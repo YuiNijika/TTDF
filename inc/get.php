@@ -10,94 +10,153 @@ class Get {
     public static function HelloWorld() {
         echo '您已成功安装开发框架！<br>这是显示在index.php中的默认内容。';
     }
-    // get站点Url
+
+    // 获取站点URL
     public static function SiteUrl() {
-        $SiteUrl = Helper::options()->siteUrl;
-        echo $SiteUrl;
+        echo Helper::options()->siteUrl;
     }
-    // get主题Url
-    public static function ThemeUrl() {
-        $ThemeUrl = Helper::options()->themeUrl;
-        echo $ThemeUrl;
-    }
-    // getAssetsUrl
+
+    // 获取主题Assets URL
     public static function AssetsUrl() {
-        $AssetsUrl = Helper::options()->themeUrl('assets');
-        echo $AssetsUrl;
+        echo Helper::options()->themeUrl('assets');
     }
-    // get主题版本号
-    public static function ThemeVer() {
-        $ver = Typecho_Plugin::parseInfo(dirname(__DIR__) . '/index.php');
-        echo $ver['version'];
-    }
-    // get框架版本号
+
+    // 获取框架版本号
     public static function FrameworkVer() {
         $ver = Typecho_Plugin::parseInfo(dirname(__DIR__) . '/inc/Config.php');
         echo $ver['version'];
     }
-    // get设置内容
+
+    // 获取Typecho版本号
+    public static function TypechoVer() {
+        echo Helper::options()->Version;
+    }
+
+    // 获取设置内容
     public static function Options($param) {
-        $Options = Helper::options()->$param;
-        return $Options;
+        return Helper::options()->$param;
     }
-    // get标题
-    public static function Title() {
-        echo \Widget_Archive::widget('Widget_Archive')->title();
+
+    // 引入文件
+    public static function Need($file) {
+        include_once $file;
     }
-    // get日期
-    public static function Date() {
-        echo \Widget_Archive::widget('Widget_Archive')->date();
-    }
-    // get分类
-    public static function Category() {
-        echo \Widget_Archive::widget('Widget_Archive')->category(',', true, '暂无分类');
-    }
-    // get标签
-    public static function Tags() {
-        echo \Widget_Archive::widget('Widget_Archive')->tags(',', true, '暂无标签');
-    }
-    // get摘要
-    public static function Excerpt() {
-        echo \Widget_Archive::widget('Widget_Archive')->excerpt();
-    }
-    // get链接
-    public static function Permalink() {
-        echo \Widget_Archive::widget('Widget_Archive')->permalink();
-    }
-    // get文章内容
-    public static function Content() {
-        echo \Widget_Archive::widget('Widget_Archive')->content();
-    }
-    // get评论数
-    public static function CommentsNum() {
-        echo \Widget_Archive::widget('Widget_Archive')->commentsNum('暂无评论', '1 条评论', '%d 条评论');
-    }
-    // get文章数
-    public static function PostsNum() {
-        echo \Widget_Archive::widget('Widget_Archive')->postsNum();
-    }
-    // get页面数
-    public static function PagesNum() {
-        echo \Widget_Archive::widget('Widget_Archive')->pagesNum();
-    }
-    // get当前页码
-    public static function CurrentPage() {
-        echo \Widget_Archive::widget('Widget_Archive')->currentPage();
-    }
-    // get当前页面标题
-    public static function ArchiveTitle() {
-        echo \Widget_Archive::widget('Widget_Archive')->archiveTitle();
-    }
-    // get当前页面作者
-    public static function Author() {
-        echo \Widget_Archive::widget('Widget_Archive')->author();
-    }
-    // get当前页面作者链接
-    public static function AuthorPermalink() {
-        echo \Widget_Archive::widget('Widget_Archive')->author->permalink();
-    }
-    // get当前页面类型
+
+    // 获取当前页面类型
     public static function Is() {
         echo \Widget_Archive::widget('Widget_Archive')->is();
+    }
+}
+
+/**
+ * Get Theme Functions
+ */
+class GetTheme {
+    // 获取主题URL
+    public static function Url() {
+        echo Helper::options()->themeUrl;
+    }
+
+    // 获取主题名称
+    public static function Name() {
+        echo Helper::options()->theme;
+    }
+
+    // 获取主题作者
+    public static function Author() {
+        $author = Typecho_Plugin::parseInfo(dirname(__DIR__) . '/index.php');
+        echo $author['author'];
+    }
+
+    // 获取主题版本号
+    public static function Ver() {
+        $ver = Typecho_Plugin::parseInfo(dirname(__DIR__) . '/index.php');
+        echo $ver['version'];
+    }
+}
+
+/**
+ * Get Post Functions
+ */
+class GetPost {
+    // 静态变量保存Widget实例
+    private static $widget;
+
+    // 获取Widget实例
+    private static function getWidget() {
+        if (is_null(self::$widget)) {
+            self::$widget = \Widget_Archive::widget('Widget_Archive');
+        }
+        return self::$widget;
+    }
+
+    // 获取标题
+    public static function Title() {
+        echo self::getWidget()->title;
+    }
+
+    // 获取日期
+    public static function Date() {
+        echo self::getWidget()->date;
+    }
+
+    // 获取分类
+    public static function Category() {
+        echo self::getWidget()->category(',', true, '暂无分类');
+    }
+
+    // 获取标签
+    public static function Tags() {
+        echo self::getWidget()->tags(',', true, '暂无标签');
+    }
+
+    // 获取摘要
+    public static function Excerpt() {
+        echo self::getWidget()->excerpt;
+    }
+
+    // 获取链接
+    public static function Permalink() {
+        echo self::getWidget()->permalink;
+    }
+
+    // 获取文章内容
+    public static function Content() {
+        echo self::getWidget()->content;
+    }
+
+    // 获取评论数
+    public static function CommentsNum() {
+        echo self::getWidget()->commentsNum('暂无评论', '1 条评论', '%d 条评论');
+    }
+
+    // 获取文章数
+    public static function PostsNum() {
+        echo self::getWidget()->postsNum;
+    }
+
+    // 获取页面数
+    public static function PagesNum() {
+        echo self::getWidget()->pagesNum;
+    }
+
+    // 获取当前页码
+    public static function CurrentPage() {
+        echo self::getWidget()->currentPage;
+    }
+
+    // 获取当前页面标题
+    public static function ArchiveTitle() {
+        echo self::getWidget()->archiveTitle;
+    }
+
+    // 获取当前页面作者
+    public static function Author() {
+        echo self::getWidget()->author;
+    }
+
+    // 获取当前页面作者链接
+    public static function AuthorPermalink() {
+        echo self::getWidget()->author->permalink;
     }
 }
