@@ -55,7 +55,7 @@ function themeConfig($form)
     $faviconUrl = new Typecho_Widget_Helper_Form_Element_Text(
         'faviconUrl',
         NULL,
-        '' . THEME_URL . '/assets/images/favicon.svg',
+        '' . THEME_URL . '/Assets/images/favicon.svg',
         _t('网站图标'),
         _t('请填入网站图标，没有则显示主题默认图标。')
     );

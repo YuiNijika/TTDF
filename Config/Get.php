@@ -39,7 +39,7 @@ class Get {
 
     // 引入文件
     public static function Need($file) {
-        include_once $file;
+        Typecho_Widget::widget('Widget_Archive')->need($file);
     }
 
     // 获取当前页面类型
