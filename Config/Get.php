@@ -97,7 +97,7 @@ class GetPost {
 
     // 获取日期
     public static function Date() {
-        echo self::getWidget()->date;
+        echo self::getWidget()->date('Y-m-d');
     }
 
     // 获取分类
