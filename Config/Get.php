@@ -18,12 +18,12 @@ class Get {
 
     // 获取主题Assets URL
     public static function AssetsUrl() {
-        echo Helper::options()->themeUrl('assets');
+        echo Helper::options()->themeUrl('Assets');
     }
 
     // 获取框架版本号
     public static function FrameworkVer() {
-        $ver = Typecho_Plugin::parseInfo(dirname(__DIR__) . '/inc/Config.php');
+        $ver = Typecho_Plugin::parseInfo(dirname(__DIR__) . '/Config/Config.php');
         echo $ver['version'];
     }
 
