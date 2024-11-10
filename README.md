@@ -22,12 +22,11 @@
 
 | 方法         | 描述                       | 示例                         |
 | ------------ | -------------------------- | ---------------------------- |
-| HelloWorld() | 输出欢迎信息               | <?php Get::HelloWorld(); ?>   |
 | SiteUrl()    | 获取站点的 URL             | <?php Get::SiteUrl(); ?>     |
 | AssetsUrl()  | 获取主题的资源文件 URL     | <?php Get::AssetsUrl(); ?>   |
 | FrameworkVer() | 获取框架版本号          | <?php Get::FrameworkVer(); ?> |
 | TypechoVer() | 获取 Typecho 版本号       | <?php Get::TypechoVer(); ?> |
-| Options($param) | 获取指定的设置项      | <?php echo Get::Options('title'); ?> |
+| Options($param) | 获取指定的设置项      | <?php echo Get::Options(''); ?> |
 
 ## GetTheme 类
 获取主题的相关信息。
