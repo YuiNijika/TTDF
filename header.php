@@ -12,8 +12,8 @@ if (!defined("__TYPECHO_ROOT_DIR__")) {
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no"/>
         <meta name="renderer" content="webkit"/>
         <link href="<?php echo Get::Options("faviconUrl") ? Get::Options("faviconUrl") : Get::AssetsUrl() . "/images/favicon.svg"; ?>" rel="icon" />
-        <link rel="stylesheet" href="<?php echo Get::AssetsUrl(); ?>/style.css?ver=<?php GetTheme::Ver(); ?>">
-        <title><?php $archiveTitle = $this->archiveTitle(
+        <link rel="stylesheet" href="<?php Get::AssetsUrl(); ?>/style.css?ver=<?php GetTheme::Ver(); ?>">
+        <title><?php $archiveTitle = GetPost::ArchiveTitle(
             [
                 "category" => _t("「%s」分类"),
                 "search" => _t("搜索结果"),
