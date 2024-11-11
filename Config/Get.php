@@ -39,12 +39,12 @@ class Get {
 
     // 引入文件
     public static function Need($file) {
-        Typecho_Widget::widget('Widget_Archive')->need($file);
+        \Widget_Archive::widget('Widget_Archive')->need($file);
     }
 
     // 获取当前页面类型
-    public static function Is() {
-        echo \Widget_Archive::widget('Widget_Archive')->is();
+    public static function Is($type) {
+        echo \Widget_Archive::widget('Widget_Archive')->is($type);
     }
 }
 
