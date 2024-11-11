@@ -58,6 +58,14 @@
 | Author()    | 获取文章作者         | <?php GetPost::Author();>   |
 | AuthorPermalink() | 获取作者链接     | <?php GetPost::AuthorPermalink();> |
 
+## GetFunctions 类
+提供一些常用的功能函数。
+
+| 方法         | 描述                       | 示例                         |
+| ------------ | -------------------------- | ---------------------------- |
+| TimerStop()  | 获取加载时间               | <?php GetFunctions::TimerStop();> |
+| ArtCount()   | 获取文章字数               | <?php GetFunctions::ArtCount();>   |
+
 ### 示例
 - 输出站点 URL
 ```php
@@ -81,6 +89,12 @@
 ```
 
 ### 更新日志
+#### 1.0.6
+ - 修复GetPost::Author()方法
+ - 新增GetFunctions类
+ - 新增TimerStop()方法
+ - 新增ArtCount()方法
+
 #### 1.0.5
  - 默认Cravatar头像源
 

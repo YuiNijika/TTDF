@@ -152,11 +152,22 @@ class GetPost {
 
     // 获取当前页面作者
     public static function Author() {
-        echo self::getWidget()->author;
+        echo self::getWidget()->author->screenName;
     }
 
     // 获取当前页面作者链接
     public static function AuthorPermalink() {
         echo self::getWidget()->author->permalink;
+    }
+}
+
+class GetFunctions {
+    // 获取加载时间
+    public static function TimerStop() {
+        echo timer_stop();
+    }
+    // 统计字数
+    public static function ArtCount($cid) {
+        echo art_count($cid);
     }
 }
