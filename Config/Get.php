@@ -24,9 +24,9 @@ class Get {
     public static function FrameworkVer() {
         try {
             $ver = Typecho_Plugin::parseInfo(dirname(__DIR__) . '/Config/Config.php');
-            return $ver['version'] ?? '未知版本';
+            echo $ver['version'] ?? '未知版本';
         } catch (Exception $e) {
-            return '获取版本失败';
+            echo '获取版本失败';
         }
     }
 
@@ -117,12 +117,12 @@ class GetPost {
 
     // 获取分类
     public static function Category() {
-        echo self::getWidget()->category(',', true, '暂无分类');
+        echo self::getWidget()->category();
     }
 
     // 获取标签
     public static function Tags() {
-        echo self::getWidget()->tags(',', true, '暂无标签');
+        echo self::getWidget()->tags();
     }
 
     // 获取摘要
@@ -142,7 +142,7 @@ class GetPost {
 
     // 获取评论数
     public static function CommentsNum() {
-        echo self::getWidget()->commentsNum('暂无评论', '1 条评论', '%d 条评论');
+        echo self::getWidget()->commentsNum();
     }
 
     // 获取文章数
