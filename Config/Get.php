@@ -13,18 +13,21 @@ class Get {
 
     // 获取站点URL
     public static function SiteUrl() {
-        echo Helper::options()->siteUrl;
+        return Helper::options()->siteUrl;
     }
 
-    // 获取主题Assets URL
     public static function AssetsUrl() {
-        echo Helper::options()->themeUrl('Assets');
+        return Helper::options()->themeUrl('Assets');
     }
 
-    // 获取框架版本号
+    // 添加错误处理
     public static function FrameworkVer() {
-        $ver = Typecho_Plugin::parseInfo(dirname(__DIR__) . '/Config/Config.php');
-        echo $ver['version'];
+        try {
+            $ver = Typecho_Plugin::parseInfo(dirname(__DIR__) . '/Config/Config.php');
+            return $ver['version'] ?? '未知版本';
+        } catch (Exception $e) {
+            return '获取版本失败';
+        }
     }
 
     // 获取Typecho版本号
@@ -79,25 +82,37 @@ class GetTheme {
  * Get Post Functions
  */
 class GetPost {
-    // 静态变量保存Widget实例
     private static $widget;
 
-    // 获取Widget实例
+    // 优化单例模式实现
     private static function getWidget() {
         if (is_null(self::$widget)) {
-            self::$widget = \Widget_Archive::widget('Widget_Archive');
+            try {
+                self::$widget = \Widget_Archive::widget('Widget_Archive');
+            } catch (Exception $e) {
+                throw new Exception('无法初始化Widget实例');
+            }
         }
         return self::$widget;
     }
 
     // 获取标题
     public static function Title() {
-        echo self::getWidget()->title;
+        try {
+            return self::getWidget()->title;
+        } catch (Exception $e) {
+            return '';
+        }
     }
 
     // 获取日期
-    public static function Date() {
-        echo self::getWidget()->date('Y-m-d');
+    // 添加格式化选项
+    public static function Date($format = 'Y-m-d') {
+        try {
+            return self::getWidget()->date($format);
+        } catch (Exception $e) {
+            return '';
+        }
     }
 
     // 获取分类
@@ -146,8 +161,12 @@ class GetPost {
     }
 
     // 获取当前页面标题
-    public static function ArchiveTitle() {
-        echo self::getWidget()->archiveTitle;
+    public static function ArchiveTitle($format = '', $default = '', $connector = '') {
+        if (empty($format)) {
+            echo self::getWidget()->archiveTitle;
+        } else {
+            echo self::getWidget()->archiveTitle($format, $default, $connector);
+        }
     }
 
     // 获取当前页面作者
@@ -167,7 +186,54 @@ class GetFunctions {
         echo timer_stop();
     }
     // 统计字数
+    // 添加参数验证
     public static function ArtCount($cid) {
-        echo art_count($cid);
+        if (!is_numeric($cid)) {
+            return 0;
+        }
+        return art_count($cid);
+    }
+}
+
+// GetJsonData
+class GetJsonData {   
+    // 获取并输出 JSON 数据中的标题
+    public static function JsonTitle($data) {
+        if (!is_array($data)) {
+            return '无效的数据格式';
+        }
+        return isset($data['title']) 
+            ? htmlspecialchars($data['title'], ENT_QUOTES, 'UTF-8')
+            : '暂无标题';
+    }
+
+    // 获取并输出 JSON 数据中的内容
+    public static function JsonContent($data) {
+        if (!is_array($data)) {
+            return '无效的数据格式';
+        }
+        return isset($data['content'])
+            ? htmlspecialchars($data['content'], ENT_QUOTES, 'UTF-8')
+            : '暂无内容';
+    }
+
+    // 获取并输出 JSON 数据中的发布时间
+    public static function JsonDate($data) {
+        if (!is_array($data)) {
+            return '无效的数据格式';
+        }
+        return isset($data['date'])
+            ? htmlspecialchars($data['date'], ENT_QUOTES, 'UTF-8')
+            : '暂无日期';
+    }
+
+    // 获取并输出 JSON 数据中的 URL
+    public static function JsonUrl($data) {
+        if (!is_array($data)) {
+            return '无效的数据格式';
+        }
+        return isset($data['url'])
+            ? htmlspecialchars($data['url'], ENT_QUOTES, 'UTF-8')
+            : '暂无链接';
     }
 }

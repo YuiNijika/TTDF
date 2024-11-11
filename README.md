@@ -49,13 +49,23 @@
 | Excerpt()   | 获取文章摘要         | <?php GetPost::Excerpt();> |
 | Permalink() | 获取文章链接         | <?php GetPost::Permalink();>|
 | Content()   | 获取文章内容         | <?php GetPost::Content();>  |
-| CommentsNum() | 获取文章评论数     | <?php GetPost::CommentsNum();> |
 | PostsNum()  | 获取文章数           | <?php GetPost::PostsNum();> |
 | PagesNum()  | 获取页面数           | <?php GetPost::PagesNum();> |
 | CurrentPage() | 获取当前页码       | <?php GetPost::CurrentPage();> |
 | ArchiveTitle() | 获取当前页面标题 | <?php GetPost::ArchiveTitle();> |
 | Author()    | 获取文章作者         | <?php GetPost::Author();>   |
 | AuthorPermalink() | 获取作者链接     | <?php GetPost::AuthorPermalink();> |
+
+## GetComments 类
+获取评论的相关信息。
+
+| 方法        | 描述                 | 示例                       |
+| ----------- | -------------------- | -------------------------- |
+| Comments()  | 获取评论             | <?php GetComments::Comments();> |
+| CommentsPage() | 获取评论页面     | <?php GetComments::CommentsPage();> |
+| CommentsList() | 获取评论列表     | <?php GetComments::CommentsList();> |
+| CommentsNum()  | 获取评论数       | <?php GetComments::CommentsNum();> |
+| CommentsForm() | 获取评论表单     | <?php GetComments::CommentsForm();> |
 
 ## GetFunctions 类
 提供一些常用的功能函数。
@@ -64,6 +74,49 @@
 | ------------ | -------------------------- | ---------------------------- |
 | TimerStop()  | 获取加载时间               | <?php GetFunctions::TimerStop();> |
 | ArtCount()   | 获取文章字数               | <?php GetFunctions::ArtCount();>   |
+
+## GetJsonData 类
+提供Json数据输出。
+
+> 注意，需要启用Json输出，请在header文件顶部增加<?php GetJsonData::Tomori(); ?>
+
+| 方法         | 描述                       | 示例                         |
+| ------------ | -------------------------- | ---------------------------- |
+| JsonTitle()  | 获取Json数据标题           | <?php GetJsonData::JsonTitle();> |
+| JsonContent()   | 获取Json数据内容           | <?php GetJsonData::JsonContent();>   |
+
+### API 使用说明：
+获取文章列表：
+```
+?JsonData=page
+?JsonData=page&page=2
+```
+获取文章详情：
+```
+?JsonData=common&cid=文章ID
+```
+获取分类：
+```
+?JsonData=category                    // 获取所有分类
+?JsonData=category&cid=分类ID         // 获取特定分类下的文章
+?JsonData=category&cid=分类ID&page=2  // 分页获取分类文章
+```
+获取标签：
+```
+?JsonData=tag                    // 获取所有标签
+?JsonData=tag&tid=标签ID         // 获取特定标签下的文章
+?JsonData=tag&tid=标签ID&page=2  // 分页获取标签文章
+```
+主要特点：
+统一的响应格式
+完整的错误处理
+
+支持分页
+丰富的文章元数据
+主题信息输出
+缓存控制
+支持文章缩略图和摘要
+这个版本提供了一个完整的 RESTful API 实现，可以用于构建前端应用或小程序等。
 
 ### 示例
 - 输出站点 URL
@@ -88,6 +141,18 @@
 ```
 
 # 更新日志
+
+## 1.0.9
+- 新增Json输出
+
+- 优化GetComments::CurrentPage()方法
+> 改为自行定义，如<?php GetComments::CommentsNum('无评论', '共1评论','共%s评论'); ?>
+- 新增GetComments::CommentsPage()方法
+> 获取评论页面，如<?php GetComments::CommentsPage('&laquo; 前一页', '后一页 &raquo;'); ?>
+- 新增GetComments::CommentsList()方法
+- 新增GetComments::CommentsNum()方法
+- 新增GetComments::CommentsForm()方法
+
 
 ## 1.0.8
  - 修复Get::Is()方法
