@@ -9,7 +9,6 @@
 
 #### 框架说明
 
-- 框架版本号：1.0.1
 - 主要文件
   > inc/Config.php 配置文件
   > inc/get.php Get函数
@@ -88,7 +87,7 @@
 <?php Get::Need('file.php'); ?>
 ```
 
-### 更新日志
+# 更新日志
 #### 1.0.6
  - 修复GetPost::Author()方法
  - 新增GetFunctions类
