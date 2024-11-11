@@ -197,6 +197,12 @@ class GetFunctions {
 
 // GetJsonData
 class GetJsonData {   
+    // 启用Json
+    public static function Tomori() {
+        if (function_exists('outputJsonData')) {
+            outputJsonData();
+        }
+    }
     // 获取并输出 JSON 数据中的标题
     public static function JsonTitle($data) {
         if (!is_array($data)) {
