@@ -78,7 +78,7 @@
 ## GetJsonData 类
 提供Json数据输出。
 
-> 注意，需要启用Json输出，请在header文件顶部增加<?php GetJsonData::Tomori(); ?>
+> 注意，需要启用Json输出，请在header文件顶部增加 GetJsonData::Tomori(); 方法
 
 | 方法         | 描述                       | 示例                         |
 | ------------ | -------------------------- | ---------------------------- |
