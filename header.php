@@ -13,7 +13,7 @@ if (!defined("__TYPECHO_ROOT_DIR__")) {
         <meta name="renderer" content="webkit"/>
         <link href="<?php echo Get::Options("faviconUrl") ? Get::Options("faviconUrl") : Get::AssetsUrl() . "/images/favicon.svg"; ?>" rel="icon" />
         <link rel="stylesheet" href="<?php Get::AssetsUrl(); ?>/style.css?ver=<?php GetTheme::Ver(); ?>">
-        <title><?php $archiveTitle = GetPost::ArchiveTitle(
+        <title><?php $archiveTitle = $this->archiveTitle(
             [
                 "category" => _t("「%s」分类"),
                 "search" => _t("搜索结果"),
