@@ -22,8 +22,8 @@ if (!defined("__TYPECHO_ROOT_DIR__")) {
             ],""," - "
         );
         echo $archiveTitle;
-        if (Get::Is("index") && !empty(Get::Options("subTitle")) && $this->_currentPage > 1) {
-            echo "「第" . $this->_currentPage . "页」 - ";
+        if (Get::Is("index") && !empty(Get::Options("subTitle")) && Get::CurrentPage() > 1) {
+            echo "「第" . Get::CurrentPage() . "页」 - ";
         }
         $title = Get::Options("title");
         echo $title;

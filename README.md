@@ -28,6 +28,8 @@ TTDF是一个Typecho主题模板开发框架；
 | Options($param) | 获取指定的设置项      | <?php echo Get::Options(''); ?> |
 | Need($file) | 引入文件      | <?php Get::Need('file'); ?> |
 | Is($type) | 获取当前页面类型      | <?php Get::Is('type'); ?> |
+| PageNav($prev, $next) | 获取分页导航      | <?php Get::PageNav(); ?> |
+| PageLink($link, $type = '') | 获取分页链接      | <?php Get::PageLink(); ?> |
 
 #### GetTheme 类
 获取主题的相关信息。
@@ -123,49 +125,16 @@ TTDF是一个Typecho主题模板开发框架；
 
 ---
 
-## 示例
-### Get类
-- 输出站点 URL
-```php
-<?php Get::SiteUrl(); ?>
-```
-- 引入文件
-```php
-<?php Get::Need('file.php'); ?>
-```
-### GetTheme类
-- 输出主题 URL
-```php
-<?php GetTheme::Url(); ?>
-```
-### GetPost类
-- 输出文章标题
-```php
-<?php GetPost::Title(); ?>
-```
-- 输出文章分类
-```php
-<?php GetPost::Category(); ?>
-```
-### GetComments类
-- 输出评论
-```php
-<?php GetComments::Comments(); ?>
-```
-### GetFunctions类
-- 输出加载时间
-```php
-<?php GetFunctions::TimerStop(); ?>
-```
-### GetJsonData类
-- 启用Json输出
-```php
-<?php GetJsonData::Tomori(); ?>
-```
-
----
-
 # 更新日志
+
+## 1.1.1
+- 优化Get.php代码结构
+- 新增输出错误日志
+- 新增Get::PageNav()方法
+- 新增Get::PageLink()方法
+- 优化GetPost::Tags()方法
+- 优化GetPost::Excerpt()方法
+- 新增参数$length，可自定义输出字数，如<?php GetPost::Excerpt(100); ?>
 
 ## 1.1.0
 - 优化Json输出
