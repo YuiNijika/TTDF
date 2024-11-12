@@ -13,11 +13,11 @@ class Get {
 
     // 获取站点URL
     public static function SiteUrl() {
-        return Helper::options()->siteUrl;
+        echo Helper::options()->siteUrl;
     }
 
     public static function AssetsUrl() {
-        return Helper::options()->themeUrl('Assets');
+        echo Helper::options()->themeUrl('Assets');
     }
 
     // 添加错误处理
