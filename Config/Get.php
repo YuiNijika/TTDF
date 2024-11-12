@@ -177,6 +177,18 @@ class GetPost {
 
 // GetComments
 class GetComments {
+    private static $widget;
+    // 优化单例模式实现
+    private static function getWidget() {
+        if (is_null(self::$widget)) {
+            try {
+                self::$widget = \Widget_Archive::widget('Widget_Archive');
+            } catch (Exception $e) {
+                throw new Exception('无法初始化Widget实例');
+            }
+        }
+        return self::$widget;
+    }
     // 获取评论
     public static function Comments() {
         echo self::getWidget()->comments;
