@@ -1,33 +1,35 @@
-# 欢迎使用Typecho主题模板开发框架！
+# 欢迎使用TTDF框架
+> Typecho Theme Development Framework
 
-本框架是鼠子写给自己使用的，还请勿喷！  
-现已开源提交至GitHub、Gitee、云原生(cnb.cool)。
+## 介绍
+TTDF是一个Typecho主题模板开发框架；  
+面向小白，免费、简单、开源，提供了一些常用的功能以及调用函数，支持REST API。
 
-## 使用说明
+### 核心文件
+  > inc/Config.php 配置文件  
+  > inc/Get.php Get函数  
+  > inc/Options.php 主题设置  
+  > inc/Functions.php 函数功能  
+  > inc/Json.php REST API
 
-这只是一个简单的开发框架，提供了一些常用的功能以及功能函数。
+---
 
-#### 框架说明
+### 类与方法
 
-- 主要文件
-  > inc/Config.php 配置文件
-  > inc/get.php Get函数
-  > inc/options.php 主题设置
-
-# 类与方法
-
-## Get 类
-提供站点级别的信息和通用功能。
+#### Get类
+获取站点信息及其他通用功能。
 
 | 方法         | 描述                       | 示例                         |
 | ------------ | -------------------------- | ---------------------------- |
 | SiteUrl()    | 获取站点的 URL             | <?php Get::SiteUrl(); ?>     |
 | AssetsUrl()  | 获取主题的资源文件 URL     | <?php Get::AssetsUrl(); ?>   |
-| FrameworkVer() | 获取框架版本号          | <?php Get::FrameworkVer(); ?> |
 | TypechoVer() | 获取 Typecho 版本号       | <?php Get::TypechoVer(); ?> |
+| FrameworkVer() | 获取框架版本号          | <?php Get::FrameworkVer(); ?> |
 | Options($param) | 获取指定的设置项      | <?php echo Get::Options(''); ?> |
+| Need($file) | 引入文件      | <?php Get::Need('file'); ?> |
+| Is($type) | 获取当前页面类型      | <?php Get::Is('type'); ?> |
 
-## GetTheme 类
+#### GetTheme 类
 获取主题的相关信息。
 
 | 方法   | 描述         | 示例                |
@@ -37,7 +39,7 @@
 | Author() | 获取主题作者 | <?php GetTheme::Author();> |
 | Ver()  | 获取主题版本号 | <?php GetTheme::Ver();> |
 
-## GetPost 类
+#### GetPost 类
 获取文章的相关信息。
 
 | 方法        | 描述                 | 示例                       |
@@ -56,7 +58,7 @@
 | Author()    | 获取文章作者         | <?php GetPost::Author();>   |
 | AuthorPermalink() | 获取作者链接     | <?php GetPost::AuthorPermalink();> |
 
-## GetComments 类
+#### GetComments 类
 获取评论的相关信息。
 
 | 方法        | 描述                 | 示例                       |
@@ -67,7 +69,7 @@
 | CommentsNum()  | 获取评论数       | <?php GetComments::CommentsNum();> |
 | CommentsForm() | 获取评论表单     | <?php GetComments::CommentsForm();> |
 
-## GetFunctions 类
+#### GetFunctions 类
 提供一些常用的功能函数。
 
 | 方法         | 描述                       | 示例                         |
@@ -75,17 +77,18 @@
 | TimerStop()  | 获取加载时间               | <?php GetFunctions::TimerStop();> |
 | ArtCount()   | 获取文章字数               | <?php GetFunctions::ArtCount();>   |
 
-## GetJsonData 类
+#### GetJsonData 类
 提供Json数据输出。
 
 > 注意，需要启用Json输出，请在header文件顶部增加 GetJsonData::Tomori(); 方法
 
 | 方法         | 描述                       | 示例                         |
 | ------------ | -------------------------- | ---------------------------- |
+| Tomori()  | 启用Json输出               | <?php GetJsonData::Tomori();> |
 | JsonTitle()  | 获取Json数据标题           | <?php GetJsonData::JsonTitle();> |
 | JsonContent()   | 获取Json数据内容           | <?php GetJsonData::JsonContent();>   |
 
-### API 使用说明：
+##### REST API 使用说明：
 获取文章列表：
 ```
 ?JsonData=page
@@ -118,15 +121,24 @@
 支持文章缩略图和摘要
 这个版本提供了一个完整的 RESTful API 实现，可以用于构建前端应用或小程序等。
 
-### 示例
+---
+
+## 示例
+### Get类
 - 输出站点 URL
 ```php
 <?php Get::SiteUrl(); ?>
 ```
+- 引入文件
+```php
+<?php Get::Need('file.php'); ?>
+```
+### GetTheme类
 - 输出主题 URL
 ```php
 <?php GetTheme::Url(); ?>
 ```
+### GetPost类
 - 输出文章标题
 ```php
 <?php GetPost::Title(); ?>
@@ -135,10 +147,23 @@
 ```php
 <?php GetPost::Category(); ?>
 ```
-- 引入文件
+### GetComments类
+- 输出评论
 ```php
-<?php Get::Need('file.php'); ?>
+<?php GetComments::Comments(); ?>
 ```
+### GetFunctions类
+- 输出加载时间
+```php
+<?php GetFunctions::TimerStop(); ?>
+```
+### GetJsonData类
+- 启用Json输出
+```php
+<?php GetJsonData::Tomori(); ?>
+```
+
+---
 
 # 更新日志
 
@@ -155,7 +180,6 @@
 - 新增GetComments::CommentsList()方法
 - 新增GetComments::CommentsNum()方法
 - 新增GetComments::CommentsForm()方法
-
 
 ## 1.0.8
  - 修复Get::Is()方法

@@ -127,7 +127,7 @@ class GetPost {
 
     // 获取摘要
     public static function Excerpt() {
-        echo self::getWidget()->excerpt;
+        echo strip_tags(self::getWidget()->excerpt);
     }
 
     // 获取链接
@@ -138,11 +138,6 @@ class GetPost {
     // 获取文章内容
     public static function Content() {
         echo self::getWidget()->content;
-    }
-
-    // 获取评论数
-    public static function CommentsNum() {
-        echo self::getWidget()->commentsNum();
     }
 
     // 获取文章数
@@ -177,6 +172,34 @@ class GetPost {
     // 获取当前页面作者链接
     public static function AuthorPermalink() {
         echo self::getWidget()->author->permalink;
+    }
+}
+
+// GetComments
+class GetComments {
+    // 获取评论
+    public static function Comments() {
+        echo self::getWidget()->comments;
+    }
+
+    // 获取评论页面
+    public static function CommentsPage() {
+        echo self::getWidget()->commentsPage;
+    }
+
+    // 获取评论列表
+    public static function CommentsList() {
+        echo self::getWidget()->commentsList;
+    }
+
+    // 获取评论数
+    public static function CommentsNum() {
+        echo self::getWidget()->commentsNum;
+    }
+
+    // 获取评论表单
+    public static function CommentsForm() {
+        echo self::getWidget()->commentsForm;
     }
 }
 
