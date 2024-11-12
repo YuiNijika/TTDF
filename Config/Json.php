@@ -6,10 +6,6 @@
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
-if (function_exists('outputJsonData')) {
-    outputJsonData();
-}
-
 function outputJsonData() {
     if (!isset($_GET['JsonData'])) {
         return;
@@ -20,6 +16,7 @@ function outputJsonData() {
     
     $response = [
         'code' => 200,
+        'framework' => 'TTDF',
         'message' => 'success',
         'data' => null
     ];
@@ -99,8 +96,8 @@ function outputJsonData() {
                     'commentsNum' => intval($post['commentsNum']),
                     'categories' => $categories,
                     'tags' => $tags,
-                    'url' => Typecho_Common::url($post['slug'], Helper::options()->siteUrl),
-                    'api' => Helper::options()->siteUrl . '?JsonData=common&cid=' . $post['cid']
+                    'url' => Typecho_Common::url($post['slug'], Get::SiteUrl()),
+                    'api' => Get::SiteUrl() . '?JsonData=common&cid=' . $post['cid']
                 ];
             }
 
@@ -112,16 +109,15 @@ function outputJsonData() {
                     'currentPage' => $currentPage,
                     'totalPages' => ceil($total / $pageSize)
                 ],
-                'theme' => [
-                    'name' => Helper::options()->theme,
-                    'title' => Helper::options()->title,
-                    'description' => Helper::options()->description,
-                    'keywords' => Helper::options()->keywords,
-                    'logo' => Helper::options()->logoUrl,
-                    'favicon' => Helper::options()->faviconUrl,
-                    'siteUrl' => Helper::options()->siteUrl,
-                    'timezone' => Helper::options()->timezone,
-                    'lang' => Helper::options()->lang
+                'site' => [
+                    'theme' => Get::Options('theme'),
+                    'title' => Get::Options('title'),
+                    'description' => Get::Options('description'),
+                    'keywords' => Get::Options('keywords'),
+                    'favicon' => Get::Options('faviconUrl'),
+                    'siteUrl' => Get::SiteUrl(),
+                    'timezone' => Get::Options('timezone'),
+                    'lang' => Get::Options('lang')
                 ]
             ];
         } elseif ($_GET['JsonData'] === 'common' && isset($_GET['cid'])) {
@@ -170,7 +166,7 @@ function outputJsonData() {
                     'commentsNum' => intval($post['commentsNum']),
                     'categories' => $categories,
                     'tags' => $tags,
-                    'url' => Typecho_Common::url($post['slug'], Helper::options()->siteUrl)
+                    'url' => Typecho_Common::url($post['slug'], Get::SiteUrl())
                 ];
             } else {
                 $response['code'] = 404;
@@ -203,8 +199,8 @@ function outputJsonData() {
                         'id' => $post['cid'],
                         'title' => $post['title'],
                         'created' => date('Y-m-d H:i:s', $post['created']),
-                        'url' => Typecho_Common::url($post['slug'], Helper::options()->siteUrl),
-                        'api' => Helper::options()->siteUrl . '?JsonData=common&cid=' . $post['cid']
+                        'url' => Typecho_Common::url($post['slug'], Get::SiteUrl()),
+                        'api' => Get::SiteUrl() . '?JsonData=common&cid=' . $post['cid']
                     ];
                 }
 
@@ -233,7 +229,7 @@ function outputJsonData() {
                         'slug' => $category['slug'],
                         'description' => $category['description'],
                         'count' => $category['count'],
-                        'url' => Helper::options()->siteUrl . '?JsonData=category&cid=' . $category['mid']
+                        'url' => Get::SiteUrl() . '?JsonData=category&cid=' . $category['mid']
                     ];
                 }
 
@@ -266,8 +262,8 @@ function outputJsonData() {
                         'id' => $post['cid'],
                         'title' => $post['title'],
                         'created' => date('Y-m-d H:i:s', $post['created']),
-                        'url' => Typecho_Common::url($post['slug'], Helper::options()->siteUrl),
-                        'api' => Helper::options()->siteUrl . '?JsonData=common&cid=' . $post['cid']
+                        'url' => Typecho_Common::url($post['slug'], Get::SiteUrl()),
+                        'api' => Get::SiteUrl() . '?JsonData=common&cid=' . $post['cid']
                     ];
                 }
 
