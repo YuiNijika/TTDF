@@ -399,6 +399,33 @@ class GetComments {
         }
     }
 
+    // 获取评论id
+    public static function RespondId() {
+        try {
+            echo self::getWidget()->respondId;
+        } catch (Exception $e) {
+            self::handleError('获取评论id失败', $e);
+        }
+    }
+
+    // 取消回复
+    public static function CancelReply() {
+        try {
+            echo self::getWidget()->cancelReply();
+        } catch (Exception $e) {
+            self::handleError('取消回复失败', $e);
+        }
+    }
+
+    // Remember
+    public static function Remember($field) {
+        try {
+            echo self::getWidget()->remember($field);
+        } catch (Exception $e) {
+            self::handleError('获取Remember失败', $e);
+        }
+    }
+
     // 获取评论表单
     public static function CommentsForm() {
         try {
