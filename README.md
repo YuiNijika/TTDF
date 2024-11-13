@@ -21,15 +21,21 @@ TTDF是一个Typecho主题模板开发框架；
 
 | 方法         | 描述                       | 示例                         |
 | ------------ | -------------------------- | ---------------------------- |
+| Header()     | 获取Typecho Header         | <?php Get::Header(); ?>     |
+| Footer()     | 获取Typecho Footer         | <?php Get::Footer(); ?>     | 
 | SiteUrl()    | 获取站点的 URL             | <?php Get::SiteUrl(); ?>     |
 | AssetsUrl()  | 获取主题的资源文件 URL     | <?php Get::AssetsUrl(); ?>   |
 | TypechoVer() | 获取 Typecho 版本号       | <?php Get::TypechoVer(); ?> |
 | FrameworkVer() | 获取框架版本号          | <?php Get::FrameworkVer(); ?> |
 | Options($param) | 获取指定的设置项      | <?php echo Get::Options(''); ?> |
-| Need($file) | 引入文件      | <?php Get::Need('file'); ?> |
-| Is($type) | 获取当前页面类型      | <?php Get::Is('type'); ?> |
+| Next()         | 循环输出文章         | <?php Get::Next(); ?>          |
+| Need($file)     | 引入文件      | <?php Get::Need('file'); ?> |
+| Is($type)       | 获取当前页面类型      | <?php Get::Is('type'); ?> |
 | PageNav($prev, $next) | 获取分页导航      | <?php Get::PageNav(); ?> |
 | PageLink($link, $type = '') | 获取分页链接      | <?php Get::PageLink(); ?> |
+| Total() | 获取文章总数      | <?php Get::Total(); ?> |
+| PageSize() | 获取每页文章数      | <?php Get::PageSize(); ?> |
+| CurrentPage() | 获取当前页码      | <?php Get::CurrentPage(); ?> |
 
 #### GetTheme 类
 获取主题的相关信息。
@@ -127,9 +133,20 @@ TTDF是一个Typecho主题模板开发框架；
 
 # 更新日志
 
+## 1.1.3
+- 优化Get整体代码
+- 新增Get::Header()方法
+- 新增Get::Footer()方法
+- 新增Get::Next()方法
+- 新增Get::Total()方法
+- 新增Get::PageSize()方法
+- 优化GetPost::Tags()方法
+- 优化GetPost::Category()方法
+> 新增$split、$link、$default参数, 如<?php GetPost::Category(',', true, '暂无分类'); ?>
+
 ## 1.1.2
 - 优化Json输出
-- 优化Get::AssetsUrl()方法
+- 优化GetTheme::AssetsUrl()方法
 > 改为<?php GetTheme::AssetsUrl(); ?>
 - 修改优化assets文件加载方式
 
