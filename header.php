@@ -2,9 +2,7 @@
 /**
  * 这里是前端输出中的Header内容。
  */
-if (!defined("__TYPECHO_ROOT_DIR__")) {
-    exit();
-} ?>
+if (!defined('__TYPECHO_ROOT_DIR__')) exit; ?>
 <!doctype html>
 <html lang="zh-CN">
     <head>
