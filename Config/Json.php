@@ -114,7 +114,7 @@ function outputJsonData() {
                     'description' => Get::Options('description'),
                     'keywords' => Get::Options('keywords'),
                     'favicon' => Get::Options('faviconUrl'),
-                    'siteUrl' => Get::SiteUrl(),
+                    'siteUrl' => Helper::options()->siteUrl,
                     'timezone' => Get::Options('timezone'),
                     'lang' => Get::Options('lang')
                 ]
