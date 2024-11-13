@@ -6,10 +6,6 @@
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
-if (function_exists('outputJsonData')) {
-    outputJsonData();
-}
-
 function outputJsonData() {
     if (!isset($_GET['JsonData'])) {
         return;
