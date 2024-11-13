@@ -20,7 +20,7 @@ function themeConfig($form)
     <style>
         body {
             font-weight:500;
-            background: url(<?php echo Get::AssetsUrl() ?>/images/background.webp)
+            background: url(<?php GetTheme::AssetsUrl() ?>/images/background.webp)
             no-repeat 0 0;
             background-size: cover;
             background-attachment: fixed;
