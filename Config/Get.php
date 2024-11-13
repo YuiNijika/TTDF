@@ -434,6 +434,17 @@ class GetComments {
             self::handleError('获取评论表单失败', $e);
         }
     }
+
+    // 获取分页
+    public static function PageNav($prev = '&laquo; 前一页', $next = '后一页 &raquo;') {
+        try {
+            // 使用评论专用的 Widget
+            $comments = \Widget_Comments_Archive::widget('Widget_Comments_Archive');
+            $comments->pageNav($prev, $next);
+        } catch (Exception $e) {
+            self::handleError('评论分页导航失败', $e);
+        }
+    }
 }
 
 class GetFunctions {

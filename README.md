@@ -79,6 +79,7 @@ TTDF是一个Typecho主题模板开发框架；
 | RespondId() | 获取评论id     | <?php GetComments::RespondId();> |
 | CancelReply() | 获取取消回复     | <?php GetComments::CancelReply();> |
 | Remember() | 获取Remember     | <?php GetComments::Remember();> |
+| PageNav() | 获取评论分页     | <?php GetComments::PageNav();> |
 
 #### GetFunctions 类
 提供一些常用的功能函数。
