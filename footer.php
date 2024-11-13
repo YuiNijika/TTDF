@@ -13,5 +13,6 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
     ?>  
     <script src="<?php echo GetTheme::AssetsUrl() . "/" . $js; ?>?v=<?php GetTheme::Ver(); ?>"></script>
     <?php endforeach; ?>
+    <?php Get::Footer() ?>
 </body>
 </html>

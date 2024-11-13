@@ -38,7 +38,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit; ?>
             echo $subTitle;
         }
         ?></title>
-        <?php $this->header(); ?>
+        <?php Get::Header(); ?>
     </head>
 <body>
     <div id="app">
