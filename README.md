@@ -127,6 +127,12 @@ TTDF是一个Typecho主题模板开发框架；
 
 # 更新日志
 
+## 1.1.2
+- 优化Json输出
+- 优化Get::AssetsUrl()方法
+> 改为<?php GetTheme::AssetsUrl(); ?>
+- 修改优化assets文件加载方式
+
 ## 1.1.1
 - 优化Get.php代码结构
 - 新增输出错误日志

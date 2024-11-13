@@ -6,6 +6,10 @@
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
+if (function_exists('outputJsonData')) {
+    outputJsonData();
+}
+
 function outputJsonData() {
     if (!isset($_GET['JsonData'])) {
         return;
@@ -16,7 +20,6 @@ function outputJsonData() {
     
     $response = [
         'code' => 200,
-        'framework' => 'TTDF',
         'message' => 'success',
         'data' => null
     ];
@@ -96,8 +99,8 @@ function outputJsonData() {
                     'commentsNum' => intval($post['commentsNum']),
                     'categories' => $categories,
                     'tags' => $tags,
-                    'url' => Typecho_Common::url($post['slug'], Get::SiteUrl()),
-                    'api' => Get::SiteUrl() . '?JsonData=common&cid=' . $post['cid']
+                    'url' => Typecho_Common::url($post['slug'], Helper::options()->siteUrl),
+                    'api' => Helper::options()->siteUrl . '?JsonData=common&cid=' . $post['cid']
                 ];
             }
 
@@ -166,7 +169,7 @@ function outputJsonData() {
                     'commentsNum' => intval($post['commentsNum']),
                     'categories' => $categories,
                     'tags' => $tags,
-                    'url' => Typecho_Common::url($post['slug'], Get::SiteUrl())
+                    'url' => Typecho_Common::url($post['slug'], Helper::options()->siteUrl)
                 ];
             } else {
                 $response['code'] = 404;
@@ -199,8 +202,8 @@ function outputJsonData() {
                         'id' => $post['cid'],
                         'title' => $post['title'],
                         'created' => date('Y-m-d H:i:s', $post['created']),
-                        'url' => Typecho_Common::url($post['slug'], Get::SiteUrl()),
-                        'api' => Get::SiteUrl() . '?JsonData=common&cid=' . $post['cid']
+                        'url' => Typecho_Common::url($post['slug'], Helper::options()->siteUrl),
+                        'api' => Helper::options()->siteUrl . '?JsonData=common&cid=' . $post['cid']
                     ];
                 }
 
@@ -229,7 +232,7 @@ function outputJsonData() {
                         'slug' => $category['slug'],
                         'description' => $category['description'],
                         'count' => $category['count'],
-                        'url' => Get::SiteUrl() . '?JsonData=category&cid=' . $category['mid']
+                        'url' => Helper::options()->siteUrl . '?JsonData=category&cid=' . $category['mid']
                     ];
                 }
 
@@ -262,8 +265,8 @@ function outputJsonData() {
                         'id' => $post['cid'],
                         'title' => $post['title'],
                         'created' => date('Y-m-d H:i:s', $post['created']),
-                        'url' => Typecho_Common::url($post['slug'], Get::SiteUrl()),
-                        'api' => Get::SiteUrl() . '?JsonData=common&cid=' . $post['cid']
+                        'url' => Typecho_Common::url($post['slug'], Helper::options()->siteUrl),
+                        'api' => Helper::options()->siteUrl . '?JsonData=common&cid=' . $post['cid']
                     ];
                 }
 

@@ -33,11 +33,6 @@ class Get {
         echo Helper::options()->siteUrl;
     }
 
-    // 获取主题Assets目录URL
-    public static function AssetsUrl() {
-        echo Helper::options()->themeUrl('Assets');
-    }
-
     // 获取框架版本
     public static function FrameworkVer() {
         try {
@@ -139,6 +134,12 @@ class GetTheme {
             echo '';
         }
     }
+
+    // 获取主题Assets目录URL
+    public static function AssetsUrl() {
+        echo Helper::options()->themeUrl('Assets');
+    }
+    
 }
 
 class GetPost {
