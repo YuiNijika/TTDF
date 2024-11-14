@@ -78,6 +78,15 @@ class Get {
         }
     }
 
+    // Metas
+    public static function Metas($type) {
+        try {
+            return self::getWidget()->metas($type);
+        } catch (Exception $e) {
+            return self::handleError('获取Metas失败', $e, null);
+        }
+    }
+
     // 获取框架版本
     public static function FrameworkVer() {
         try {
@@ -104,6 +113,15 @@ class Get {
             return Helper::options()->$param;
         } catch (Exception $e) {
             return self::handleError('获取配置参数失败', $e);
+        }
+    }
+
+    // 获取字段
+    public static function Fields($param) {
+        try {
+            return self::getWidget()->fields->$param;
+        } catch (Exception $e) {
+            return self::handleError('获取字段失败', $e);
         }
     }
 

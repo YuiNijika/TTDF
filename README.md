@@ -28,6 +28,7 @@ TTDF是一个Typecho主题模板开发框架；
 | TypechoVer() | 获取 Typecho 版本号       | <?php Get::TypechoVer(); ?> |
 | FrameworkVer() | 获取框架版本号          | <?php Get::FrameworkVer(); ?> |
 | Options($param) | 获取指定的设置项      | <?php echo Get::Options(''); ?> |
+| Fields($param) | 获取自定义字段      | <?php echo Get::Fields(''); ?> |
 | Next()         | 循环输出文章         | <?php Get::Next(); ?>          |
 | Need($file)     | 引入文件      | <?php Get::Need('file'); ?> |
 | Is($type)       | 获取当前页面类型      | <?php Get::Is('type'); ?> |
@@ -136,6 +137,10 @@ TTDF是一个Typecho主题模板开发框架；
 ---
 
 # 更新日志
+
+## 1.1.4
+- 新增Get::Fields()方法
+> 自定义字段
 
 ## 1.1.3
 - 优化Get整体代码
