@@ -37,6 +37,8 @@ TTDF是一个Typecho主题模板开发框架；
 | Total() | 获取文章总数      | <?php Get::Total(); ?> |
 | PageSize() | 获取每页文章数      | <?php Get::PageSize(); ?> |
 | CurrentPage() | 获取当前页码      | <?php Get::CurrentPage(); ?> |
+| Permalink() | 获取文章链接      | <?php Get::Permalink();> |
+| Field($field) | 获取自定义字段      | <?php Get::Field(''); ?> |
 
 #### GetTheme 类
 获取主题的相关信息。
@@ -141,6 +143,7 @@ TTDF是一个Typecho主题模板开发框架；
 ## 1.1.4
 - 新增Get::Fields()方法
 > 自定义字段
+- 新增Get::Permalink()方法
 
 ## 1.1.3
 - 优化Get整体代码

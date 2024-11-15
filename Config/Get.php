@@ -191,6 +191,15 @@ class Get {
             return self::handleError('获取当前页码失败', $e, 1);
         }
     }
+
+    // 获取页面Permalink
+    public static function Permalink() {
+        try {
+            return self::getWidget()->permalink();
+        } catch (Exception $e) {
+            return self::handleError('获取页面Url失败', $e);
+        }
+    }
 }
 
 class GetTheme {
@@ -342,7 +351,7 @@ class GetPost {
         }
     }
 
-    // 获取归档标题
+    // 获取标题
     public static function ArchiveTitle($format = '', $default = '', $connector = '') {
         try {
             if (empty($format)) {
@@ -351,7 +360,7 @@ class GetPost {
                 echo self::getWidget()->archiveTitle($format, $default, $connector);
             }
         } catch (Exception $e) {
-            self::handleError('获取归档标题失败', $e);
+            self::handleError('获取标题失败', $e);
         }
     }
 
