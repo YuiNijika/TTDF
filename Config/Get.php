@@ -372,6 +372,15 @@ class GetPost {
             self::handleError('获取作者失败', $e);
         }
     }
+    
+    // 获取作者头像
+    public static function AuthorAvatar($size = 128) {
+        try {
+            echo self::getWidget()->author->gravatar($size);
+        } catch (Exception $e) {
+            self::handleError('获取作者头像失败', $e);
+        }
+    }
 
     // 获取作者链接
     public static function AuthorPermalink() {
