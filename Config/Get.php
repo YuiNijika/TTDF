@@ -33,7 +33,7 @@ class Get {
     
     private function __construct() {}
     private function __clone() {}
-    private function __wakeup() {}
+    public function __wakeup() {}
 
     public static function HelloWorld() {
         echo '您已成功安装开发框架！<br>这是显示在index.php中的默认内容。';
@@ -207,7 +207,7 @@ class GetTheme {
     
     private function __construct() {}
     private function __clone() {}
-    private function __wakeup() {}
+    public function __wakeup() {}
 
     public static function Url() {
         try {
@@ -263,7 +263,7 @@ class GetPost {
     
     private function __construct() {}
     private function __clone() {}
-    private function __wakeup() {}
+    public function __wakeup() {}
 
     // 获取标题
     public static function Title() {
@@ -397,7 +397,7 @@ class GetComments {
     
     private function __construct() {}
     private function __clone() {}
-    private function __wakeup() {}
+    public function __wakeup() {}
 
     // 获取评论
     public static function Comments() {
@@ -488,7 +488,7 @@ class GetFunctions {
     
     private function __construct() {}
     private function __clone() {}
-    private function __wakeup() {}
+    public function __wakeup() {}
 
     // 获取加载时间
     public static function TimerStop() {
@@ -533,7 +533,7 @@ class GetJsonData {
     
     private function __construct() {}
     private function __clone() {}
-    private function __wakeup() {}
+    public function __wakeup() {}
 
     private static function validateData($data, $field) {
         if (!is_array($data)) {
