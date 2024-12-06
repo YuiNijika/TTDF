@@ -35,20 +35,24 @@ class Get {
     private function __clone() {}
     public function __wakeup() {}
 
-    // HelloWorld
+    /**
+     * HelloWorld
+     * 
+     */
     public static function HelloWorld() {
         echo '您已成功安装开发框架！<br>这是显示在index.php中的默认内容。';
     }
     
     /**
-     * 获取类的详细信息，支持文本输出和数组返回
+     * 获取类的详细反射信息并格式化输出
+     * 通过反射机制获取指定函数的全面详细属性和元数据
      * 
      * @param string|object $class 类名或类对象
      * @param bool $returnArray 是否返回数组（默认为false，直接输出）
      * @return array|void 类信息数组（当$returnArray为true时）
      * @throws \ReflectionException
      */
-    public static function classDetails($class, $returnArray = false) {
+    public static function classDetails($class, ?bool $returnArray = false) {
         try {
             $reflector = new \ReflectionClass($class);
             
@@ -266,16 +270,44 @@ class Get {
         }
     }
 
-    // Header
-    public static function Header() {
+    /**
+     * 输出header头部元数据
+     * 
+     * 此方法会基于一组预定义的键名来过滤相关数据（预定义键名如下：
+     * - 'description'
+     * - 'keywords'
+     * - 'generator'
+     * - 'template'
+     * - 'pingback'
+     * - 'xmlrpc'
+     * - 'wlw'
+     * - 'rss2'
+     * - 'rss1'
+     * - 'commentReply'
+     * - 'antiSpam'
+     * - 'social'
+     * - 'atom'
+     * ），若传递符合这些预定义键名对应的值，则起到过滤这些值的作用。
+     *
+     * @param string|null $rule 规则
+     * @return string 头部信息输出
+     * @throws self::handleError()
+     */
+    public static function Header(?string $rule = null)
+    {
         try {
-            return self::getWidget()->header();
+            return self::getWidget()->header($rule);
         } catch (Exception $e) {
             return self::handleError('获取Header失败', $e);
         }
     }
 
-    // Footer  
+    /**
+     * 输出页脚自定义内容
+     * 即输出 self::pluginHandle()->call('footer', $this); footer钩子。
+     * 
+     * @return mixed
+     */
     public static function Footer() {
         try {
             return self::getWidget()->footer();
@@ -284,7 +316,11 @@ class Get {
         }
     }
 
-    // 获取站点URL
+    /**
+     * 获取站点URL
+     * 
+     * @return string
+     */
     public static function SiteUrl() {
         try {
             echo Helper::options()->siteUrl;
@@ -293,7 +329,12 @@ class Get {
         }
     }
 
-    // Next
+    /**
+     * 返回堆栈（数组）中每一行的值
+     * 一般用于循环输出文章
+     *
+     * @return mixed
+     */
     public static function Next() {
         try {
             if (method_exists(self::getWidget(), 'Next')) {
