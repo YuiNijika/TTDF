@@ -302,12 +302,7 @@ class Get {
         }
     }
 
-    /**
-     * 输出页脚自定义内容
-     * 即输出 self::pluginHandle()->call('footer', $this); footer钩子。
-     * 
-     * @return mixed
-     */
+    // Footer 输出页脚自定义内容，即输出 self::pluginHandle()->call('footer', $this); footer钩子。
     public static function Footer() {
         try {
             return self::getWidget()->footer();
@@ -316,11 +311,7 @@ class Get {
         }
     }
 
-    /**
-     * 获取站点URL
-     * 
-     * @return string
-     */
+    // 获取站点URL
     public static function SiteUrl() {
         try {
             echo Helper::options()->siteUrl;
@@ -329,12 +320,7 @@ class Get {
         }
     }
 
-    /**
-     * 返回堆栈（数组）中每一行的值
-     * 一般用于循环输出文章
-     *
-     * @return mixed
-     */
+    // Next 返回堆栈（数组）中每一行的值，一般用于循环输出文章
     public static function Next() {
         try {
             if (method_exists(self::getWidget(), 'Next')) {
