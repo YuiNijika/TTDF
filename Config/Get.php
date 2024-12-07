@@ -25,7 +25,7 @@ trait SingletonWidget {
             }
         }
         return self::$widget;
-    }
+    }    
 }
 
 class Get {
@@ -40,6 +40,7 @@ class Get {
      * 
      */
     public static function HelloWorld() {
+        error_log('获取Footer失败11111');
         echo '您已成功安装开发框架！<br>这是显示在index.php中的默认内容。';
     }
     
@@ -52,7 +53,7 @@ class Get {
      * @return array|void 类信息数组（当$returnArray为true时）
      * @throws \ReflectionException
      */
-    public static function classDetails($class, ?bool $returnArray = false) {
+    public static function ClassDetails($class, ?bool $returnArray = false) {
         try {
             $reflector = new \ReflectionClass($class);
             
@@ -302,7 +303,12 @@ class Get {
         }
     }
 
-    // Footer 输出页脚自定义内容，即输出 self::pluginHandle()->call('footer', $this); footer钩子。
+    /**
+     * 输出页脚自定义内容
+     * 即输出 self::pluginHandle()->call('footer', $this); footer钩子。
+     * 
+     * @return mixed
+     */
     public static function Footer() {
         try {
             return self::getWidget()->footer();
@@ -311,7 +317,11 @@ class Get {
         }
     }
 
-    // 获取站点URL
+    /**
+     * 获取站点URL
+     * 
+     * @return string
+     */
     public static function SiteUrl() {
         try {
             echo Helper::options()->siteUrl;
@@ -320,7 +330,12 @@ class Get {
         }
     }
 
-    // Next 返回堆栈（数组）中每一行的值，一般用于循环输出文章
+    /**
+     * 返回堆栈（数组）中每一行的值
+     * 一般用于循环输出文章
+     *
+     * @return mixed
+     */
     public static function Next() {
         try {
             if (method_exists(self::getWidget(), 'Next')) {
@@ -329,15 +344,6 @@ class Get {
             throw new Exception('Next 方法不存在');
         } catch (Exception $e) {
             return self::handleError('Next 调用失败', $e, null);
-        }
-    }
-
-    // Metas
-    public static function Metas($type) {
-        try {
-            return self::getWidget()->metas($type);
-        } catch (Exception $e) {
-            return self::handleError('获取Metas失败', $e, null);
         }
     }
 
