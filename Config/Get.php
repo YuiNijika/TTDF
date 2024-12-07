@@ -25,7 +25,7 @@ trait SingletonWidget {
             }
         }
         return self::$widget;
-    }
+    }    
 }
 
 class Get {
@@ -33,22 +33,282 @@ class Get {
     
     private function __construct() {}
     private function __clone() {}
-    private function __wakeup() {}
+    public function __wakeup() {}
 
+    /**
+     * HelloWorld
+     * 
+     */
     public static function HelloWorld() {
+        error_log('获取Footer失败11111');
         echo '您已成功安装开发框架！<br>这是显示在index.php中的默认内容。';
     }
-
-    // Header
-    public static function Header() {
+    
+    /**
+     * 获取类的详细反射信息并格式化输出
+     * 通过反射机制获取指定函数的全面详细属性和元数据
+     * 
+     * @param string|object $class 类名或类对象
+     * @param bool $returnArray 是否返回数组（默认为false，直接输出）
+     * @return array|void 类信息数组（当$returnArray为true时）
+     * @throws \ReflectionException
+     */
+    public static function ClassDetails($class, ?bool $returnArray = false) {
         try {
-            return self::getWidget()->header();
+            $reflector = new \ReflectionClass($class);
+            
+            // 安全地获取默认值的函数
+            $getSafeDefaultValue = function($value) {
+                try {
+                    if (is_object($value)) {
+                        return get_class($value);
+                    }
+                    if (is_array($value)) {
+                        return array_map(function($item) {
+                            return is_object($item) ? get_class($item) : $item;
+                        }, $value);
+                    }
+                    return $value;
+                } catch (\Throwable $e) {
+                    return '无法获取默认值';
+                }
+            };
+            
+            // 递归获取父类继承链
+            $getParentChain = function($reflector) use (&$getParentChain) {
+                $parentChain = [];
+                $currentParent = $reflector->getParentClass();
+                
+                while ($currentParent) {
+                    $parentChain[] = [
+                        'className' => $currentParent->getName(),
+                        'namespace' => $currentParent->getNamespaceName(),
+                        'shortName' => $currentParent->getShortName()
+                    ];
+                    $currentParent = $currentParent->getParentClass();
+                }
+                
+                return $parentChain;
+            };
+            
+            // 基本类信息
+            $namespace = $reflector->getNamespaceName();
+            $className = $reflector->getName();
+            $shortClassName = $reflector->getShortName();
+            
+            // 获取完整父类继承链
+            $parentChain = $getParentChain($reflector);
+            
+            // 接口信息
+            $interfaces = $reflector->getInterfaceNames();
+            
+            // 属性信息
+            $properties = array_map(function($prop) use ($getSafeDefaultValue) {
+                try {
+                    return [
+                        'name' => $prop->getName(),
+                        'type' => $prop->getType() ? $prop->getType()->getName() : 'mixed',
+                        'visibility' => match(true) {
+                            $prop->isPublic() => 'public',
+                            $prop->isProtected() => 'protected',
+                            $prop->isPrivate() => 'private',
+                            default => 'unknown'
+                        },
+                        'static' => $prop->isStatic(),
+                        'hasDefaultValue' => $prop->hasDefaultValue(),
+                        'defaultValue' => $prop->hasDefaultValue() 
+                            ? $getSafeDefaultValue($prop->getDefaultValue()) 
+                            : null
+                    ];
+                } catch (\Throwable $e) {
+                    return [
+                        'name' => $prop->getName(),
+                        'error' => '无法获取属性详情：' . $e->getMessage()
+                    ];
+                }
+            }, $reflector->getProperties());
+            
+            // 方法信息
+            $methods = array_map(function($method) use ($getSafeDefaultValue) {
+                try {
+                    return [
+                        'name' => $method->getName(),
+                        'visibility' => match(true) {
+                            $method->isPublic() => 'public',
+                            $method->isProtected() => 'protected',
+                            $method->isPrivate() => 'private',
+                            default => 'unknown'
+                        },
+                        'static' => $method->isStatic(),
+                        'abstract' => $method->isAbstract(),
+                        'final' => $method->isFinal(),
+                        'parameters' => array_map(function($param) use ($getSafeDefaultValue) {
+                            return [
+                                'name' => $param->getName(),
+                                'type' => $param->hasType() ? $param->getType()->getName() : 'mixed',
+                                'optional' => $param->isOptional() ?? false,
+                                'defaultValue' => $param->isOptional() 
+                                    ? ($param->isDefaultValueAvailable() 
+                                        ? $getSafeDefaultValue($param->getDefaultValue()) 
+                                        : null)
+                                    : null
+                            ];
+                        }, $method->getParameters())
+                    ];
+                } catch (\Throwable $e) {
+                    return [
+                        'name' => $method->getName(),
+                        'error' => '无法获取方法详情：' . $e->getMessage()
+                    ];
+                }
+            }, $reflector->getMethods());
+            
+            // 准备返回的数组
+            $classInfo = [
+                'fullClassName' => $className,
+                'shortClassName' => $shortClassName,
+                'namespace' => $namespace,
+                'parentChain' => $parentChain,
+                'interfaces' => $interfaces,
+                'properties' => $properties,
+                'methods' => $methods,
+                'isAbstract' => $reflector->isAbstract(),
+                'isFinal' => $reflector->isFinal(),
+                'isInterface' => $reflector->isInterface(),
+                'isTrait' => $reflector->isTrait(),
+                'fileName' => $reflector->getFileName(),
+                'constants' => $reflector->getConstants()
+            ];
+            
+            // 根据参数决定返回或输出
+            if ($returnArray) {
+                return $classInfo;
+            }
+            
+            // 文本输出
+            echo "完整类名: {$className}\n";
+            echo "短类名: {$shortClassName}\n";
+            echo "命名空间: {$namespace}\n";
+            echo "文件位置: " . ($reflector->getFileName() ?: '未知') . "\n";
+            
+            // 输出父类继承链
+            echo "父类继承链: \n";
+            if (empty($parentChain)) {
+                echo "  无父类\n";
+            } else {
+                foreach ($parentChain as $index => $parent) {
+                    echo "  " . str_repeat("└── ", $index) . 
+                         "父类 " . ($index + 1) . ": {$parent['className']} (命名空间: {$parent['namespace']})\n";
+                }
+            }
+            
+            // 输出接口信息
+            echo "实现的接口: \n";
+            if (empty($interfaces)) {
+                echo "  无接口\n";
+            } else {
+                foreach ($interfaces as $interface) {
+                    echo "  - {$interface}\n";
+                }
+            }
+            
+            // 输出常量信息
+            $constants = $reflector->getConstants();
+            echo "类常量: \n";
+            if (empty($constants)) {
+                echo "  无常量\n";
+            } else {
+                foreach ($constants as $name => $value) {
+                    echo "  - {$name}: " . (is_array($value) ? json_encode($value) : $value) . "\n";
+                }
+            }
+            
+            // 输出属性信息
+            echo "类属性: \n";
+            if (empty($properties)) {
+                echo "  无属性\n";
+            } else {
+                foreach ($properties as $prop) {
+                    $defaultValue = $prop['hasDefaultValue'] 
+                        ? ' (默认值: ' . (is_array($prop['defaultValue']) ? json_encode($prop['defaultValue']) : $prop['defaultValue']) . ')' 
+                        : '';
+                    echo "  - {$prop['visibility']} " . 
+                         ($prop['static'] ? 'static ' : '') . 
+                         "{$prop['type']} \${$prop['name']}{$defaultValue}\n";
+                }
+            }
+            
+            // 输出方法信息
+            echo "类方法: \n";
+            if (empty($methods)) {
+                echo "  无方法\n";
+            } else {
+                foreach ($methods as $method) {
+                    $params = implode(', ', array_map(function($param) {
+                        $optional = $param['optional'] ? ' = ' . 
+                            (is_array($param['defaultValue']) ? json_encode($param['defaultValue']) : $param['defaultValue']) 
+                            : '';
+                        return "{$param['type']} \${$param['name']}{$optional}";
+                    }, $method['parameters']));
+                    
+                    echo "  - {$method['visibility']} " . 
+                         ($method['static'] ? 'static ' : '') . 
+                         ($method['abstract'] ? 'abstract ' : '') . 
+                         ($method['final'] ? 'final ' : '') . 
+                         "function {$method['name']}({$params})\n";
+                }
+            }
+            
+            // 额外类型信息
+            echo "\n类型信息:\n";
+            echo "  抽象类: " . ($reflector->isAbstract() ? '是' : '否') . "\n";
+            echo "  Final类: " . ($reflector->isFinal() ? '是' : '否') . "\n";
+            echo "  接口: " . ($reflector->isInterface() ? '是' : '否') . "\n";
+            echo "  Trait: " . ($reflector->isTrait() ? '是' : '否') . "\n";
+            
+        } catch (\ReflectionException $e) {
+            echo "错误：无法获取类信息 - " . $e->getMessage() . "\n";
+        }
+    }
+
+    /**
+     * 输出header头部元数据
+     * 
+     * 此方法会基于一组预定义的键名来过滤相关数据（预定义键名如下：
+     * - 'description'
+     * - 'keywords'
+     * - 'generator'
+     * - 'template'
+     * - 'pingback'
+     * - 'xmlrpc'
+     * - 'wlw'
+     * - 'rss2'
+     * - 'rss1'
+     * - 'commentReply'
+     * - 'antiSpam'
+     * - 'social'
+     * - 'atom'
+     * ），若传递符合这些预定义键名对应的值，则起到过滤这些值的作用。
+     *
+     * @param string|null $rule 规则
+     * @return string 头部信息输出
+     * @throws self::handleError()
+     */
+    public static function Header(?string $rule = null)
+    {
+        try {
+            return self::getWidget()->header($rule);
         } catch (Exception $e) {
             return self::handleError('获取Header失败', $e);
         }
     }
 
-    // Footer  
+    /**
+     * 输出页脚自定义内容
+     * 即输出 self::pluginHandle()->call('footer', $this); footer钩子。
+     * 
+     * @return mixed
+     */
     public static function Footer() {
         try {
             return self::getWidget()->footer();
@@ -57,7 +317,11 @@ class Get {
         }
     }
 
-    // 获取站点URL
+    /**
+     * 获取站点URL
+     * 
+     * @return string
+     */
     public static function SiteUrl() {
         try {
             echo Helper::options()->siteUrl;
@@ -66,7 +330,12 @@ class Get {
         }
     }
 
-    // Next
+    /**
+     * 返回堆栈（数组）中每一行的值
+     * 一般用于循环输出文章
+     *
+     * @return mixed
+     */
     public static function Next() {
         try {
             if (method_exists(self::getWidget(), 'Next')) {
@@ -75,15 +344,6 @@ class Get {
             throw new Exception('Next 方法不存在');
         } catch (Exception $e) {
             return self::handleError('Next 调用失败', $e, null);
-        }
-    }
-
-    // Metas
-    public static function Metas($type) {
-        try {
-            return self::getWidget()->metas($type);
-        } catch (Exception $e) {
-            return self::handleError('获取Metas失败', $e, null);
         }
     }
 
@@ -207,7 +467,7 @@ class GetTheme {
     
     private function __construct() {}
     private function __clone() {}
-    private function __wakeup() {}
+    public function __wakeup() {}
 
     public static function Url() {
         try {
@@ -263,7 +523,7 @@ class GetPost {
     
     private function __construct() {}
     private function __clone() {}
-    private function __wakeup() {}
+    public function __wakeup() {}
 
     // 获取标题
     public static function Title() {
@@ -397,7 +657,7 @@ class GetComments {
     
     private function __construct() {}
     private function __clone() {}
-    private function __wakeup() {}
+    public function __wakeup() {}
 
     // 获取评论
     public static function Comments() {
@@ -488,7 +748,7 @@ class GetFunctions {
     
     private function __construct() {}
     private function __clone() {}
-    private function __wakeup() {}
+    public function __wakeup() {}
 
     // 获取加载时间
     public static function TimerStop() {
@@ -533,7 +793,7 @@ class GetJsonData {
     
     private function __construct() {}
     private function __clone() {}
-    private function __wakeup() {}
+    public function __wakeup() {}
 
     private static function validateData($data, $field) {
         if (!is_array($data)) {
