@@ -108,12 +108,18 @@ class Get {
                     return [
                         'name' => $prop->getName(),
                         'type' => $prop->getType() ? $prop->getType()->getName() : 'mixed',
-                        'visibility' => match(true) {
-                            $prop->isPublic() => 'public',
-                            $prop->isProtected() => 'protected',
-                            $prop->isPrivate() => 'private',
-                            default => 'unknown'
-                        },
+                        // 替换 match 表达式兼容php7
+                        'visibility' => (function() use ($prop) {
+                            if ($prop->isPublic()) {
+                                return 'public';
+                            } elseif ($prop->isProtected()) {
+                                return 'protected';
+                            } elseif ($prop->isPrivate()) {
+                                return 'private';
+                            } else {
+                                return 'unknown';
+                            }
+                        })(),
                         'static' => $prop->isStatic(),
                         'hasDefaultValue' => $prop->hasDefaultValue(),
                         'defaultValue' => $prop->hasDefaultValue() 
@@ -133,12 +139,18 @@ class Get {
                 try {
                     return [
                         'name' => $method->getName(),
-                        'visibility' => match(true) {
-                            $method->isPublic() => 'public',
-                            $method->isProtected() => 'protected',
-                            $method->isPrivate() => 'private',
-                            default => 'unknown'
-                        },
+                        // 替换 match 表达式兼容php7
+                        'visibility' => (function() use ($method) {
+                            if ($method->isPublic()) {
+                                return 'public';
+                            } elseif ($method->isProtected()) {
+                                return 'protected';
+                            } elseif ($method->isPrivate()) {
+                                return 'private';
+                            } else {
+                                return 'unknown';
+                            }
+                        })(),
                         'static' => $method->isStatic(),
                         'abstract' => $method->isAbstract(),
                         'final' => $method->isFinal(),
