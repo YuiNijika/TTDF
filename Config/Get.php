@@ -16,16 +16,16 @@ trait ErrorHandler {
 trait SingletonWidget {
     private static $widget;
     
-    private static function getWidget() {
+    private static function getArchive() {
         if (is_null(self::$widget)) {
             try {
-                self::$widget = \Widget_Archive::widget('Widget_Archive');
+                self::$widget = \Widget\Archive::widget('Widget_Archive');
             } catch (Exception $e) {
-                throw new Exception('无法初始化Widget实例: ' . $e->getMessage());
+                throw new Exception('无法初始化 Widget 实例: ' . $e->getMessage());
             }
         }
         return self::$widget;
-    }    
+    }
 }
 
 class Get {
@@ -39,248 +39,10 @@ class Get {
      * HelloWorld
      * 
      */
-    public static function HelloWorld() {
-        error_log('获取Footer失败11111');
-        echo '您已成功安装开发框架！<br>这是显示在index.php中的默认内容。';
-    }
-    
-    /**
-     * 获取类的详细反射信息并格式化输出
-     * 通过反射机制获取指定函数的全面详细属性和元数据
-     * 
-     * @param string|object $class 类名或类对象
-     * @param bool $returnArray 是否返回数组（默认为false，直接输出）
-     * @return array|void 类信息数组（当$returnArray为true时）
-     * @throws \ReflectionException
-     */
-    public static function ClassDetails($class, ?bool $returnArray = false) {
-        try {
-            $reflector = new \ReflectionClass($class);
-            
-            // 安全地获取默认值的函数
-            $getSafeDefaultValue = function($value) {
-                try {
-                    if (is_object($value)) {
-                        return get_class($value);
-                    }
-                    if (is_array($value)) {
-                        return array_map(function($item) {
-                            return is_object($item) ? get_class($item) : $item;
-                        }, $value);
-                    }
-                    return $value;
-                } catch (\Throwable $e) {
-                    return '无法获取默认值';
-                }
-            };
-            
-            // 递归获取父类继承链
-            $getParentChain = function($reflector) use (&$getParentChain) {
-                $parentChain = [];
-                $currentParent = $reflector->getParentClass();
-                
-                while ($currentParent) {
-                    $parentChain[] = [
-                        'className' => $currentParent->getName(),
-                        'namespace' => $currentParent->getNamespaceName(),
-                        'shortName' => $currentParent->getShortName()
-                    ];
-                    $currentParent = $currentParent->getParentClass();
-                }
-                
-                return $parentChain;
-            };
-            
-            // 基本类信息
-            $namespace = $reflector->getNamespaceName();
-            $className = $reflector->getName();
-            $shortClassName = $reflector->getShortName();
-            
-            // 获取完整父类继承链
-            $parentChain = $getParentChain($reflector);
-            
-            // 接口信息
-            $interfaces = $reflector->getInterfaceNames();
-            
-            // 属性信息
-            $properties = array_map(function($prop) use ($getSafeDefaultValue) {
-                try {
-                    return [
-                        'name' => $prop->getName(),
-                        'type' => $prop->getType() ? $prop->getType()->getName() : 'mixed',
-                        // 替换 match 表达式兼容php7
-                        'visibility' => (function() use ($prop) {
-                            if ($prop->isPublic()) {
-                                return 'public';
-                            } elseif ($prop->isProtected()) {
-                                return 'protected';
-                            } elseif ($prop->isPrivate()) {
-                                return 'private';
-                            } else {
-                                return 'unknown';
-                            }
-                        })(),
-                        'static' => $prop->isStatic(),
-                        'hasDefaultValue' => $prop->hasDefaultValue(),
-                        'defaultValue' => $prop->hasDefaultValue() 
-                            ? $getSafeDefaultValue($prop->getDefaultValue()) 
-                            : null
-                    ];
-                } catch (\Throwable $e) {
-                    return [
-                        'name' => $prop->getName(),
-                        'error' => '无法获取属性详情：' . $e->getMessage()
-                    ];
-                }
-            }, $reflector->getProperties());
-            
-            // 方法信息
-            $methods = array_map(function($method) use ($getSafeDefaultValue) {
-                try {
-                    return [
-                        'name' => $method->getName(),
-                        // 替换 match 表达式兼容php7
-                        'visibility' => (function() use ($method) {
-                            if ($method->isPublic()) {
-                                return 'public';
-                            } elseif ($method->isProtected()) {
-                                return 'protected';
-                            } elseif ($method->isPrivate()) {
-                                return 'private';
-                            } else {
-                                return 'unknown';
-                            }
-                        })(),
-                        'static' => $method->isStatic(),
-                        'abstract' => $method->isAbstract(),
-                        'final' => $method->isFinal(),
-                        'parameters' => array_map(function($param) use ($getSafeDefaultValue) {
-                            return [
-                                'name' => $param->getName(),
-                                'type' => $param->hasType() ? $param->getType()->getName() : 'mixed',
-                                'optional' => $param->isOptional() ?? false,
-                                'defaultValue' => $param->isOptional() 
-                                    ? ($param->isDefaultValueAvailable() 
-                                        ? $getSafeDefaultValue($param->getDefaultValue()) 
-                                        : null)
-                                    : null
-                            ];
-                        }, $method->getParameters())
-                    ];
-                } catch (\Throwable $e) {
-                    return [
-                        'name' => $method->getName(),
-                        'error' => '无法获取方法详情：' . $e->getMessage()
-                    ];
-                }
-            }, $reflector->getMethods());
-            
-            // 准备返回的数组
-            $classInfo = [
-                'fullClassName' => $className,
-                'shortClassName' => $shortClassName,
-                'namespace' => $namespace,
-                'parentChain' => $parentChain,
-                'interfaces' => $interfaces,
-                'properties' => $properties,
-                'methods' => $methods,
-                'isAbstract' => $reflector->isAbstract(),
-                'isFinal' => $reflector->isFinal(),
-                'isInterface' => $reflector->isInterface(),
-                'isTrait' => $reflector->isTrait(),
-                'fileName' => $reflector->getFileName(),
-                'constants' => $reflector->getConstants()
-            ];
-            
-            // 根据参数决定返回或输出
-            if ($returnArray) {
-                return $classInfo;
-            }
-            
-            // 文本输出
-            echo "完整类名: {$className}\n";
-            echo "短类名: {$shortClassName}\n";
-            echo "命名空间: {$namespace}\n";
-            echo "文件位置: " . ($reflector->getFileName() ?: '未知') . "\n";
-            
-            // 输出父类继承链
-            echo "父类继承链: \n";
-            if (empty($parentChain)) {
-                echo "  无父类\n";
-            } else {
-                foreach ($parentChain as $index => $parent) {
-                    echo "  " . str_repeat("└── ", $index) . 
-                         "父类 " . ($index + 1) . ": {$parent['className']} (命名空间: {$parent['namespace']})\n";
-                }
-            }
-            
-            // 输出接口信息
-            echo "实现的接口: \n";
-            if (empty($interfaces)) {
-                echo "  无接口\n";
-            } else {
-                foreach ($interfaces as $interface) {
-                    echo "  - {$interface}\n";
-                }
-            }
-            
-            // 输出常量信息
-            $constants = $reflector->getConstants();
-            echo "类常量: \n";
-            if (empty($constants)) {
-                echo "  无常量\n";
-            } else {
-                foreach ($constants as $name => $value) {
-                    echo "  - {$name}: " . (is_array($value) ? json_encode($value) : $value) . "\n";
-                }
-            }
-            
-            // 输出属性信息
-            echo "类属性: \n";
-            if (empty($properties)) {
-                echo "  无属性\n";
-            } else {
-                foreach ($properties as $prop) {
-                    $defaultValue = $prop['hasDefaultValue'] 
-                        ? ' (默认值: ' . (is_array($prop['defaultValue']) ? json_encode($prop['defaultValue']) : $prop['defaultValue']) . ')' 
-                        : '';
-                    echo "  - {$prop['visibility']} " . 
-                         ($prop['static'] ? 'static ' : '') . 
-                         "{$prop['type']} \${$prop['name']}{$defaultValue}\n";
-                }
-            }
-            
-            // 输出方法信息
-            echo "类方法: \n";
-            if (empty($methods)) {
-                echo "  无方法\n";
-            } else {
-                foreach ($methods as $method) {
-                    $params = implode(', ', array_map(function($param) {
-                        $optional = $param['optional'] ? ' = ' . 
-                            (is_array($param['defaultValue']) ? json_encode($param['defaultValue']) : $param['defaultValue']) 
-                            : '';
-                        return "{$param['type']} \${$param['name']}{$optional}";
-                    }, $method['parameters']));
-                    
-                    echo "  - {$method['visibility']} " . 
-                         ($method['static'] ? 'static ' : '') . 
-                         ($method['abstract'] ? 'abstract ' : '') . 
-                         ($method['final'] ? 'final ' : '') . 
-                         "function {$method['name']}({$params})\n";
-                }
-            }
-            
-            // 额外类型信息
-            echo "\n类型信息:\n";
-            echo "  抽象类: " . ($reflector->isAbstract() ? '是' : '否') . "\n";
-            echo "  Final类: " . ($reflector->isFinal() ? '是' : '否') . "\n";
-            echo "  接口: " . ($reflector->isInterface() ? '是' : '否') . "\n";
-            echo "  Trait: " . ($reflector->isTrait() ? '是' : '否') . "\n";
-            
-        } catch (\ReflectionException $e) {
-            echo "错误：无法获取类信息 - " . $e->getMessage() . "\n";
-        }
+    public static function HelloWorld(?bool $echo = true) {
+        if ($echo) '您已成功安装开发框架！<br>这是显示在index.php中的默认内容。';
+        
+        return '您已成功安装开发框架！<br>这是显示在index.php中的默认内容。';
     }
 
     /**
@@ -303,27 +65,42 @@ class Get {
      * ），若传递符合这些预定义键名对应的值，则起到过滤这些值的作用。
      *
      * @param string|null $rule 规则
+     * @param bool|null $echo 当设置为 true 时，会直接输出；
+     *                        当设置为 false 时，则返回结果值。
      * @return string 头部信息输出
      * @throws self::handleError()
      */
-    public static function Header(?string $rule = null)
+    public static function Header(?bool $echo = true, ?string $rule = null)
     {
         try {
-            return self::getWidget()->header($rule);
+            //error_log('测试错误日志');
+            if ($echo) self::getArchive()->header($rule);
+            
+            ob_start();  // 开启输出缓冲
+            self::getArchive()->header($rule);
+            $content = ob_get_clean();  // 获取缓冲区内容并清除缓冲区
+            
+            return $content;
         } catch (Exception $e) {
             return self::handleError('获取Header失败', $e);
         }
     }
 
     /**
-     * 输出页脚自定义内容
+     * 执行页脚自定义内容
      * 即输出 self::pluginHandle()->call('footer', $this); footer钩子。
      * 
      * @return mixed
      */
     public static function Footer() {
         try {
-            return self::getWidget()->footer();
+            ob_start();
+            $Footer = self::getArchive()->footer();
+            $content = ob_get_clean();
+            
+            if (!empty($content)) return $Footer;
+            
+            return self::getArchive()->footer();
         } catch (Exception $e) {
             return self::handleError('获取Footer失败', $e);
         }
@@ -332,13 +109,19 @@ class Get {
     /**
      * 获取站点URL
      * 
+     * @param bool|null $echo 当设置为 true 时，会直接输出；
+     *                        当设置为 false 时，则返回结果值。
      * @return string
      */
-    public static function SiteUrl() {
+    public static function SiteUrl(?bool $echo = true) {
         try {
-            echo Helper::options()->siteUrl;
+            $SiteUrl = \Helper::options()->siteUrl;
+            
+            if ($echo) echo $SiteUrl;
+            
+            return $SiteUrl;
         } catch (Exception $e) {
-            self::handleError('获取站点URL失败', $e);
+            return self::handleError('获取站点URL失败', $e);
         }
     }
 
@@ -350,8 +133,8 @@ class Get {
      */
     public static function Next() {
         try {
-            if (method_exists(self::getWidget(), 'Next')) {
-                return self::getWidget()->Next();
+            if (method_exists(self::getArchive(), 'Next')) {
+                return self::getArchive()->Next();
             }
             throw new Exception('Next 方法不存在');
         } catch (Exception $e) {
@@ -359,23 +142,43 @@ class Get {
         }
     }
 
-    // 获取框架版本
-    public static function FrameworkVer() {
+    /**
+     * 获取框架版本
+     *
+     * @param bool|null $echo 当设置为 true 时，会直接输出；
+     *                        当设置为 false 时，则返回结果值。
+     * @return string|null 
+     * @throws Exception
+     */
+    public static function FrameworkVer(?bool $echo = true) {
         try {
-            $ver = Typecho_Plugin::parseInfo(dirname(__DIR__) . '/Config/Config.php');
-            echo $ver['version'] ?? '未知版本';
+            $FrameworkVer = __FRAMEWORK_VER__;
+            
+            if ($echo) echo $FrameworkVer;
+            
+            return $FrameworkVer;
         } catch (Exception $e) {
-            self::handleError('获取框架版本失败', $e);
-            echo '获取版本失败';
+            return self::handleError('获取框架版本失败', $e);
         }
     }
 
-    // 获取Typecho版本
-    public static function TypechoVer() {
+    /**
+     * 获取 typecho 版本
+     *
+     * @param bool|null $echo 当设置为 true 时，会直接输出；
+     *                        当设置为 false 时，则返回结果值。
+     * @return string|null 
+     * @throws Exception
+     */
+    public static function TypechoVer(?bool $echo = true) {
         try {
-            echo Helper::options()->Version;
+            $TypechoVer = \Helper::options()->Version;
+            
+            if ($echo) echo $TypechoVer;
+            
+            return $TypechoVer;
         } catch (Exception $e) {
-            self::handleError('获取Typecho版本失败', $e);
+            return self::handleError('获取Typecho版本失败', $e);
         }
     }
 
@@ -391,7 +194,7 @@ class Get {
     // 获取字段
     public static function Fields($param) {
         try {
-            return self::getWidget()->fields->$param;
+            return self::getArchive()->fields->$param;
         } catch (Exception $e) {
             return self::handleError('获取字段失败', $e);
         }
@@ -400,7 +203,7 @@ class Get {
     // 引入文件
     public static function Need($file) {
         try {
-            return self::getWidget()->need($file);
+            return self::getArchive()->need($file);
         } catch (Exception $e) {
             return self::handleError('获取文件失败', $e);
         }
@@ -409,7 +212,7 @@ class Get {
     // 判断页面类型
     public static function Is($type) {
         try {
-            return self::getWidget()->is($type);
+            return self::getArchive()->is($type);
         } catch (Exception $e) {
             return self::handleError('判断页面类型失败', $e, false);
         }
@@ -418,7 +221,7 @@ class Get {
     // 分页导航
     public static function PageNav($prev = '&laquo; 前一页', $next = '后一页 &raquo;') {
         try {
-            self::getWidget()->pageNav($prev, $next);
+            self::getArchive()->pageNav($prev, $next);
         } catch (Exception $e) {
             self::handleError('分页导航失败', $e);
         }
@@ -427,7 +230,7 @@ class Get {
     // 获取总数
     public static function Total() {
         try {
-            return self::getWidget()->getTotal();
+            return self::getArchive()->getTotal();
         } catch (Exception $e) {
             return self::handleError('获取总数失败', $e, 0);
         }
@@ -436,7 +239,7 @@ class Get {
     // 获取页面大小
     public static function PageSize() {
         try {
-            return self::getWidget()->parameter->pageSize;
+            return self::getArchive()->parameter->pageSize;
         } catch (Exception $e) {
             return self::handleError('获取页面大小失败', $e, 10);
         }
@@ -445,7 +248,7 @@ class Get {
     // 获取页面链接
     public static function PageLink($html = '', $next = '') {
         try {
-            $widget = self::getWidget();
+            $widget = self::getArchive();
             if ($widget->have()) {
                 $link = ($next === 'next') ? $widget->pageLink($html, 'next') : $widget->pageLink($html);
                 echo $link;
@@ -458,7 +261,7 @@ class Get {
     // 获取当前页码
     public static function CurrentPage() {
         try {
-            return self::getWidget()->_currentPage;
+            return self::getArchive()->_currentPage;
         } catch (Exception $e) {
             return self::handleError('获取当前页码失败', $e, 1);
         }
@@ -467,7 +270,7 @@ class Get {
     // 获取页面Permalink
     public static function Permalink() {
         try {
-            return self::getWidget()->permalink();
+            return self::getArchive()->permalink();
         } catch (Exception $e) {
             return self::handleError('获取页面Url失败', $e);
         }
@@ -475,57 +278,118 @@ class Get {
 }
 
 class GetTheme {
-    use ErrorHandler;
+    use ErrorHandler, SingletonWidget;
     
     private function __construct() {}
     private function __clone() {}
     public function __wakeup() {}
 
-    public static function Url() {
+    /**
+     * 获取主题目录的 Url 地址（末尾带 / ）
+     *
+     * @param bool|null $echo 当设置为 true 时，会直接输出；
+     *                        当设置为 false 时，则返回结果径,
+     *                        若额外的只传入$path，则只能输出。
+     * @param string|null $path 子路径，就是主题文件夹相对于主题根目录的相对路径，路径开头 / 随意，结尾 / 同步到输出 Url。
+     * @param string|null $theme 自定义模版名称，默认为当前模板。
+     * @return string|null 
+     * @throws Exception
+     */
+    public static function Url(?bool $echo = true, ?string $path = null, ?string $theme = null) {
         try {
-            echo Helper::options()->themeUrl;
+            if (!$echo && !isset($path)) {
+                return \Helper::options()->themeUrl;
+            }else if($echo && isset($theme)) {
+                echo \Helper::options()->themeUrl($path, $theme);
+            }
+            
+            \Helper::options()->themeUrl($path, $theme);
         } catch (Exception $e) {
-            self::handleError('获取主题URL失败', $e);
+            return self::handleError('获取主题URL失败', $e);
+        }
+    }
+    
+    /**
+     * 获取主题的绝对路径（末尾不带 / ）
+     *
+     * @param bool|null $echo 当设置为 true 时，会直接输出；
+     *                        当设置为 false 时，则返回结果径。
+     * @return string|null 
+     * @throws Exception
+     */
+    public static function Dir(?bool $echo = true) {
+        try {
+            $Dir = self::getArchive()->getThemeDir();
+            
+            if ($echo) echo $Dir;
+            
+            return $Dir; 
+        } catch (Exception $e) {
+            return self::handleError('获取主题绝对路径失败', $e);
+        }        
+    }
+    
+    /**
+     * 获取主题名称
+     *
+     * @param bool|null $echo 当设置为 true 时，会直接输出；
+     *                        当设置为 false 时，则返回结果。
+     * @return string|null 
+     * @throws Exception
+     */
+    public static function Name(?bool $echo = true) {
+        try {
+            $Name = \Helper::options()->theme;
+            
+            if ($echo) echo $Name;
+            
+            return $Name; 
+        } catch (Exception $e) {
+            return self::handleError('获取主题名称失败', $e);
         }
     }
 
-    // 获取主题名称
-    public static function Name() {
+    /**
+     * 获取主题作者
+     *
+     * @param bool|null $echo 当设置为 true 时，会直接输出；
+     *                        当设置为 false 时，则返回结果。
+     * @return string|null 
+     * @throws Exception
+     */
+    public static function Author(?bool $echo = true) {
         try {
-            echo Helper::options()->theme;
+            $author = \Typecho\Plugin::parseInfo(dirname(__DIR__) . '/index.php');
+            
+            if (empty($author['author'])) $author['author'] = null;
+            
+            if ($echo) echo $author['author'];
+            
+            return $author['author'];
         } catch (Exception $e) {
-            self::handleError('获取主题名称失败', $e);
+            return self::handleError('获取主题作者失败', $e);
         }
     }
 
-    // 获取主题作者
-    public static function Author() {
+    /**
+     * 获取主题版本
+     *
+     * @param bool|null $echo 当设置为 true 时，会直接输出；
+     *                        当设置为 false 时，则返回结果。
+     * @return string|null 
+     * @throws Exception
+     */
+    public static function Ver(?bool $echo = true) {
         try {
-            $author = Typecho_Plugin::parseInfo(dirname(__DIR__) . '/index.php');
-            echo $author['author'];
+            $ver = \Typecho\Plugin::parseInfo(dirname(__DIR__) . '/index.php');
+            
+            if (empty($ver['version'])) $ver['version'] = null;
+            
+            if ($echo)  echo $ver['version'];
+            
+            return $ver;
         } catch (Exception $e) {
-            self::handleError('获取主题作者失败', $e);
-            echo '';
-        }
-    }
-
-    // 获取主题版本
-    public static function Ver() {
-        try {
-            $ver = Typecho_Plugin::parseInfo(dirname(__DIR__) . '/index.php');
-            echo $ver['version'];
-        } catch (Exception $e) {
-            self::handleError('获取主题版本失败', $e);
-            echo '';
-        }
-    }
-
-    // 获取主题Assets目录URL
-    public static function AssetsUrl() {
-        try {
-            echo Helper::options()->themeUrl('Assets');
-        } catch (Exception $e) {
-            self::handleError('获取主题Assets目录URL失败', $e);
+            return self::handleError('获取主题版本失败', $e);
         }
     }
 }
@@ -540,7 +404,7 @@ class GetPost {
     // 获取标题
     public static function Title() {
         try {
-            echo self::getWidget()->title;
+            echo self::getArchive()->title;
         } catch (Exception $e) {
             self::handleError('获取标题失败', $e);
         }
@@ -549,7 +413,7 @@ class GetPost {
     // 获取日期
     public static function Date($format = 'Y-m-d') {
         try {
-            return self::getWidget()->date($format);
+            return self::getArchive()->date($format);
         } catch (Exception $e) {
             return self::handleError('获取日期失败', $e, '');
         }
@@ -558,7 +422,7 @@ class GetPost {
     // 获取分类
     public static function Category($split = ',', $link = true, $default = '暂无分类') {
         try {
-            echo self::getWidget()->category($split, $link, $default);
+            echo self::getArchive()->category($split, $link, $default);
         } catch (Exception $e) {
             self::handleError('获取分类失败', $e);
             echo $default;
@@ -568,7 +432,7 @@ class GetPost {
     // 获取标签
     public static function Tags($split = ',', $link = true, $default = '暂无标签') {
         try {
-            echo self::getWidget()->tags($split, $link, $default);
+            echo self::getArchive()->tags($split, $link, $default);
         } catch (Exception $e) {
             self::handleError('获取标签失败', $e);
             echo $default;
@@ -577,7 +441,7 @@ class GetPost {
     // 获取摘要
     public static function Excerpt($length = 0) {
         try {
-            $excerpt = strip_tags(self::getWidget()->excerpt);
+            $excerpt = strip_tags(self::getArchive()->excerpt);
             if ($length > 0) {
                 $excerpt = mb_substr($excerpt, 0, $length, 'UTF-8');
             }
@@ -590,7 +454,7 @@ class GetPost {
     // 获取永久链接
     public static function Permalink() {
         try {
-            echo self::getWidget()->permalink;
+            echo self::getArchive()->permalink;
         } catch (Exception $e) {
             self::handleError('获取永久链接失败', $e);
         }
@@ -599,7 +463,7 @@ class GetPost {
     // 获取内容
     public static function Content() {
         try {
-            echo self::getWidget()->content;
+            echo self::getArchive()->content;
         } catch (Exception $e) {
             self::handleError('获取内容失败', $e);
         }
@@ -608,7 +472,7 @@ class GetPost {
     // 获取文章数
     public static function PostsNum() {
         try {
-            echo self::getWidget()->postsNum;
+            echo self::getArchive()->postsNum;
         } catch (Exception $e) {
             self::handleError('获取文章数失败', $e);
         }
@@ -617,7 +481,7 @@ class GetPost {
     // 获取页面数
     public static function PagesNum() {
         try {
-            echo self::getWidget()->pagesNum;
+            echo self::getArchive()->pagesNum;
         } catch (Exception $e) {
             self::handleError('获取页面数失败', $e);
         }
@@ -627,9 +491,9 @@ class GetPost {
     public static function ArchiveTitle($format = '', $default = '', $connector = '') {
         try {
             if (empty($format)) {
-                echo self::getWidget()->archiveTitle;
+                echo self::getArchive()->archiveTitle;
             } else {
-                echo self::getWidget()->archiveTitle($format, $default, $connector);
+                echo self::getArchive()->archiveTitle($format, $default, $connector);
             }
         } catch (Exception $e) {
             self::handleError('获取标题失败', $e);
@@ -639,7 +503,7 @@ class GetPost {
     // 获取作者
     public static function Author() {
         try {
-            echo self::getWidget()->author->screenName;
+            echo self::getArchive()->author->screenName;
         } catch (Exception $e) {
             self::handleError('获取作者失败', $e);
         }
@@ -648,7 +512,7 @@ class GetPost {
     // 获取作者头像
     public static function AuthorAvatar($size = 128) {
         try {
-            echo self::getWidget()->author->gravatar($size);
+            echo self::getArchive()->author->gravatar($size);
         } catch (Exception $e) {
             self::handleError('获取作者头像失败', $e);
         }
@@ -657,7 +521,7 @@ class GetPost {
     // 获取作者链接
     public static function AuthorPermalink() {
         try {
-            echo self::getWidget()->author->permalink;
+            echo self::getArchive()->author->permalink;
         } catch (Exception $e) {
             self::handleError('获取作者链接失败', $e);
         }
@@ -674,7 +538,7 @@ class GetComments {
     // 获取评论
     public static function Comments() {
         try {
-            echo self::getWidget()->comments;
+            echo self::getArchive()->comments;
         } catch (Exception $e) {
             self::handleError('获取评论失败', $e);
         }
@@ -683,7 +547,7 @@ class GetComments {
     // 获取评论页面
     public static function CommentsPage() {
         try {
-            echo self::getWidget()->commentsPage;
+            echo self::getArchive()->commentsPage;
         } catch (Exception $e) {
             self::handleError('获取评论页面失败', $e);
         }
@@ -692,7 +556,7 @@ class GetComments {
     // 获取评论列表
     public static function CommentsList() {
         try {
-            echo self::getWidget()->commentsList;
+            echo self::getArchive()->commentsList;
         } catch (Exception $e) {
             self::handleError('获取评论列表失败', $e);
         }
@@ -701,7 +565,7 @@ class GetComments {
     // 获取评论数
     public static function CommentsNum() {
         try {
-            echo self::getWidget()->commentsNum;
+            echo self::getArchive()->commentsNum;
         } catch (Exception $e) {
             self::handleError('获取评论数失败', $e);
         }
@@ -710,7 +574,7 @@ class GetComments {
     // 获取评论id
     public static function RespondId() {
         try {
-            echo self::getWidget()->respondId;
+            echo self::getArchive()->respondId;
         } catch (Exception $e) {
             self::handleError('获取评论id失败', $e);
         }
@@ -719,7 +583,7 @@ class GetComments {
     // 取消回复
     public static function CancelReply() {
         try {
-            echo self::getWidget()->cancelReply();
+            echo self::getArchive()->cancelReply();
         } catch (Exception $e) {
             self::handleError('取消回复失败', $e);
         }
@@ -728,7 +592,7 @@ class GetComments {
     // Remember
     public static function Remember($field) {
         try {
-            echo self::getWidget()->remember($field);
+            echo self::getArchive()->remember($field);
         } catch (Exception $e) {
             self::handleError('获取Remember失败', $e);
         }
@@ -737,7 +601,7 @@ class GetComments {
     // 获取评论表单
     public static function CommentsForm() {
         try {
-            echo self::getWidget()->commentsForm;
+            echo self::getArchive()->commentsForm;
         } catch (Exception $e) {
             self::handleError('获取评论表单失败', $e);
         }

@@ -16,18 +16,18 @@ require_once 'Options.php';
 require_once 'Functions.php';
 // 引入Json功能
 require_once 'Json.php';
-
-// 设置主题目录
-define("THEME_URL", str_replace(Helper::options()->rootUrl, '', Helper::options()->themeUrl));
-// 设置主题目录名称
-define("THEME_NAME", str_replace("/usr/themes/", "", THEME_URL));
-
-// 设置错误日志路径
-ini_set('error_log', __TYPECHO_ROOT_DIR__ . THEME_URL . '/Config/error.log');
-// 设置错误日志文件权限
-ini_set('error_log_mode', 0644);
+// 引入工具类
+require_once 'Tools.php';
 
 // 配置默认Cravatar
 $avatarCdn = 'https://cravatar.cn/avatar/';
 // 定义常量
 define('__TYPECHO_GRAVATAR_PREFIX__', $avatarCdn);
+
+// 设置框架版本
+define('__FRAMEWORK_VER__', '1.1.4');
+
+// 设置错误日志路径
+ini_set('error_log', GetTheme::Dir(false) . '/Config/error.log');
+// 设置错误日志文件权限
+ini_set('error_log_mode', 0644);
