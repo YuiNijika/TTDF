@@ -1,11 +1,16 @@
 <?php
 /**
- * ptions Functions
- * @author 鼠子Tomoriゞ
- * @link https://blog.miomoe.cn/
+ * Options Functions
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
-
+/**
+ * THEME_URL
+ * 用于后台设置获取主题目录
+ */
+define("THEME_URL", str_replace('//usr', '/usr', str_replace(Get::Options('siteUrl'), Get::Options('rootUrl') . '/', Get::Options('themeUrl'))));
+$str1 = explode('/themes/', (THEME_URL . '/'));
+$str2 = explode('/', $str1[1]);
+define("THEME_NAME", $str2[0]);
 function themeConfig($form)
 {
 ?>
@@ -13,7 +18,7 @@ function themeConfig($form)
     <style>
         body {
             font-weight:500;
-            background: url(<?php GetTheme::AssetsUrl() ?>/images/background.webp)
+            background: url(<?php echo GetTheme::AssetsUrl() ?>/images/background.webp)
             no-repeat 0 0;
             background-size: cover;
             background-attachment: fixed;

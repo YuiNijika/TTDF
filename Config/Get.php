@@ -1,8 +1,6 @@
 <?php
 /**
  * Get Functions
- * @author 鼠子Tomoriゞ
- * @link https://blog.miomoe.cn/
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
@@ -328,7 +326,14 @@ class GetTheme {
             return self::handleError('获取主题绝对路径失败', $e);
         }        
     }
-    
+
+    /**
+     * 定义AssetsUrl
+     * 防止之前写的主题失效
+     */
+    public static function AssetsUrl() {
+        return self::Url(false, 'Assets');
+    }
     /**
      * 获取主题名称
      *

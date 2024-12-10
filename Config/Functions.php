@@ -1,8 +1,6 @@
 <?php
 /**
  * Functions Code
- * @author 鼠子Tomoriゞ
- * @link https://blog.miomoe.cn/
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 /**

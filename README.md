@@ -6,11 +6,12 @@ TTDF是一个Typecho主题模板开发框架；
 面向小白，免费、简单、开源，提供了一些常用的功能以及调用函数，支持REST API。
 
 ### 核心文件
-  > inc/Config.php 配置文件  
-  > inc/Get.php Get函数  
-  > inc/Options.php 主题设置  
-  > inc/Functions.php 函数功能  
-  > inc/Json.php REST API
+  > Config/Config.php 配置文件  
+  > Config/Get.php Get函数  
+  > Config/Options.php 主题设置  
+  > Config/Functions.php 函数功能  
+  > Config/Json.php REST API
+  > Config/Json.php 
 
 ---
 

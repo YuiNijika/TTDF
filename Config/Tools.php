@@ -1,4 +1,8 @@
 <?php
+/**
+ * Tools Functions
+ */
+if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 class Tools {
     /**
      * 获取类的详细反射信息并格式化输出
