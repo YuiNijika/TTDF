@@ -113,10 +113,10 @@ function outputJsonData() {
                     'title' => Get::Options('title'),
                     'description' => Get::Options('description'),
                     'keywords' => Get::Options('keywords'),
-                    'favicon' => Get::Options('faviconUrl'),
-                    'siteUrl' => Helper::options()->siteUrl,
+                    'favicon' => Get::Options('FaviconUrl'),
+                    'siteUrl' => Get::Options('siteUrl'),
                     'timezone' => Get::Options('timezone'),
-                    'lang' => Get::Options('lang')
+                    'lang' => 'zh-CN',
                 ]
             ];
         } elseif ($_GET['JsonData'] === 'common' && isset($_GET['cid'])) {
