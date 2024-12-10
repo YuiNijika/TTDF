@@ -11,7 +11,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
         ];
         foreach ($jsFiles as $js):
     ?>  
-    <script src="<?php echo GetTheme::AssetsUrl() . "/" . $js; ?>?v=<?php GetTheme::Ver(); ?>"></script>
+    <script src="<?php echo GetTheme::Url(false, 'Assets') . "/" . $js; ?>?v=<?php GetTheme::Ver(); ?>"></script>
     <?php endforeach; ?>
     <?php Get::Footer() ?>
 </body>
