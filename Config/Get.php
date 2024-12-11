@@ -38,7 +38,7 @@ class Get {
      * 
      */
     public static function HelloWorld(?bool $echo = true) {
-        if ($echo) '您已成功安装开发框架！<br>这是显示在index.php中的默认内容。';
+        if ($echo) echo '您已成功安装开发框架！<br>这是显示在index.php中的默认内容。';
         
         return '您已成功安装开发框架！<br>这是显示在index.php中的默认内容。';
     }
@@ -71,7 +71,6 @@ class Get {
     public static function Header(?bool $echo = true, ?string $rule = null)
     {
         try {
-            //error_log('测试错误日志');
             if ($echo) self::getArchive()->header($rule);
             
             ob_start();  // 开启输出缓冲
