@@ -14,7 +14,7 @@ Get::Need('header.php');
 ?>
 
 <!-- 调用默认内容 开发前请删除 Get::HelloWorld(); -->
-<?php echo Get::HelloWorld(); ?>
+<?php Get::HelloWorld(); ?>
 
 <?php 
 // 引入footer
