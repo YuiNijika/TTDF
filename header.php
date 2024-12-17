@@ -14,10 +14,10 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit; ?>
             $cssFiles = [
                 'style.css',
             ];
-            foreach ($cssFiles as $css):
+            foreach ($cssFiles as $css){
         ?> 
         <link rel="stylesheet" href="<?php echo GetTheme::Url(false, 'Assets') . "/" . $css; ?>?ver=<?php GetTheme::Ver(); ?>">
-        <?php endforeach; ?>
+        <?php }; ?>
         <title><?php $archiveTitle = GetPost::ArchiveTitle(
             [
                 "category" => _t("「%s」分类"),

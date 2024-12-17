@@ -9,10 +9,10 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
         $jsFiles = [
             'ttdf.js',
         ];
-        foreach ($jsFiles as $js):
+        foreach ($jsFiles as $js){
     ?>  
     <script src="<?php echo GetTheme::Url(false, 'Assets') . "/" . $js; ?>?v=<?php GetTheme::Ver(); ?>"></script>
-    <?php endforeach; ?>
+    <?php }; ?>
     <?php Get::Footer() ?>
 </body>
 </html>
