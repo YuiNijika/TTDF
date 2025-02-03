@@ -8,26 +8,15 @@
  * @link https://blog.miomoe.cn/
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
-// Get功能
-require_once 'Get.php';
-// 主题设置功能
-require_once 'Options.php';
-// 引入框架功能
-require_once 'Functions.php';
-// 引入Json功能
-require_once 'Json.php';
-// 引入工具类
-require_once 'Tools.php';
-
 // 配置默认Cravatar
 $avatarCdn = 'https://cravatar.cn/avatar/';
 // 定义常量
 define('__TYPECHO_GRAVATAR_PREFIX__', $avatarCdn);
 
 // 设置框架版本
-define('__FRAMEWORK_VER__', '1.1.4');
+define('__FRAMEWORK_VER__', '1.1.5');
 
-// 设置错误日志路径
-ini_set('error_log', GetTheme::Dir(false) . '/Config/error.log');
-// 设置错误日志文件权限
-ini_set('error_log_mode', 0644);
+require_once 'Get.php';
+require_once 'Functions.php';
+require_once 'Json.php';
+require_once 'Tools.php';
