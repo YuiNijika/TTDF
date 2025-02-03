@@ -14,13 +14,6 @@ function themeConfig($form)
 ?>
     <!-- 自定义CSS样式 -->
     <style>
-        body {
-            font-weight:500;
-            background: url(<?php echo GetTheme::AssetsUrl() ?>/images/background.webp)
-            no-repeat 0 0;
-            background-size: cover;
-            background-attachment: fixed;
-        }
         .clearfix, .row {
             background-color: #ffffff96;
             border-radius: 8px;

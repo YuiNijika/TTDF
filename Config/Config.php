@@ -20,3 +20,4 @@ require_once 'Get.php';
 require_once 'Functions.php';
 require_once 'Json.php';
 require_once 'Tools.php';
+require_once 'Options.php';
