@@ -180,9 +180,15 @@ class Get {
     }
 
     // 获取配置参数
-    public static function Options($param) {
+    public static function Options($param, ?bool $echo = false) {
         try {
-            return Helper::options()->$param;
+            $value = Helper::options()->$param;
+            
+            if ($echo) {
+                echo $value;
+            }
+            
+            return $value;
         } catch (Exception $e) {
             return self::handleError('获取配置参数失败', $e);
         }
