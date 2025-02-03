@@ -10,7 +10,7 @@
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 // 引入header
-Get::Need('Header.php');
+Get::Need('header.php');
 ?>
 
 <!-- 调用默认内容 开发前请删除 Get::HelloWorld(); -->
@@ -18,5 +18,5 @@ Get::Need('Header.php');
 
 <?php 
 // 引入footer
-Get::Need('Footer.php');
+Get::Need('footer.php');
 ?>
