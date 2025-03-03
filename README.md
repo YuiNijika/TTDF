@@ -2,6 +2,8 @@
 
 > 一个 Typecho 主题开发框架，~~还算不上框架只能说让开发变得更简单些~~
 
+特别感谢[@Sualiu](https://github.com/Sualiu)
+
 ### 类与方法
 
 调用方法时值为 true 直接echo输出，如果为 false 则返回值。  
