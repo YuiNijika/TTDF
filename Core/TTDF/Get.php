@@ -449,13 +449,25 @@ class GetTheme
     public static function Ver(?bool $echo = true)
     {
         try {
-            $ver = \Typecho\Plugin::parseInfo(dirname(__DIR__) . '/index.php');
-
-            if (empty($ver['version'])) $ver['version'] = null;
-
-            if ($echo)  echo $ver['version'];
-
-            return $ver;
+            // 获取主题根目录路径
+            $themeRoot = dirname(dirname(__DIR__));
+            $infoFile = $themeRoot . '/index.php';
+    
+            if (!file_exists($infoFile)) {
+                throw new Exception("主题信息文件不存在: {$infoFile}");
+            }
+    
+            $ver = \Typecho\Plugin::parseInfo($infoFile);
+    
+            if (empty($ver['version'])) {
+                $ver['version'] = null;
+            }
+    
+            if ($echo) {
+                echo $ver['version'];
+            }
+    
+            return $ver['version']; // 返回版本号而不是整个数组
         } catch (Exception $e) {
             return self::handleError('获取主题版本失败', $e);
         }
