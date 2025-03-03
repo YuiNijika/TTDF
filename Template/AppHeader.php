@@ -10,7 +10,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
     <meta name="renderer" content="webkit" />
     <?php TTDF::Functions('SEO') ?>
     <?php Get::Header(); ?>
-    <link rel="stylesheet" href="<?php GetTheme::AssetsUrl() ?>/main.css">
+    <link rel="stylesheet" href="<?php GetTheme::AssetsUrl() ?>/main.css?ver=<?php GetTheme::Ver(); ?>">
 </head>
 <body>
     <main id="app">
