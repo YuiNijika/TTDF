@@ -3,6 +3,7 @@
  * Functions Code
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
+Get::CoreFunctions('Thumbnail');
 /**
  * 加载时间
  * Blog.MioMoe.Cn
