@@ -17,5 +17,4 @@ require_once 'TTDF/Get.php';
 require_once 'TTDF/Functions.php';
 require_once 'TTDF/Json.php';
 require_once 'TTDF/Tools.php';
-// 引入主题设置
 require_once 'Options.php';
