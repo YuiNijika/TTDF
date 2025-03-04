@@ -452,21 +452,21 @@ class GetTheme
             // 获取主题根目录路径
             $themeRoot = dirname(dirname(__DIR__));
             $infoFile = $themeRoot . '/index.php';
-    
+
             if (!file_exists($infoFile)) {
                 throw new Exception("主题信息文件不存在: {$infoFile}");
             }
-    
+
             $ver = \Typecho\Plugin::parseInfo($infoFile);
-    
+
             if (empty($ver['version'])) {
                 $ver['version'] = null;
             }
-    
+
             if ($echo) {
                 echo $ver['version'];
             }
-    
+
             return $ver['version']; // 返回版本号而不是整个数组
         } catch (Exception $e) {
             return self::handleError('获取主题版本失败', $e);
@@ -867,5 +867,18 @@ class TTDF
     public static function Functions($TTDF)
     {
         Get::CoreFunctions($TTDF);
+    }
+    /**
+     * HeadMeta
+     */
+    public static function HeadMeta()
+    {
+?>
+        <meta charset="<?php Get::Options('charset', true) ?>">
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" />
+        <meta name="renderer" content="webkit" />
+        <meta name="generator" content="Typecho <?php Get::TypechoVer(true) ?>" />
+        <meta name="template" content="<?php GetTheme::Name(true) ?>" />
+<?php
     }
 }
