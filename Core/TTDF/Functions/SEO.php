@@ -48,9 +48,10 @@ class TTDF_SEO
             if ($length > 0) {
                 $excerpt = mb_substr($excerpt, 0, $length, 'UTF-8');
             }
-            echo $excerpt;
+            return $excerpt;
         } catch (Exception $e) {
             self::handleError('获取摘要失败', $e);
+            return '';
         }
     }
 }
@@ -77,13 +78,14 @@ function Title()
         $SubTitle = Get::Options("SubTitle");
         echo $SubTitle;
     }
-};
+}
+
 function Keywords()
 {
     if (Get::Is('index')) {
         Get::Options('keywords', true);
     } elseif (Get::Is('post')) {
-        TTDF_SEO::Category();?>,<?php TTDF_SEO::Tags();
+        TTDF_SEO::Category(); ?>,<?php TTDF_SEO::Tags();
     } elseif (Get::Is('category')) {
         TTDF_SEO::Category();
     } elseif (Get::Is('tag')) {
@@ -91,13 +93,19 @@ function Keywords()
     } else {
         Get::Options('keywords', true);
     }
-};
+}
+
 function Description()
 {
     if (Get::Is('index')) {
         Get::Options('description', true);
     } elseif (Get::Is('post')) {
-        TTDF_SEO::Excerpt('150');
+        $excerpt = TTDF_SEO::Excerpt('150');
+        if (!empty($excerpt)) {
+            echo $excerpt;
+        } else {
+            Get::Options('description', true);
+        }
     } elseif (Get::Is('category')) {
         Get::Options('description', true);
     } elseif (Get::Is('tag')) {
