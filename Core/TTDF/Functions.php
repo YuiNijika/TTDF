@@ -3,10 +3,8 @@
  * Functions Code
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
-Get::CoreFunctions('Thumbnail');
 /**
  * 加载时间
- * Blog.MioMoe.Cn
  */
 function timer_start() {
     global $timestart;
@@ -28,7 +26,6 @@ function timer_stop( $display = 0, $precision = 3 ) {
 }
 /**
  * 统计字数
- * Blog.MioMoe.Cn
  */
 function  art_count ($cid){
     $db=Typecho_Db::get ();
