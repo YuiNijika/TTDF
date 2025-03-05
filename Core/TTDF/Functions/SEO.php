@@ -69,7 +69,7 @@ function Title()
     );
     echo $archiveTitle;
     if (Get::Is("index") && !empty(Get::Options("SubTitle")) && Get::CurrentPage() > 1) {
-        echo "「第" . Get::CurrentPage() . "页」 - ";
+        echo "第" . Get::CurrentPage() . "页 - ";
     }
     $title = Get::Options("title");
     echo $title;
