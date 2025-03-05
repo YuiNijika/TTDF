@@ -1,9 +1,9 @@
 <?php
 /**
+ * TTDF主题设置框架
  * Options Functions
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
-
 /**
  * THEME_URL
  * 用于后台设置获取主题目录
