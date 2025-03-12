@@ -59,7 +59,21 @@ function themeConfig($form)
         }
     </style>
 <?php
-    // 定义表单元素配置
+    /**
+     * 定义表单元素配置
+     * SEO副标题注册 name 为 'SubTitle'
+     * ------------------------------
+     * @param array $formElements
+     * @var array $formElements 表单元素配置数组
+     * @var string $type 表单元素类型
+     * @param string $name 表单元素名称
+     * @param string $value 表单元素值
+     * @param string $label 表单元素标签
+     * @param string $description 表单元素描述
+     * @param array $options 表单元素选项
+     * @param string $options['value'] 表单元素选项值
+     * @param string $options['label'] 表单元素选项标签
+     */
     $formElements = [
         [
             // Text

@@ -1,95 +1,97 @@
-# Typecho Theme Development Framework v2
+# Typecho Theme Development Framework
 
-> 一个 Typecho 主题开发框架，~~还算不上框架只能说让开发变得更简单些~~
+> 一个 Typecho 主题开发框架 v2 版，~~还算不上框架只能说让开发变得更简单些~~
 
 特别感谢[@Sualiu](https://github.com/Sualiu)
 
 ### 类与方法
 
-调用方法时值为 true 直接echo输出，如果为 false 则返回值。  
+调用方法时值为 true 直接 echo 输出，如果为 false 则返回值。  
 Get::SiteUrl(true) 为 echo 输出  
 Get::SiteUrl(false) 为 return 返回值
+
+#### TTDF 类
+
+|    方法    |        描述         |        示例         |
+| :--------: | :-----------------: | :-----------------: |
+|    Ver     |   获取框架版本号    |    TTDF::Ver();     |
+| TypechoVer | 获取 Typecho 版本号 | TTDF::TypechoVer(); |
+|  HeadMeta  |   调用 meta 标签    |  TTDF::HeadMeta();  |
 
 #### Get 类
 
 获取站点信息及其他通用功能。
 
-| 方法                        | 描述                   | 示例                          |
-| --------------------------- | ---------------------- | ----------------------------- |
-| Header()                    | 获取 Typecho Header    | <?php Get::Header(); ?>       |
-| Footer()                    | 获取 Typecho Footer    | <?php Get::Footer(); ?>       |
-| SiteUrl()                   | 获取站点的 URL         | <?php Get::SiteUrl(); ?>      |
-| AssetsUrl()                 | 获取主题的资源文件 URL | <?php Get::AssetsUrl(); ?>    |
-| TypechoVer()                | 获取 Typecho 版本号    | <?php Get::TypechoVer(); ?>   |
-| FrameworkVer()              | 获取框架版本号         | <?php Get::FrameworkVer(); ?> |
-| Options($param)             | 获取指定的设置项       | <?php echo Get::Options(); ?> |
-| Fields($param)              | 获取自定义字段         | <?php echo Get::Fields(); ?>  |
-| Next()                      | 循环输出文章           | <?php Get::Next(); ?>         |
-| Need($file)                 | 引入文件               | <?php Get::Need('file'); ?>   |
-| Is($type)                   | 获取当前页面类型       | <?php Get::Is('type'); ?>     |
-| PageNav($prev, $next)       | 获取分页导航           | <?php Get::PageNav(); ?>      |
-| PageLink($link, $type = '') | 获取分页链接           | <?php Get::PageLink(); ?>     |
-| Total()                     | 获取文章总数           | <?php Get::Total(); ?>        |
-| PageSize()                  | 获取每页文章数         | <?php Get::PageSize(); ?>     |
-| CurrentPage()               | 获取当前页码           | <?php Get::CurrentPage(); ?>  |
-| Permalink()                 | 获取文章链接           | <?php Get::Permalink();>      |
-| Field($field)               | 获取自定义字段         | <?php Get::Field(); ?>        |
+|            方法             |       描述       |         示例          |
+| :-------------------------: | :--------------: | :-------------------: |
+|           SiteUrl           |  获取站点的 URL  |    Get::SiteUrl();    |
+|       Options($param)       |    获取配置项    | Get::Options('name'); |
+|       Fields($param)        |     获取字段     | Get::Fields('name');  |
+|          Is($type)          | 判断当前页面类型 |   Get::Is('type');    |
+|           Next()            |   循环输出文章   |     Get::Next();      |
+|    PageNav($prev, $next)    |   获取分页导航   |    Get::PageNav();    |
+| PageLink($link, $type = '') |   获取分页链接   |   Get::PageLink();    |
+|           Total()           |   获取文章总数   |     Get::Total();     |
+|         PageSize()          |  获取每页文章数  |   Get::PageSize();    |
+|        CurrentPage()        |   获取当前页码   |  Get::CurrentPage();  |
+|         Permalink()         |   获取文章链接   |   Get::Permalink();   |
+|        Field($field)        |  获取自定义字段  |     Get::Field();     |
 
 #### GetTheme 类
 
 获取主题的相关信息。
 
-| 方法     | 描述           | 示例                       |
-| -------- | -------------- | -------------------------- |
-| Url()    | 获取主题的 URL | <?php GetTheme::Url();>    |
-| Name()   | 获取主题名称   | <?php GetTheme::Name();>   |
-| Author() | 获取主题作者   | <?php GetTheme::Author();> |
-| Ver()    | 获取主题版本号 | <?php GetTheme::Ver();>    |
+| 方法     | 描述           | 示例                |
+| -------- | -------------- | ------------------- |
+| Url()    | 获取主题的 URL | GetTheme::Url();    |
+| Name()   | 获取主题名称   | GetTheme::Name();   |
+| Author() | 获取主题作者   | GetTheme::Author(); |
+| Ver()    | 获取主题版本号 | GetTheme::Ver();    |
 
 #### GetPost 类
 
 获取文章的相关信息。
 
-| 方法              | 描述             | 示例                               |
-| ----------------- | ---------------- | ---------------------------------- |
-| Title()           | 获取文章标题     | <?php GetPost::Title();>           |
-| Date()            | 获取文章日期     | <?php GetPost::Date();>            |
-| Category()        | 获取文章分类     | <?php GetPost::Category();>        |
-| Tags()            | 获取文章标签     | <?php GetPost::Tags();>            |
-| Excerpt()         | 获取文章摘要     | <?php GetPost::Excerpt();>         |
-| Permalink()       | 获取文章链接     | <?php GetPost::Permalink();>       |
-| Content()         | 获取文章内容     | <?php GetPost::Content();>         |
-| PostsNum()        | 获取文章数       | <?php GetPost::PostsNum();>        |
-| PagesNum()        | 获取页面数       | <?php GetPost::PagesNum();>        |
-| CurrentPage()     | 获取当前页码     | <?php GetPost::CurrentPage();>     |
-| ArchiveTitle()    | 获取当前页面标题 | <?php GetPost::ArchiveTitle();>    |
-| Author()          | 获取文章作者     | <?php GetPost::Author();>          |
-| AuthorPermalink() | 获取作者链接     | <?php GetPost::AuthorPermalink();> |
+| 方法              | 描述             | 示例                        |
+| ----------------- | ---------------- | --------------------------- |
+| Title()           | 获取文章标题     | GetPost::Title();           |
+| Date()            | 获取文章日期     | GetPost::Date();            |
+| Category()        | 获取文章分类     | GetPost::Category();        |
+| Tags()            | 获取文章标签     | GetPost::Tags();            |
+| Excerpt()         | 获取文章摘要     | GetPost::Excerpt();         |
+| Permalink()       | 获取文章链接     | GetPost::Permalink();       |
+| Content()         | 获取文章内容     | GetPost::Content();         |
+| PostsNum()        | 获取文章数       | GetPost::PostsNum();        |
+| PagesNum()        | 获取页面数       | GetPost::PagesNum();        |
+| CurrentPage()     | 获取当前页码     | GetPost::CurrentPage();     |
+| ArchiveTitle()    | 获取当前页面标题 | GetPost::ArchiveTitle();    |
+| Author()          | 获取文章作者     | GetPost::Author();>         |
+| AuthorPermalink() | 获取作者链接     | GetPost::AuthorPermalink(); |
 
 #### GetComments 类
 
 获取评论的相关信息。
 
-| 方法           | 描述          | 示例                                |
-| -------------- | ------------- | ----------------------------------- |
-| Comments()     | 获取评论      | <?php GetComments::Comments();>     |
-| CommentsPage() | 获取评论页面  | <?php GetComments::CommentsPage();> |
-| CommentsList() | 获取评论列表  | <?php GetComments::CommentsList();> |
-| CommentsNum()  | 获取评论数    | <?php GetComments::CommentsNum();>  |
-| CommentsForm() | 获取评论表单  | <?php GetComments::CommentsForm();> |
-| RespondId()    | 获取评论 id   | <?php GetComments::RespondId();>    |
-| CancelReply()  | 获取取消回复  | <?php GetComments::CancelReply();>  |
-| Remember()     | 获取 Remember | <?php GetComments::Remember();>     |
-| PageNav()      | 获取评论分页  | <?php GetComments::PageNav();>      |
+| 方法           | 描述          | 示例                         |
+| -------------- | ------------- | ---------------------------- |
+| Comments()     | 获取评论      | GetComments::Comments();     |
+| CommentsPage() | 获取评论页面  | GetComments::CommentsPage(); |
+| CommentsList() | 获取评论列表  | GetComments::CommentsList(); |
+| CommentsNum()  | 获取评论数    | GetComments::CommentsNum();  |
+| CommentsForm() | 获取评论表单  | GetComments::CommentsForm(); |
+| RespondId()    | 获取评论 id   | GetComments::RespondId();>   |
+| CancelReply()  | 获取取消回复  | GetComments::CancelReply();  |
+| Remember()     | 获取 Remember | GetComments::Remember();     |
+| PageNav()      | 获取评论分页  | GetComments::PageNav();      |
 
 #### GetFunctions 类
 
 提供一些常用的功能函数。
 
-| 方法        | 描述         | 示例                              |
-| ----------- | ------------ | --------------------------------- |
-| TimerStop() | 获取加载时间 | <?php GetFunctions::TimerStop();> |
-| ArtCount()  | 获取文章字数 | <?php GetFunctions::ArtCount();>  |
+| 方法        | 描述         | 示例                       |
+| ----------- | ------------ | -------------------------- |
+| TimerStop() | 获取加载时间 | GetFunctions::TimerStop(); |
+| ArtCount()  | 获取文章字数 | GetFunctions::ArtCount();  |
 
 #### GetJsonData 类
 
@@ -97,11 +99,11 @@ Get::SiteUrl(false) 为 return 返回值
 
 > 注意，需要启用 Json 输出，请在 header 文件顶部增加 GetJsonData::Tomori(); 方法
 
-| 方法          | 描述               | 示例                               |
-| ------------- | ------------------ | ---------------------------------- |
-| Tomori()      | 启用 Json 输出     | <?php GetJsonData::Tomori();>      |
-| JsonTitle()   | 获取 Json 数据标题 | <?php GetJsonData::JsonTitle();>   |
-| JsonContent() | 获取 Json 数据内容 | <?php GetJsonData::JsonContent();> |
+| 方法          | 描述               | 示例                        |
+| ------------- | ------------------ | --------------------------- |
+| Tomori()      | 启用 Json 输出     | GetJsonData::Tomori();      |
+| JsonTitle()   | 获取 Json 数据标题 | GetJsonData::JsonTitle();   |
+| JsonContent() | 获取 Json 数据内容 | GetJsonData::JsonContent(); |
 
 ##### REST API 使用说明：
 

@@ -1,6 +1,6 @@
 <?php
 /**
- * Tools Functions
+ * Tools Class
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 class Tools {
