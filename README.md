@@ -4,6 +4,8 @@
 
 特别感谢[@Sualiu](https://github.com/Sualiu)
 
+[开发示例](https://www.bilibili.com/video/BV1qLQKYmE6j)
+
 ### 类与方法
 
 调用方法时值为 true 直接 echo 输出，如果为 false 则返回值。  
