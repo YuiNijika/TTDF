@@ -1,4 +1,5 @@
-<?php 
+<?php
+
 /**
  * GetTheme Class
  */
@@ -67,6 +68,7 @@ class GetTheme
     {
         return self::Url(false, 'Assets');
     }
+
     /**
      * 获取主题名称
      *
@@ -99,9 +101,17 @@ class GetTheme
     public static function Author(?bool $echo = true)
     {
         try {
-            $author = \Typecho\Plugin::parseInfo(dirname(__DIR__) . '/index.php');
+            $infoFile = dirname(__DIR__, 3) . '/index.php'; // 主题根目录的 index.php
 
-            if (empty($author['author'])) $author['author'] = null;
+            if (!file_exists($infoFile)) {
+                throw new Exception("主题信息文件不存在: {$infoFile}");
+            }
+
+            $author = \Typecho\Plugin::parseInfo($infoFile);
+
+            if (empty($author['author'])) {
+                $author['author'] = null;
+            }
 
             if ($echo) echo $author['author'];
 
@@ -122,9 +132,7 @@ class GetTheme
     public static function Ver(?bool $echo = true)
     {
         try {
-            // 获取主题根目录路径
-            $themeRoot = dirname(dirname(__DIR__));
-            $infoFile = $themeRoot . '/index.php';
+            $infoFile = dirname(__DIR__, 3) . '/index.php'; // 主题根目录的 index.php
 
             if (!file_exists($infoFile)) {
                 throw new Exception("主题信息文件不存在: {$infoFile}");
@@ -140,7 +148,7 @@ class GetTheme
                 echo $ver['version'];
             }
 
-            return $ver['version']; // 返回版本号而不是整个数组
+            return $ver['version'];
         } catch (Exception $e) {
             return self::handleError('获取主题版本失败', $e);
         }
