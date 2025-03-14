@@ -24,20 +24,23 @@ Get::SiteUrl(false) 为 return 返回值
 
 获取站点信息及其他通用功能。
 
-|            方法             |       描述       |         示例          |
-| :-------------------------: | :--------------: | :-------------------: |
-|           SiteUrl           |  获取站点的 URL  |    Get::SiteUrl();    |
-|       Options($param)       |    获取配置项    | Get::Options('name'); |
-|       Fields($param)        |     获取字段     | Get::Fields('name');  |
-|          Is($type)          | 判断当前页面类型 |   Get::Is('type');    |
-|           Next()            |   循环输出文章   |     Get::Next();      |
-|    PageNav($prev, $next)    |   获取分页导航   |    Get::PageNav();    |
-| PageLink($link, $type = '') |   获取分页链接   |   Get::PageLink();    |
-|           Total()           |   获取文章总数   |     Get::Total();     |
-|         PageSize()          |  获取每页文章数  |   Get::PageSize();    |
-|        CurrentPage()        |   获取当前页码   |  Get::CurrentPage();  |
-|         Permalink()         |   获取文章链接   |   Get::Permalink();   |
-|        Field($field)        |  获取自定义字段  |     Get::Field();     |
+|            方法             |       描述       |          示例           |
+| :-------------------------: | :--------------: | :---------------------: |
+|           SiteUrl           |  获取站点的 URL  |     Get::SiteUrl();     |
+|         SiteName()          |   获取站点名称   |    Get::SiteName();     |
+|       SiteKeywords()        |  获取站点关键词  |  Get::SiteKeywords();   |
+|      SiteDescription()      |   获取站点描述   | Get::SiteDescription(); |
+|       Options($param)       |    获取配置项    |  Get::Options('name');  |
+|       Fields($param)        |     获取字段     |  Get::Fields('name');   |
+|          Is($type)          | 判断当前页面类型 |    Get::Is('type');     |
+|           Next()            |   循环输出文章   |      Get::Next();       |
+|    PageNav($prev, $next)    |   获取分页导航   |     Get::PageNav();     |
+| PageLink($link, $type = '') |   获取分页链接   |    Get::PageLink();     |
+|           Total()           |   获取文章总数   |      Get::Total();      |
+|         PageSize()          |  获取每页文章数  |    Get::PageSize();     |
+|        CurrentPage()        |   获取当前页码   |   Get::CurrentPage();   |
+|         Permalink()         |   获取文章链接   |    Get::Permalink();    |
+|        Field($field)        |  获取自定义字段  |      Get::Field();      |
 
 #### GetTheme 类
 

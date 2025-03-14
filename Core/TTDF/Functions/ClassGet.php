@@ -1,4 +1,5 @@
-<?php 
+<?php
+
 /**
  * Get Class
  */
@@ -90,6 +91,59 @@ class Get
             return $SiteUrl;
         } catch (Exception $e) {
             return self::handleError('获取站点URL失败', $e);
+        }
+    }
+    /**
+     * 获取站点名称
+     * 
+     * @param bool|null $echo 当设置为 true 时，会直接输出；
+     *                        当设置为false 时，则返回结果值。
+     * @return string
+     */
+    public static function SiteName(?bool $echo = true)
+    {
+        try {
+            $SiteName = \Helper::options()->title;
+
+            if ($echo) echo $SiteName;
+
+            return $SiteName;
+        } catch (Exception $e) {
+            return self::handleError('获取站点名称失败', $e);
+        }
+    }
+    /**
+     * 获取站点关键字
+     */
+    public static function SiteKeywords(?bool $echo = true)
+    {
+        try {
+            $SiteKeywords = \Helper::options()->keywords;
+
+            if ($echo) echo $SiteKeywords;
+
+            return $SiteKeywords;
+        } catch (Exception $e) {
+            return self::handleError('获取站点关键字失败', $e);
+        }
+    }
+    /**
+     * 获取站点描述
+     * 
+     * @param bool|null $echo 当设置为 true 时，会直接输出；
+     *                        当设置为 false 时，则返回结果值。
+     * @return string
+     */
+    public static function SiteDescription(?bool $echo = true)
+    {
+        try {
+            $SiteDescription = \Helper::options()->description;
+
+            if ($echo) echo $SiteDescription;
+
+            return $SiteDescription;
+        } catch (Exception $e) {
+            return self::handleError('获取站点描述失败', $e);
         }
     }
 
