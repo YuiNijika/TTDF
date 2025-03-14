@@ -54,46 +54,45 @@ Get::SiteUrl(false) 为 return 返回值
 
 获取文章的相关信息。
 
-| 方法              | 描述             | 示例                        |
-| ----------------- | ---------------- | --------------------------- |
-| Title()           | 获取文章标题     | GetPost::Title();           |
-| Date()            | 获取文章日期     | GetPost::Date();            |
-| Category()        | 获取文章分类     | GetPost::Category();        |
-| Tags()            | 获取文章标签     | GetPost::Tags();            |
-| Excerpt()         | 获取文章摘要     | GetPost::Excerpt();         |
-| Permalink()       | 获取文章链接     | GetPost::Permalink();       |
-| Content()         | 获取文章内容     | GetPost::Content();         |
-| PostsNum()        | 获取文章数       | GetPost::PostsNum();        |
-| PagesNum()        | 获取页面数       | GetPost::PagesNum();        |
-| CurrentPage()     | 获取当前页码     | GetPost::CurrentPage();     |
-| ArchiveTitle()    | 获取当前页面标题 | GetPost::ArchiveTitle();    |
-| Author()          | 获取文章作者     | GetPost::Author();>         |
-| AuthorPermalink() | 获取作者链接     | GetPost::AuthorPermalink(); |
+|       方法        |       描述       |            示例             |
+| :---------------: | :--------------: | :-------------------------: |
+|      Title()      |   获取文章标题   |      GetPost::Title();      |
+|      Date()       |   获取文章日期   |      GetPost::Date();       |
+|    Category()     |   获取文章分类   |    GetPost::Category();     |
+|      Tags()       |   获取文章标签   |      GetPost::Tags();       |
+|     Excerpt()     |   获取文章摘要   |     GetPost::Excerpt();     |
+|    Permalink()    |   获取文章链接   |    GetPost::Permalink();    |
+|     Content()     |   获取文章内容   |     GetPost::Content();     |
+|    WordCount()    |   获取文章字数   |    GetPost::WordCount();    |
+|    PagesNum()     |    获取页面数    |    GetPost::PagesNum();     |
+|   CurrentPage()   |   获取当前页码   |   GetPost::CurrentPage();   |
+|  ArchiveTitle()   | 获取当前页面标题 |  GetPost::ArchiveTitle();   |
+|     Author()      |   获取文章作者   |     GetPost::Author();>     |
+| AuthorPermalink() |   获取作者链接   | GetPost::AuthorPermalink(); |
 
 #### GetComments 类
 
 获取评论的相关信息。
 
-| 方法           | 描述          | 示例                         |
-| -------------- | ------------- | ---------------------------- |
-| Comments()     | 获取评论      | GetComments::Comments();     |
+|      方法      |     描述      |             示例             |
+| :------------: | :-----------: | :--------------------------: |
+|   Comments()   |   获取评论    |   GetComments::Comments();   |
 | CommentsPage() | 获取评论页面  | GetComments::CommentsPage(); |
 | CommentsList() | 获取评论列表  | GetComments::CommentsList(); |
-| CommentsNum()  | 获取评论数    | GetComments::CommentsNum();  |
+| CommentsNum()  |  获取评论数   | GetComments::CommentsNum();  |
 | CommentsForm() | 获取评论表单  | GetComments::CommentsForm(); |
-| RespondId()    | 获取评论 id   | GetComments::RespondId();>   |
+|  RespondId()   |  获取评论 id  |  GetComments::RespondId();>  |
 | CancelReply()  | 获取取消回复  | GetComments::CancelReply();  |
-| Remember()     | 获取 Remember | GetComments::Remember();     |
-| PageNav()      | 获取评论分页  | GetComments::PageNav();      |
+|   Remember()   | 获取 Remember |   GetComments::Remember();   |
+|   PageNav()    | 获取评论分页  |   GetComments::PageNav();    |
 
 #### GetFunctions 类
 
 提供一些常用的功能函数。
 
-| 方法        | 描述         | 示例                       |
-| ----------- | ------------ | -------------------------- |
+|    方法     |     描述     |            示例            |
+| :---------: | :----------: | :------------------------: |
 | TimerStop() | 获取加载时间 | GetFunctions::TimerStop(); |
-| ArtCount()  | 获取文章字数 | GetFunctions::ArtCount();  |
 
 #### GetJsonData 类
 

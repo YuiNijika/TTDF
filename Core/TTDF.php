@@ -11,7 +11,7 @@ $avatarCdn = 'https://cravatar.cn/avatar/';
 define('__TYPECHO_GRAVATAR_PREFIX__', $avatarCdn);
 
 // 设置框架版本
-define('__FRAMEWORK_VER__', '2.1.0');
+define('__FRAMEWORK_VER__', '2.1.1');
 
 require_once 'TTDF/Class.php';
 require_once 'TTDF/Functions.php';

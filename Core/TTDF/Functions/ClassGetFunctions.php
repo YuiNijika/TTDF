@@ -12,43 +12,21 @@ class GetFunctions
     private function __clone() {}
     public function __wakeup() {}
 
-    // 获取加载时间
-    public static function TimerStop()
+    /**
+     * 获取加载时间
+     *  @param bool|null $echo 当设置为 true 时，会直接输出；
+     *                        当设置为 false 时，则返回结果值。
+     */
+    public static function TimerStop(?bool $echo = true)
     {
         try {
-            echo timer_stop();
+            if ($echo) echo TTDF_TimerStop();
+            ob_start();  // 开启输出缓冲
+            echo TTDF_TimerStop();
+            $content = ob_get_clean();  // 获取缓冲区内容并清除缓冲区
+            return $content;
         } catch (Exception $e) {
-            self::handleError('获取加载时间失败', $e);
-        }
-    }
-
-    // 获取文章字数
-    public static function ArtCount($cid)
-    {
-        try {
-            if (!is_numeric($cid)) {
-                throw new Exception('无效的CID参数');
-            }
-            return art_count($cid);
-        } catch (Exception $e) {
-            return self::handleError('获取文章字数失败', $e, 0);
-        }
-    }
-
-    // 获取字数
-    public static function WordCount($content, $echo = true)
-    {
-        try {
-            if (empty($content)) {
-                return 0;
-            }
-            $wordCount = mb_strlen(strip_tags($content), 'UTF-8');
-            if ($echo) {
-                echo $wordCount;
-            }
-            return $wordCount;
-        } catch (Exception $e) {
-            return self::handleError('字数统计失败', $e, 0);
+            return self::handleError('获取加载时间失败', $e);
         }
     }
 }

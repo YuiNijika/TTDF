@@ -31,6 +31,7 @@ trait SingletonWidget
     }
 }
 
+require_once 'Functions/ClassDB.php';
 require_once 'Functions/ClassGet.php';
 require_once 'Functions/ClassGetTheme.php';
 require_once 'Functions/ClassGetPost.php';

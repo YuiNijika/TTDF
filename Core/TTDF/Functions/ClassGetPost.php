@@ -1,11 +1,13 @@
 <?php
+
 /**
  * GetPost Class
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
-class GetPost
-{
+require_once 'ClassDB.php';
+
+class GetPost extends Typecho_Widget {
     use ErrorHandler, SingletonWidget;
 
     private function __construct() {}
@@ -53,6 +55,7 @@ class GetPost
             echo $default;
         }
     }
+
     // 获取摘要
     public static function Excerpt($length = 0)
     {
@@ -149,5 +152,14 @@ class GetPost
         } catch (Exception $e) {
             self::handleError('获取作者链接失败', $e);
         }
+    }
+
+    // 获取文章字数
+    public static function WordCount() {
+        $cid = self::getArchive()->cid;
+        $db = DB::getInstance();
+        $text = $db->getArticleText($cid);
+        $text = preg_replace("/[^\x{4e00}-\x{9fa5}]/u", "", $text);
+        echo mb_strlen($text, 'UTF-8');
     }
 }
