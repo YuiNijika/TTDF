@@ -73,6 +73,16 @@ Get::SiteUrl(false) 为 return 返回值
 |     Author()      |   获取文章作者   |     GetPost::Author();>     |
 | AuthorPermalink() |   获取作者链接   | GetPost::AuthorPermalink(); |
 
+#### GetAuthor 类
+
+获取作者的相关信息。
+
+|    方法     |       描述       |          示例           |
+| :---------: | :--------------: | :---------------------: |
+|   Name()    | 获取当前页面标题 |   GetAuthor::Name();    |
+|  Author()   |   获取文章作者   |  GetAuthor::Author();>  |
+| Permalink() |   获取作者链接   | GetAuthor::Permalink(); |
+
 #### GetComments 类
 
 获取评论的相关信息。
