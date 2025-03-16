@@ -83,7 +83,7 @@ class TTDF
     <meta name="generator" content="Typecho <?php TTDF::TypechoVer(true) ?>" />
     <meta name="framework" content="TTDF <?php TTDF::Ver(true) ?>" />
     <meta name="template" content="<?php GetTheme::Name(true) ?>" />
-    <?php
+<?php
     }
     /**
      * HeadMetaOG
