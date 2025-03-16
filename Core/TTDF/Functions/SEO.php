@@ -55,7 +55,7 @@ class TTDF_SEO
         }
     }
 }
-function Title()
+function TTDF_SEO_Title()
 {
     $archiveTitle = GetPost::ArchiveTitle(
         [
@@ -80,7 +80,7 @@ function Title()
     }
 }
 
-function Keywords()
+function TTDF_SEO_Keywords()
 {
     if (Get::Is('index')) {
         Get::Options('keywords', true);
@@ -95,7 +95,7 @@ function Keywords()
     }
 }
 
-function Description()
+function TTDF_SEO_Description()
 {
     if (Get::Is('index')) {
         Get::Options('description', true);
@@ -120,6 +120,6 @@ function Description()
     }
 }
 ?>
-<title><?php Title(); ?></title>
-<meta name="keywords" content="<?php Keywords(); ?>" />
-<meta name="description" content="<?php Description(); ?>" />
+<title><?php TTDF_SEO_Title(); ?></title>
+<meta name="keywords" content="<?php TTDF_SEO_Keywords(); ?>" />
+<meta name="description" content="<?php TTDF_SEO_Description(); ?>" />
