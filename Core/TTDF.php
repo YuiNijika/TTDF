@@ -16,4 +16,5 @@ define('__FRAMEWORK_VER__', '2.1.1');
 require_once 'TTDF/Class.php';
 require_once 'TTDF/Functions.php';
 require_once 'TTDF/Json.php';
+require_once 'Fields.php';
 require_once 'Options.php';
