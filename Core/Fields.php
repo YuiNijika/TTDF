@@ -12,7 +12,7 @@ function themeFields($layout)
             // Text
             'type' => 'Text',
             'name' => 'TTDF_Fields_Text',
-            'value' => null,
+            'value' => null, // 默认值为 null
             'label' => '文本框',
             'description' => '这是一个文本框~'
         ],
@@ -20,7 +20,7 @@ function themeFields($layout)
             // Textarea
             'type' => 'Textarea',
             'name' => 'TTDF_Fields_Textarea',
-            'value' => null,
+            'value' => null, // 默认值为 null
             'label' => '文本域',
             'description' => '这是一个文本域~'
         ],
@@ -28,7 +28,7 @@ function themeFields($layout)
             // Radio
             'type' => 'Radio',
             'name' => 'TTDF_Fields_Radio',
-            'value' => 'option1', // 默认选中的值
+            'value' => null, // 默认值为 null
             'label' => '单选框',
             'description' => '这是一个单选框~',
             'options' => [
@@ -41,7 +41,7 @@ function themeFields($layout)
             // Select
             'type' => 'Select',
             'name' => 'TTDF_Fields_Select',
-            'value' => 'option2', // 默认选中的值
+            'value' => null, // 默认值为 null
             'label' => '下拉框',
             'description' => '这是一个下拉框~',
             'options' => [
@@ -54,7 +54,7 @@ function themeFields($layout)
             // Checkbox
             'type' => 'Checkbox',
             'name' => 'TTDF_Fields_Checkbox',
-            'value' => ['option1', 'option3'], // 默认选中的值（数组）
+            'value' => [], // 默认值为空数组
             'label' => '多选框',
             'description' => '这是一个多选框~',
             'options' => [
