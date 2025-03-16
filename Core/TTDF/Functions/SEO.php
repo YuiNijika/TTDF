@@ -102,7 +102,9 @@ function TTDF_SEO_Description()
     } elseif (Get::Is('post')) {
         $excerpt = TTDF_SEO::Excerpt(150);
         if (!empty($excerpt)) {
-            echo strip_tags($excerpt); // 屏蔽代码段
+            $excerpt = str_replace(["\r", "\n"], '', strip_tags($excerpt)); // 去除换行符和 HTML 标签
+            $excerpt = preg_replace('/(rrel|rel|canonical|nofollow|noindex)="[^"]*"/i', '', $excerpt); // 移除类似标签
+            echo $excerpt;
         } else {
             Get::Options('description', true);
         }
@@ -111,7 +113,9 @@ function TTDF_SEO_Description()
         $slug = Typecho_Widget::widget('Widget_Archive')->getArchiveSlug(); // 获取当前分类的 slug
         $category = $db->fetchRow($db->select('description')->from('table.metas')->where('slug = ?', $slug)->where('type = ?', 'category'));
         if (!empty($category['description'])) {
-            echo strip_tags($category['description']); // 屏蔽代码段
+            $description = str_replace(["\r", "\n"], '', strip_tags($category['description'])); // 去除换行符和 HTML 标签
+            $description = preg_replace('/(rrel|rel|canonical|nofollow|noindex)="[^"]*"/i', '', $description); // 移除类似标签
+            echo $description;
         } else {
             Get::Options('description', true);
         }
@@ -121,5 +125,5 @@ function TTDF_SEO_Description()
 }
 ?>
 <title><?php TTDF_SEO_Title(); ?></title>
-<meta name="keywords" content="<?php TTDF_SEO_Keywords(); ?>" />
-<meta name="description" content="<?php TTDF_SEO_Description(); ?>" />
+    <meta name="keywords" content="<?php TTDF_SEO_Keywords(); ?>" />
+    <meta name="description" content="<?php TTDF_SEO_Description(); ?>" />
