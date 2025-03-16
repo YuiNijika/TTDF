@@ -6,6 +6,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
 <head>
     <?php TTDF::HeadMeta() ?>
+    <?php TTDF::HeadMetaOG() ?>
     <link rel="stylesheet" href="<?php GetTheme::AssetsUrl() ?>/main.css?ver=<?php GetTheme::Ver(); ?>">
 </head>
 <body>

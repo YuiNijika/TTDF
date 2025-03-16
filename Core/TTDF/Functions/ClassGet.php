@@ -356,4 +356,29 @@ class Get
             return self::handleError('获取页面Url失败', $e);
         }
     }
+
+    /**
+     * 获取当前页面url
+     * 
+     * @param bool $echo 是否输出
+     * @return string|null
+     */
+    public static function PageUrl(?bool $echo = true)
+    {
+        try {
+            // 获取当前页面的 URL
+            $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http";
+            $host = $_SERVER['HTTP_HOST'];
+            $uri = $_SERVER['REQUEST_URI'];
+            $url = $protocol . '://' . $host . $uri;
+
+            if ($echo) {
+                echo $url;
+            }
+
+            return $url;
+        } catch (Exception $e) {
+            return self::handleError('获取当前页面url失败', $e);
+        }
+    }
 }

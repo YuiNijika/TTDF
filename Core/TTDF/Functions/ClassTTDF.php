@@ -1,4 +1,5 @@
 <?php
+
 /**
  * TTDF Class
  */
@@ -74,14 +75,29 @@ class TTDF
      */
     public static function HeadMeta()
     {
-    TTDF::Functions('SEO')
-?>
-    <meta charset="<?php Get::Options('charset', true) ?>">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" />
-    <meta name="renderer" content="webkit" />
-    <meta name="generator" content="Typecho <?php TTDF::TypechoVer(true) ?>" />
-    <meta name="framework" content="TTDF <?php TTDF::Ver(true) ?>" />
-    <meta name="template" content="<?php GetTheme::Name(true) ?>" />
-<?php
+        TTDF::Functions('SEO');
+    ?>
+        <meta charset="<?php Get::Options('charset', true) ?>">
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" />
+        <meta name="renderer" content="webkit" />
+        <meta name="generator" content="Typecho <?php TTDF::TypechoVer(true) ?>" />
+        <meta name="framework" content="TTDF <?php TTDF::Ver(true) ?>" />
+        <meta name="template" content="<?php GetTheme::Name(true) ?>" />
+    <?php
+    }
+    /**
+     * HeadMetaOG
+     */
+    public static function HeadMetaOG()
+    {
+    ?>
+<meta property="og:locale" content="<?php echo Get::Options('lang', true) ? Get::Options('lang', true) : 'zh-CN' ?>" />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="<?php Get::Options('title', true) ?>" />
+        <meta property="og:title" content="<?php TTDF_SEO_Title(); ?>" />
+        <meta property="og:url" content="<?php Get::PageUrl(); ?>" />
+        <meta name="keywords" content="<?php TTDF_SEO_Keywords(); ?>" />
+        <meta name="description" content="<?php TTDF_SEO_Description(); ?>" />
+    <?php
     }
 }

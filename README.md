@@ -19,6 +19,7 @@ Get::SiteUrl(false) 为 return 返回值
 |    Ver     |   获取框架版本号    |    TTDF::Ver();     |
 | TypechoVer | 获取 Typecho 版本号 | TTDF::TypechoVer(); |
 |  HeadMeta  |   调用 meta 标签    |  TTDF::HeadMeta();  |
+| HeadMetaOG |   调用 OG 标签    |  TTDF::HeadMetaOG();   |
 
 #### Get 类
 
@@ -27,6 +28,7 @@ Get::SiteUrl(false) 为 return 返回值
 |            方法             |       描述       |          示例           |
 | :-------------------------: | :--------------: | :---------------------: |
 |           SiteUrl           |  获取站点的 URL  |     Get::SiteUrl();     |
+|           PageUrl           |   获取当前url    |     Get::PageUrl();     |
 |         SiteName()          |   获取站点名称   |    Get::SiteName();     |
 |       SiteKeywords()        |  获取站点关键词  |  Get::SiteKeywords();   |
 |      SiteDescription()      |   获取站点描述   | Get::SiteDescription(); |
