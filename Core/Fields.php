@@ -67,13 +67,22 @@ function themeFields($layout)
 
     // 循环添加字段
     foreach ($fieldElements as $field) {
-        $layout->addItem(TTDF_FormElement(
+        $element = TTDF_FormElement(
             $field['type'],
             $field['name'],
             $field['value'] ?? null,
             $field['label'] ?? '',
             $field['description'] ?? '',
             $field['options'] ?? []
-        ));
+        );
+
+        // 设置字段属性（如 style）
+        if (isset($field['attributes'])) {
+            foreach ($field['attributes'] as $attr => $value) {
+                $element->input->setAttribute($attr, $value);
+            }
+        }
+
+        $layout->addItem($element);
     }
 }
