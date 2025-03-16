@@ -22,7 +22,10 @@ function themeFields($layout)
             'name' => 'TTDF_Fields_Textarea',
             'value' => null, // 默认值为 null
             'label' => '文本域',
-            'description' => '这是一个文本域~'
+            'description' => '这是一个文本域~',
+            'attributes' => [
+                'style' => 'width: 100%;height: 100px;'
+            ]
         ],
         [
             // Radio
