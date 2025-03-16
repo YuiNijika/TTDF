@@ -44,7 +44,7 @@ class TTDF_SEO
     public static function Excerpt($length = 0)
     {
         try {
-            $excerpt = strip_tags(self::getArchive()->excerpt);
+            $excerpt = strip_tags(self::getArchive()->excerpt); // 去除 HTML 标签
             if ($length > 0) {
                 $excerpt = mb_substr($excerpt, 0, $length, 'UTF-8');
             }
@@ -100,16 +100,21 @@ function Description()
     if (Get::Is('index')) {
         Get::Options('description', true);
     } elseif (Get::Is('post')) {
-        $excerpt = TTDF_SEO::Excerpt('150');
+        $excerpt = TTDF_SEO::Excerpt(150);
         if (!empty($excerpt)) {
-            echo $excerpt;
+            echo strip_tags($excerpt); // 屏蔽代码段
         } else {
             Get::Options('description', true);
         }
     } elseif (Get::Is('category')) {
-        Get::Options('description', true);
-    } elseif (Get::Is('tag')) {
-        Get::Options('description', true);
+        $db = Typecho_Db::get();
+        $slug = Typecho_Widget::widget('Widget_Archive')->getArchiveSlug(); // 获取当前分类的 slug
+        $category = $db->fetchRow($db->select('description')->from('table.metas')->where('slug = ?', $slug)->where('type = ?', 'category'));
+        if (!empty($category['description'])) {
+            echo strip_tags($category['description']); // 屏蔽代码段
+        } else {
+            Get::Options('description', true);
+        }
     } else {
         Get::Options('description', true);
     }
