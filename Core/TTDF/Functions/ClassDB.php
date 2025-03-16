@@ -33,4 +33,34 @@ class DB {
             ->limit(1));
         return $rs['text'] ?? '';
     }
+
+    /**
+     * 获取文章标题
+     * @param int $cid 文章cid
+     * @return string
+     * @throws Typecho_Db_Exception
+     */
+    public function getArticleTitle($cid) {
+        $rs = $this->db->fetchRow($this->db->select('table.contents.title')
+            ->from('table.contents')
+            ->where('table.contents.cid = ?', $cid)
+            ->order('table.contents.cid', Typecho_Db::SORT_ASC)
+            ->limit(1));
+        return $rs['title'] ?? '';
+    }
+
+    /**
+     * 获取文章内容
+     * @param int $cid 文章cid
+     * @return string
+     * @throws Typecho_Db_Exception
+     */
+    public function getArticleContent($cid) {
+        $rs = $this->db->fetchRow($this->db->select('table.contents.text')
+            ->from('table.contents')
+            ->where('table.contents.cid = ?', $cid)
+            ->order('table.contents.cid', Typecho_Db::SORT_ASC)
+            ->limit(1));
+        return $rs['text'] ?? '';
+    }
 }

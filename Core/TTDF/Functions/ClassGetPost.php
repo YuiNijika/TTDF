@@ -281,6 +281,12 @@ class GetPost extends Typecho_Widget {
         }
     }
 
+    /**
+     * 通过查询数据库获取
+     * @param bool $echo 是否输出
+     * @return int|string
+     * @throws Typecho_Db_Exception
+     */
     // 获取文章字数
     public static function WordCount($echo = true)
     {
@@ -297,6 +303,82 @@ class GetPost extends Typecho_Widget {
             }
         } catch (Exception $e) {
             self::handleError('获取文章字数失败', $e);
+            if ($echo) {
+                echo '';
+            } else {
+                return '';
+            }
+        }
+    }
+    
+    // 获取文章标题
+    public static function DB_Title($echo = true)
+    {
+        try {
+            $cid = self::getArchive()->cid;
+            $db = DB::getInstance();
+            $title = $db->getArticleTitle($cid);
+            if ($echo) {
+                echo $title;
+            } else {
+                return $title;
+            }
+        } catch (Exception $e) {
+            self::handleError('获取文章标题失败', $e);
+            if ($echo) {
+                echo '';
+            } else {
+                return '';
+            }
+        }
+    }
+
+    /**
+     * 获取文章内容 Markdown 格式
+     * @param bool $echo 是否输出
+     * @return string
+     * @throws Typecho_Db_Exception
+     */
+    public static function DB_Content($echo = true)
+    {
+        try {
+            $cid = self::getArchive()->cid;
+            $db = DB::getInstance();
+            $content = $db->getArticleContent($cid);
+            if ($echo) {
+                echo $content;
+            } else {
+                return $content;
+            }
+        } catch (Exception $e) {
+            self::handleError('获取文章内容失败', $e);
+            if ($echo) {
+                echo '';
+            } else {
+                return '';
+            }
+        }
+    }
+    /**
+     * 获取文章内容 HTML 格式
+     * @param bool $echo 是否输出
+     * @return string
+     * @throws Typecho_Db_Exception
+     */
+    public static function DB_Content_Html($echo = true)
+    {
+        try {
+            $cid = self::getArchive()->cid;
+            $db = DB::getInstance();
+            $content = $db->getArticleContent($cid);
+            $content = Markdown::convert($content);
+            if ($echo) {
+                echo $content;
+            } else {
+                return $content;
+            }
+        } catch (Exception $e) {
+            self::handleError('获取文章内容失败', $e);
             if ($echo) {
                 echo '';
             } else {

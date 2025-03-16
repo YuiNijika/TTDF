@@ -66,6 +66,8 @@ Get::SiteUrl(false) 为 return 返回值
 |     Excerpt()     |   获取文章摘要   |     GetPost::Excerpt();     |
 |    Permalink()    |   获取文章链接   |    GetPost::Permalink();    |
 |     Content()     |   获取文章内容   |     GetPost::Content();     |
+|   DB_Content()    |  获取文章md内容  |   GetPost::DB_Content();    |
+| DB_Content_HTML() | 获取文章html内容 | GetPost::DB_Content_HTML(); |
 |    WordCount()    |   获取文章字数   |    GetPost::WordCount();    |
 |    PagesNum()     |    获取页面数    |    GetPost::PagesNum();     |
 |   CurrentPage()   |   获取当前页码   |   GetPost::CurrentPage();   |
