@@ -19,7 +19,7 @@ Get::SiteUrl(false) 为 return 返回值
 |    Ver     |   获取框架版本号    |    TTDF::Ver();     |
 | TypechoVer | 获取 Typecho 版本号 | TTDF::TypechoVer(); |
 |  HeadMeta  |   调用 meta 标签    |  TTDF::HeadMeta();  |
-| HeadMetaOG |   调用 OG 标签    |  TTDF::HeadMetaOG();   |
+| HeadMetaOG |    调用 OG 标签     | TTDF::HeadMetaOG(); |
 
 #### Get 类
 
@@ -71,7 +71,7 @@ Get::SiteUrl(false) 为 return 返回值
 |   DB_Content()    |  获取文章md内容  |   GetPost::DB_Content();    |
 | DB_Content_HTML() | 获取文章html内容 | GetPost::DB_Content_HTML(); |
 |    WordCount()    |   获取文章字数   |    GetPost::WordCount();    |
-|    PagesNum()     |    获取页面数    |    GetPost::PagesNum();     |
+|    PostsNum()     |    获取文章数    |    GetPost::PostsNum();     |
 |   CurrentPage()   |   获取当前页码   |   GetPost::CurrentPage();   |
 |  ArchiveTitle()   | 获取当前页面标题 |  GetPost::ArchiveTitle();   |
 |     Author()      |   获取文章作者   |     GetPost::Author();>     |

@@ -157,46 +157,6 @@ class GetPost extends Typecho_Widget {
         }
     }
 
-    // 获取文章数
-    public static function PostsNum($echo = true)
-    {
-        try {
-            $postsNum = self::getArchive()->postsNum;
-            if ($echo) {
-                echo $postsNum;
-            } else {
-                return $postsNum;
-            }
-        } catch (Exception $e) {
-            self::handleError('获取文章数失败', $e);
-            if ($echo) {
-                echo '';
-            } else {
-                return '';
-            }
-        }
-    }
-
-    // 获取页面数
-    public static function PagesNum($echo = true)
-    {
-        try {
-            $pagesNum = self::getArchive()->pagesNum;
-            if ($echo) {
-                echo $pagesNum;
-            } else {
-                return $pagesNum;
-            }
-        } catch (Exception $e) {
-            self::handleError('获取页面数失败', $e);
-            if ($echo) {
-                echo '';
-            } else {
-                return '';
-            }
-        }
-    }
-
     // 获取标题
     public static function ArchiveTitle($format = '', $default = '', $connector = '', $echo = true)
     {
@@ -310,6 +270,26 @@ class GetPost extends Typecho_Widget {
             }
         }
     }
+    // 获取文章数量
+    public static function PostsNum($echo = true)
+    {
+        try {
+            $db = DB::getInstance();
+            $postsNum = $db->getArticleCount();
+            if ($echo) {
+                echo $postsNum;
+            } else {
+                return $postsNum;
+            }
+        } catch (Exception $e) {
+            self::handleError('获取文章数量失败', $e);
+            if ($echo) {
+                echo '';
+            } else {
+                return '';
+            }
+        }
+    }
     
     // 获取文章标题
     public static function DB_Title($echo = true)
@@ -333,12 +313,7 @@ class GetPost extends Typecho_Widget {
         }
     }
 
-    /**
-     * 获取文章内容 Markdown 格式
-     * @param bool $echo 是否输出
-     * @return string
-     * @throws Typecho_Db_Exception
-     */
+    // 获取文章内容 Markdown 格式
     public static function DB_Content($echo = true)
     {
         try {
@@ -359,12 +334,8 @@ class GetPost extends Typecho_Widget {
             }
         }
     }
-    /**
-     * 获取文章内容 HTML 格式
-     * @param bool $echo 是否输出
-     * @return string
-     * @throws Typecho_Db_Exception
-     */
+
+    // 获取文章内容 HTML 格式
     public static function DB_Content_Html($echo = true)
     {
         try {

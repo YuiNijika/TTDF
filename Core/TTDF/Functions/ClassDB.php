@@ -63,4 +63,16 @@ class DB {
             ->limit(1));
         return $rs['text'] ?? '';
     }
+
+    /**
+     * 获取文章数量
+     */
+    public function getArticleCount() {
+        $rs = $this->db->fetchRow($this->db->select('COUNT(*)')
+            ->from('table.contents')
+            ->where('table.contents.type = ?', 'post')
+            ->order('table.contents.cid', Typecho_Db::SORT_ASC)
+            ->limit(1));
+        return $rs['COUNT(*)'] ?? 0;
+    }
 }
