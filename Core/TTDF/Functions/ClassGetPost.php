@@ -5,356 +5,248 @@
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
-require_once 'ClassDB.php';
-
-class GetPost extends Typecho_Widget {
+class GetPost extends Typecho_Widget
+{
     use ErrorHandler, SingletonWidget;
 
+    private static $_currentArchive;
+    
     private function __construct() {}
     private function __clone() {}
     public function __wakeup() {}
 
-    // 获取标题
+    /**
+     * 获取当前文章实例
+     */
+    private static function getCurrentArchive()
+    {
+        return self::$_currentArchive ?? self::getArchive();
+    }
+
+    /**
+     * 解除实例绑定
+     */
+    public static function unbindArchive()
+    {
+        self::$_currentArchive = null;
+    }
+
+    /**
+     * 文章列表获取
+     * @param array|null $params 查询参数
+     * @return Typecho_Widget
+     */
+    public static function List($params = null)
+    {
+        try {
+            if ($params) {
+                $alias = 'custom_'.md5(serialize($params));
+                $widget = \Widget\Archive::allocWithAlias(
+                    $alias, 
+                    is_array($params) ? http_build_query($params) : $params
+                );
+                $widget->execute();
+                self::$_currentArchive = $widget;
+                return $widget;
+            }
+
+            if (method_exists(self::getArchive(), 'Next')) {
+                return self::getArchive()->Next();
+            }
+            throw new Exception('List 方法不存在');
+        } catch (Exception $e) {
+            self::handleError('List 调用失败', $e);
+            return new \Typecho_Widget_Helper_Empty();
+        }
+    }
+
+    // 数据获取方法
+    
     public static function Title($echo = true)
     {
         try {
-            $title = self::getArchive()->title;
-            if ($echo) {
-                echo $title;
-            } else {
-                return $title;
-            }
+            $title = self::getCurrentArchive()->title;
+            return self::outputValue($title, $echo);
         } catch (Exception $e) {
-            self::handleError('获取标题失败', $e);
-            if ($echo) {
-                echo '';
-            } else {
-                return '';
-            }
+            return self::handleOutputError('获取标题失败', $e, $echo);
         }
     }
 
-    // 获取日期
     public static function Date($format = 'Y-m-d', $echo = true)
     {
         try {
-            $date = self::getArchive()->date($format);
-            if ($echo) {
-                echo $date;
-            } else {
-                return $date;
-            }
+            $date = self::getCurrentArchive()->date($format);
+            return self::outputValue($date, $echo);
         } catch (Exception $e) {
-            $result = self::handleError('获取日期失败', $e, '');
-            if ($echo) {
-                echo $result;
-            } else {
-                return $result;
-            }
+            return self::handleOutputError('获取日期失败', $e, $echo, '');
         }
     }
 
-    // 获取分类
     public static function Category($split = ',', $link = true, $default = '暂无分类', $echo = true)
     {
         try {
-            $category = self::getArchive()->category($split, $link, $default);
-            if ($echo) {
-                echo $category;
-            } else {
-                return $category;
-            }
+            $category = self::getCurrentArchive()->category($split, $link, $default);
+            return self::outputValue($category, $echo);
         } catch (Exception $e) {
-            self::handleError('获取分类失败', $e);
-            if ($echo) {
-                echo $default;
-            } else {
-                return $default;
-            }
+            return self::handleOutputError('获取分类失败', $e, $echo, $default);
         }
     }
 
-    // 获取标签
     public static function Tags($split = ',', $link = true, $default = '暂无标签', $echo = true)
     {
         try {
-            $tags = self::getArchive()->tags($split, $link, $default);
-            if ($echo) {
-                echo $tags;
-            } else {
-                return $tags;
-            }
+            $tags = self::getCurrentArchive()->tags($split, $link, $default);
+            return self::outputValue($tags, $echo);
         } catch (Exception $e) {
-            self::handleError('获取标签失败', $e);
-            if ($echo) {
-                echo $default;
-            } else {
-                return $default;
-            }
+            return self::handleOutputError('获取标签失败', $e, $echo, $default);
         }
     }
 
-    // 获取摘要
     public static function Excerpt($length = 0, $echo = true)
     {
         try {
-            $excerpt = strip_tags(self::getArchive()->excerpt);
-            if ($length > 0) {
-                $excerpt = mb_substr($excerpt, 0, $length, 'UTF-8');
-            }
-            if ($echo) {
-                echo $excerpt;
-            } else {
-                return $excerpt;
-            }
+            $excerpt = strip_tags(self::getCurrentArchive()->excerpt);
+            $excerpt = $length > 0 ? mb_substr($excerpt, 0, $length, 'UTF-8') : $excerpt;
+            return self::outputValue($excerpt, $echo);
         } catch (Exception $e) {
-            self::handleError('获取摘要失败', $e);
-            if ($echo) {
-                echo '';
-            } else {
-                return '';
-            }
+            return self::handleOutputError('获取摘要失败', $e, $echo);
         }
     }
 
-    // 获取永久链接
     public static function Permalink($echo = true)
     {
         try {
-            $permalink = self::getArchive()->permalink;
-            if ($echo) {
-                echo $permalink;
-            } else {
-                return $permalink;
-            }
+            $permalink = self::getCurrentArchive()->permalink;
+            return self::outputValue($permalink, $echo);
         } catch (Exception $e) {
-            self::handleError('获取永久链接失败', $e);
-            if ($echo) {
-                echo '';
-            } else {
-                return '';
-            }
+            return self::handleOutputError('获取链接失败', $e, $echo);
         }
     }
 
-    // 获取内容
     public static function Content($echo = true)
     {
         try {
-            $content = self::getArchive()->content;
-            if ($echo) {
-                echo $content;
-            } else {
-                return $content;
-            }
+            $content = self::getCurrentArchive()->content;
+            return self::outputValue($content, $echo);
         } catch (Exception $e) {
-            self::handleError('获取内容失败', $e);
-            if ($echo) {
-                echo '';
-            } else {
-                return '';
-            }
+            return self::handleOutputError('获取内容失败', $e, $echo);
         }
     }
 
-    // 获取标题
     public static function ArchiveTitle($format = '', $default = '', $connector = '', $echo = true)
     {
         try {
-            if (empty($format)) {
-                $archiveTitle = self::getArchive()->archiveTitle;
-            } else {
-                $archiveTitle = self::getArchive()->archiveTitle($format, $default, $connector);
-            }
-            if ($echo) {
-                echo $archiveTitle;
-            } else {
-                return $archiveTitle;
-            }
+            $title = empty($format) 
+                ? self::getCurrentArchive()->archiveTitle 
+                : self::getCurrentArchive()->archiveTitle($format, $default, $connector);
+            return self::outputValue($title, $echo);
         } catch (Exception $e) {
-            self::handleError('获取标题失败', $e);
-            if ($echo) {
-                echo '';
-            } else {
-                return '';
-            }
+            return self::handleOutputError('获取标题失败', $e, $echo);
         }
     }
 
-    // 获取作者
     public static function Author($echo = true)
     {
         try {
-            $author = self::getArchive()->author->screenName;
-            if ($echo) {
-                echo $author;
-            } else {
-                return $author;
-            }
+            $author = self::getCurrentArchive()->author->screenName;
+            return self::outputValue($author, $echo);
         } catch (Exception $e) {
-            self::handleError('获取作者失败', $e);
-            if ($echo) {
-                echo '';
-            } else {
-                return '';
-            }
+            return self::handleOutputError('获取作者失败', $e, $echo);
         }
     }
 
-    // 获取作者头像
     public static function AuthorAvatar($size = 128, $echo = true)
     {
         try {
-            $avatar = self::getArchive()->author->gravatar($size);
-            if ($echo) {
-                echo $avatar;
-            } else {
-                return $avatar;
-            }
+            $avatar = self::getCurrentArchive()->author->gravatar($size);
+            return self::outputValue($avatar, $echo);
         } catch (Exception $e) {
-            self::handleError('获取作者头像失败', $e);
-            if ($echo) {
-                echo '';
-            } else {
-                return '';
-            }
+            return self::handleOutputError('获取头像失败', $e, $echo);
         }
     }
 
-    // 获取作者链接
     public static function AuthorPermalink($echo = true)
     {
         try {
-            $authorPermalink = self::getArchive()->author->permalink;
-            if ($echo) {
-                echo $authorPermalink;
-            } else {
-                return $authorPermalink;
-            }
+            $link = self::getCurrentArchive()->author->permalink;
+            return self::outputValue($link, $echo);
         } catch (Exception $e) {
-            self::handleError('获取作者链接失败', $e);
-            if ($echo) {
-                echo '';
-            } else {
-                return '';
-            }
+            return self::handleOutputError('获取作者链接失败', $e, $echo);
+        }
+    }
+
+    public static function WordCount($echo = true)
+    {
+        try {
+            $cid = self::getCurrentArchive()->cid;
+            $text = DB::getInstance()->getArticleText($cid);
+            $text = preg_replace("/[^\x{4e00}-\x{9fa5}]/u", "", $text);
+            $count = mb_strlen($text, 'UTF-8');
+            return self::outputValue($count, $echo);
+        } catch (Exception $e) {
+            return self::handleOutputError('统计字数失败', $e, $echo);
+        }
+    }
+
+    public static function PostsNum($echo = true)
+    {
+        try {
+            $count = DB::getInstance()->getArticleCount();
+            return self::outputValue($count, $echo);
+        } catch (Exception $e) {
+            return self::handleOutputError('获取文章数失败', $e, $echo);
+        }
+    }
+
+    public static function DB_Title($echo = true)
+    {
+        try {
+            $title = DB::getInstance()->getArticleTitle(self::getCurrentArchive()->cid);
+            return self::outputValue($title, $echo);
+        } catch (Exception $e) {
+            return self::handleOutputError('获取数据库标题失败', $e, $echo);
+        }
+    }
+
+    public static function DB_Content($echo = true)
+    {
+        try {
+            $content = DB::getInstance()->getArticleContent(self::getCurrentArchive()->cid);
+            return self::outputValue($content, $echo);
+        } catch (Exception $e) {
+            return self::handleOutputError('获取数据库内容失败', $e, $echo);
+        }
+    }
+
+    public static function DB_Content_Html($echo = true)
+    {
+        try {
+            $content = DB::getInstance()->getArticleContent(self::getCurrentArchive()->cid);
+            $html = Markdown::convert($content);
+            return self::outputValue($html, $echo);
+        } catch (Exception $e) {
+            return self::handleOutputError('转换HTML失败', $e, $echo);
         }
     }
 
     /**
-     * 通过查询数据库获取
-     * @param bool $echo 是否输出
-     * @return int|string
-     * @throws Typecho_Db_Exception
+     * 统一输出处理方法
      */
-    // 获取文章字数
-    public static function WordCount($echo = true)
+    private static function outputValue($value, $echo)
     {
-        try {
-            $cid = self::getArchive()->cid;
-            $db = DB::getInstance();
-            $text = $db->getArticleText($cid);
-            $text = preg_replace("/[^\x{4e00}-\x{9fa5}]/u", "", $text);
-            $wordCount = mb_strlen($text, 'UTF-8');
-            if ($echo) {
-                echo $wordCount;
-            } else {
-                return $wordCount;
-            }
-        } catch (Exception $e) {
-            self::handleError('获取文章字数失败', $e);
-            if ($echo) {
-                echo '';
-            } else {
-                return '';
-            }
+        if ($echo) {
+            echo $value;
+            return null;
         }
-    }
-    // 获取文章数量
-    public static function PostsNum($echo = true)
-    {
-        try {
-            $db = DB::getInstance();
-            $postsNum = $db->getArticleCount();
-            if ($echo) {
-                echo $postsNum;
-            } else {
-                return $postsNum;
-            }
-        } catch (Exception $e) {
-            self::handleError('获取文章数量失败', $e);
-            if ($echo) {
-                echo '';
-            } else {
-                return '';
-            }
-        }
-    }
-    
-    // 获取文章标题
-    public static function DB_Title($echo = true)
-    {
-        try {
-            $cid = self::getArchive()->cid;
-            $db = DB::getInstance();
-            $title = $db->getArticleTitle($cid);
-            if ($echo) {
-                echo $title;
-            } else {
-                return $title;
-            }
-        } catch (Exception $e) {
-            self::handleError('获取文章标题失败', $e);
-            if ($echo) {
-                echo '';
-            } else {
-                return '';
-            }
-        }
+        return $value;
     }
 
-    // 获取文章内容 Markdown 格式
-    public static function DB_Content($echo = true)
+    /**
+     * 统一错误处理方法
+     */
+    private static function handleOutputError($message, $exception, $echo, $default = '')
     {
-        try {
-            $cid = self::getArchive()->cid;
-            $db = DB::getInstance();
-            $content = $db->getArticleContent($cid);
-            if ($echo) {
-                echo $content;
-            } else {
-                return $content;
-            }
-        } catch (Exception $e) {
-            self::handleError('获取文章内容失败', $e);
-            if ($echo) {
-                echo '';
-            } else {
-                return '';
-            }
-        }
-    }
-
-    // 获取文章内容 HTML 格式
-    public static function DB_Content_Html($echo = true)
-    {
-        try {
-            $cid = self::getArchive()->cid;
-            $db = DB::getInstance();
-            $content = $db->getArticleContent($cid);
-            $content = Markdown::convert($content);
-            if ($echo) {
-                echo $content;
-            } else {
-                return $content;
-            }
-        } catch (Exception $e) {
-            self::handleError('获取文章内容失败', $e);
-            if ($echo) {
-                echo '';
-            } else {
-                return '';
-            }
-        }
+        self::handleError($message, $exception);
+        return self::outputValue($default, $echo);
     }
 }

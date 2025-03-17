@@ -35,7 +35,7 @@ Get::SiteUrl(false) 为 return 返回值
 |       Options($param)       |    获取配置项    |  Get::Options('name');  |
 |       Fields($param)        |     获取字段     |  Get::Fields('name');   |
 |          Is($type)          | 判断当前页面类型 |    Get::Is('type');     |
-|           Next()            |   循环输出文章   |      Get::Next();       |
+|           Next()            |    返回数组值    |      Get::Next();       |
 |    PageNav($prev, $next)    |   获取分页导航   |     Get::PageNav();     |
 | PageLink($link, $type = '') |   获取分页链接   |    Get::PageLink();     |
 |           Total()           |   获取文章总数   |      Get::Total();      |
@@ -61,6 +61,7 @@ Get::SiteUrl(false) 为 return 返回值
 
 |       方法        |       描述       |            示例             |
 | :---------------: | :--------------: | :-------------------------: |
+|      List()       |   获取文章列表   |      GetPost::List();       |  |
 |      Title()      |   获取文章标题   |      GetPost::Title();      |
 |      Date()       |   获取文章日期   |      GetPost::Date();       |
 |    Category()     |   获取文章分类   |    GetPost::Category();     |
@@ -76,6 +77,33 @@ Get::SiteUrl(false) 为 return 返回值
 |  ArchiveTitle()   | 获取当前页面标题 |  GetPost::ArchiveTitle();   |
 |     Author()      |   获取文章作者   |     GetPost::Author();>     |
 | AuthorPermalink() |   获取作者链接   | GetPost::AuthorPermalink(); |
+
+> GetPost:List() 方法可自定义输出，示例如下：
+> 默认调用
+``` php
+ while (GetPost::List()) {
+    
+};
+```
+> 自定义调用
+``` php
+<?php 
+// 第一个文章列表
+$featuredPosts = GetPost::List (
+    ['pageSize' => 3, 
+    'type' => 'category', 
+    'mid' => 1]
+); 
+?>
+<?php while ($featuredPosts->next()) { ?>
+    <div class="featured-post">
+        <h2><?php GetPost::Title() ?></h2>
+        <p><?php GetPost::Excerpt(100) ?></p>
+        <?php GetPost::Date('Y年m月d日') ?>
+    </div>
+<?php }; ?>
+<?php GetPost::unbindArchive(); // 结束当前绑定 ?>
+```
 
 #### GetAuthor 类
 
