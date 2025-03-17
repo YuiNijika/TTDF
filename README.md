@@ -27,8 +27,8 @@ Get::SiteUrl(false) 为 return 返回值
 
 |            方法             |       描述       |          示例           |
 | :-------------------------: | :--------------: | :---------------------: |
-|           SiteUrl           |  获取站点的 URL  |     Get::SiteUrl();     |
-|           PageUrl           |   获取当前url    |     Get::PageUrl();     |
+|           SiteUrl()           |  获取站点的 URL  |     Get::SiteUrl();     |
+|           PageUrl()           |   获取当前url    |     Get::PageUrl();     |
 |         SiteName()          |   获取站点名称   |    Get::SiteName();     |
 |       SiteKeywords()        |  获取站点关键词  |  Get::SiteKeywords();   |
 |      SiteDescription()      |   获取站点描述   | Get::SiteDescription(); |
