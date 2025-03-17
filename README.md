@@ -70,7 +70,7 @@ Get::SiteUrl(false) 为 return 返回值
 |    Permalink()    |   获取文章链接   |    GetPost::Permalink();    |
 |     Content()     |   获取文章内容   |     GetPost::Content();     |
 |   DB_Content()    |  获取文章md内容  |   GetPost::DB_Content();    |
-| DB_Content_HTML() | 获取文章html内容 | GetPost::DB_Content_HTML(); |
+| DB_Content_Html() | 获取文章html内容 | GetPost::DB_Content_Html(); |
 |    WordCount()    |   获取文章字数   |    GetPost::WordCount();    |
 |    PostsNum()     |    获取文章数    |    GetPost::PostsNum();     |
 |   CurrentPage()   |   获取当前页码   |   GetPost::CurrentPage();   |
