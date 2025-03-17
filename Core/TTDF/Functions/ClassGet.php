@@ -361,15 +361,53 @@ class Get
      * 获取当前页面url
      * 
      * @param bool $echo 是否输出
+     * @param bool $removePort 是否移除端口号
+     * @param array|null $excludeParams 需要屏蔽的参数名数组
+     * @param bool $removeAllQuery 是否移除所有查询参数
      * @return string|null
      */
-    public static function PageUrl(?bool $echo = true)
-    {
+    public static function PageUrl(
+        ?bool $echo = true,
+        ?bool $removePort = false,
+        ?array $excludeParams = null,
+        ?bool $removeAllQuery = false // 新增参数
+    ) {
         try {
-            // 获取当前页面的 URL
+            // 获取协议
             $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http";
+
+            // 获取主机名
             $host = $_SERVER['HTTP_HOST'];
+
+            // 移除端口号（如果需要）
+            if ($removePort) {
+                $host = preg_replace('/:\d+$/', '', $host);
+            }
+
+            // 处理查询参数
             $uri = $_SERVER['REQUEST_URI'];
+            if ($removeAllQuery) {
+                // 移除所有查询参数
+                $parsedUrl = parse_url($uri);
+                $uri = $parsedUrl['path'] ?? '/';
+            } elseif ($excludeParams && is_array($excludeParams)) {
+                $parsedUrl = parse_url($uri);
+                $query = $parsedUrl['query'] ?? '';
+
+                // 解析查询参数
+                parse_str($query, $queryParams);
+
+                // 移除需要屏蔽的参数
+                foreach ($excludeParams as $param) {
+                    unset($queryParams[$param]);
+                }
+
+                // 重新构建查询字符串
+                $newQuery = http_build_query($queryParams);
+                $uri = $parsedUrl['path'] . ($newQuery ? "?$newQuery" : '');
+            }
+
+            // 拼接完整URL
             $url = $protocol . '://' . $host . $uri;
 
             if ($echo) {

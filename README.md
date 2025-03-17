@@ -44,6 +44,16 @@ Get::SiteUrl(false) 为 return 返回值
 |         Permalink()         |   获取文章链接   |    Get::Permalink();    |
 |        Field($field)        |  获取自定义字段  |      Get::Field();      |
 
+> Get::PageUrl() 方法可自定义输出，示例如下：
+> 默认调用  
+> Get::PageUrl();  
+> 移除所有查询参数  
+> Get::PageUrl(true, false, null, true);  
+> 屏蔽指定参数  
+> Get::PageUrl(true, false, ['foo', 'baz']);  
+> 移除所有查询参数并移除端口  
+> Get::PageUrl(true, true, null, true);  
+
 #### GetTheme 类
 
 获取主题的相关信息。
@@ -90,9 +100,11 @@ Get::SiteUrl(false) 为 return 返回值
 <?php 
 // 第一个文章列表
 $featuredPosts = GetPost::List (
-    ['pageSize' => 3, 
-    'type' => 'category', 
-    'mid' => 1]
+    [
+        'pageSize' => 3, 
+        'type' => 'category', 
+        'mid' => 1
+    ]
 ); 
 ?>
 <?php while ($featuredPosts->next()) { ?>
