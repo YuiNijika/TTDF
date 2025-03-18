@@ -37,7 +37,6 @@ require_once 'Functions/ClassGetTheme.php';
 require_once 'Functions/ClassGetPost.php';
 require_once 'Functions/ClassGetAuthor.php';
 require_once 'Functions/ClassGetComments.php';
-require_once 'Functions/ClassGetJsonData.php';
 require_once 'Functions/ClassGetFunctions.php';
 require_once 'Functions/ClassTools.php';
 require_once 'Functions/ClassTTDF.php';

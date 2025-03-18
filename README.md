@@ -27,8 +27,8 @@ Get::SiteUrl(false) 为 return 返回值
 
 |            方法             |       描述       |          示例           |
 | :-------------------------: | :--------------: | :---------------------: |
-|           SiteUrl()           |  获取站点的 URL  |     Get::SiteUrl();     |
-|           PageUrl()           |   获取当前url    |     Get::PageUrl();     |
+|          SiteUrl()          |  获取站点的 URL  |     Get::SiteUrl();     |
+|          PageUrl()          |   获取当前url    |     Get::PageUrl();     |
 |         SiteName()          |   获取站点名称   |    Get::SiteName();     |
 |       SiteKeywords()        |  获取站点关键词  |  Get::SiteKeywords();   |
 |      SiteDescription()      |   获取站点描述   | Get::SiteDescription(); |
@@ -151,56 +151,13 @@ $featuredPosts = GetPost::List (
 | :---------: | :----------: | :------------------------: |
 | TimerStop() | 获取加载时间 | GetFunctions::TimerStop(); |
 
-#### GetJsonData 类
+### REST API
 
-提供 Json 数据输出。
+一个简单的 REST API，你可以使用它来获取一些数据。
 
-> 注意，需要启用 Json 输出，请在 header 文件顶部增加 GetJsonData::Tomori(); 方法
-
-| 方法          | 描述               | 示例                        |
-| ------------- | ------------------ | --------------------------- |
-| Tomori()      | 启用 Json 输出     | GetJsonData::Tomori();      |
-| JsonTitle()   | 获取 Json 数据标题 | GetJsonData::JsonTitle();   |
-| JsonContent() | 获取 Json 数据内容 | GetJsonData::JsonContent(); |
-
-##### REST API 使用说明：
-
-获取文章列表：
-
-```
-?JsonData=page
-?JsonData=page&page=2
-```
-
-获取文章详情：
-
-```
-?JsonData=common&cid=文章ID
-```
-
-获取分类：
-
-```
-?JsonData=category                    // 获取所有分类
-?JsonData=category&cid=分类ID         // 获取特定分类下的文章
-?JsonData=category&cid=分类ID&page=2  // 分页获取分类文章
-```
-
-获取标签：
-
-```
-?JsonData=tag                    // 获取所有标签
-?JsonData=tag&tid=标签ID         // 获取特定标签下的文章
-?JsonData=tag&tid=标签ID&page=2  // 分页获取标签文章
-```
-
-主要特点：
-统一的响应格式
-完整的错误处理
-
-支持分页
-丰富的文章元数据
-主题信息输出
-缓存控制
-支持文章缩略图和摘要
-这个版本提供了一个完整的 RESTful API 实现，可以用于构建前端应用或小程序等。
+| 调用  |      路由       |      参数      | 描述         |
+| :---: | :-------------: | :------------: |
+|  Get  |  /API/PostList  | pageSize, page | 获取文章列表 |
+|  Get  |  /API/Category  |      cid       | 获取分类列表 |
+|  Get  |    /API/Tag     |      tid       | 获取标签列表 |
+|  Get  | /API/PostCommon |      cid       | 获取文章数据 |
