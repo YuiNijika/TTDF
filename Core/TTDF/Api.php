@@ -14,8 +14,8 @@ class TTDF_API
         header('Content-Type: application/json; charset=UTF-8');
         header('Cache-Control: no-cache, no-store, must-revalidate');
         try {
-            // 初始化 TTDF_DB_API
-            self::$dbApi = new TTDF_DB_API();
+            // 初始化 DB_API
+            self::$dbApi = new DB_API();
 
             // 获取请求路径和方法
             $requestUri = $_SERVER['REQUEST_URI'];
@@ -70,7 +70,7 @@ class TTDF_API
         $pageSize = isset($_GET['pageSize']) ? intval($_GET['pageSize']) : 10;
         $currentPage = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
 
-        // 使用 TTDF_DB_API 获取文章列表
+        // 使用 DB_API 获取文章列表
         $posts = self::$dbApi->getPostList($pageSize, $currentPage);
         $total = self::$dbApi->getTotalPosts();
         $postList = [];

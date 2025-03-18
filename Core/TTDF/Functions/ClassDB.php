@@ -5,7 +5,7 @@
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
-class TTDF_DB {
+class DB {
     private static $instance = null;
     private $db;
 
