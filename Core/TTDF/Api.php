@@ -91,6 +91,21 @@ class TTDF_API
         ];
     }
 
+    private static function getPostUrl($post)
+{
+    // 使用Typecho的路由机制生成标准URL
+    $pathInfo = array(
+        'cid'  => $post['cid'],
+        'slug' => $post['slug']
+    );
+
+    return Typecho_Router::url(
+        'post', 
+        $pathInfo, 
+        Helper::options()->siteUrl
+    );
+}
+
     private static function getCategory(&$response)
     {
         $cid = isset($_GET['cid']) ? intval($_GET['cid']) : null;
@@ -186,7 +201,7 @@ class TTDF_API
         $tags = self::$dbApi->getPostTags($post['cid']);
         $thumb = self::$dbApi->getThumbnail($post['text']);
         $excerpt = Typecho_Common::subStr(strip_tags($post['text']), 0, 150, '...');
-
+    
         $formattedPost = [
             'id' => $post['cid'],
             'title' => $post['title'],
@@ -198,12 +213,13 @@ class TTDF_API
             'commentsNum' => intval($post['commentsNum']),
             'categories' => $categories,
             'tags' => $tags,
+            'url' => self::getPostUrl($post),
         ];
-
+    
         if ($includeContent) {
             $formattedPost['content'] = $post['text'];
         }
-
+    
         return $formattedPost;
     }
     
