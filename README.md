@@ -160,4 +160,4 @@ $featuredPosts = GetPost::List (
 |  Get  |  /API/PostList  | pageSize, page | 获取文章列表 |
 |  Get  |  /API/Category  |      cid       | 获取分类列表 |
 |  Get  |    /API/Tag     |      tid       | 获取标签列表 |
-|  Get  | /API/PostCommon |      cid       | 获取文章数据 |
+|  Get  | /API/PostContent |      cid       | 获取文章数据 |

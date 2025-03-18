@@ -45,8 +45,8 @@ class TTDF_API
                 case '/Tag':
                     self::getTag($response);
                     break;
-                case '/PostCommon':
-                    self::getPostCommon($response);
+                case '/PostContent':
+                    self::getPostContent($response);
                     break;
                 default:
                     $response['code'] = 404;
@@ -159,7 +159,7 @@ class TTDF_API
         }
     }
 
-    private static function getPostCommon(&$response)
+    private static function getPostContent(&$response)
     {
         $cid = isset($_GET['cid']) ? intval($_GET['cid']) : null;
 
