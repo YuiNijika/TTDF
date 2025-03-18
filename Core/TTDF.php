@@ -12,9 +12,11 @@ define('__TYPECHO_GRAVATAR_PREFIX__', $avatarCdn);
 
 // 设置框架版本
 define('__FRAMEWORK_VER__', '2.1.1');
+// 设置REST API 路由
+define('__TTDF_RESTAPI_ROUTE__', 'API');
 
 require_once 'TTDF/Class.php';
+require_once 'TTDF/Api.php';
 require_once 'TTDF/Functions.php';
-require_once 'TTDF/Json.php';
 require_once 'Fields.php';
 require_once 'Options.php';

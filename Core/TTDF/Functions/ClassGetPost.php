@@ -179,7 +179,7 @@ class GetPost extends Typecho_Widget
     {
         try {
             $cid = self::getCurrentArchive()->cid;
-            $text = DB::getInstance()->getArticleText($cid);
+            $text = TTDF_DB::getInstance()->getArticleText($cid);
             $text = preg_replace("/[^\x{4e00}-\x{9fa5}]/u", "", $text);
             $count = mb_strlen($text, 'UTF-8');
             return self::outputValue($count, $echo);
@@ -191,7 +191,7 @@ class GetPost extends Typecho_Widget
     public static function PostsNum($echo = true)
     {
         try {
-            $count = DB::getInstance()->getArticleCount();
+            $count = TTDF_DB::getInstance()->getArticleCount();
             return self::outputValue($count, $echo);
         } catch (Exception $e) {
             return self::handleOutputError('获取文章数失败', $e, $echo);
@@ -201,7 +201,7 @@ class GetPost extends Typecho_Widget
     public static function DB_Title($echo = true)
     {
         try {
-            $title = DB::getInstance()->getArticleTitle(self::getCurrentArchive()->cid);
+            $title = TTDF_DB::getInstance()->getArticleTitle(self::getCurrentArchive()->cid);
             return self::outputValue($title, $echo);
         } catch (Exception $e) {
             return self::handleOutputError('获取数据库标题失败', $e, $echo);
@@ -211,7 +211,7 @@ class GetPost extends Typecho_Widget
     public static function DB_Content($echo = true)
     {
         try {
-            $content = DB::getInstance()->getArticleContent(self::getCurrentArchive()->cid);
+            $content = TTDF_DB::getInstance()->getArticleContent(self::getCurrentArchive()->cid);
             return self::outputValue($content, $echo);
         } catch (Exception $e) {
             return self::handleOutputError('获取数据库内容失败', $e, $echo);
@@ -221,7 +221,7 @@ class GetPost extends Typecho_Widget
     public static function DB_Content_Html($echo = true)
     {
         try {
-            $content = DB::getInstance()->getArticleContent(self::getCurrentArchive()->cid);
+            $content = TTDF_DB::getInstance()->getArticleContent(self::getCurrentArchive()->cid);
             $html = Markdown::convert($content);
             return self::outputValue($html, $echo);
         } catch (Exception $e) {
