@@ -77,7 +77,7 @@ class DB {
     }
 }
 
-class TTDF_DB_API {
+class DB_API {
     private $db;
 
     public function __construct() {
