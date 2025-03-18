@@ -16,36 +16,30 @@ class TTDF_API
         try {
             // 初始化 DB_API
             self::$dbApi = new DB_API();
-
+    
             // 获取请求路径和方法
-            $requestUri = $_SERVER['REQUEST_URI'];
-            $basePath = '/' . __TTDF_RESTAPI_ROUTE__;
-
-            // 使用 parse_url 提取路径部分，忽略查询参数
-            $path = parse_url($requestUri, PHP_URL_PATH);
-            $path = substr($path, strlen($basePath));
-
+            $path = isset($_GET['path']) ? $_GET['path'] : '';
             $method = $_SERVER['REQUEST_METHOD'];
-
+    
             // 初始化响应数据
             $response = [
                 'code' => 200,
                 'message' => 'success',
                 'data' => null
             ];
-
+    
             // 根据路由分发请求
             switch ($path) {
-                case '/PostList':
+                case 'PostList':
                     self::getPostList($response);
                     break;
-                case '/Category':
+                case 'Category':
                     self::getCategory($response);
                     break;
-                case '/Tag':
+                case 'Tag':
                     self::getTag($response);
                     break;
-                case '/PostContent':
+                case 'PostContent':
                     self::getPostContent($response);
                     break;
                 default:
@@ -59,8 +53,9 @@ class TTDF_API
                 'error' => $e->getMessage()
             ];
         }
-
+    
         // 输出 JSON 响应
+        http_response_code($response['code']);
         echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         exit;
     }
@@ -237,9 +232,9 @@ class TTDF_API
     }
 }
 
-// 注册路由
+// 注册参数路由
 $requestUri = $_SERVER['REQUEST_URI'];
 $basePath = '/' . __TTDF_RESTAPI_ROUTE__;
-if (strpos($requestUri, $basePath) === 0) {
+if (isset($_GET['action']) && $_GET['action'] === 'api') {
     TTDF_API::handleRequest();
 }
