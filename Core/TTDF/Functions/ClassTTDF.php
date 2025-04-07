@@ -91,7 +91,7 @@ class TTDF
     public static function HeadMetaOG()
     {
     ?>
-<meta property="og:locale" content="<?php echo Get::Options('lang', true) ? Get::Options('lang', true) : 'zh-CN' ?>" />
+<meta property="og:locale" content="<?php echo Get::Options('lang') ? Get::Options('lang') : 'zh-CN' ?>" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="<?php Get::Options('title', true) ?>" />
     <meta property="og:title" content="<?php TTDF_SEO_Title(); ?>" />
