@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Functions Code
  */
@@ -26,21 +27,39 @@ function TTDF_FormElement($type, $name, $value, $label, $description, $options =
  * 加载时间
  * @return bool
  */
-function TTDF_TimerStart() {
+function TTDF_TimerStart()
+{
     global $timestart;
-    $mtime     = explode( ' ', microtime() );
+    $mtime     = explode(' ', microtime());
     $timestart = $mtime[1] + $mtime[0];
     return true;
 }
 TTDF_TimerStart();
-function TTDF_TimerStop( $display = 0, $precision = 3 ) {
+function TTDF_TimerStop($display = 0, $precision = 3)
+{
     global $timestart, $timeend;
-    $mtime     = explode( ' ', microtime() );
+    $mtime     = explode(' ', microtime());
     $timeend   = $mtime[1] + $mtime[0];
-    $timetotal = number_format( $timeend - $timestart, $precision );
+    $timetotal = number_format($timeend - $timestart, $precision);
     $r         = $timetotal < 1 ? $timetotal * 1000 . " ms" : $timetotal . " s";
-    if ( $display ) {
+    if ($display) {
         echo $r;
     }
     return $r;
 }
+
+/**
+ * 默认钩子加载
+ * @return void
+ * @throws Exception
+ */
+TTDF_Hook::add_action('load_head', function () {
+    TTDF::HeadMeta(); // 添加头部信息
+    TTDF::HeadMetaOG(); // 添加 OG 标签
+});
+
+TTDF_Hook::add_action('load_foot', function () {
+?>
+<script type="text/javascript">console.log('加载时间<?php GetFunctions::TimerStop(); ?>')</script>
+<?php
+});

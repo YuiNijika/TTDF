@@ -5,8 +5,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 <html lang="zh-CN">
 
 <head>
-    <?php TTDF::HeadMeta() ?>
-    <?php TTDF::HeadMetaOG() ?>
+    <?php TTDF_Hook::do_action('load_head'); ?>
     <link rel="stylesheet" href="<?php GetTheme::AssetsUrl() ?>/main.css?ver=<?php GetTheme::Ver(); ?>">
 </head>
 <body>
