@@ -155,9 +155,27 @@ $featuredPosts = GetPost::List (
 
 一个简单的 REST API，你可以使用它来获取一些数据。
 
-| 调用  | 路由  | 参数  | 描述 |
-| :---: | :---: | :---: ||
+| 调用  |             路由             |      参数      |     描述     |
+| :---: | :--------------------------: | :------------: | :----------: |
 |  Get  |  ?action=api&path=PostList   | pageSize, page | 获取文章列表 |
 |  Get  |  ?action=api&path=Category   |      cid       | 获取分类列表 |
 |  Get  |     ?action=api&path=Tag     |      tid       | 获取标签列表 |
 |  Get  | ?action=api&path=PostContent |      cid       | 获取文章数据 |
+
+### 钩子
+> TTDF默认有两个钩子可以挂，分别为`load_head`&`load_foot`
+
+#### 使用方法
+
+在页面 如index.php写
+```php
+<?php 
+TTDF_Hook::add_action('load_foot', function () {
+?>
+<script type="text/javascript">console.log('TTDF NB')</script>
+<?php
+});
+```
+
+f12打开控制台就会看到打印的`TTDF NB`，挂钩的内容仅在当前页面生效。
+也就是说写到`index.php`只有首页才会输出`TTDF NB`，其他页面则没有。
