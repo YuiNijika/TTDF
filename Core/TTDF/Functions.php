@@ -60,6 +60,9 @@ TTDF_Hook::add_action('load_head', function () {
 
 TTDF_Hook::add_action('load_foot', function () {
 ?>
-<script type="text/javascript">console.log('加载时间<?php GetFunctions::TimerStop(); ?>')</script>
+<script type="text/javascript">
+        console.log("\n %c %s \n", "color: #fff; background: #34495e; padding:5px 0;", "TTDF v<?php TTDF::Ver() ?>", );
+        console.log('页面加载耗时 <?php GetFunctions::TimerStop(); ?>');
+    </script>
 <?php
 });
