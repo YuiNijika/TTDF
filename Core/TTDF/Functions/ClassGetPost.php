@@ -404,6 +404,7 @@ class GetPost extends Typecho_Widget
     {
         try {
             $content = DB::getInstance()->getArticleContent(self::getCurrentArchive()->cid);
+            $content = preg_replace('/<!--.*?-->/', '', $content); // 移除注释避免干扰markdown解析
             $html = Markdown::convert($content);
             return self::outputValue($html, $echo);
         } catch (Exception $e) {
