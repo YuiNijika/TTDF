@@ -49,16 +49,18 @@ function TTDF_TimerStop($display = 0, $precision = 3)
 }
 
 /**
- * 默认钩子加载
+ * 默认钩子
  * @return void
  * @throws Exception
  */
 TTDF_Hook::add_action('load_head', function () {
     TTDF::HeadMeta(); // 添加头部信息
     TTDF::HeadMetaOG(); // 添加 OG 标签
+    Get::Header(true, 'description,keywords,generator,template,pingback,EditURI,wlwmanifest,alternate');
 });
 
 TTDF_Hook::add_action('load_foot', function () {
+    Get::Footer(true);
 ?>
 <script type="text/javascript">
         console.log("\n %c %s \n", "color: #fff; background: #34495e; padding:5px 0;", "TTDF v<?php TTDF::Ver() ?>", );

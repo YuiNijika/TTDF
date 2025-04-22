@@ -14,7 +14,7 @@ class Get
     public function __wakeup() {}
 
     /**
-     * 输出header头部元数据
+     * 输出header头部元数据和link标签
      * 
      * 此方法会基于一组预定义的键名来过滤相关数据（预定义键名如下：
      * - 'description'
@@ -30,22 +30,45 @@ class Get
      * - 'antiSpam'
      * - 'social'
      * - 'atom'
-     * ），若传递符合这些预定义键名对应的值，则起到过滤这些值的作用。
-     *
-     * @param string|null $rule 规则
-     * @param bool|null $echo 当设置为 true 时，会直接输出；
-     *                        当设置为 false 时，则返回结果值。
+     * 对于link标签，可以指定rel属性值来排除
+     * 
+     * @param bool|null $echo 当设置为 true 时，会直接输出；当设置为 false 时，则返回结果值。
+     * @param string|null $exclude 要排除的meta或link标签，多个用逗号分隔
+     * @param string|null $excludeLinkTypes 要排除的link标签的rel属性值，多个用逗号分隔
      * @return string 头部信息输出
      * @throws self::handleError()
      */
-    public static function Header(?bool $echo = true, ?string $rule = null)
+    public static function Header(?bool $echo = true, ?string $exclude = null)
     {
         try {
-            if ($echo) self::getArchive()->header($rule);
+            ob_start();
+            self::getArchive()->header(); // 获取原始 header HTML
+            $content = ob_get_clean();
 
-            ob_start();  // 开启输出缓冲
-            self::getArchive()->header($rule);
-            $content = ob_get_clean();  // 获取缓冲区内容并清除缓冲区
+            // 移除指定的 meta 或 link 标签
+            if ($exclude) {
+                $excluded = explode(',', $exclude);
+                foreach ($excluded as $item) {
+                    $item = trim($item);
+                    // 匹配 meta name="xxx" 或 link rel="xxx"
+                    $content = preg_replace(
+                        '/\s*<(meta\s+name=["\']' . preg_quote($item, '/') . '["\']|link\s+rel=["\']' . preg_quote($item, '/') . '["\'])[^>]*>\s*/i',
+                        '',
+                        $content
+                    );
+                }
+            }
+
+            // 在所有 meta 和 link 标签前添加四个空格
+            $content = preg_replace('/(<(meta|link)[^>]*>)/', '    $1', $content);
+
+            // 格式化 HTML：清理多余空行，保留合理缩进
+            $content = preg_replace('/\n\s*\n/', "\n", $content); // 合并连续空行
+            $content = preg_replace('/^\s+/m', '', $content);      // 移除行首多余空格（可选）
+
+            if ($echo) {
+                echo $content;
+            }
 
             return $content;
         } catch (Exception $e) {
@@ -55,20 +78,34 @@ class Get
 
     /**
      * 执行页脚自定义内容
-     * 即输出 self::pluginHandle()->call('footer', $this); footer钩子。
+     * 调用 footer 钩子，允许插件修改页脚内容
      * 
-     * @return mixed
+     * @param bool $echo 是否直接输出，默认 true
+     * @return string|null 返回页脚 HTML（如果 $echo=false）
      */
-    public static function Footer()
+    public static function Footer(bool $echo = true): ?string
     {
         try {
+            // 获取 Archive 实例
+            $archive = self::getArchive();
+
+            // 先触发 footer 钩子，让插件可以修改内容
+            if (method_exists($archive, 'pluginHandle')) {
+                $archive->pluginHandle()->call('footer', $archive);
+            }
+
+            // 捕获输出
             ob_start();
-            $Footer = self::getArchive()->footer();
+            $archive->footer();
             $content = ob_get_clean();
 
-            if (!empty($content)) return $Footer;
+            // 如果 $echo=true，直接输出；否则返回内容
+            if ($echo) {
+                echo $content;
+                return null;
+            }
 
-            return self::getArchive()->footer();
+            return $content;
         } catch (Exception $e) {
             return self::handleError('获取Footer失败', $e);
         }
