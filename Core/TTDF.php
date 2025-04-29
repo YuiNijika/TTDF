@@ -6,17 +6,20 @@
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 // 配置默认Cravatar
-$avatarCdn = 'https://cravatar.cn/avatar/';
+$TTDF_Cravatar = 'https://cravatar.cn/avatar/';
 // 定义常量
-define('__TYPECHO_GRAVATAR_PREFIX__', $avatarCdn);
+define('__TYPECHO_GRAVATAR_PREFIX__', $TTDF_Cravatar);
 
 // 设置框架版本
 define('__FRAMEWORK_VER__', '2.1.2');
-// 设置REST API 路由
+
+// 设置 REST API 状态
+define('__TTDF_RESTAPI__', false); // true为开启，false为关闭
+// 设置 REST API 路由
 define('__TTDF_RESTAPI_ROUTE__', 'API');
 
 require_once 'TTDF/Class.php';
-// require_once 'TTDF/Api.php';
+require_once 'TTDF/Api.php';
 require_once 'TTDF/Functions.php';
 require_once 'Fields.php';
 require_once 'Options.php';

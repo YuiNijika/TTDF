@@ -256,14 +256,15 @@ class DB_API
      * @param int $cid 分类ID
      * @return array
      */
-    public function getPostsInCategory($cid)
+    public function getPostsInCategory($mid, $pageSize = 10, $currentPage = 1)
     {
         $query = $this->db->select()->from('table.contents')
             ->join('table.relationships', 'table.contents.cid = table.relationships.cid')
-            ->where('table.relationships.mid = ?', $cid)
+            ->where('table.relationships.mid = ?', $mid)
             ->where('table.contents.status = ?', 'publish')
             ->where('table.contents.type = ?', 'post')
-            ->order('table.contents.created', Typecho_Db::SORT_DESC);
+            ->order('table.contents.created', Typecho_Db::SORT_DESC)
+            ->page($currentPage, $pageSize);
 
         return $this->db->fetchAll($query);
     }
@@ -289,14 +290,15 @@ class DB_API
      * @param int $tid 标签ID
      * @return array
      */
-    public function getPostsInTag($tid)
+    public function getPostsInTag($mid, $pageSize = 10, $currentPage = 1)
     {
         $query = $this->db->select()->from('table.contents')
             ->join('table.relationships', 'table.contents.cid = table.relationships.cid')
-            ->where('table.relationships.mid = ?', $tid)
+            ->where('table.relationships.mid = ?', $mid)
             ->where('table.contents.status = ?', 'publish')
             ->where('table.contents.type = ?', 'post')
-            ->order('table.contents.created', Typecho_Db::SORT_DESC);
+            ->order('table.contents.created', Typecho_Db::SORT_DESC)
+            ->page($currentPage, $pageSize);
 
         return $this->db->fetchAll($query);
     }
@@ -329,7 +331,30 @@ class DB_API
 
         return $this->db->fetchAll($query);
     }
-
+    /**
+     * 通过slug查询分类详情
+     * @param string $slug slug
+     * @return array
+     */
+    public function getCategoryBySlug($slug)
+    {
+        return $this->db->fetchRow($this->db->select()->from('table.metas')
+            ->where('slug = ?', $slug)
+            ->where('type = ?', 'category')
+            ->limit(1));
+    }
+    /**
+     * 通过mid查询分类详情
+     * @param int $mid mid
+     * @return array
+     */
+    public function getCategoryByMid($mid)
+    {
+        return $this->db->fetchRow($this->db->select()->from('table.metas')
+            ->where('mid = ?', $mid)
+            ->where('type = ?', 'category')
+            ->limit(1));
+    }
     /**
      * 获取所有标签
      * @return array
@@ -342,6 +367,30 @@ class DB_API
 
         return $this->db->fetchAll($query);
     }
+    /**
+     * 通过slug查询标签详情
+     * @param string $slug slug
+     * @return array
+     */
+    public function getTagBySlug($slug)
+    {
+        return $this->db->fetchRow($this->db->select()->from('table.metas')
+            ->where('slug = ?', $slug)
+            ->where('type = ?', 'tag')
+            ->limit(1));
+    }
+    /**
+     * 通过mid查询标签详情
+     * @param int $mid mid
+     * @return array
+     */
+    public function getTagByMid($mid)
+    {
+        return $this->db->fetchRow($this->db->select()->from('table.metas')
+            ->where('mid = ?', $mid)
+            ->where('type = ?', 'tag')
+            ->limit(1));
+    }
 
     /**
      * 获取文章详情
@@ -351,6 +400,15 @@ class DB_API
     public function getPostDetail($cid)
     {
         return $this->db->fetchRow($this->db->select()->from('table.contents')->where('cid = ?', $cid)->limit(1));
+    }
+    /**
+     * 通过slug获取文章详情
+     * @param string $slug slug
+     * @return array|null
+     */
+    public function getPostDetailBySlug($slug)
+    {
+        return $this->db->fetchRow($this->db->select()->from('table.contents')->where('slug = ?', $slug)->limit(1));
     }
 
     /**
