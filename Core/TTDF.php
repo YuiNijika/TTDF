@@ -11,7 +11,7 @@ $TTDF_Cravatar = 'https://cravatar.cn/avatar/';
 define('__TYPECHO_GRAVATAR_PREFIX__', $TTDF_Cravatar);
 
 // 设置框架版本
-define('__FRAMEWORK_VER__', '2.1.2');
+define('__FRAMEWORK_VER__', '2.1.3');
 
 // 设置 REST API 状态
 define('__TTDF_RESTAPI__', false); // true为开启，false为关闭
