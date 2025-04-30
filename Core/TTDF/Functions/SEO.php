@@ -1,5 +1,6 @@
 <?php
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
+
 class TTDF_SEO
 {
     use ErrorHandler, SingletonWidget;
@@ -9,7 +10,7 @@ class TTDF_SEO
     public function __wakeup() {}
 
     // 获取标题
-    public static function Title()
+    public static function getTitle(): void
     {
         try {
             echo self::getArchive()->title;
@@ -19,7 +20,7 @@ class TTDF_SEO
     }
 
     // 获取分类
-    public static function Category($split = ',', $link = false, $default = '暂无分类')
+    public static function getCategory(string $split = ',', bool $link = false, string $default = '暂无分类'): void
     {
         try {
             echo self::getArchive()->category($split, $link, $default);
@@ -30,7 +31,7 @@ class TTDF_SEO
     }
 
     // 获取标签
-    public static function Tags($split = ',', $link = false, $default = '暂无标签')
+    public static function getTags(string $split = ',', bool $link = false, string $default = '暂无标签'): void
     {
         try {
             echo self::getArchive()->tags($split, $link, $default);
@@ -41,89 +42,111 @@ class TTDF_SEO
     }
 
     // 获取摘要
-    public static function Excerpt($length = 0)
+    public static function getExcerpt(int $length = 0): string
     {
         try {
-            $excerpt = strip_tags(self::getArchive()->excerpt); // 去除 HTML 标签
-            if ($length > 0) {
-                $excerpt = mb_substr($excerpt, 0, $length, 'UTF-8');
-            }
-            return $excerpt;
+            $excerpt = strip_tags(self::getArchive()->excerpt);
+            return $length > 0 ? mb_substr($excerpt, 0, $length, 'UTF-8') : $excerpt;
         } catch (Exception $e) {
             self::handleError('获取摘要失败', $e);
             return '';
         }
     }
+
+    // 清理HTML内容
+    public static function cleanContent(string $content): string
+    {
+        $content = str_replace(["\r", "\n"], '', strip_tags($content));
+        return preg_replace('/(rrel|rel|canonical|nofollow|noindex)="[^"]*"/i', '', $content);
+    }
 }
-function TTDF_SEO_Title()
+
+// SEO辅助函数
+class TTDF_SEO_Helper
 {
-    $archiveTitle = GetPost::ArchiveTitle(
-        [
+    // 获取页面标题
+    public static function getPageTitle(): string
+    {
+
+        $archiveTitle = GetPost::ArchiveTitle([
             "category" => _t("%s 分类"),
             "search" => _t("搜索结果"),
             "tag" => _t("%s 标签"),
             "author" => _t("%s 的空间"),
-        ],
-        "",
-        " - "
-    );
-    echo $archiveTitle;
-    if (Get::Is("index") && !empty(Get::Options("SubTitle")) && Get::CurrentPage() > 1) {
-        echo "第" . Get::CurrentPage() . "页 - ";
-    }
-    $title = Get::Options("title");
-    echo $title;
-    if (Get::Is("index") && !empty(Get::Options("SubTitle"))) {
-        echo " - ";
-        $SubTitle = Get::Options("SubTitle");
-        echo $SubTitle;
-    }
-}
+        ], "", " - ");
 
-function TTDF_SEO_Keywords()
-{
-    if (Get::Is('index')) {
-        Get::Options('keywords', true);
-    } elseif (Get::Is('post')) {
-        TTDF_SEO::Category(); ?>,<?php TTDF_SEO::Tags();
-    } elseif (Get::Is('category')) {
-        TTDF_SEO::Category();
-    } elseif (Get::Is('tag')) {
-        TTDF_SEO::Tags();
-    } else {
-        Get::Options('keywords', true);
-    }
-}
+        $pageTitle = Get::Options("title");
+        $subTitle = Get::Options("SubTitle");
 
-function TTDF_SEO_Description()
-{
-    if (Get::Is('index')) {
-        Get::Options('description', true);
-    } elseif (Get::Is('post')) {
-        $excerpt = TTDF_SEO::Excerpt(150);
-        if (!empty($excerpt)) {
-            $excerpt = str_replace(["\r", "\n"], '', strip_tags($excerpt)); // 去除换行符和 HTML 标签
-            $excerpt = preg_replace('/(rrel|rel|canonical|nofollow|noindex)="[^"]*"/i', '', $excerpt); // 移除类似标签
-            echo $excerpt;
-        } else {
-            Get::Options('description', true);
+        if (Get::Is("index") && $subTitle && Get::CurrentPage() > 1) {
+            $archiveTitle .= "第" . Get::CurrentPage() . "页 - ";
         }
-    } elseif (Get::Is('category')) {
-        $db = Typecho_Db::get();
-        $slug = Typecho_Widget::widget('Widget_Archive')->getArchiveSlug(); // 获取当前分类的 slug
-        $category = $db->fetchRow($db->select('description')->from('table.metas')->where('slug = ?', $slug)->where('type = ?', 'category'));
-        if (!empty($category['description'])) {
-            $description = str_replace(["\r", "\n"], '', strip_tags($category['description'])); // 去除换行符和 HTML 标签
-            $description = preg_replace('/(rrel|rel|canonical|nofollow|noindex)="[^"]*"/i', '', $description); // 移除类似标签
-            echo $description;
-        } else {
-            Get::Options('description', true);
+
+        $result = $archiveTitle . $pageTitle;
+
+        if (Get::Is("index") && $subTitle) {
+            $result .= " - " . $subTitle;
         }
-    } else {
-        Get::Options('description', true);
+
+        return $result;
+    }
+
+    // 获取关键词
+    public static function getKeywords(): string
+    {
+        if (Get::Is('index')) {
+            return Get::Options('keywords');
+        }
+
+        if (Get::Is('post')) {
+            return TTDF_SEO::getCategory() . ',' . TTDF_SEO::getTags();
+        }
+
+        if (Get::Is('category')) {
+            return TTDF_SEO::getCategory();
+        }
+
+        if (Get::Is('tag')) {
+            return TTDF_SEO::getTags();
+        }
+
+        return Get::Options('keywords');
+    }
+
+    // 获取描述
+    public static function getDescription(): string
+    {
+        if (Get::Is('index')) {
+            return Get::Options('description');
+        }
+
+        if (Get::Is('post')) {
+            $excerpt = TTDF_SEO::cleanContent(TTDF_SEO::getExcerpt(150));
+            return $excerpt ?: Get::Options('description');
+        }
+
+        if (Get::Is('category')) {
+            $db = Typecho_Db::get();
+            $slug = Typecho_Widget::widget('Widget_Archive')->getArchiveSlug();
+
+            // 使用缓存避免重复查询
+            static $categoryDesc;
+            if (!$categoryDesc) {
+                $categoryDesc = $db->fetchRow(
+                    $db->select('description')
+                        ->from('table.metas')
+                        ->where('slug = ?', $slug)
+                        ->where('type = ?', 'category')
+                )['description'] ?? '';
+            }
+
+            return TTDF_SEO::cleanContent($categoryDesc) ?: Get::Options('description');
+        }
+
+        return Get::Options('description');
     }
 }
 ?>
-<title><?php TTDF_SEO_Title(); ?></title>
-    <meta name="keywords" content="<?php TTDF_SEO_Keywords(); ?>" />
-    <meta name="description" content="<?php TTDF_SEO_Description(); ?>" />
+<title><?php echo TTDF_SEO_Helper::getPageTitle(); ?></title>
+    <meta name="keywords" content="<?php echo TTDF_SEO_Helper::getKeywords(); ?>" />
+    <meta name="description" content="<?php echo TTDF_SEO_Helper::getDescription(); ?>" />
