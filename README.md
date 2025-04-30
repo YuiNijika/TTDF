@@ -164,9 +164,11 @@ $featuredPosts = GetPost::List (
 |  Get  | /API/PostContent |   cid, slug    | 获取文章数据 |
 
 ### 钩子
-> TTDF默认有两个钩子可以挂，分别为`load_head`&`load_foot`
+> TTDF默认有三个钩子可以挂，分别为`load_head`&`load_foot`&`load_code`
 
 #### 使用方法
+
+注意，`load_head`&`load_foot`为挂载到页面模板，`load_code`为functions代码
 
 在页面 如index.php写
 ```php

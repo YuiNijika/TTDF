@@ -5,21 +5,37 @@
  * @link https://github.com/ShuShuicu/Typecho-Theme-Development-Framework
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
-// 配置默认Cravatar
-$TTDF_Cravatar = 'https://cravatar.cn/avatar/';
+// TTDF Version
+$TTDF_Version = '2.1.3'; 
+// 配置Avatar源
+$TTDF_Avatar = 'https://cravatar.cn/avatar/'; 
+
+/**
+ * REST API 配置
+ * @var bool $TTDF_RESTAPI 是否开启
+ * @var string $TTDF_RESTAPI_ROUTE 路由配置
+ */
+$TTDF_RESTAPI = false; 
+$TTDF_RESTAPI_ROUTE = 'API'; 
+
 // 定义常量
-define('__TYPECHO_GRAVATAR_PREFIX__', $TTDF_Cravatar);
-
+define('__TYPECHO_GRAVATAR_PREFIX__', $TTDF_Avatar); 
 // 设置框架版本
-define('__FRAMEWORK_VER__', '2.1.3');
-
+define('__FRAMEWORK_VER__', $TTDF_Version); 
 // 设置 REST API 状态
-define('__TTDF_RESTAPI__', false); // true为开启，false为关闭
+define('__TTDF_RESTAPI__', $TTDF_RESTAPI ); 
 // 设置 REST API 路由
-define('__TTDF_RESTAPI_ROUTE__', 'API');
+define('__TTDF_RESTAPI_ROUTE__', $TTDF_RESTAPI_ROUTE); 
 
+// 加载核心文件
 require_once 'TTDF/Class.php';
 require_once 'TTDF/Api.php';
 require_once 'TTDF/Functions.php';
 require_once 'Fields.php';
 require_once 'Options.php';
+
+/**
+ * 注册load_code钩子
+ * @param callable $callback 回调函数
+ */
+TTDF_Hook::do_action('load_code');
