@@ -67,12 +67,17 @@ class TTDF_SEO_Helper
     // 获取页面标题
     public static function getPageTitle(): string
     {
+        // 判断是否自定义信息
+        if (isset($GLOBALS['TTDF_SEO_PAGE_Title']) && !empty($GLOBALS['TTDF_SEO_PAGE_Title'])) {
+            return $GLOBALS['TTDF_SEO_PAGE_Title'];
+        }
 
+        // 原有逻辑
         $archiveTitle = GetPost::ArchiveTitle([
             "category" => _t("%s 分类"),
-            "search" => _t("搜索结果"),
-            "tag" => _t("%s 标签"),
-            "author" => _t("%s 的空间"),
+            "search"   => _t("搜索结果"),
+            "tag"      => _t("%s 标签"),
+            "author"   => _t("%s 的空间"),
         ], "", " - ");
 
         $pageTitle = Get::Options("title");
@@ -94,6 +99,12 @@ class TTDF_SEO_Helper
     // 获取关键词
     public static function getKeywords(): string
     {
+        // 判断是否自定义信息
+        if (isset($GLOBALS['TTDF_SEO_PAGE_Keywords']) && !empty($GLOBALS['TTDF_SEO_PAGE_Keywords'])) {
+            return $GLOBALS['TTDF_SEO_PAGE_Keywords'];
+        }
+
+        // 判断页面类型
         if (Get::Is('index')) {
             return Get::Options('keywords');
         }
@@ -116,6 +127,12 @@ class TTDF_SEO_Helper
     // 获取描述
     public static function getDescription(): string
     {
+        // 判断是否自定义信息
+        if (isset($GLOBALS['TTDF_SEO_PAGE_Description']) && !empty($GLOBALS['TTDF_SEO_PAGE_Description'])) {
+            return $GLOBALS['TTDF_SEO_PAGE_Description'];
+        }
+
+        // 原有逻辑
         if (Get::Is('index')) {
             return Get::Options('description');
         }

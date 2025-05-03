@@ -329,6 +329,21 @@ class Get
             return self::handleError('判断页面类型失败', $e, false);
         }
     }
+    /**
+     * 判断是否为指定HTTP状态码
+     * 
+     * @param int $code HTTP状态码
+     * @return bool
+     */
+    public static function IsHttpCode($code)
+    {
+        try {
+            $currentCode = http_response_code();
+            return $currentCode === (int)$code;
+        } catch (Exception $e) {
+            return self::handleError('判断HTTP状态码失败', $e, false);
+        }
+    }
 
     // 分页导航
     public static function PageNav($prev = '&laquo; 前一页', $next = '后一页 &raquo;')

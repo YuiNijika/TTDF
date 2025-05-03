@@ -20,6 +20,26 @@ class TTDF
     }
 
     /**
+     * 获取PHP版本
+     * 
+     * @param bool $echo 是否输出
+     * @return string
+     */
+    public static function PHPVer(?bool $echo = true)
+    {
+        try {
+            $PHPVer = PHP_VERSION;
+
+            if ($echo) echo $PHPVer;
+
+            return $PHPVer;
+        } catch (Exception $e) {
+            return self::handleError('获取PHP版本失败', $e);
+        }
+    }
+    
+
+    /**
      * 获取框架版本
      *
      * @param bool|null $echo 当设置为 true 时，会直接输出；
