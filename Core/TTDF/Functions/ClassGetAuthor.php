@@ -72,4 +72,44 @@ class GetAuthor extends Typecho_Widget
             }
         }
     }
+
+    // 获取作者邮箱
+    public static function Email($echo = true)
+    {
+        try {
+            $email = self::getArchive()->author->mail;
+            if ($echo) {
+                echo $email;
+            } else {
+                return $email;
+            }
+        } catch (Exception $e) {
+            self::handleError('获取作者邮箱失败', $e);
+            if ($echo) {
+                echo '';
+            } else {
+                return '';
+            }
+        }
+    }
+
+    // 获取作者简介
+    public static function Bio($echo = true)
+    {
+        try {
+            $bio = self::getArchive()->author->bio;
+            if ($echo) {
+                echo $bio;
+            } else {
+                return $bio;
+            }
+        } catch (Exception $e) {
+            self::handleError('获取作者简介失败', $e);
+            if ($echo) {
+                echo '';
+            } else {
+                return '';
+            }
+        }
+    }
 }

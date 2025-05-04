@@ -117,6 +117,21 @@ $featuredPosts = GetPost::List (
 <?php GetPost::unbindArchive(); // 结束当前绑定 ?>
 ```
 
+#### GetUser 类
+
+获取用户的相关信息。
+
+|     方法     |       描述       |          示例          |
+| :----------: | :--------------: | :--------------------: |
+|    Name()    |    获取用户名    |    GetUser::Name();    |
+|   Avatar()   |   获取用户头像   |   GetUser::Avatar();   |
+|   Email()    |   获取用户邮箱   |   GetUser::Email();    |
+|    Bio()     |   获取用户简介   |    GetUser::Bio();     |
+|   Group()    |    获取用户组    |    GetUser::Role();    |
+| Registered() |   获取注册时间   | GetUser::Registered(); |
+| LastLogin()  | 获取最后登录时间 | GetUser::LastLogin();  |
+| PostCount()  |    获取文章数    | GetUser::PostCount();  |
+
 #### GetAuthor 类
 
 获取作者的相关信息。
@@ -124,6 +139,8 @@ $featuredPosts = GetPost::List (
 |    方法     |       描述       |          示例           |
 | :---------: | :--------------: | :---------------------: |
 |   Name()    | 获取当前页面标题 |   GetAuthor::Name();    |
+|   Email()   |   获取作者邮箱   |   GetAuthor::Email();   |
+| Bio()       |   获取作者简介   |    GetAuthor::Bio();    |
 |  Author()   |   获取文章作者   |  GetAuthor::Author();>  |
 | Permalink() |   获取作者链接   | GetAuthor::Permalink(); |
 
