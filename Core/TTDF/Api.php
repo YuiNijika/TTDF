@@ -1,6 +1,6 @@
 <?php
 /**
- * TTDF REST API - 优化版本
+ * TTDF REST API
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;

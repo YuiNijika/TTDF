@@ -6,7 +6,7 @@
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 // TTDF Version
-$TTDF_Version = '2.1.3'; 
+$TTDF_Version = '2.2.0'; 
 // 配置Avatar源
 $TTDF_Avatar = 'https://cravatar.cn/avatar/'; 
 
@@ -31,8 +31,9 @@ define('__TTDF_RESTAPI_ROUTE__', $TTDF_RESTAPI_ROUTE);
 require_once 'TTDF/Class.php';
 require_once 'TTDF/Api.php';
 require_once 'TTDF/Functions.php';
+require_once 'TTDF/Options.php';
 require_once 'Fields.php';
-require_once 'Options.php';
+require_once 'Setup.php';
 
 /**
  * 注册load_code钩子
