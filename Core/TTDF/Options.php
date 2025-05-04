@@ -186,6 +186,77 @@ function themeConfig($form)
                 transform: translateY(0);
             }
         }
+
+        /* 响应式设计修改部分 */
+        @media screen and (max-width: 768px) {
+            #TTDF_Options .tab-container {
+                flex-direction: column;
+                border-radius: 0;
+                box-shadow: none;
+            }
+
+            #TTDF_Options .tab-buttons {
+                width: 100%;
+                flex-direction: row;
+                overflow-x: auto;
+                white-space: nowrap;
+                border-right: none;
+                border-bottom: 1px solid #ddd;
+            }
+
+            #TTDF_Options .tab-button {
+                padding: 12px 20px;
+                border-left: none;
+                border-bottom: 4px solid transparent;
+                display: inline-block;
+                width: auto;
+            }
+
+            #TTDF_Options .tab-button.active {
+                border-left: none;
+                border-bottom: 4px solid #27ae60;
+            }
+
+            #TTDF_Options .tab-button.active::after {
+                display: none;
+            }
+
+            #TTDF_Options .tab-contents {
+                padding: 20px 15px;
+            }
+
+            #TTDF_Options .header {
+                padding: 12px 15px;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            #TTDF_Options .header h1 {
+                font-size: 20px;
+                margin-bottom: 10px;
+            }
+
+            #TTDF_Options .save-btn {
+                align-self: flex-end;
+                margin-top: -40px;
+            }
+        }
+
+        @media screen and (max-width: 480px) {
+            .tab-button {
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+
+            .tab-contents {
+                padding: 15px 10px;
+            }
+
+            .typecho-input,
+            .typecho-textarea {
+                padding: 6px 10px;
+            }
+        }
     </style>
     <script text="text/javascript">
         // 打开指定标签页
