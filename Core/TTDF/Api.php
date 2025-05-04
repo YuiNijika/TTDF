@@ -6,7 +6,10 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
 }
 
-if (!defined('__TTDF_RESTAPI__') || !__TTDF_RESTAPI__) {
+$restApiSwitch = Get::Options('TTDF_RESTAPI_Switch');
+if ($restApiSwitch === 'false') {
+    return;
+} elseif (!isset($restApiSwitch) && (!defined('__TTDF_RESTAPI__') || !__TTDF_RESTAPI__)) {
     return;
 }
 

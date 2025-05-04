@@ -14,6 +14,7 @@ $TTDF_Avatar = 'https://cravatar.cn/avatar/';
  * REST API 配置
  * @var bool $TTDF_RESTAPI 是否开启
  * @var string $TTDF_RESTAPI_ROUTE 路由配置
+ * @example 主题注册设置项 TTDF_RESTAPI_Switch 值为 true 时，开启 REST API 功能
  */
 $TTDF_RESTAPI = false; 
 $TTDF_RESTAPI_ROUTE = 'API'; 

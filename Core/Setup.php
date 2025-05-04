@@ -3,14 +3,14 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 TTDF_Hook::add_action('TTDF_Options_Code', function ($form) {
     // 定义所有设置项
     $tabs = [
-        'text-elements' => [
-            'title' => '文本设置',
+        '基础设置' => [
+            'title' => '基础设置',
             'fields' => [
                 [
                     'type' => 'Text',
-                    'name' => 'TTDF_Text',
-                    'label' => '文本框',
-                    'description' => '这是一个文本框~'
+                    'name' => 'SubTitle',
+                    'label' => '副标题',
+                    'description' => '这是一个文本框，用于设置网站副标题，如果为空则不显示。'
                 ],
                 [
                     'type' => 'Textarea',
@@ -59,6 +59,22 @@ TTDF_Hook::add_action('TTDF_Options_Code', function ($form) {
                         'option3' => '选项三'
                     ]
                 ]
+            ]
+        ],
+        'TTDF-Options' => [
+            'title' => '其他设置',
+            'fields' => [
+                [
+                    'type' => 'Select',
+                    'name' => 'TTDF_RESTAPI_Switch',
+                    'value' => 'flase',
+                    'label' => 'REST API',
+                    'description' => 'TTDF框架内置的 REST API',
+                    'options' => [
+                        'true' => '开启',
+                        'false' => '关闭'
+                    ]
+                ],
             ]
         ],
     ];
