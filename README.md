@@ -158,6 +158,7 @@ $featuredPosts = GetPost::List (
 
 | 调用  |       路由       |      参数      |     描述     |
 | :---: | :--------------: | :------------: | :----------: |
+|  Get  |       /API       |      null      | 获取网站信息 |
 |  Get  |  /API/PostList   | pageSize, page | 获取文章列表 |
 |  Get  |  /API/Category   |   mid, slug    | 获取分类列表 |
 |  Get  |     /API/Tag     |   mid, slug    | 获取标签列表 |
