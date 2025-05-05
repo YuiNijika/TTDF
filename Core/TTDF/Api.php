@@ -1,4 +1,5 @@
 <?php
+
 /**
  * TTDF REST API
  */
@@ -18,7 +19,7 @@ class TTDF_API
     private static $dbApi;
     private static $contentFormat = 'html';
     private static $allowedFormats = ['html', 'markdown'];
-    
+
     // HTTP 状态码常量
     const HTTP_OK = 200;
     const HTTP_BAD_REQUEST = 400;
@@ -27,7 +28,7 @@ class TTDF_API
     const HTTP_NOT_FOUND = 404;
     const HTTP_METHOD_NOT_ALLOWED = 405;
     const HTTP_INTERNAL_ERROR = 500;
-    
+
     // 默认分页设置
     const DEFAULT_PAGE_SIZE = 10;
     const MAX_PAGE_SIZE = 100;
@@ -48,11 +49,21 @@ class TTDF_API
         $response->setStatus(self::HTTP_OK);
         header('Content-Type: application/json; charset=UTF-8');
         header('Cache-Control: no-cache, no-store, must-revalidate');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+        header('Strict-Transport-Security: max-age=31536000; includeSubDomains; preload');
+        header('Content-Security-Policy: default-src \'self\'; script-src \'self\'; style-src \'self\'; img-src \'self\' data:; font-src \'self\'; connect-src \'self\'; frame-src \'self\'; object-src \'none\';');
         header('X-Content-Type-Options: nosniff');
-        
+        header('X-Frame-Options: SAMEORIGIN');
+        header('X-XSS-Protection: 1; mode=block');
+        header('Referrer-Policy: no-referrer-when-downgrade');
+        header('Permissions-Policy: interest-cohort=()');
+        header('Access-Control-Allow-Origin: *');
+        header('Vary: Origin');
+
         // 初始化 DB_API
         self::$dbApi = new DB_API();
-        
+
         // 设置内容格式
         self::$contentFormat = self::getRequestFormat();
     }
@@ -75,9 +86,9 @@ class TTDF_API
     {
         try {
             self::init();
-            
+
             $path = self::getRequestPath();
-            
+
             // 路由分发
             switch ($path) {
                 case '/':
@@ -98,7 +109,7 @@ class TTDF_API
                 default:
                     self::sendErrorResponse('Not Found', self::HTTP_NOT_FOUND);
             }
-            
+
             self::sendResponse($response);
         } catch (Exception $e) {
             self::sendErrorResponse($e->getMessage(), self::HTTP_INTERNAL_ERROR, $e);
@@ -112,11 +123,11 @@ class TTDF_API
     {
         $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         $basePath = '/' . ltrim(__TTDF_RESTAPI_ROUTE__, '/');
-        
+
         if (strpos($requestUri, $basePath) === 0) {
             return substr($requestUri, strlen($basePath)) ?: '/';
         }
-        
+
         return '/';
     }
 
@@ -158,7 +169,7 @@ class TTDF_API
         if (defined('__DEBUG__') && __DEBUG__) {
             $options |= JSON_PRETTY_PRINT;
         }
-        
+
         http_response_code($statusCode);
         echo json_encode($response, $options);
         exit;
@@ -192,7 +203,7 @@ class TTDF_API
 
         $posts = self::$dbApi->getPostList($pageSize, $currentPage);
         $total = self::$dbApi->getTotalPosts();
-        
+
         return [
             'data' => [
                 'list' => array_map([self::class, 'formatPost'], $posts),
@@ -211,17 +222,17 @@ class TTDF_API
 
         if ($mid || $slug) {
             $category = $mid ? self::$dbApi->getCategoryByMid($mid) : self::$dbApi->getCategoryBySlug($slug);
-            
+
             if (!$category) {
                 self::sendErrorResponse('Category not found', self::HTTP_NOT_FOUND);
             }
-            
+
             $pageSize = self::getPageSize();
             $currentPage = self::getCurrentPage();
-            
+
             $posts = self::$dbApi->getPostsInCategory($category['mid'], $pageSize, $currentPage);
             $total = self::$dbApi->getTotalPostsInCategory($category['mid']);
-            
+
             return [
                 'data' => [
                     'category' => self::formatCategory($category),
@@ -230,7 +241,7 @@ class TTDF_API
                 ]
             ];
         }
-        
+
         return [
             'data' => array_map([self::class, 'formatCategory'], self::$dbApi->getAllCategories())
         ];
@@ -246,17 +257,17 @@ class TTDF_API
 
         if ($mid || $slug) {
             $tag = $mid ? self::$dbApi->getTagByMid($mid) : self::$dbApi->getTagBySlug($slug);
-            
+
             if (!$tag) {
                 self::sendErrorResponse('Tag not found', self::HTTP_NOT_FOUND);
             }
-            
+
             $pageSize = self::getPageSize();
             $currentPage = self::getCurrentPage();
-            
+
             $posts = self::$dbApi->getPostsInTag($tag['mid'], $pageSize, $currentPage);
             $total = self::$dbApi->getTotalPostsInTag($tag['mid']);
-            
+
             return [
                 'data' => [
                     'tag' => self::formatTag($tag),
@@ -265,7 +276,7 @@ class TTDF_API
                 ]
             ];
         }
-        
+
         return [
             'data' => array_map([self::class, 'formatTag'], self::$dbApi->getAllTags())
         ];
@@ -284,7 +295,7 @@ class TTDF_API
         }
 
         $post = $cid ? self::$dbApi->getPostDetail($cid) : self::$dbApi->getPostDetailBySlug($slug);
-        
+
         if (!$post) {
             self::sendErrorResponse('Post not found', self::HTTP_NOT_FOUND);
         }
@@ -322,11 +333,11 @@ class TTDF_API
             'currentPage' => $currentPage,
             'totalPages' => max(1, ceil($total / $pageSize))
         ];
-        
+
         if ($type) {
             $pagination['type'] = $type;
         }
-        
+
         return $pagination;
     }
 
@@ -338,7 +349,7 @@ class TTDF_API
         if (!is_array($category)) {
             return $category;
         }
-        
+
         $category['description'] = self::formatContent($category['description'] ?? '');
         return $category;
     }
@@ -351,7 +362,7 @@ class TTDF_API
         if (!is_array($tag)) {
             return $tag;
         }
-        
+
         $tag['description'] = self::formatContent($tag['description'] ?? '');
         return $tag;
     }
@@ -372,10 +383,14 @@ class TTDF_API
             'created' => date('c', $post['created'] ?? time()),
             'modified' => date('c', $post['modified'] ?? time()),
             'commentsNum' => (int)($post['commentsNum'] ?? 0),
-            'categories' => array_map([self::class, 'formatCategory'], 
-                self::$dbApi->getPostCategories($post['cid'] ?? 0)),
-            'tags' => array_map([self::class, 'formatTag'], 
-                self::$dbApi->getPostTags($post['cid'] ?? 0)),
+            'categories' => array_map(
+                [self::class, 'formatCategory'],
+                self::$dbApi->getPostCategories($post['cid'] ?? 0)
+            ),
+            'tags' => array_map(
+                [self::class, 'formatTag'],
+                self::$dbApi->getPostTags($post['cid'] ?? 0)
+            ),
             'status' => $post['status'] ?? 'publish',
             'contentType' => self::$contentFormat
         ];
@@ -398,11 +413,11 @@ class TTDF_API
         if (self::$contentFormat === 'markdown') {
             return $content;
         }
-        
+
         if (!class_exists('Markdown')) {
             require_once __TYPECHO_ROOT_DIR__ . '/var/Typecho/Common/Markdown.php';
         }
-        
+
         $content = preg_replace('/<!--.*?-->/s', '', $content);
         return Markdown::convert($content);
     }
@@ -415,11 +430,11 @@ class TTDF_API
         $text = strip_tags($content);
         $text = preg_replace('/\[.*?\]\(.*?\)/', '', $text);
         $text = preg_replace('/\s+/', ' ', $text);
-        
+
         if (mb_strlen($text) > $length) {
             $text = mb_substr($text, 0, $length) . '...';
         }
-        
+
         return trim($text);
     }
 

@@ -140,7 +140,7 @@ $featuredPosts = GetPost::List (
 | :---------: | :--------------: | :---------------------: |
 |   Name()    | 获取当前页面标题 |   GetAuthor::Name();    |
 |   Email()   |   获取作者邮箱   |   GetAuthor::Email();   |
-| Bio()       |   获取作者简介   |    GetAuthor::Bio();    |
+|    Bio()    |   获取作者简介   |    GetAuthor::Bio();    |
 |  Author()   |   获取文章作者   |  GetAuthor::Author();>  |
 | Permalink() |   获取作者链接   | GetAuthor::Permalink(); |
 
