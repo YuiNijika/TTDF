@@ -9,12 +9,14 @@ TTDF_Hook::add_action('TTDF_Options_Code', function ($form) {
                 [
                     'type' => 'Text',
                     'name' => 'SubTitle',
+                    'value' => null,
                     'label' => '副标题',
                     'description' => '这是一个文本框，用于设置网站副标题，如果为空则不显示。'
                 ],
                 [
                     'type' => 'Textarea',
                     'name' => 'TTDF_Textarea',
+                    'value' => null,
                     'label' => '文本域',
                     'description' => '这是一个文本域~'
                 ]
@@ -67,9 +69,9 @@ TTDF_Hook::add_action('TTDF_Options_Code', function ($form) {
                 [
                     'type' => 'Select',
                     'name' => 'TTDF_RESTAPI_Switch',
-                    'value' => 'flase',
+                    'value' => 'false',
                     'label' => 'REST API',
-                    'description' => 'TTDF框架内置的 REST API',
+                    'description' => 'TTDF框架内置的 REST API<br/>使用教程可参见 <a href="https://github.com/Typecho-Framework/Typecho-Theme-Development-Framework#rest-api" target="_blank">*这里*</a>',
                     'options' => [
                         'true' => '开启',
                         'false' => '关闭'
