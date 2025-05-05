@@ -88,24 +88,35 @@ class TTDF_API
             self::init();
 
             $path = self::getRequestPath();
+            $pathParts = explode('/', trim($path, '/'));
 
             // 路由分发
-            switch ($path) {
-                case '/':
+            switch ($pathParts[0]) {
+                case '':
                     $response = self::handleIndex();
                     break;
-                case '/PostList':
-                    $response = self::handlePostList();
+                case 'posts':
+                    $response = self::handlePostList($pathParts);
                     break;
-                case '/Category':
-                    $response = self::handleCategory();
+                case 'content':
+                    $response = self::handlePostContent($pathParts);
                     break;
-                case '/Tag':
-                    $response = self::handleTag();
+                case 'category':
+                    $response = self::handleCategory($pathParts);
                     break;
-                case '/PostContent':
-                    $response = self::handlePostContent();
+                case 'tag':
+                    $response = self::handleTag($pathParts);
                     break;
+                case 'comments':
+                    $response = self::handleComments($pathParts);
+                    break;
+                case 'pages':
+                    $response = self::handlePageList($pathParts);
+                    break;
+                case 'attachments':
+                    $response = self::handleAttachmentList($pathParts);
+                    break;
+
                 default:
                     self::sendErrorResponse('Not Found', self::HTTP_NOT_FOUND);
             }
@@ -196,7 +207,7 @@ class TTDF_API
     /**
      * 处理文章列表请求
      */
-    private static function handlePostList()
+    private static function handlePostList($pathParts)
     {
         $pageSize = self::getPageSize();
         $currentPage = self::getCurrentPage();
@@ -208,6 +219,31 @@ class TTDF_API
             'data' => [
                 'list' => array_map([self::class, 'formatPost'], $posts),
                 'pagination' => self::buildPagination($total, $pageSize, $currentPage),
+                'page' => $currentPage,
+                'pageSize' => $pageSize,
+                'total' => $total
+            ]
+        ];
+    }
+
+    /**
+     * 处理页面列表请求
+     */
+    private static function handlePageList($pathParts)
+    {
+        $pageSize = self::getPageSize();
+        $currentPage = self::getCurrentPage();
+
+        $pages = self::$dbApi->getAllPages($pageSize, $currentPage);
+        $total = self::$dbApi->getTotalPages();
+
+        return [
+            'data' => [
+                'list' => array_map([self::class, 'formatPost'], $pages),
+                'pagination' => self::buildPagination($total, $pageSize, $currentPage, 'pages'),
+                'page' => $currentPage,
+                'pageSize' => $pageSize,
+                'total' => $total
             ]
         ];
     }
@@ -215,93 +251,244 @@ class TTDF_API
     /**
      * 处理分类请求
      */
-    private static function handleCategory()
+    private static function handleCategory($pathParts)
     {
-        $mid = isset($_GET['mid']) ? (int)$_GET['mid'] : null;
-        $slug = isset($_GET['slug']) ? trim($_GET['slug']) : null;
-
-        if ($mid || $slug) {
-            $category = $mid ? self::$dbApi->getCategoryByMid($mid) : self::$dbApi->getCategoryBySlug($slug);
-
-            if (!$category) {
-                self::sendErrorResponse('Category not found', self::HTTP_NOT_FOUND);
-            }
-
-            $pageSize = self::getPageSize();
-            $currentPage = self::getCurrentPage();
-
-            $posts = self::$dbApi->getPostsInCategory($category['mid'], $pageSize, $currentPage);
-            $total = self::$dbApi->getTotalPostsInCategory($category['mid']);
-
+        if (count($pathParts) === 1) {
+            // /category - 获取所有分类
             return [
-                'data' => [
-                    'category' => self::formatCategory($category),
-                    'list' => array_map([self::class, 'formatPost'], $posts),
-                    'pagination' => self::buildPagination($total, $pageSize, $currentPage, 'category')
-                ]
+                'data' => array_map([self::class, 'formatCategory'], self::$dbApi->getAllCategories()),
+                'page' => 1,
+                'pageSize' => 'all',
+                'total' => count(self::$dbApi->getAllCategories())
             ];
         }
 
+        // 解析路径参数
+        $identifier = $pathParts[1];
+        $isMid = is_numeric($identifier);
+
+        $category = $isMid ? self::$dbApi->getCategoryByMid($identifier) : self::$dbApi->getCategoryBySlug($identifier);
+
+        if (!$category) {
+            self::sendErrorResponse('Category not found', self::HTTP_NOT_FOUND);
+        }
+
+        $pageSize = self::getPageSize();
+        $currentPage = self::getCurrentPage();
+
+        $posts = self::$dbApi->getPostsInCategory($category['mid'], $pageSize, $currentPage);
+        $total = self::$dbApi->getTotalPostsInCategory($category['mid']);
+
         return [
-            'data' => array_map([self::class, 'formatCategory'], self::$dbApi->getAllCategories())
+            'data' => [
+                'category' => self::formatCategory($category),
+                'list' => array_map([self::class, 'formatPost'], $posts),
+                'pagination' => self::buildPagination($total, $pageSize, $currentPage, 'category'),
+                'page' => $currentPage,
+                'pageSize' => $pageSize,
+                'total' => $total
+            ]
         ];
     }
 
     /**
      * 处理标签请求
      */
-    private static function handleTag()
+    private static function handleTag($pathParts)
     {
-        $mid = isset($_GET['mid']) ? (int)$_GET['mid'] : null;
-        $slug = isset($_GET['slug']) ? trim($_GET['slug']) : null;
-
-        if ($mid || $slug) {
-            $tag = $mid ? self::$dbApi->getTagByMid($mid) : self::$dbApi->getTagBySlug($slug);
-
-            if (!$tag) {
-                self::sendErrorResponse('Tag not found', self::HTTP_NOT_FOUND);
-            }
-
-            $pageSize = self::getPageSize();
-            $currentPage = self::getCurrentPage();
-
-            $posts = self::$dbApi->getPostsInTag($tag['mid'], $pageSize, $currentPage);
-            $total = self::$dbApi->getTotalPostsInTag($tag['mid']);
-
+        if (count($pathParts) === 1) {
+            // /tag - 获取所有标签
             return [
-                'data' => [
-                    'tag' => self::formatTag($tag),
-                    'list' => array_map([self::class, 'formatPost'], $posts),
-                    'pagination' => self::buildPagination($total, $pageSize, $currentPage, 'tag')
-                ]
+                'data' => array_map([self::class, 'formatTag'], self::$dbApi->getAllTags()),
+                'page' => 1,
+                'pageSize' => 'all',
+                'total' => count(self::$dbApi->getAllTags())
             ];
         }
 
+        // 解析路径参数
+        $identifier = $pathParts[1];
+        $isMid = is_numeric($identifier);
+
+        $tag = $isMid ? self::$dbApi->getTagByMid($identifier) : self::$dbApi->getTagBySlug($identifier);
+
+        if (!$tag) {
+            self::sendErrorResponse('Tag not found', self::HTTP_NOT_FOUND);
+        }
+
+        $pageSize = self::getPageSize();
+        $currentPage = self::getCurrentPage();
+
+        $posts = self::$dbApi->getPostsInTag($tag['mid'], $pageSize, $currentPage);
+        $total = self::$dbApi->getTotalPostsInTag($tag['mid']);
+
         return [
-            'data' => array_map([self::class, 'formatTag'], self::$dbApi->getAllTags())
+            'data' => [
+                'tag' => self::formatTag($tag),
+                'list' => array_map([self::class, 'formatPost'], $posts),
+                'pagination' => self::buildPagination($total, $pageSize, $currentPage, 'tag'),
+                'page' => $currentPage,
+                'pageSize' => $pageSize,
+                'total' => $total
+            ]
         ];
     }
 
     /**
      * 处理文章内容请求
      */
-    private static function handlePostContent()
+    private static function handlePostContent($pathParts)
     {
-        $cid = isset($_GET['cid']) ? (int)$_GET['cid'] : null;
-        $slug = isset($_GET['slug']) ? trim($_GET['slug']) : null;
-
-        if (!$cid && !$slug) {
-            self::sendErrorResponse('Missing cid or slug parameter', self::HTTP_BAD_REQUEST);
+        if (count($pathParts) < 2) {
+            self::sendErrorResponse('Missing post identifier', self::HTTP_BAD_REQUEST);
         }
 
-        $post = $cid ? self::$dbApi->getPostDetail($cid) : self::$dbApi->getPostDetailBySlug($slug);
+        $identifier = $pathParts[1];
+        $isCid = is_numeric($identifier);
+
+        $post = $isCid ? self::$dbApi->getPostDetail($identifier) : self::$dbApi->getPostDetailBySlug($identifier);
 
         if (!$post) {
             self::sendErrorResponse('Post not found', self::HTTP_NOT_FOUND);
         }
 
         return [
-            'data' => self::formatPost($post, true)
+            'data' => self::formatPost($post, true),
+            'page' => 1,
+            'pageSize' => 1,
+            'total' => 1
+        ];
+    }
+
+    /**
+     * 处理评论请求
+     */
+    private static function handleComments($pathParts)
+    {
+        if (count($pathParts) === 1) {
+            // /comments - 获取所有评论
+            $pageSize = self::getPageSize();
+            $currentPage = self::getCurrentPage();
+
+            $comments = self::$dbApi->getAllComments($pageSize, $currentPage);
+            $total = self::$dbApi->getTotalComments();
+
+            return [
+                'data' => [
+                    'list' => array_map([self::class, 'formatComment'], $comments),
+                    'pagination' => self::buildPagination($total, $pageSize, $currentPage, 'comments'),
+                    'page' => $currentPage,
+                    'pageSize' => $pageSize,
+                    'total' => $total
+                ]
+            ];
+        } elseif (count($pathParts) >= 2 && $pathParts[1] === 'post') {
+            // /comments/post/{cid} - 获取特定文章的评论
+            if (count($pathParts) < 3) {
+                self::sendErrorResponse('Missing post ID', self::HTTP_BAD_REQUEST);
+            }
+
+            $cid = $pathParts[2];
+            if (!is_numeric($cid)) {
+                self::sendErrorResponse('Invalid post ID', self::HTTP_BAD_REQUEST);
+            }
+
+            $pageSize = self::getPageSize();
+            $currentPage = self::getCurrentPage();
+
+            $comments = self::$dbApi->getPostComments($cid, $pageSize, $currentPage);
+            $total = self::$dbApi->getTotalPostComments($cid);
+
+            // 检查文章是否存在
+            $post = self::$dbApi->getPostDetail($cid);
+            if (!$post) {
+                self::sendErrorResponse('Post not found', self::HTTP_NOT_FOUND);
+            }
+
+            return [
+                'data' => [
+                    'post' => [
+                        'cid' => (int)$post['cid'],
+                        'title' => $post['title'] ?? ''
+                    ],
+                    'list' => array_map([self::class, 'formatComment'], $comments),
+                    'pagination' => self::buildPagination($total, $pageSize, $currentPage, 'comments'),
+                    'page' => $currentPage,
+                    'pageSize' => $pageSize,
+                    'total' => $total
+                ]
+            ];
+        }
+
+        self::sendErrorResponse('Not Found', self::HTTP_NOT_FOUND);
+    }
+
+    /**
+     * 格式化评论数据
+     */
+    private static function formatComment($comment)
+    {
+        if (!is_array($comment)) {
+            return $comment;
+        }
+
+        return [
+            'coid' => (int)$comment['coid'],
+            'cid' => (int)$comment['cid'],
+            'author' => $comment['author'] ?? '',
+            'mail' => $comment['mail'] ?? '',
+            'url' => $comment['url'] ?? '',
+            'ip' => $comment['ip'] ?? '',
+            'created' => date('c', $comment['created'] ?? time()),
+            'modified' => date('c', $comment['modified'] ?? time()),
+            'text' => self::formatContent($comment['text'] ?? ''),
+            'status' => $comment['status'] ?? 'approved',
+            'parent' => (int)($comment['parent'] ?? 0),
+            'authorId' => (int)($comment['authorId'] ?? 0)
+        ];
+    }
+
+    /**
+     * 处理附件列表请求
+     */
+    private static function handleAttachmentList($pathParts)
+    {
+        $pageSize = self::getPageSize();
+        $currentPage = self::getCurrentPage();
+
+        $attachments = self::$dbApi->getAllAttachments($pageSize, $currentPage);
+        $total = self::$dbApi->getTotalAttachments();
+
+        return [
+            'data' => [
+                'list' => array_map([self::class, 'formatAttachment'], $attachments),
+                'pagination' => self::buildPagination($total, $pageSize, $currentPage, 'attachments'),
+                'page' => $currentPage,
+                'pageSize' => $pageSize,
+                'total' => $total
+            ]
+        ];
+    }
+
+    /**
+     * 格式化附件数据
+     */
+    private static function formatAttachment($attachment)
+    {
+        if (!is_array($attachment)) {
+            return $attachment;
+        }
+
+        $options = Helper::options();
+
+        return [
+            'cid' => (int)$attachment['cid'],
+            'title' => $attachment['title'] ?? '',
+            'type' => $attachment['type'] ?? '',
+            'size' => (int)($attachment['size'] ?? 0),
+            'created' => date('c', $attachment['created'] ?? time()),
+            'modified' => date('c', $attachment['modified'] ?? time()),
+            'status' => $attachment['status'] ?? 'publish',
         ];
     }
 
@@ -377,23 +564,28 @@ class TTDF_API
         }
 
         $formattedPost = [
-            'id' => (int)$post['cid'],
+            'cid' => (int)$post['cid'],
             'title' => $post['title'] ?? '',
             'slug' => $post['slug'] ?? '',
+            'type' => $post['type'] ?? 'post',
             'created' => date('c', $post['created'] ?? time()),
             'modified' => date('c', $post['modified'] ?? time()),
             'commentsNum' => (int)($post['commentsNum'] ?? 0),
-            'categories' => array_map(
-                [self::class, 'formatCategory'],
-                self::$dbApi->getPostCategories($post['cid'] ?? 0)
-            ),
-            'tags' => array_map(
-                [self::class, 'formatTag'],
-                self::$dbApi->getPostTags($post['cid'] ?? 0)
-            ),
+            'authorId' => (int)($post['authorId'] ?? 0),
             'status' => $post['status'] ?? 'publish',
             'contentType' => self::$contentFormat
         ];
+
+        if ($formattedPost['type'] === 'post') {
+            $formattedPost['categories'] = array_map(
+                [self::class, 'formatCategory'],
+                self::$dbApi->getPostCategories($post['cid'] ?? 0)
+            );
+            $formattedPost['tags'] = array_map(
+                [self::class, 'formatTag'],
+                self::$dbApi->getPostTags($post['cid'] ?? 0)
+            );
+        }
 
         if ($includeContent) {
             $formattedPost['content'] = self::formatContent($post['text'] ?? '');

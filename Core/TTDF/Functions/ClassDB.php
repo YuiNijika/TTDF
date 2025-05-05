@@ -239,6 +239,34 @@ class DB_API
     }
 
     /**
+     * 获取所有页面
+     * @param int $pageSize 每页数量
+     * @param int $currentPage 当前页码
+     * @return array
+     */
+    public function getAllPages($pageSize, $currentPage)
+    {
+        $query = $this->db->select()->from('table.contents')
+            ->where('type = ?', 'page')
+            ->order('created', Typecho_Db::SORT_DESC)
+            ->page($currentPage, $pageSize);
+
+        return $this->db->fetchAll($query);
+    }
+
+    /**
+     * 获取页面总数
+     * @return int
+     */
+    public function getTotalPages()
+    {
+        $rs = $this->db->fetchRow($this->db->select('COUNT(*)')
+            ->from('table.contents')
+            ->where('type = ?', 'page'));
+        return (int) ($rs['COUNT(*)'] ?? 0);
+    }
+
+    /**
      * 获取总文章数
      * @return int
      */
@@ -442,17 +470,82 @@ class DB_API
     }
 
     /**
-     * 获取文章缩略图
-     * @param string $content 文章内容
-     * @return string
+     * 获取所有评论列表
+     * @param int $pageSize 每页数量
+     * @param int $currentPage 当前页码
+     * @return array
      */
-    public function getThumbnail($content)
+    public function getAllComments($pageSize, $currentPage)
     {
-        if (preg_match('/\[thumb\](.*?)\[\/thumb\]/', $content, $matches)) {
-            return $matches[1];
-        } elseif (preg_match('/<img.*?src="(.*?)"/', $content, $matches)) {
-            return $matches[1];
-        }
-        return '';
+        $query = $this->db->select()->from('table.comments')
+            ->order('created', Typecho_Db::SORT_DESC)
+            ->limit($pageSize, ($currentPage - 1) * $pageSize);
+
+        return $this->db->fetchAll($query);
+    }
+    /**
+     * 获取总评论数
+     * @return int
+     */
+    public function getTotalComments()
+    {
+        $rs = $this->db->fetchRow($this->db->select('COUNT(*)')->from('table.comments'));
+        return (int) ($rs['COUNT(*)'] ?? 0);
+    }
+    /**
+     * 获取文章的评论
+     * @param int $cid 文章ID
+     * @param int $pageSize 每页数量
+     * @param int $currentPage 当前页码
+     * @return array
+     */
+    public function getPostComments($cid, $pageSize, $currentPage)
+    {
+        $query = $this->db->select()->from('table.comments')
+            ->where('cid = ?', $cid)
+            ->order('created', Typecho_Db::SORT_ASC)
+            ->page($currentPage, $pageSize);
+
+        return $this->db->fetchAll($query);
+    }
+    /**
+     * 获取文章的评论总数
+     * @param int $cid 文章ID
+     * @return int
+     */
+    public function getTotalPostComments($cid)
+    {
+        $rs = $this->db->fetchRow($this->db->select('COUNT(*)')
+            ->from('table.comments')
+            ->where('cid = ?', $cid));
+        return (int) ($rs['COUNT(*)'] ?? 0);
+    }
+
+    /**
+     * 获取所有附件列表
+     * @param int $pageSize 每页数量
+     * @param int $currentPage 当前页码
+     * @return array
+     */
+    public function getAllAttachments($pageSize, $currentPage)
+    {
+        $query = $this->db->select()->from('table.contents')
+            ->where('type = ?', 'attachment')
+            ->order('created', Typecho_Db::SORT_DESC)
+            ->page($currentPage, $pageSize);
+
+        return $this->db->fetchAll($query);
+    }
+
+    /**
+     * 获取附件总数
+     * @return int
+     */
+    public function getTotalAttachments()
+    {
+        $rs = $this->db->fetchRow($this->db->select('COUNT(*)')
+            ->from('table.contents')
+            ->where('type = ?', 'attachment'));
+        return (int) ($rs['COUNT(*)'] ?? 0);
     }
 }

@@ -171,15 +171,18 @@ $featuredPosts = GetPost::List (
 ### REST API
 
 一个简单的 REST API，你可以使用它来获取一些数据。
-> `API`路由及状态在`Core/TTDF.php`中定义。 
+> `API`路由及状态在`functions.php`中定义。 
 
-| 调用  |       路由       |      参数      |     描述     |
-| :---: | :--------------: | :------------: | :----------: |
-|  Get  |       /API       |      null      | 获取网站信息 |
-|  Get  |  /API/PostList   | pageSize, page | 获取文章列表 |
-|  Get  |  /API/Category   |   mid, slug    | 获取分类列表 |
-|  Get  |     /API/Tag     |   mid, slug    | 获取标签列表 |
-|  Get  | /API/PostContent |   cid, slug    | 获取文章数据 |
+| 调用  |          路由          |      参数      |     描述     |
+| :---: | :--------------------: | :------------: | :----------: |
+|  Get  |          /API          |      null      | 获取网站信息 |
+|  Get  |       /API/posts       | pageSize, page | 获取文章列表 |
+|  Get  |       /API/pages       | pageSize, page | 获取页面列表 |
+|  Get  |    /API/attachments    | pageSize, page | 获取附件列表 |
+|  Get  | /API/category/{string} |   mid, slug    | 获取分类列表 |
+|  Get  |   /API/tag/{string}    |   mid, slug    | 获取标签列表 |
+|  Get  | /API/content/{string}  |   cid, slug    | 获取文章数据 |
+
 
 ### 钩子
 > TTDF默认有三个钩子可以挂，分别为`load_head`&`load_foot`&`load_code`
