@@ -5,24 +5,11 @@
  * @link https://github.com/ShuShuicu/Typecho-Theme-Development-Framework
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
-// TTDF Version
-$TTDF_Version = '2.2.0'; 
-// 配置Avatar源
-$TTDF_Avatar = 'https://cravatar.cn/avatar/'; 
-
-/**
- * REST API 配置
- * @var bool $TTDF_RESTAPI 是否开启
- * @var string $TTDF_RESTAPI_ROUTE 路由配置
- * @example 主题注册设置项 TTDF_RESTAPI_Switch 值为 true 时，开启 REST API 功能
- */
-$TTDF_RESTAPI = false; 
-$TTDF_RESTAPI_ROUTE = 'API'; 
 
 // 定义常量
 define('__TYPECHO_GRAVATAR_PREFIX__', $TTDF_Avatar); 
 // 设置框架版本
-define('__FRAMEWORK_VER__', $TTDF_Version); 
+define('__FRAMEWORK_VER__', '2.2.0'); 
 // 设置 REST API 状态
 define('__TTDF_RESTAPI__', $TTDF_RESTAPI ); 
 // 设置 REST API 路由
@@ -35,9 +22,3 @@ require_once 'TTDF/Functions.php';
 require_once 'TTDF/Options.php';
 require_once 'Fields.php';
 require_once 'Setup.php';
-
-/**
- * 注册load_code钩子
- * @param callable $callback 回调函数
- */
-TTDF_Hook::do_action('load_code');
