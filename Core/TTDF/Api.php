@@ -217,7 +217,7 @@ class TTDF_API
 
         return [
             'data' => [
-                'list' => array_map([self::class, 'formatPost'], $posts),
+                'list' => array_map(fn($post) => self::formatPost($post, true), $posts),
                 'pagination' => self::buildPagination($total, $pageSize, $currentPage),
                 'page' => $currentPage,
                 'pageSize' => $pageSize,
@@ -573,7 +573,7 @@ class TTDF_API
             'commentsNum' => (int)($post['commentsNum'] ?? 0),
             'authorId' => (int)($post['authorId'] ?? 0),
             'status' => $post['status'] ?? 'publish',
-            'contentType' => self::$contentFormat
+            'contentType' => self::$contentFormat,
         ];
 
         if ($formattedPost['type'] === 'post') {
