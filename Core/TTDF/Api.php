@@ -107,6 +107,9 @@ class TTDF_API
                 case 'tag':
                     $response = self::handleTag($pathParts);
                     break;
+                case 'search':
+                    $response = self::handleSearch($pathParts);
+                    break;
                 case 'comments':
                     $response = self::handleComments($pathParts);
                     break;
@@ -358,6 +361,46 @@ class TTDF_API
             'pageSize' => 1,
             'total' => 1
         ];
+    }
+
+    // 添加搜索处理方法
+    private static function handleSearch($pathParts)
+    {
+        if (count($pathParts) < 2 || empty($pathParts[1])) {
+            self::sendErrorResponse('Missing search keyword', self::HTTP_BAD_REQUEST);
+        }
+
+        // 对关键词进行URL解码
+        $keyword = urldecode($pathParts[1]);
+
+        // 记录日志用于调试（调试完成后可移除）
+        error_log("Search keyword: " . $keyword);
+
+        $pageSize = self::getPageSize();
+        $currentPage = self::getCurrentPage();
+
+        try {
+            $posts = self::$dbApi->searchPosts($keyword, $pageSize, $currentPage);
+            $total = self::$dbApi->getSearchPostsCount($keyword);
+
+            // 记录搜索结果数量（调试用）
+            error_log("Search results: " . count($posts) . " out of " . $total);
+
+            return [
+                'data' => [
+                    'keyword' => $keyword,
+                    'list' => array_map(fn($post) => self::formatPost($post, true), $posts),
+                    'pagination' => self::buildPagination($total, $pageSize, $currentPage, 'search'),
+                    'page' => $currentPage,
+                    'pageSize' => $pageSize,
+                    'total' => $total
+                ]
+            ];
+        } catch (Exception $e) {
+            // 记录错误信息
+            error_log("Search error: " . $e->getMessage());
+            self::sendErrorResponse('Search failed', self::HTTP_INTERNAL_ERROR, $e);
+        }
     }
 
     /**

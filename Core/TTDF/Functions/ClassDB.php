@@ -470,6 +470,67 @@ class DB_API
     }
 
     /**
+     * 搜索文章
+     * @param string $keyword 搜索关键词
+     * @param int $pageSize 每页数量
+     * @param int $currentPage 当前页码
+     * @return array
+     */
+    public function searchPosts($keyword, $pageSize, $currentPage)
+    {
+        try {
+            // 使用 Typecho 的过滤方法处理搜索词
+            $filteredKeyword = Typecho_Common::filterSearchQuery($keyword);
+            $searchKeyword = '%' . str_replace(' ', '%', $filteredKeyword) . '%';
+
+            $query = $this->db->select()->from('table.contents')
+                ->where('status = ?', 'publish')
+                ->where('type = ?', 'post')
+                ->where(
+                    '(title LIKE ? OR text LIKE ?)',
+                    $searchKeyword,
+                    $searchKeyword
+                )
+                ->order('created', Typecho_Db::SORT_DESC)
+                ->page($currentPage, $pageSize);
+
+            return $this->db->fetchAll($query);
+        } catch (Exception $e) {
+            error_log("Database search error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * 获取搜索结果总数
+     * @param string $keyword 搜索关键词
+     * @return int
+     */
+    public function getSearchPostsCount($keyword)
+    {
+        try {
+            // 使用 Typecho 的过滤方法处理搜索词
+            $filteredKeyword = Typecho_Common::filterSearchQuery($keyword);
+            $searchKeyword = '%' . str_replace(' ', '%', $filteredKeyword) . '%';
+
+            $rs = $this->db->fetchRow($this->db->select('COUNT(*)')
+                ->from('table.contents')
+                ->where('status = ?', 'publish')
+                ->where('type = ?', 'post')
+                ->where(
+                    '(title LIKE ? OR text LIKE ?)',
+                    $searchKeyword,
+                    $searchKeyword
+                ));
+
+            return (int) ($rs['COUNT(*)'] ?? 0);
+        } catch (Exception $e) {
+            error_log("Count search error: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
      * 获取所有评论列表
      * @param int $pageSize 每页数量
      * @param int $currentPage 当前页码

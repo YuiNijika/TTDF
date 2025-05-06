@@ -176,18 +176,23 @@ $featuredPosts = GetPost::List (
 
 全局参数
 
+`page` 控制当前页码，默认为`1`
+`pageSize` 控制每页显示条数，默认为`10`
 `format` 控制返回格式，支持`html`&`markdown`
 `excerptLength` 控制文章摘要长度，默认为`200`
 
-| 调用  |          路由          |      参数      |     描述     |
-| :---: | :--------------------: | :------------: | :----------: |
-|  Get  |          /API          |      null      | 获取网站信息 |
-|  Get  |       /API/posts       | pageSize, page | 获取文章列表 |
-|  Get  |       /API/pages       | pageSize, page | 获取页面列表 |
-|  Get  |    /API/attachments    | pageSize, page | 获取附件列表 |
-|  Get  | /API/category/{string} |   mid, slug    | 获取分类列表 |
-|  Get  |   /API/tag/{string}    |   mid, slug    | 获取标签列表 |
-|  Get  | /API/content/{string}  |   cid, slug    | 获取文章数据 |
+| 调用  |            路由             | 其他参数&路由 |       描述       |
+| :---: | :-------------------------: | :-----------: | :--------------: |
+|  Get  |            /API             |     null      |   获取网站信息   |
+|  Get  |         /API/posts          |     null      |   获取文章列表   |
+|  Get  |         /API/pages          |     null      |   获取页面列表   |
+|  Get  |    /API/search/{string}     |    string     |   搜索文章列表   |
+|  Get  |   /API/category/{string}    |   mid, slug   |   获取分类列表   |
+|  Get  |      /API/tag/{string}      |   mid, slug   |   获取标签列表   |
+|  Get  |    /API/content/{string}    |   cid, slug   |   获取内容数据   |
+|  Get  |      /API/attachments       |     null      |   获取附件列表   |
+|  Get  |        /API/comments        |     post      |   获取评论列表   |
+|  Get  | /API/comments/post/{string} |    string     | 获取文章评论列表 |
 
 
 ### 钩子
