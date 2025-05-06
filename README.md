@@ -172,6 +172,12 @@ $featuredPosts = GetPost::List (
 
 一个简单的 REST API，你可以使用它来获取一些数据。
 > `API`路由及状态在`functions.php`中定义。 
+>
+
+全局参数
+
+`format` 控制返回格式，支持`html`&`markdown`
+`excerptLength` 控制文章摘要长度，默认为`200`
 
 | 调用  |          路由          |      参数      |     描述     |
 | :---: | :--------------------: | :------------: | :----------: |

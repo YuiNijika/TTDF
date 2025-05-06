@@ -587,14 +587,53 @@ class TTDF_API
             );
         }
 
-        if ($includeContent) {
-            $formattedPost['content'] = self::formatContent($post['text'] ?? '');
-            $formattedPost['excerpt'] = self::formatContent(
-                self::generateExcerpt($post['text'] ?? '')
-            );
-        }
+        // 获取摘要长度参数，默认为200
+        $excerptLength = isset($_GET['excerptLength']) ? (int)$_GET['excerptLength'] : 200;
+
+        // 总是包含内容
+        $formattedPost['content'] = self::formatContent($post['text'] ?? '');
+
+        // 生成纯文本摘要
+        $formattedPost['excerpt'] = self::generatePlainExcerpt(
+            $post['text'] ?? '',
+            $excerptLength
+        );
 
         return $formattedPost;
+    }
+
+    /**
+     * 生成纯文本摘要
+     */
+    private static function generatePlainExcerpt($content, $length = 200)
+    {
+        // 去除HTML标签
+        $text = strip_tags($content);
+
+        // 去除Markdown
+        $text = preg_replace('/```.*?```/s', '', $text);
+        $text = preg_replace('/~~~.*?~~~/s', '', $text);
+        $text = preg_replace('/`.*?`/', '', $text);
+        $text = preg_replace('/$$(.*?)$$$.*?$/', '$1', $text); // 保留链接文字
+        $text = preg_replace('/!$$(.*?)$$$.*?$/', '$1', $text); // 保留图片alt文字
+        $text = preg_replace('/[\*\_]{1,3}(.*?)[\*\_]{1,3}/', '$1', $text);
+        $text = preg_replace('/^\s*>\s*/m', '', $text);
+
+        // 去除多余空白字符
+        $text = preg_replace('/\s+/', ' ', $text);
+        $text = trim($text);
+
+        // 截取指定长度
+        if (mb_strlen($text) > $length) {
+            $text = mb_substr($text, 0, $length);
+
+            // 确保截断后不会在单词中间断开
+            if (preg_match('/\s\S+$/', $text, $matches)) {
+                $text = mb_substr($text, 0, mb_strlen($text) - mb_strlen($matches[0]));
+            }
+        }
+
+        return $text;
     }
 
     /**
