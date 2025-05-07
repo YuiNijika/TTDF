@@ -110,6 +110,12 @@ class TTDF_API
                 case 'search':
                     $response = self::handleSearch($pathParts);
                     break;
+                case 'fields':
+                    $response = self::handleFieldSearch($pathParts);
+                    break;
+                case 'advancedFields':
+                    $response = self::handleAdvancedFieldSearch($pathParts);
+                    break;
                 case 'comments':
                     $response = self::handleComments($pathParts);
                     break;
@@ -403,6 +409,98 @@ class TTDF_API
         }
     }
 
+    // 添加字段搜索处理方法
+    private static function handleFieldSearch($pathParts)
+    {
+        if (count($pathParts) < 3) {
+            self::sendErrorResponse('Missing field parameters', self::HTTP_BAD_REQUEST);
+        }
+
+        // 定义字段名和字段值
+        $fieldName = $pathParts[1];
+        $fieldValue = urldecode($pathParts[2]);
+
+        // 构建条件数组
+        $conditions[] = [
+            'name' => $fieldName,
+            'operator' => $_GET['operator'] ?? '=',
+            'value' => $fieldValue,
+            'value_type' => $_GET['value_type'] ?? 'str'
+        ];
+
+        $pageSize = self::getPageSize();
+        $currentPage = self::getCurrentPage();
+
+        $posts = self::$dbApi->getPostsByField($fieldName, $fieldValue, $pageSize, $currentPage);
+        $total = self::$dbApi->getPostsCountByField($fieldName, $fieldValue);
+
+        return [
+            'data' => [
+                'conditions' => [
+                    'name' => $fieldName,
+                    'value' => $fieldValue,
+                    'value_type' => $_GET['value_type'] ?? 'str'
+                ],
+                'list' => array_map(fn($post) => self::formatPost($post, true), $posts),
+                'pagination' => self::buildPagination($total, $pageSize, $currentPage, 'field'),
+                'page' => $currentPage,
+                'pageSize' => $pageSize,
+                'total' => $total
+            ]
+        ];
+    }
+
+    /**
+     * 处理高级字段搜索请求
+     * @param array $pathParts 路由路径数组
+     */
+    private static function handleAdvancedFieldSearch($pathParts)
+    {
+        $conditions = [];
+
+        // 精简匹配 {name}/{value}
+        if (count($pathParts) >= 3) {
+            $fieldName = $pathParts[1];
+            $fieldValue = urldecode($pathParts[2]);
+
+            $conditions[] = [
+                'name' => $fieldName,
+                'operator' => $_GET['operator'] ?? '=',
+                'value' => $fieldValue,
+                'value_type' => $_GET['value_type'] ?? 'str'
+            ];
+        }
+        // 高级字段 ?conditions=[JSON]
+        elseif (isset($_GET['conditions'])) {
+            $decoded = json_decode($_GET['conditions'], true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $conditions = $decoded;
+            }
+        }
+
+        // 验证条件
+        if (empty($conditions)) {
+            self::sendErrorResponse('Invalid search conditions', self::HTTP_BAD_REQUEST);
+        }
+
+        $pageSize = self::getPageSize();
+        $currentPage = self::getCurrentPage();
+
+        $posts = self::$dbApi->getPostsByAdvancedFields($conditions, $pageSize, $currentPage);
+        $total = self::$dbApi->getPostsCountByAdvancedFields($conditions);
+
+        return [
+            'data' => [
+                'conditions' => $conditions,
+                'list' => array_map(fn($post) => self::formatPost($post, true), $posts),
+                'pagination' => self::buildPagination($total, $pageSize, $currentPage, 'advanced-fields'),
+                'page' => $currentPage,
+                'pageSize' => $pageSize,
+                'total' => $total
+            ]
+        ];
+    }
+
     /**
      * 处理评论请求
      */
@@ -617,6 +715,7 @@ class TTDF_API
             'authorId' => (int)($post['authorId'] ?? 0),
             'status' => $post['status'] ?? 'publish',
             'contentType' => self::$contentFormat,
+            'fields' => self::$dbApi->getPostFields($post['cid'] ?? 0), // 添加字段数据
         ];
 
         if ($formattedPost['type'] === 'post') {

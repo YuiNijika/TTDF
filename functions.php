@@ -10,7 +10,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 $TTDF_RESTAPI = false; 
 $TTDF_RESTAPI_ROUTE = 'API'; 
 
-$TTDF_Fields = false; // 是否开启自定义字段
+$TTDF_Fields = true; // 是否开启自定义字段
 
 // 配置Avatar源
 $TTDF_Avatar = 'https://cravatar.cn/avatar/'; 

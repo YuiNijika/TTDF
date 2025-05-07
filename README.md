@@ -44,7 +44,7 @@ Get::SiteUrl(false) 为 return 返回值
 |         Permalink()         |   获取文章链接   |    Get::Permalink();    |
 |        Field($field)        |  获取自定义字段  |      Get::Field();      |
 
-> Get::PageUrl() 方法可自定义输出，示例如下：
+> Get::PageUrl() 方法可自定义输出，示例如下：  
 > 默认调用  
 > Get::PageUrl();  
 > 移除所有查询参数  
@@ -71,7 +71,7 @@ Get::SiteUrl(false) 为 return 返回值
 
 |       方法        |       描述       |            示例             |
 | :---------------: | :--------------: | :-------------------------: |
-|      List()       |   获取文章列表   |      GetPost::List();       |  |
+|      List()       |   获取文章列表   |      GetPost::List();       |
 |      Title()      |   获取文章标题   |      GetPost::Title();      |
 |      Date()       |   获取文章日期   |      GetPost::Date();       |
 |    Category()     |   获取文章分类   |    GetPost::Category();     |
@@ -85,12 +85,12 @@ Get::SiteUrl(false) 为 return 返回值
 |    PostsNum()     |    获取文章数    |    GetPost::PostsNum();     |
 |   CurrentPage()   |   获取当前页码   |   GetPost::CurrentPage();   |
 |  ArchiveTitle()   | 获取当前页面标题 |  GetPost::ArchiveTitle();   |
-|     Author()      |   获取文章作者   |     GetPost::Author();>     |
+|     Author()      |   获取文章作者   |     GetPost::Author();      |
 | AuthorPermalink() |   获取作者链接   | GetPost::AuthorPermalink(); |
 
-> GetPost:List() 方法可自定义输出，示例如下：
+> GetPost:List() 方法可自定义输出，示例如下：  
 > 默认调用
-``` php
+`` php
  while (GetPost::List()) {
     
 };
@@ -181,19 +181,73 @@ $featuredPosts = GetPost::List (
 `format` 控制返回格式，支持`html`&`markdown`
 `excerptLength` 控制文章摘要长度，默认为`200`
 
-| 调用  |            路由             | 其他参数&路由 |       描述       |
-| :---: | :-------------------------: | :-----------: | :--------------: |
-|  Get  |            /API             |     null      |   获取网站信息   |
-|  Get  |         /API/posts          |     null      |   获取文章列表   |
-|  Get  |         /API/pages          |     null      |   获取页面列表   |
-|  Get  |    /API/search/{string}     |    string     |   搜索文章列表   |
-|  Get  |   /API/category/{string}    |   mid, slug   |   获取分类列表   |
-|  Get  |      /API/tag/{string}      |   mid, slug   |   获取标签列表   |
-|  Get  |    /API/content/{string}    |   cid, slug   |   获取内容数据   |
-|  Get  |      /API/attachments       |     null      |   获取附件列表   |
-|  Get  |        /API/comments        |     post      |   获取评论列表   |
-|  Get  | /API/comments/post/{string} |    string     | 获取文章评论列表 |
+| 调用  |                路由                | 其他参数&路由 |         描述         |
+| :---: | :--------------------------------: | :-----------: | :------------------: |
+|  Get  |                /API                |     null      |     获取网站信息     |
+|  Get  |             /API/posts             |     null      |     获取文章列表     |
+|  Get  |             /API/pages             |     null      |     获取页面列表     |
+|  Get  |        /API/search/{string}        |    string     |     搜索文章列表     |
+|  Get  |       /API/category/{string}       |   mid, slug   |     获取分类列表     |
+|  Get  |         /API/tag/{string}          |   mid, slug   |     获取标签列表     |
+|  Get  |       /API/content/{string}        |   cid, slug   |     获取内容数据     |
+|  Get  |          /API/attachments          |     null      |     获取附件列表     |
+|  Get  |           /API/comments            |     post      |     获取评论列表     |
+|  Get  |    /API/comments/post/{string}     |    string     |   获取文章评论列表   |
+|  Get  |     /API/fields/{name}/{value}     |    string     |   获取字段文章列表   |
+|  Get  | /API/advancedFields/{name}/{value} |    string     | 获取高级字段查询列表 |
 
+### 字段查询
+> TTDF内置了字段查询文章列表功能
+
+#### 普通查询  
+
+普通字段查询文章
+
+```bash
+GET /API/fields/{name}/{value}
+```
+
+#### 高级查询
+
+##### 复杂查询​​使用 JSON
+
+```bash
+GET /api/advanced-fields?conditions=[{"name":"color","value":"red"},{"name":"price","operator":">=","value":100}]
+```
+
+##### 模糊搜索​
+
+```bash
+GET /api/advanced-fields/title/%重要%?operator=LIKE
+```
+
+#### 查询运算符与值类型规范
+
+##### 运算符对照表
+
+| 运算符 | 名称       | 描述                 | 使用示例           |
+|--------|------------|----------------------|--------------------|
+| =      | 等于       | 完全匹配字段值       | `color=red`        |
+| !=     | 不等于     | 排除指定值           | `color!=blue`      |
+| >      | 大于       | 数值比较             | `price>100`        |
+| <      | 小于       | 数值比较             | `price<200`        |
+| >=     | 大于等于   | 数值比较             | `price>=100`       |
+| <=     | 小于等于   | 数值比较             | `price<=200`       |
+| LIKE   | 模糊匹配   | 支持通配符%          | `title LIKE %重要%`|
+
+##### 值类型定义
+
+| 类型   | 说明                  | 典型应用场景         | 示例               |
+|--------|-----------------------|----------------------|--------------------|
+| str    | 字符串（默认类型）    | 文本字段精确匹配     | `category=tech`    |
+| int    | 整型数字              | ID/数量等数值比较    | `views>1000`       |
+| float  | 浮点数字              | 价格等精确数值       | `price<=19.99`     |
+| text   | 长文本                | 内容全文检索         | `content=查询词`   |
+
+#### 注意事项
+
+ - 字段名和值区分大小写
+ - 特殊字符需要进行 URL 编码
 
 ### 钩子
 > TTDF默认有三个钩子可以挂，分别为`load_head`&`load_foot`&`load_code`
