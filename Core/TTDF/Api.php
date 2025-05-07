@@ -650,19 +650,18 @@ class TTDF_API
      */
     private static function generatePlainExcerpt($content, $length = 200)
     {
-        // 去除HTML标签
+        // 去除HTML
         $text = strip_tags($content);
 
-        // 去除Markdown
-        $text = preg_replace('/```.*?```/s', '', $text);
-        $text = preg_replace('/~~~.*?~~~/s', '', $text);
-        $text = preg_replace('/`.*?`/', '', $text);
-        $text = preg_replace('/$$(.*?)$$$.*?$/', '$1', $text); // 保留链接文字
-        $text = preg_replace('/!$$(.*?)$$$.*?$/', '$1', $text); // 保留图片alt文字
-        $text = preg_replace('/[\*\_]{1,3}(.*?)[\*\_]{1,3}/', '$1', $text);
+        // 处理Markdown
+        $text = preg_replace('/```.*?```/s', '', $text);  // 去除代码块
+        $text = preg_replace('/~~~.*?~~~/s', '', $text);  // 去除代码块
+        $text = preg_replace('/`.*?`/', '', $text);       // 去除行内代码
+        $text = preg_replace('/$$([^$$]+)\]$[^)]+$/', '$1', $text);
+        $text = preg_replace('/!$$([^$$]*)\]$[^)]+$/', '', $text);
+        $text = preg_replace('/^#{1,6}\s*/m', '', $text);
+        $text = preg_replace('/[\*\_]{1,3}([^*_]+)[\*\_]{1,3}/', '$1', $text);
         $text = preg_replace('/^\s*>\s*/m', '', $text);
-
-        // 去除多余空白字符
         $text = preg_replace('/\s+/', ' ', $text);
         $text = trim($text);
 
@@ -678,7 +677,6 @@ class TTDF_API
 
         return $text;
     }
-
     /**
      * 格式化内容为指定格式
      */
