@@ -110,6 +110,12 @@ class TTDF_API
                 case 'search':
                     $response = self::handleSearch($pathParts);
                     break;
+                case 'options':
+                    $response = self::handleOptions($pathParts);
+                    break;
+                case 'themeOptions':
+                    $response = self::handleThemeOptions($pathParts);
+                    break;
                 case 'fields':
                     $response = self::handleFieldSearch($pathParts);
                     break;
@@ -125,7 +131,6 @@ class TTDF_API
                 case 'attachments':
                     $response = self::handleAttachmentList($pathParts);
                     break;
-
                 default:
                     self::sendErrorResponse('Not Found', self::HTTP_NOT_FOUND);
             }
@@ -409,6 +414,138 @@ class TTDF_API
         }
     }
 
+    /**
+     * 处理options请求
+     */
+    private static function handleOptions($pathParts)
+    {
+        if (count($pathParts) === 1) {
+            // /options - 获取所有公开选项
+            return [
+                'data' => self::getAllPublicOptions(),
+                'page' => 1,
+                'pageSize' => 'all',
+                'total' => count(self::getAllPublicOptions())
+            ];
+        }
+
+        // /options/{name} - 获取特定选项
+        $optionName = $pathParts[1];
+        $optionValue = Get::Options($optionName);
+
+        if ($optionValue === null) {
+            self::sendErrorResponse('Option not found', self::HTTP_NOT_FOUND);
+        }
+
+        return [
+            'data' => [
+                'name' => $optionName,
+                'value' => $optionValue
+            ],
+            'page' => 1,
+            'pageSize' => 1,
+            'total' => 1
+        ];
+    }
+
+    /**
+     * 获取所有公开选项
+     */
+    private static function getAllPublicOptions()
+    {
+        $options = Helper::options();
+        $publicOptions = [];
+
+        // 定义允许公开的选项白名单
+        $allowedOptions = [
+            'title',
+            'description',
+            'keywords',
+            'theme',
+            'plugins',
+            'timezone',
+            'lang',
+            'charset',
+            'contentType',
+            'siteUrl',
+            'rootUrl',
+            'rewrite',
+            'generator',
+            'feedUrl',
+            'searchUrl'
+        ];
+
+        foreach ($allowedOptions as $option) {
+            if (isset($options->$option)) {
+                $publicOptions[$option] = $options->$option;
+            }
+        }
+
+        return $publicOptions;
+    }
+
+    /**
+     * 处理主题设置请求
+     */
+    private static function handleThemeOptions($pathParts)
+    {
+        // 主题名称
+        $themeName = GetTheme::Name(false);
+
+        // 获取主题设置
+        $themeOptions = self::getThemeOptions($themeName);
+
+        if (count($pathParts) === 1) {
+            // /themeOtions - 获取所有主题设置
+            return [
+                'data' => $themeOptions,
+                'page' => 1,
+                'pageSize' => 'all',
+                'total' => count($themeOptions)
+            ];
+        }
+
+        // /themeOptions/{name} - 获取特定主题设置项
+        $optionName = $pathParts[1];
+
+        if (!isset($themeOptions[$optionName])) {
+            self::sendErrorResponse('Theme option not found', self::HTTP_NOT_FOUND);
+        }
+
+        return [
+            'data' => [
+                'name' => $optionName,
+                'value' => $themeOptions[$optionName]
+            ],
+            'page' => 1,
+            'pageSize' => 1,
+            'total' => 1
+        ];
+    }
+
+    /**
+     * 获取主题设置项
+     * @param string $themeName 主题名称
+     * @return array 主题设置数组
+     */
+    private static function getThemeOptions($themeName)
+    {
+        $db = Typecho_Db::get();
+        $prefix = $db->getPrefix(); // 获取表前缀
+
+        $row = $db->fetchRow($db->select('value')
+            ->from($prefix . 'options') // 使用正确的表名格式
+            ->where('name = ?', 'theme:' . $themeName)
+            ->limit(1));
+
+        if (!$row || !isset($row['value'])) {
+            return [];
+        }
+
+        // 反序列化主题设置
+        $options = @unserialize($row['value']);
+        return is_array($options) ? $options : [];
+    }
     // 添加字段搜索处理方法
     private static function handleFieldSearch($pathParts)
     {
