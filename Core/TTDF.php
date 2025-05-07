@@ -20,5 +20,8 @@ require_once 'TTDF/Class.php';
 require_once 'TTDF/Api.php';
 require_once 'TTDF/Functions.php';
 require_once 'TTDF/Options.php';
-require_once 'Fields.php';
 require_once 'Setup.php';
+
+if ($TTDF_Fields == true) {
+    require_once 'Fields.php';
+}
