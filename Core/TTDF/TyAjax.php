@@ -146,7 +146,7 @@ class TyAjax_Core
     {
         echo <<<HTML
     <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
-    <link href="https://csf.vxras.com/usr/themes/zibll/message.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/gh/ShuShuicu/TyAjax/message.css" rel="stylesheet">
     HTML;
     }
 
@@ -154,7 +154,7 @@ class TyAjax_Core
     {
         echo <<<HTML
 <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-<script src="https://csf.vxras.com/usr/themes/zibll/message.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/ShuShuicu/TyAjax/message.js"></script>
 <script>
 /**
  * @description: ajax请求封装
