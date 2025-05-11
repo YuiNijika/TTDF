@@ -6,14 +6,12 @@
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
-// 定义常量
-define('__TYPECHO_GRAVATAR_PREFIX__', $TTDF_Avatar); 
+define('__TYPECHO_GRAVATAR_PREFIX__', $TTDF_Avatar ?? '');
 // 设置框架版本
-define('__FRAMEWORK_VER__', '2.2.0'); 
+define('__FRAMEWORK_VER__', '2.2.1'); 
 // 设置 REST API 状态
-define('__TTDF_RESTAPI__', $TTDF_RESTAPI ); 
-// 设置 REST API 路由
-define('__TTDF_RESTAPI_ROUTE__', $TTDF_RESTAPI_ROUTE); 
+define('__TTDF_RESTAPI__', $TTDF_RESTAPI ?? false);
+define('__TTDF_RESTAPI_ROUTE__', $TTDF_RESTAPI_ROUTE ?? 'API');
 
 // 加载核心文件
 require_once 'TTDF/Class.php';
