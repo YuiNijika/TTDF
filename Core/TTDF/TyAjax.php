@@ -1,17 +1,10 @@
 <?php
-
 /**
  * 一个轻量级的 AJAX 处理框架，专为 Typecho 博客系统设计，提供简单易用的 AJAX 请求处理功能。
  * @author DearLicy
  * @link https://github.com/DearLicy/TyAjax
  */
-if (!defined('__TYPECHO_ROOT_DIR__')) {
-    define('__TYPECHO_ROOT_DIR__', dirname(__FILE__) . '/../..');
-    require __TYPECHO_ROOT_DIR__ . '/config.inc.php';
-    require __TYPECHO_ROOT_DIR__ . '/var/Typecho/Common.php';
-    require __TYPECHO_ROOT_DIR__ . '/var/Typecho/Db.php';
-    $db = Typecho_Db::get();
-}
+if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
 if (!class_exists('TyAjax_Hook')) {
     class TyAjax_Hook
@@ -153,6 +146,7 @@ class TyAjax_Core
     {
         echo <<<HTML
     <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <link href="https://csf.vxras.com/usr/themes/zibll/message.css" rel="stylesheet">
     HTML;
     }
 
@@ -160,7 +154,7 @@ class TyAjax_Core
     {
         echo <<<HTML
 <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-
+<script src="https://csf.vxras.com/usr/themes/zibll/message.js"></script>
 <script>
 /**
  * @description: ajax请求封装
