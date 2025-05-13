@@ -111,11 +111,11 @@ class TTDF
     public static function HeadMetaOG()
     {
     ?>
-    <meta name="og:description" content="<?php echo TTDF_SEO_Helper::getDescription(); ?>" />
+    <meta name="og:description" content="<?php echo TTDF_SEO_Description(); ?>" />
     <meta property="og:locale" content="<?php echo Get::Options('lang') ? Get::Options('lang') : 'zh-CN' ?>" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="<?php Get::Options('title', true) ?>" />
-    <meta property="og:title" content="<?php echo TTDF_SEO_Helper::getPageTitle(); ?>" />
+    <meta property="og:title" content="<?php echo TTDF_SEO_Title(); ?>" />
     <meta property="og:url" content="<?php Get::PageUrl(); ?>" />
     <link rel="canonical" href="<?php Get::PageUrl(true, false, null, true); ?>" />
 <?php
