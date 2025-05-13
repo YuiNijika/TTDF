@@ -3,14 +3,19 @@
 /**
  * TTDF REST API
  */
-if (!defined('__TYPECHO_ROOT_DIR__')) {
-    exit;
-}
+if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
 $restApiSwitch = Get::Options('TTDF_RESTAPI_Switch');
 if ($restApiSwitch === 'false') {
+    // 确保 Router::$current 是一个空字符串而不是 null
+    if (!isset(Typecho\Router::$current)) {
+        Typecho\Router::$current = '';
+    }
     return;
 } elseif (!isset($restApiSwitch) && (!defined('__TTDF_RESTAPI__') || !__TTDF_RESTAPI__)) {
+    if (!isset(Typecho\Router::$current)) {
+        Typecho\Router::$current = '';
+    }
     return;
 }
 
