@@ -218,6 +218,10 @@ class GetPost extends Typecho_Widget
     {
         try {
             $excerpt = strip_tags(self::getCurrentArchive()->excerpt);
+            if (empty($excerpt)) {
+                $content = strip_tags(self::getCurrentArchive()->content);
+                $excerpt = mb_substr($content, 0, $length > 0 ? $length : 100, 'UTF-8');
+            }
             $excerpt = $length > 0 ? mb_substr($excerpt, 0, $length, 'UTF-8') : $excerpt;
             return self::outputValue($excerpt, $echo);
         } catch (Exception $e) {
