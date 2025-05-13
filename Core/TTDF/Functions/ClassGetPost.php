@@ -137,6 +137,22 @@ class GetPost extends Typecho_Widget
     // 数据获取方法
 
     /**
+     * 获取文章CID
+     * 
+     * @param bool $echo 是否直接输出，默认为 true
+     * @return int|null 返回文章CID或直接输出
+     */
+    public static function Cid($echo = true)
+    {
+        try {
+            $cid = self::getCurrentArchive()->cid;
+            return self::outputValue($cid, $echo);
+        } catch (Exception $e) {
+            return self::handleOutputError('获取Cid失败', $e, $echo);
+        }
+    }
+
+    /**
      * 获取文章标题
      * 
      * @param bool $echo 是否直接输出，默认为 true
