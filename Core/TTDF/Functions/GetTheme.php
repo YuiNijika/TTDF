@@ -64,8 +64,11 @@ class GetTheme
      * 定义AssetsUrl
      * 防止之前写的主题失效
      */
-    public static function AssetsUrl()
+    public static function AssetsUrl($echo = true)
     {
+        if ($echo) {
+            echo self::Url(false, 'Assets');
+        }
         return self::Url(false, 'Assets');
     }
 
