@@ -72,6 +72,7 @@ Get::SiteUrl(false) 为 return 返回值
 
 |       方法        |       描述       |            示例             |
 | :---------------: | :--------------: | :-------------------------: |
+|       Cid()       |   获取文章Cid    |       GetPost::Cid();       |
 |      List()       |   获取文章列表   |      GetPost::List();       |
 |      Title()      |   获取文章标题   |      GetPost::Title();      |
 |      Date()       |   获取文章日期   |      GetPost::Date();       |
