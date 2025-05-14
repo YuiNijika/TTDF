@@ -8,6 +8,8 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 function themeConfig($form)
 {
 ?>
+    </div>
+
     <style text="text/css">
         /* Typecho CSS 重置部分 */
         .typecho-foot {
@@ -135,6 +137,9 @@ function themeConfig($form)
             display: flex;
             flex-direction: column;
             width: 240px;
+            max-height: 520px;
+            overflow-y: auto;
+            overflow:auto;overflow-x: hidden;
             background-color: var(--secondary-light);
         }
 
