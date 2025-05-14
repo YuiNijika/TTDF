@@ -1,6 +1,7 @@
 # Typecho Theme Development Framework
 
-> 一个 Typecho 主题开发框架 v2 版，~~还算不上框架只能说让开发变得更简单些~~
+> 一个 Typecho 主题开发框架，设计之初是写给自己用的。  
+> ~~还算不上框架只能说让开发变得更简单些~~
 
 特别感谢  
 [@Sualiu](https://github.com/Sualiu) & [@李初一](https://github.com/DearLicy)
