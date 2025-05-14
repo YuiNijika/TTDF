@@ -123,13 +123,13 @@ class TTDF
     public static function HeadMeta()
     {
 ?>
-        <meta charset="<?php Get::Options('charset', true) ?>">
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" />
-        <meta name="renderer" content="webkit" />
-        <?php TTDF::Functions('SEO'); ?>
-        <meta name="generator" content="Typecho <?php TTDF::TypechoVer(true) ?>" />
-        <meta name="framework" content="TTDF <?php TTDF::Ver(true) ?>" />
-        <meta name="template" content="<?php GetTheme::Name(true) ?>" />
+<meta charset="<?php Get::Options('charset', true) ?>">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" />
+    <meta name="renderer" content="webkit" />
+    <?php TTDF::Functions('SEO'); ?>
+    <meta name="generator" content="Typecho <?php TTDF::TypechoVer(true) ?>" />
+    <meta name="framework" content="TTDF <?php TTDF::Ver(true) ?>" />
+    <meta name="template" content="<?php GetTheme::Name(true) ?>" />
     <?php
     }
     /**
@@ -138,13 +138,13 @@ class TTDF
     public static function HeadMetaOG()
     {
     ?>
-        <meta name="og:description" content="<?php echo TTDF_SEO_Description(); ?>" />
-        <meta property="og:locale" content="<?php echo Get::Options('lang') ? Get::Options('lang') : 'zh-CN' ?>" />
-        <meta property="og:type" content="website" />
-        <meta property="og:site_name" content="<?php Get::Options('title', true) ?>" />
-        <meta property="og:title" content="<?php echo TTDF_SEO_Title(); ?>" />
-        <meta property="og:url" content="<?php Get::PageUrl(); ?>" />
-        <link rel="canonical" href="<?php Get::PageUrl(true, false, null, true); ?>" />
+<meta name="og:description" content="<?php echo TTDF_SEO_Description(); ?>" />
+    <meta property="og:locale" content="<?php echo Get::Options('lang') ? Get::Options('lang') : 'zh-CN' ?>" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="<?php Get::Options('title', true) ?>" />
+    <meta property="og:title" content="<?php echo TTDF_SEO_Title(); ?>" />
+    <meta property="og:url" content="<?php Get::PageUrl(); ?>" />
+    <link rel="canonical" href="<?php Get::PageUrl(true, false, null, true); ?>" />
 <?php
     }
 }
