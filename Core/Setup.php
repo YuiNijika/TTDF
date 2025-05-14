@@ -78,6 +78,19 @@ $config = [
             ],
         ]
     ],
+    'HTML-Demo' => [
+        'title' => 'HTML示例',
+        'html' => [
+            [
+                'content' => '<h2>欢迎使用TTDF框架</h2>
+            <p>Typecho Theme Development Framework</p>
+            <blockquote style="border-left: 4px solid #ccc; padding-left: 20px; margin: 20px 0;">
+                <p>一个 Typecho 主题开发框架，设计之初是写给自己用的。<br>
+                <del>还算不上框架只能说让开发变得更简单些</del></p>
+            </blockquote>'
+            ],
+        ]
+    ],
 ];
 
 return $config;

@@ -434,10 +434,10 @@ function themeConfig($form)
         foreach ($tabs as $tab_id => $tab) {
             $active = $first_tab ? 'active' : '';
             $form->addItem(new EchoHtml('
-            <div class="tab-button ' . $active . '" onclick="openTab(event, \'' . $tab_id . '\')" 
-                    data-tab="' . $tab_id . '">
-                ' . $tab['title'] . '
-            </div>'));
+        <div class="tab-button ' . $active . '" onclick="openTab(event, \'' . $tab_id . '\')" 
+                data-tab="' . $tab_id . '">
+            ' . $tab['title'] . '
+        </div>'));
             $first_tab = false;
         }
 
@@ -450,15 +450,21 @@ function themeConfig($form)
             $active = $first_tab ? 'active' : '';
             $form->addItem(new EchoHtml('<div id="' . $tab_id . '" class="tab-content ' . $active . '">'));
 
-            foreach ($tab['fields'] as $field) {
-                $form->addInput(TTDF_FormElement(
-                    $field['type'],
-                    $field['name'],
-                    $field['value'] ?? null,
-                    $field['label'] ?? '',
-                    $field['description'] ?? '',
-                    $field['options'] ?? []
-                ));
+            if (isset($tab['html'])) {
+                foreach ($tab['html'] as $html) {
+                    $form->addItem(new EchoHtml($html['content']));
+                }
+            } else {
+                foreach ($tab['fields'] as $field) {
+                    $form->addInput(TTDF_FormElement(
+                        $field['type'],
+                        $field['name'],
+                        $field['value'] ?? null,
+                        $field['label'] ?? '',
+                        $field['description'] ?? '',
+                        $field['options'] ?? []
+                    ));
+                }
             }
 
             $form->addItem(new EchoHtml('</div>'));
