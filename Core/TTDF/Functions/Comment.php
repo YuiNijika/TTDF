@@ -1,10 +1,10 @@
 <?php
 /**
- * GetComments Class
+ * Comments Class
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
-class GetComments
+class Comment
 {
     use ErrorHandler, SingletonWidget;
 

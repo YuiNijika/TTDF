@@ -5,6 +5,33 @@
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
+class TTDF_Function
+{
+
+    use ErrorHandler;
+
+    private function __construct() {}
+    private function __clone() {}
+    public function __wakeup() {}
+    /**
+     * 获取加载时间
+     *  @param bool|null $echo 当设置为 true 时，会直接输出；
+     *                        当设置为 false 时，则返回结果值。
+     */
+    public static function TimerStop(?bool $echo = true)
+    {
+        try {
+            if ($echo) echo TTDF_TimerStop();
+            ob_start();  // 开启输出缓冲
+            echo TTDF_TimerStop();
+            $content = ob_get_clean();  // 获取缓冲区内容并清除缓冲区
+            return $content;
+        } catch (Exception $e) {
+            return self::handleError('获取加载时间失败', $e);
+        }
+    }
+}
+
 class TTDF
 {
     /**
@@ -37,7 +64,7 @@ class TTDF
             return self::handleError('获取PHP版本失败', $e);
         }
     }
-    
+
 
     /**
      * 获取框架版本
@@ -95,15 +122,15 @@ class TTDF
      */
     public static function HeadMeta()
     {
-    ?>
-<meta charset="<?php Get::Options('charset', true) ?>">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" />
-    <meta name="renderer" content="webkit" />
-    <?php TTDF::Functions('SEO'); ?>
-    <meta name="generator" content="Typecho <?php TTDF::TypechoVer(true) ?>" />
-    <meta name="framework" content="TTDF <?php TTDF::Ver(true) ?>" />
-    <meta name="template" content="<?php GetTheme::Name(true) ?>" />
-<?php
+?>
+        <meta charset="<?php Get::Options('charset', true) ?>">
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" />
+        <meta name="renderer" content="webkit" />
+        <?php TTDF::Functions('SEO'); ?>
+        <meta name="generator" content="Typecho <?php TTDF::TypechoVer(true) ?>" />
+        <meta name="framework" content="TTDF <?php TTDF::Ver(true) ?>" />
+        <meta name="template" content="<?php GetTheme::Name(true) ?>" />
+    <?php
     }
     /**
      * HeadMetaOG
@@ -111,13 +138,13 @@ class TTDF
     public static function HeadMetaOG()
     {
     ?>
-    <meta name="og:description" content="<?php echo TTDF_SEO_Description(); ?>" />
-    <meta property="og:locale" content="<?php echo Get::Options('lang') ? Get::Options('lang') : 'zh-CN' ?>" />
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="<?php Get::Options('title', true) ?>" />
-    <meta property="og:title" content="<?php echo TTDF_SEO_Title(); ?>" />
-    <meta property="og:url" content="<?php Get::PageUrl(); ?>" />
-    <link rel="canonical" href="<?php Get::PageUrl(true, false, null, true); ?>" />
+        <meta name="og:description" content="<?php echo TTDF_SEO_Description(); ?>" />
+        <meta property="og:locale" content="<?php echo Get::Options('lang') ? Get::Options('lang') : 'zh-CN' ?>" />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="<?php Get::Options('title', true) ?>" />
+        <meta property="og:title" content="<?php echo TTDF_SEO_Title(); ?>" />
+        <meta property="og:url" content="<?php Get::PageUrl(); ?>" />
+        <link rel="canonical" href="<?php Get::PageUrl(true, false, null, true); ?>" />
 <?php
     }
 }
@@ -125,7 +152,8 @@ class TTDF
 /**
  * 钩子类
  */
-class TTDF_Hook {
+class TTDF_Hook
+{
     private static $actions = [];
 
     /**
@@ -133,7 +161,8 @@ class TTDF_Hook {
      * @param string $hook_name 钩子名称
      * @param callable $callback 回调函数
      */
-    public static function add_action($hook_name, $callback) {
+    public static function add_action($hook_name, $callback)
+    {
         if (!isset(self::$actions[$hook_name])) {
             self::$actions[$hook_name] = [];
         }
@@ -145,7 +174,8 @@ class TTDF_Hook {
      * @param string $hook_name 钩子名称
      * @param mixed $args 传递给回调函数的参数
      */
-    public static function do_action($hook_name, $args = null) {
+    public static function do_action($hook_name, $args = null)
+    {
         if (isset(self::$actions[$hook_name])) {
             foreach (self::$actions[$hook_name] as $callback) {
                 call_user_func($callback, $args);

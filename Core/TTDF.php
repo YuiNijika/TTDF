@@ -12,7 +12,7 @@ if (version_compare(PHP_VERSION, '7.4', '<')) {
 
 define('__TYPECHO_GRAVATAR_PREFIX__', $TTDF_Avatar ?? '');
 // 设置框架版本
-define('__FRAMEWORK_VER__', '2.2.1'); 
+define('__FRAMEWORK_VER__', '2.2.2'); 
 // 设置 REST API 状态
 define('__TTDF_RESTAPI__', $TTDF_RESTAPI ?? false);
 define('__TTDF_RESTAPI_ROUTE__', $TTDF_RESTAPI_ROUTE ?? 'API');
