@@ -10,15 +10,8 @@ function themeConfig($form)
 ?>
     <style text="text/css">
         /* Typecho CSS 重置部分 */
-        .main {
-            background-color: #ffffffde;
-            padding: 10px;
-            min-height: calc(100vh - 200px);
-        }
-
         .typecho-foot {
-            padding: 1em 0 3em;
-            background-color: #ffffffde;
+            display: none;
         }
 
         .typecho-head-nav .operate a {
@@ -71,6 +64,7 @@ function themeConfig($form)
             --border-radius: 6px;
             --transition-speed: 0.25s;
             --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 20px;
         }
 
         #TTDF_Options .header {
@@ -82,6 +76,17 @@ function themeConfig($form)
             color: var(--text-light);
             box-shadow: var(--shadow);
             border-radius: var(--border-radius) var(--border-radius) 0 0;
+            position: relative;
+        }
+
+        #TTDF_Options .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
         }
 
         #TTDF_Options .header h1 {
@@ -176,6 +181,10 @@ function themeConfig($form)
             flex: 1;
             padding: 10px 20px;
             background-color: white;
+            max-height: 500px;
+            /* 设置固定高度 */
+            overflow-y: auto;
+            /* 启用垂直滚动 */
         }
 
         #TTDF_Options .tab-content {
@@ -248,6 +257,19 @@ function themeConfig($form)
             color: #777;
             margin-top: 6px;
             line-height: 1.5;
+        }
+
+        /* 新增底部版权区块样式 */
+        #TTDF_Options .footer {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 25px;
+        }
+
+        /* 调整主容器圆角 */
+        #TTDF_Options .tab-container {
+            border-radius: 0;
         }
 
         /* 动画效果 */
@@ -344,7 +366,7 @@ function themeConfig($form)
             }
         }
     </style>
-    <script text="text/javascript">
+    <script type="text/javascript">
         // 打开指定标签页
         function openTab(evt, tabId) {
             // 隐藏所有内容
@@ -363,8 +385,9 @@ function themeConfig($form)
             document.getElementById(tabId).classList.add("active");
             evt.currentTarget.classList.add("active");
 
-            // 更新 URL hash
+            // 更新 URL hash 并滚动到顶部
             window.location.hash = tabId;
+            window.scrollTo(0, 0);
         }
 
         // 页面加载时检查 hash 并打开对应标签页
@@ -396,6 +419,9 @@ function themeConfig($form)
                     if (buttons.length > 0) {
                         buttons[0].classList.add("active");
                     }
+
+                    // 滚动到顶部
+                    window.scrollTo(0, 0);
                 }
             }
         });
@@ -435,10 +461,11 @@ function themeConfig($form)
                 ));
             }
 
-            $form->addItem(new EchoHtml('<hr><div>© Framework By <a href="https://github.com/Typecho-Framework/Typecho-Theme-Development-Framework" target="_blank">TTDF</a> ' . TTDF::Ver(false) . '</div></div>'));
+            $form->addItem(new EchoHtml('</div>'));
             $first_tab = false;
         }
     });
+
     // 辅助类用于输出HTML
     class EchoHtml extends Typecho_Widget_Helper_Layout
     {
@@ -465,7 +492,15 @@ function themeConfig($form)
         </div>
         <div class="tab-container">
             <div class="tab-buttons">'));
+
     TTDF_Hook::do_action('TTDF_Options_Code', $form);
-    // 关闭所有HTML标签
-    $form->addItem(new EchoHtml('</div></div></div>'));
+
+    // 关闭所有HTML标签并添加底部版权信息
+    $form->addItem(new EchoHtml('
+        </div>
+    </div>
+    <div class="footer">
+        © Framework By <a href="https://github.com/Typecho-Framework/Typecho-Theme-Development-Framework" target="_blank">TTDF</a> ' . TTDF::Ver(false) . '
+    </div>
+    </div>'));
 }
