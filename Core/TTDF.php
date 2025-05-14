@@ -6,6 +6,10 @@
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
+if (version_compare(PHP_VERSION, '7.4', '<')) {
+    die('您的PHP版本低于7.4, 请升级PHP版本!');
+}
+
 define('__TYPECHO_GRAVATAR_PREFIX__', $TTDF_Avatar ?? '');
 // 设置框架版本
 define('__FRAMEWORK_VER__', '2.2.1'); 
