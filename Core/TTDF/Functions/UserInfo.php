@@ -1,6 +1,5 @@
 <?php
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
-
 class UserInfo
 {
     use ErrorHandler, SingletonWidget;
@@ -9,374 +8,274 @@ class UserInfo
     private function __clone() {}
     public function __wakeup() {}
 
-    /**
-     * 获取当前用户或作者对象
-     * @param bool $author 是否获取作者(而非当前登录用户)
-     * @return object
-     */
-    private static function getUserObject($author = false)
+    // 获取用户名
+    public static function Name($echo = true)
     {
         try {
-            return $author ? self::getArchive()->author : self::getArchive()->user;
+            $author = self::getArchive()->author->screenName;
+            if ($echo) {
+                echo $author;
+            } else {
+                return $author;
+            }
         } catch (Exception $e) {
-            self::handleError('获取用户对象失败', $e);
-            return null;
+            self::handleError('获取作者失败', $e);
+            if ($echo) {
+                echo '';
+            } else {
+                return '';
+            }
         }
     }
 
-    // ==================== 基本信息 ====================
-
-    /**
-     * 获取用户名
-     * @param bool $echo 是否直接输出
-     * @param bool $author 是否获取作者(而非当前登录用户)
-     * @return string
-     */
-    public static function Name($echo = true, $author = false)
+    // 获取昵称
+    public static function DisplayName($echo = true)
     {
         try {
-            $name = self::getUserObject($author)->screenName;
-            return self::output($name, $echo);
+            $name = self::getArchive()->author->name;
+            if ($echo) {
+                echo $name;
+            } else {
+                return $name;
+            }
         } catch (Exception $e) {
-            self::handleError('获取用户名失败', $e);
-            return self::output('', $echo);
+            self::handleError('获取昵称失败', $e);
+            if ($echo) {
+                echo '';
+            } else {
+                return '';
+            }
         }
     }
 
-    /**
-     * 获取用户显示名称
-     * @param bool $echo 是否直接输出
-     * @param bool $author 是否获取作者(而非当前登录用户)
-     * @return string
-     */
-    public static function DisplayName($echo = true, $author = false)
+    // 获取用户头像
+    public static function Avatar($size = 128, $echo = true)
     {
         try {
-            $name = self::getUserObject($author)->name;
-            return self::output($name ?: self::Name(false, $author), $echo);
+            $avatar = self::getArchive()->author->gravatar($size);
+            if ($echo) {
+                echo $avatar;
+            } else {
+                return $avatar;
+            }
         } catch (Exception $e) {
-            self::handleError('获取用户显示名称失败', $e);
-            return self::output('', $echo);
+            self::handleError('获取作者头像失败', $e);
+            if ($echo) {
+                echo '';
+            } else {
+                return '';
+            }
         }
     }
 
-    // ==================== 头像相关 ====================
-
-    /**
-     * 获取用户头像
-     * @param int $size 头像尺寸
-     * @param bool $echo 是否直接输出
-     * @param bool $author 是否获取作者(而非当前登录用户)
-     * @return string
-     */
-    public static function Avatar($size = 128, $echo = true, $author = false)
+    // 获取用户头像URL
+    public static function AvatarURL($size = 128, $default = 'mm', $rating = 'X', $echo = true)
     {
         try {
-            $avatar = self::getUserObject($author)->gravatar($size);
-            return self::output($avatar, $echo);
-        } catch (Exception $e) {
-            self::handleError('获取用户头像失败', $e);
-            return self::output('', $echo);
-        }
-    }
-
-    /**
-     * 获取用户头像URL
-     * @param int $size 头像尺寸
-     * @param string $default 默认头像类型
-     * @param string $rating 头像分级
-     * @param bool $echo 是否直接输出
-     * @param bool $author 是否获取作者(而非当前登录用户)
-     * @return string
-     */
-    public static function AvatarURL($size = 128, $default = 'mm', $rating = 'X', $echo = true, $author = false)
-    {
-        try {
-            $email = self::getUserObject($author)->mail;
+            $email = self::getArchive()->author->mail;
             $isSecure = self::getArchive()->request->isSecure();
             $avatarUrl = \Typecho\Common::gravatarUrl($email, $size, $rating, $default, $isSecure);
-            return self::output($avatarUrl, $echo);
+
+            if ($echo) {
+                echo $avatarUrl;
+            } else {
+                return $avatarUrl;
+            }
         } catch (Exception $e) {
-            self::handleError('获取用户头像URL失败', $e);
-            return self::output('', $echo);
+            self::handleError('获取作者头像URL失败', $e);
+            if ($echo) {
+                echo '';
+            } else {
+                return '';
+            }
         }
     }
 
-    // ==================== 联系信息 ====================
-
-    /**
-     * 获取用户邮箱
-     * @param bool $echo 是否直接输出
-     * @param bool $author 是否获取作者(而非当前登录用户)
-     * @return string
-     */
-    public static function Email($echo = true, $author = false)
+    // 获取用户邮箱
+    public static function Email($echo = true)
     {
         try {
-            $email = self::getUserObject($author)->mail;
-            return self::output($email, $echo);
+            $email = self::getArchive()->author->mail;
+            if ($echo) {
+                echo $email;
+            } else {
+                return $email;
+            }
         } catch (Exception $e) {
-            self::handleError('获取用户邮箱失败', $e);
-            return self::output('', $echo);
+            self::handleError('获取作者邮箱失败', $e);
+            if ($echo) {
+                echo '';
+            } else {
+                return '';
+            }
         }
     }
 
-    /**
-     * 获取用户网站
-     * @param bool $echo 是否直接输出
-     * @param bool $author 是否获取作者(而非当前登录用户)
-     * @return string
-     */
-    public static function WebSite($echo = true, $author = false)
+    // 获取用户网站
+    public static function WebSite($echo = true)
     {
         try {
-            $url = self::getUserObject($author)->url;
-            return self::output($url, $echo);
+            $url = self::getArchive()->author->url;
+            if ($echo) {
+                echo $url;
+            } else {
+                return $url;
+            }
         } catch (Exception $e) {
-            self::handleError('获取用户网站失败', $e);
-            return self::output('', $echo);
+            self::handleError('获取作者网站失败', $e);
+            if ($echo) {
+                echo '';
+            } else {
+                return '';
+            }
         }
     }
 
-    // ==================== 用户资料 ====================
-
-    /**
-     * 获取用户简介
-     * @param bool $echo 是否直接输出
-     * @param bool $author 是否获取作者(而非当前登录用户)
-     * @return string
-     */
-    public static function Bio($echo = true, $author = false)
+    // 获取用户简介
+    public static function Bio($echo = true)
     {
         try {
-            $bio = self::getUserObject($author)->bio;
-            return self::output($bio, $echo);
+            $bio = self::getArchive()->author->userBio;
+            if ($echo) {
+                echo $bio;
+            } else {
+                return $bio;
+            }
         } catch (Exception $e) {
-            self::handleError('获取用户简介失败', $e);
-            return self::output('', $echo);
+            self::handleError('获取作者简介失败', $e);
+            if ($echo) {
+                echo '';
+            } else {
+                return '';
+            }
         }
     }
 
-    /**
-     * 获取用户角色/用户组
-     * @param bool $echo 是否直接输出
-     * @param bool $author 是否获取作者(而非当前登录用户)
-     * @return string
-     */
-    public static function Group($echo = true, $author = false)
+    // 获取用户组/角色
+    public static function Role($echo = true)
     {
         try {
-            $group = self::getUserObject($author)->group;
-            return self::output($group, $echo);
+            $group = self::getArchive()->author->group;
+            if ($echo) {
+                echo $group;
+            } else {
+                return $group;
+            }
         } catch (Exception $e) {
-            self::handleError('获取用户角色失败', $e);
-            return self::output('', $echo);
+            self::handleError('获取作者组失败', $e);
+            if ($echo) {
+                echo '';
+            } else {
+                return '';
+            }
         }
     }
 
-    // ==================== 时间信息 ====================
-
-    /**
-     * 获取用户注册时间
-     * @param string $format 时间格式
-     * @param bool $echo 是否直接输出
-     * @param bool $author 是否获取作者(而非当前登录用户)
-     * @return string
-     */
-    public static function Registered($format = 'Y-m-d H:i:s', $echo = true, $author = false)
+    // 获取注册时间
+    public static function Registered($format = 'Y-m-d H:i:s', $echo = true)
     {
         try {
-            $time = self::getUserObject($author)->registered;
+            $time = self::getArchive()->author->created;
             $formatted = date($format, $time);
-            return self::output($formatted, $echo);
+            if ($echo) {
+                echo $formatted;
+            } else {
+                return $formatted;
+            }
         } catch (Exception $e) {
-            self::handleError('获取用户注册时间失败', $e);
-            return self::output('', $echo);
+            self::handleError('获取注册时间失败', $e);
+            if ($echo) {
+                echo '';
+            } else {
+                return '';
+            }
         }
     }
 
-    /**
-     * 获取用户最后登录时间
-     * @param string $format 时间格式
-     * @param bool $echo 是否直接输出
-     * @param bool $author 是否获取作者(而非当前登录用户)
-     * @return string
-     */
-    public static function LastLogin($format = 'Y-m-d H:i:s', $echo = true, $author = false)
+    // 获取最后登录时间
+    public static function LastLogin($format = 'Y-m-d H:i:s', $echo = true)
     {
         try {
-            $time = self::getUserObject($author)->logged;
+            $time = self::getArchive()->author->logged;
             $formatted = date($format, $time);
-            return self::output($formatted, $echo);
+            if ($echo) {
+                echo $formatted;
+            } else {
+                return $formatted;
+            }
         } catch (Exception $e) {
-            self::handleError('获取用户最后登录时间失败', $e);
-            return self::output('', $echo);
+            self::handleError('获取最后登录时间失败', $e);
+            if ($echo) {
+                echo '';
+            } else {
+                return '';
+            }
         }
     }
 
-    // ==================== 统计信息 ====================
-
-    /**
-     * 获取用户文章数量
-     * @param bool $echo 是否直接输出
-     * @param bool $author 是否获取作者(而非当前登录用户)
-     * @return int
-     */
-    public static function PostCount($echo = true, $author = false)
+    // 获取文章数
+    public static function PostCount($echo = true)
     {
         try {
-            $count = self::getUserObject($author)->postsNum;
-            return self::output($count, $echo);
+            $count = self::getArchive()->author->postsNum;
+            if ($echo) {
+                echo $count;
+            } else {
+                return $count;
+            }
         } catch (Exception $e) {
-            self::handleError('获取用户文章数量失败', $e);
-            return self::output(0, $echo);
+            self::handleError('获取文章数失败', $e);
+            if ($echo) {
+                echo '0';
+            } else {
+                return 0;
+            }
         }
     }
 
-    /**
-     * 获取用户页面数量
-     * @param bool $echo 是否直接输出
-     * @param bool $author 是否获取作者(而非当前登录用户)
-     * @return int
-     */
-    public static function PageCount($echo = true, $author = false)
+    // 获取页面数量
+    public static function PageCount($echo = true)
     {
         try {
-            $count = self::getUserObject($author)->pagesNum;
-            return self::output($count, $echo);
+            $db = \Typecho\Db::get();
+            $count = $db->fetchObject($db->select(['COUNT(cid)' => 'num'])
+                ->from('table.contents')
+                ->where('type = ?', 'page')
+                ->where('authorId = ?', self::getArchive()->author->uid)
+                ->where('status = ?', 'publish'))->num;
+            
+            if ($echo) {
+                echo $count;
+            } else {
+                return $count;
+            }
         } catch (Exception $e) {
-            self::handleError('获取用户页面数量失败', $e);
-            return self::output(0, $echo);
+            self::handleError('获取页面数量失败', $e);
+            if ($echo) {
+                echo '0';
+            } else {
+                return 0;
+            }
         }
     }
 
-    // ==================== 链接相关 ====================
-
-    /**
-     * 获取作者链接
-     * @param bool $echo 是否直接输出
-     * @return string
-     */
+    // 获取作者链接
     public static function Permalink($echo = true)
     {
         try {
-            $permalink = self::getUserObject(true)->permalink;
-            return self::output($permalink, $echo);
+            $permalink = self::getArchive()->author->permalink;
+            if ($echo) {
+                echo $permalink;
+            } else {
+                return $permalink;
+            }
         } catch (Exception $e) {
             self::handleError('获取作者链接失败', $e);
-            return self::output('', $echo);
-        }
-    }
-
-    // ==================== 评论相关方法 ====================
-
-    /**
-     * 获取用户评论数量
-     * @param bool $echo 是否直接输出
-     * @param bool $author 是否获取作者(而非当前登录用户)
-     * @return int
-     */
-    public static function CommentCount($echo = true, $author = false)
-    {
-        try {
-            $count = self::getUserObject($author)->commentsNum;
-            return self::output($count, $echo);
-        } catch (Exception $e) {
-            self::handleError('获取用户评论数量失败', $e);
-            return self::output(0, $echo);
-        }
-    }
-
-    /**
-     * 获取用户最新评论
-     * @param int $limit 获取数量
-     * @param bool $author 是否获取作者(而非当前登录用户)
-     * @return Typecho_Db_Query
-     */
-    public static function RecentComments($limit = 5, $author = false)
-    {
-        try {
-            $userId = self::getUserObject($author)->uid;
-            $db = Typecho_Db::get();
-            $select = $db->select()->from('table.comments')
-                ->where('authorId = ?', $userId)
-                ->where('status = ?', 'approved')
-                ->order('created', Typecho_Db::SORT_DESC)
-                ->limit($limit);
-
-            return $db->fetchAll($select);
-        } catch (Exception $e) {
-            self::handleError('获取用户最新评论失败', $e);
-            return array();
-        }
-    }
-
-    /**
-     * 获取用户评论过的文章数量
-     * @param bool $echo 是否直接输出
-     * @param bool $author 是否获取作者(而非当前登录用户)
-     * @return int
-     */
-    public static function CommentedPostCount($echo = true, $author = false)
-    {
-        try {
-            $userId = self::getUserObject($author)->uid;
-            $db = Typecho_Db::get();
-            $select = $db->select('DISTINCT cid')
-                ->from('table.comments')
-                ->where('authorId = ?', $userId)
-                ->where('status = ?', 'approved');
-
-            $count = count($db->fetchAll($select));
-            return self::output($count, $echo);
-        } catch (Exception $e) {
-            self::handleError('获取用户评论过的文章数量失败', $e);
-            return self::output(0, $echo);
-        }
-    }
-
-    /**
-     * 获取用户评论的HTML输出
-     * @param int $limit 获取数量
-     * @param bool $author 是否获取作者(而非当前登录用户)
-     * @return string
-     */
-    public static function CommentsHTML($limit = 5, $author = false)
-    {
-        try {
-            $comments = self::RecentComments($limit, $author);
-            $html = '';
-
-            foreach ($comments as $comment) {
-                $html .= '<div class="user-comment">';
-                $html .= '<p class="comment-content">' . htmlspecialchars($comment['text']) . '</p>';
-                $html .= '<p class="comment-meta">';
-                $html .= '发布于: ' . date('Y-m-d H:i', $comment['created']);
-                $html .= ' | 文章: <a href="' . $comment['permalink'] . '">' . htmlspecialchars($comment['title']) . '</a>';
-                $html .= '</p></div>';
+            if ($echo) {
+                echo '';
+            } else {
+                return '';
             }
-
-            return $html;
-        } catch (Exception $e) {
-            self::handleError('生成用户评论HTML失败', $e);
-            return '';
         }
-    }
-
-    // ==================== 辅助方法 ====================
-
-    /**
-     * 根据参数决定输出或返回
-     * @param mixed $content 要输出的内容
-     * @param bool $echo 是否直接输出
-     * @return mixed
-     */
-    private static function output($content, $echo)
-    {
-        if ($echo) {
-            echo $content;
-            return null;
-        }
-        return $content;
     }
 }
