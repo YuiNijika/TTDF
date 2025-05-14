@@ -500,7 +500,7 @@ function themeConfig($form)
         </div>
     </div>
     <div class="footer">
-        © Framework By <a href="https://github.com/Typecho-Framework/Typecho-Theme-Development-Framework" target="_blank">TTDF</a> ' . TTDF::Ver(false) . '
+        © Framework By<a href="https://github.com/Typecho-Framework/Typecho-Theme-Development-Framework" target="_blank" style="padding: 0px 3px;">TTDF</a>v' . TTDF::Ver(false) . '
     </div>
     </div>'));
 }
