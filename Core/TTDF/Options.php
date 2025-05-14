@@ -485,10 +485,6 @@ function themeConfig($form)
         public function end() {}
     }
 
-    // 定义常量
-    define("THEME_URL", GetTheme::Url(false));
-    define("THEME_NAME", GetTheme::Name(false));
-
     // 初始化HTML结构
     $form->addItem(new EchoHtml('
     <div id="TTDF_Options">
