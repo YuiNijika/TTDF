@@ -137,10 +137,6 @@ $featuredPosts = GetPost::List (
 |              PostCount()              |        获取文章数        |     GetUser::PostCount();      |
 |              PageCount()              |       获取页面数量       |     GetUser::PageCount();      |
 |              Permalink()              |       获取作者链接       |     GetUser::Permalink();      |
-|            CommentCount()             |     获取用户评论数量     |    GetUser::CommentCount();    |
-|           RecentComments()            |     获取用户最新评论     |   GetUser::RecentComments();   |
-|         CommentedPostCount()          | 获取用户评论过的文章数量 | GetUser::CommentedPostCount(); |
-|            CommentsHTML()             |  获取用户评论的HTML输出  |    GetUser::CommentsHTML();    |
 
 
 #### Comment 类
