@@ -64,7 +64,7 @@ TTDF_Hook::add_action('load_foot', function () {
 ?>
 <script type="text/javascript">
         console.log("\n %c %s \n", "color: #fff; background: #34495e; padding:5px 0;", "TTDF v<?php TTDF::Ver() ?>", );
-        console.log('页面加载耗时 <?php GetFunctions::TimerStop(); ?>');
+        console.log('页面加载耗时 <?php TTDF_Function::TimerStop(); ?>');
     </script>
 <?php
 });

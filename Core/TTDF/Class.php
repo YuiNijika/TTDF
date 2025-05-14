@@ -31,12 +31,11 @@ trait SingletonWidget
     }
 }
 
-require_once 'Functions/ClassDB.php';
-require_once 'Functions/ClassGet.php';
-require_once 'Functions/ClassGetTheme.php';
-require_once 'Functions/ClassGetPost.php';
-require_once 'Functions/ClassGetAuthor.php';
-require_once 'Functions/ClassGetComments.php';
-require_once 'Functions/ClassGetFunctions.php';
-require_once 'Functions/ClassTools.php';
+require_once 'Functions/DB.php';
+require_once 'Functions/Tools.php';
+require_once 'Functions/Get.php';
+require_once 'Functions/GetTheme.php';
+require_once 'Functions/GetPost.php';
+require_once 'Functions/Comment.php';
+require_once 'Functions/UserInfo.php';
 require_once 'Functions/ClassTTDF.php';
