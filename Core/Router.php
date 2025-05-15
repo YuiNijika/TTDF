@@ -22,7 +22,7 @@ if ($TTDF_ROUTE) {
 
                 // 根据路由分发请求
                 switch ($path) {
-                    case 'test1':
+                    case 'test':
                         self::GetTest($response);
                         echo $response; // 输出响应
                         break;
