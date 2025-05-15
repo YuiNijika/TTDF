@@ -15,15 +15,20 @@ Get::SiteUrl(false) 为 return 返回值
 
 #### TTDF 类
 
-|       方法       |        描述         |          示例           |
-| :--------------: | :-----------------: | :---------------------: |
-|      Ver()       |   获取框架版本号    |      TTDF::Ver();       |
-|   TypechoVer()   | 获取 Typecho 版本号 |   TTDF::TypechoVer();   |
-|    HeadMeta()    |   调用 meta 标签    |    TTDF::HeadMeta();    |
-|   HeadMetaOG()   |    调用 OG 标签     |   TTDF::HeadMetaOG();   |
-| Widget($TTDF) |    调用功能函数     | TTDF::Functions($TTDF); |
+|     方法      |        描述         |         示例         |
+| :-----------: | :-----------------: | :------------------: |
+|     Ver()     |   获取框架版本号    |     TTDF::Ver();     |
+| TypechoVer()  | 获取 Typecho 版本号 | TTDF::TypechoVer();  |
+| Widget($TTDF) |    调用功能函数     | TTDF::Widget($TTDF); |
 
-> 调用SEO为TTDF::Widget('SEO');
+#####  Widget 方法
+|            方法             |       描述       |               示例                |
+| :-------------------------: | :--------------: | :-------------------------------: |
+|        Widget('SEO')        |   调用SEO标签    |       TTDF::Widget('SEO');        |
+|     Widget('SEO', $OG)      |   不输出OG标签   |    TTDF::Widget('SEO', false);    |
+|     Widget('HeadMeta')      |   调用Meta标签   |    TTDF::Widget('HeadMeta') ;     |
+| Widget('HeadMeta' $HeadSeo) |  不输出SEO标签   | TTDF::Widget('HeadMeta', false) ; |
+|     Widget('TimerStop')     | 输出页面加载时间 |    TTDF::Widget('TimerStop');     |
 
 #### Get 类
 
@@ -58,16 +63,31 @@ Get::SiteUrl(false) 为 return 返回值
 > 移除所有查询参数并移除端口  
 > Get::PageUrl(true, true, null, true);  
 
+#### Site 类
+
+获取站点信息。
+
+|    方法     |       描述       |         示例         |
+| :---------: | :--------------: | :------------------: |
+|    Name     |   获取站点名称   |    Site::Name();     |
+| Description |   获取站点描述   | Site::description(); |
+|  Keywords   |  获取站点关键词  |  Site::Keywords();   |
+|  Language   |   获取站点语言   |  Site::Language();   |
+|   Charset   |  获取站点字符集  |   Site::Charset();   |
+|     Url     |   获取站点地址   |     Site::Url();     |
+|   PageUrl   | 获取当前页面地址 |   Site::PageUrl();   |
+|    Theme    |   获取主题名称   |    Site::Theme();    |
+
 #### GetTheme 类
 
 获取主题的相关信息。
 
-| 方法     | 描述           | 示例                |
-| -------- | -------------- | ------------------- |
-| Url()    | 获取主题的 URL | GetTheme::Url();    |
-| Name()   | 获取主题名称   | GetTheme::Name();   |
-| Author() | 获取主题作者   | GetTheme::Author(); |
-| Ver()    | 获取主题版本号 | GetTheme::Ver();    |
+|   方法   |      描述      |        示例         |
+| :------: | :------------: | :-----------------: |
+|  Url()   | 获取主题的 URL |  GetTheme::Url();   |
+|  Name()  |  获取主题名称  |  GetTheme::Name();  |
+| Author() |  获取主题作者  | GetTheme::Author(); |
+|  Ver()   | 获取主题版本号 |  GetTheme::Ver();   |
 
 #### GetPost 类
 

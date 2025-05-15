@@ -34,6 +34,7 @@ trait SingletonWidget
 require_once 'Widget/DB.php';
 require_once 'Widget/Tools.php';
 require_once 'Widget/Get.php';
+require_once 'Widget/Site.php';
 require_once 'Widget/GetTheme.php';
 require_once 'Widget/GetPost.php';
 require_once 'Widget/Comment.php';
