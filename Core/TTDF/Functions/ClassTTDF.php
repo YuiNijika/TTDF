@@ -120,13 +120,10 @@ class TTDF
     /**
      * HeadMeta
      */
-    public static function HeadMeta()
+    public static function HeadMeta($skipHead = false)
     {
 ?>
-<meta charset="<?php Get::Options('charset', true) ?>">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" />
     <meta name="renderer" content="webkit" />
-    <?php TTDF::Functions('SEO'); ?>
     <meta name="generator" content="Typecho <?php TTDF::TypechoVer(true) ?>" />
     <meta name="framework" content="TTDF <?php TTDF::Ver(true) ?>" />
     <meta name="template" content="<?php GetTheme::Name(true) ?>" />

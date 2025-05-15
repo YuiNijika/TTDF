@@ -53,9 +53,11 @@ function TTDF_TimerStop($display = 0, $precision = 3)
  * @return void
  * @throws Exception
  */
-TTDF_Hook::add_action('load_head', function () {
+TTDF_Hook::add_action('load_head', function ($skipHead = false) {
     TTDF::HeadMeta(); // 添加头部信息
-    TTDF::HeadMetaOG(); // 添加 OG 标签
+    if (!$skipHead) {
+        TTDF::HeadMetaOG(); // 添加 OG 标签
+    }
     Get::Header(true, 'description,keywords,generator,template,pingback,EditURI,wlwmanifest,alternate');
 });
 
