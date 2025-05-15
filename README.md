@@ -30,6 +30,25 @@ Get::SiteUrl(false) 为 return 返回值
 | Widget('HeadMeta' $HeadSeo) |  不输出SEO标签   | TTDF::Widget('HeadMeta', false) ; |
 |     Widget('TimerStop')     | 输出页面加载时间 |    TTDF::Widget('TimerStop');     |
 
+自定义SEO信息
+
+只需要在引入`AppHeader`之前定义一个`useSeoMeta`类即可实现自定义SEO信息。
+
+```php
+class useSeoMeta
+{
+    public static function Title() {
+        echo '自定义标题';
+    }
+    public static function Description() {
+        echo '自定义描述';
+    }
+    public static function Keywords() {
+        echo '自定义关键词';
+    }
+}
+```
+
 #### Get 类
 
 获取站点信息及其他通用功能。
