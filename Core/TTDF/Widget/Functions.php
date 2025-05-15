@@ -54,11 +54,7 @@ function TTDF_TimerStop($display = 0, $precision = 3)
  * @throws Exception
  */
 TTDF_Hook::add_action('load_head', function ($skipHead = false) {
-    TTDF::HeadMeta(); // 添加头部信息
-    if (!$skipHead) {
-        TTDF::HeadMetaOG(); // 添加 OG 标签
-    }
-    Get::Header(true, 'description,keywords,generator,template,pingback,EditURI,wlwmanifest,alternate');
+    TTDF_Widget::HeadMeta(); // 添加头部信息
 });
 
 TTDF_Hook::add_action('load_foot', function () {
@@ -66,7 +62,7 @@ TTDF_Hook::add_action('load_foot', function () {
 ?>
 <script type="text/javascript">
         console.log("\n %c %s \n", "color: #fff; background: #34495e; padding:5px 0;", "TTDF v<?php TTDF::Ver() ?>", );
-        console.log('页面加载耗时 <?php TTDF_Function::TimerStop(); ?>');
+        console.log('页面加载耗时 <?php TTDF_Widget::TimerStop(); ?>');
     </script>
 <?php
 });

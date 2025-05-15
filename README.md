@@ -21,9 +21,9 @@ Get::SiteUrl(false) 为 return 返回值
 |   TypechoVer()   | 获取 Typecho 版本号 |   TTDF::TypechoVer();   |
 |    HeadMeta()    |   调用 meta 标签    |    TTDF::HeadMeta();    |
 |   HeadMetaOG()   |    调用 OG 标签     |   TTDF::HeadMetaOG();   |
-| Functions($TTDF) |    调用功能函数     | TTDF::Functions($TTDF); |
+| Widget($TTDF) |    调用功能函数     | TTDF::Functions($TTDF); |
 
-> 调用SEO为TTDF::Functions('SEO');
+> 调用SEO为TTDF::Widget('SEO');
 
 #### Get 类
 
@@ -94,12 +94,14 @@ Get::SiteUrl(false) 为 return 返回值
 
 > GetPost:List() 方法可自定义输出，示例如下：  
 > 默认调用
+> 
 `` php
  while (GetPost::List()) {
     
 };
 ```
 > 自定义调用
+
 ``` php
 <?php 
 // 第一个文章列表

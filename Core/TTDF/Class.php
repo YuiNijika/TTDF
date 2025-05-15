@@ -39,6 +39,7 @@ require_once 'Widget/GetPost.php';
 require_once 'Widget/Comment.php';
 require_once 'Widget/UserInfo.php';
 require_once 'Widget/ClassTTDF.php';
+require_once 'Widget/Widget.php';
 require_once 'Widget/TyAjax.php';
 /** API */
 require_once 'Widget/Api.php';

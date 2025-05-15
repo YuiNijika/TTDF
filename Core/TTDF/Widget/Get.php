@@ -308,18 +308,6 @@ class Get
     {
         return self::Need(self::buildFilePath('Template', $file));
     }
-
-    // 引入Core文件
-    public static function Core($file)
-    {
-        return self::Need(self::buildFilePath('Core', $file));
-    }
-
-    public static function CoreFunctions($file)
-    {
-        return self::Need(self::buildFilePath('Core/TTDF/Functions', $file));
-    }
-
     // 判断页面类型
     public static function Is($type)
     {
