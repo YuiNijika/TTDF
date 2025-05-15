@@ -434,7 +434,7 @@ function themeConfig($form)
     </script>
 <?php
     TTDF_Hook::add_action('TTDF_Options_Code', function ($form) {
-        $tabs = require __DIR__ . '/../Setup.php';
+        $tabs = require __DIR__ . '/../../Setup.php';
         // 生成Tab按钮
         $first_tab = true;
         foreach ($tabs as $tab_id => $tab) {

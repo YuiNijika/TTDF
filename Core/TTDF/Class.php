@@ -30,12 +30,17 @@ trait SingletonWidget
         return self::$widget;
     }
 }
-
-require_once 'Functions/DB.php';
-require_once 'Functions/Tools.php';
-require_once 'Functions/Get.php';
-require_once 'Functions/GetTheme.php';
-require_once 'Functions/GetPost.php';
-require_once 'Functions/Comment.php';
-require_once 'Functions/UserInfo.php';
-require_once 'Functions/ClassTTDF.php';
+/** Widget */
+require_once 'Widget/DB.php';
+require_once 'Widget/Tools.php';
+require_once 'Widget/Get.php';
+require_once 'Widget/GetTheme.php';
+require_once 'Widget/GetPost.php';
+require_once 'Widget/Comment.php';
+require_once 'Widget/UserInfo.php';
+require_once 'Widget/ClassTTDF.php';
+require_once 'Widget/TyAjax.php';
+/** API */
+require_once 'Widget/Api.php';
+require_once 'Widget/Functions.php';
+require_once 'Widget/Options.php';
