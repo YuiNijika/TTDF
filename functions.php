@@ -2,12 +2,14 @@
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
 /**
- * REST API 配置
- * @var bool $TTDF_RESTAPI 是否开启
- * @var string $TTDF_RESTAPI_ROUTE 路由配置
+ * 路由配置
+ * @var bool $TTDF_ROUTE 是否开启路由功能
+ * @var bool $TTDF_RESTAPI 是否开启 `REST API`
+ * @var string $TTDF_RESTAPI_ROUTE `REST API`的路由配置
  * @example 主题注册设置项 TTDF_RESTAPI_Switch 值为 true 时，开启 REST API 功能
  */
-$TTDF_RESTAPI = false; 
+$TTDF_ROUTE = false;
+$TTDF_RESTAPI = false;
 $TTDF_RESTAPI_ROUTE = 'API'; 
 
 $TTDF_Fields = false; // 是否开启自定义字段

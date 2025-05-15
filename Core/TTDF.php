@@ -23,6 +23,7 @@ require_once 'TTDF/Api.php';
 require_once 'TTDF/TyAjax.php';
 require_once 'TTDF/Functions.php';
 require_once 'TTDF/Options.php';
+require_once 'Router.php';
 require_once 'Setup.php';
 
 if ($TTDF_Fields == true) {
