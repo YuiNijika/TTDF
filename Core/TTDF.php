@@ -22,3 +22,4 @@ require_once 'TTDF/Class.php';
 require_once 'Ajax.php';
 require_once 'Router.php';
 require_once 'Setup.php';
+require_once 'Load.php';
