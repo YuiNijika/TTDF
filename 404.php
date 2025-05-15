@@ -1,6 +1,6 @@
 <?php
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
-class useSeoMeta
+class useSeo
 {
     public static function Title() {
         echo '出错啦';

@@ -57,8 +57,8 @@ class TTDF_SEO
 }
 function TTDF_SEO_Title()
 {
-    if (class_exists('useSeoMeta')) {
-        useSeoMeta::Title();
+    if (class_exists('useSeo')) {
+        useSeo::Title();
         return;
     }
 
@@ -90,8 +90,8 @@ function TTDF_SEO_Title()
 }
 function TTDF_SEO_Keywords()
 {
-    if (class_exists('useSeoMeta')) {
-        useSeoMeta::Keywords();
+    if (class_exists('useSeo')) {
+        useSeo::Keywords();
         return;
     }
 
@@ -110,8 +110,8 @@ function TTDF_SEO_Keywords()
 
 function TTDF_SEO_Description()
 {
-    if (class_exists('useSeoMeta')) {
-        useSeoMeta::Description();
+    if (class_exists('useSeo')) {
+        useSeo::Description();
         return;
     }
 

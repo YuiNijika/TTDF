@@ -239,10 +239,10 @@ Get::SiteUrl(false) 为 return 返回值
 
 自定义SEO信息
 
-只需要在引入`AppHeader`之前定义一个`useSeoMeta`类即可实现自定义SEO信息。
+只需要在引入`AppHeader`之前定义一个`useSeo`类即可实现自定义SEO信息。
 
 ```php
-class useSeoMeta
+class useSeo
 {
     public static function Title() {
         echo '自定义标题';
