@@ -15,12 +15,15 @@ Get::SiteUrl(false) 为 return 返回值
 
 #### TTDF 类
 
-|    方法    |        描述         |        示例         |
-| :--------: | :-----------------: | :-----------------: |
-|    Ver     |   获取框架版本号    |    TTDF::Ver();     |
-| TypechoVer | 获取 Typecho 版本号 | TTDF::TypechoVer(); |
-|  HeadMeta  |   调用 meta 标签    |  TTDF::HeadMeta();  |
-| HeadMetaOG |    调用 OG 标签     | TTDF::HeadMetaOG(); |
+|       方法       |        描述         |          示例           |
+| :--------------: | :-----------------: | :---------------------: |
+|      Ver()       |   获取框架版本号    |      TTDF::Ver();       |
+|   TypechoVer()   | 获取 Typecho 版本号 |   TTDF::TypechoVer();   |
+|    HeadMeta()    |   调用 meta 标签    |    TTDF::HeadMeta();    |
+|   HeadMetaOG()   |    调用 OG 标签     |   TTDF::HeadMetaOG();   |
+| Functions($TTDF) |    调用功能函数     | TTDF::Functions($TTDF); |
+
+> 调用SEO为TTDF::Functions('SEO');
 
 #### Get 类
 
@@ -122,21 +125,21 @@ $featuredPosts = GetPost::List (
 
 获取用户的相关信息。
 
-|                 方法                  |           描述           |              示例              |
-| :-----------------------------------: | :----------------------: | :----------------------------: |
-|                Name()                 |        获取用户名        |        GetUser::Name();        |
-| DisplayName($size, $default, $rating) |         获取昵称         |    GetUser::DisplayName();     |
-|               Avatar()                |       获取用户头像       |       GetUser::Avatar();       |
-|              AvatarURL()              |       获取用户头像       |     GetUser::AvatarURL();      |
-|                Email()                |       获取用户邮箱       |       GetUser::Email();        |
-|               WebSite()               |       获取用户网站       |      GetUser::WebSite();       |
-|                 Bio()                 |       获取用户简介       |        GetUser::Bio();         |
-|                Group()                |        获取用户组        |        GetUser::Role();        |
-|             Registered()              |       获取注册时间       |     GetUser::Registered();     |
-|              LastLogin()              |     获取最后登录时间     |     GetUser::LastLogin();      |
-|              PostCount()              |        获取文章数        |     GetUser::PostCount();      |
-|              PageCount()              |       获取页面数量       |     GetUser::PageCount();      |
-|              Permalink()              |       获取作者链接       |     GetUser::Permalink();      |
+|                 方法                  |       描述       |          示例           |
+| :-----------------------------------: | :--------------: | :---------------------: |
+|                Name()                 |    获取用户名    |    GetUser::Name();     |
+| DisplayName($size, $default, $rating) |     获取昵称     | GetUser::DisplayName(); |
+|               Avatar()                |   获取用户头像   |   GetUser::Avatar();    |
+|              AvatarURL()              |   获取用户头像   |  GetUser::AvatarURL();  |
+|                Email()                |   获取用户邮箱   |    GetUser::Email();    |
+|               WebSite()               |   获取用户网站   |   GetUser::WebSite();   |
+|                 Bio()                 |   获取用户简介   |     GetUser::Bio();     |
+|                Group()                |    获取用户组    |    GetUser::Role();     |
+|             Registered()              |   获取注册时间   | GetUser::Registered();  |
+|              LastLogin()              | 获取最后登录时间 |  GetUser::LastLogin();  |
+|              PostCount()              |    获取文章数    |  GetUser::PostCount();  |
+|              PageCount()              |   获取页面数量   |  GetUser::PageCount();  |
+|              Permalink()              |   获取作者链接   |  GetUser::Permalink();  |
 
 
 #### Comment 类
