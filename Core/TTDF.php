@@ -12,16 +12,13 @@ if (version_compare(PHP_VERSION, '7.4', '<')) {
 
 define('__TYPECHO_GRAVATAR_PREFIX__', $TTDF_Avatar ?? 'https://cravatar.cn/avatar/');
 // 设置框架版本
-define('__FRAMEWORK_VER__', '2.2.2'); 
+define('__FRAMEWORK_VER__', '2.2.3'); 
 // 设置 REST API 状态
 define('__TTDF_RESTAPI__', $TTDF_RESTAPI ?? false);
 define('__TTDF_RESTAPI_ROUTE__', $TTDF_RESTAPI_ROUTE ?? 'API');
 
 // 加载核心文件
 require_once 'TTDF/Class.php';
+require_once 'Ajax.php';
 require_once 'Router.php';
 require_once 'Setup.php';
-
-if ($TTDF_Fields == true) {
-    require_once 'Fields.php';
-}
