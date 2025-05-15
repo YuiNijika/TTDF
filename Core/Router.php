@@ -22,7 +22,7 @@ if ($TTDF_ROUTE) {
 
                 // 根据路由分发请求
                 switch ($path) {
-                    case 'test':
+                    case 'test1':
                         self::GetTest($response);
                         echo $response; // 输出响应
                         break;
@@ -34,7 +34,7 @@ if ($TTDF_ROUTE) {
                 // 异常处理
                 echo "500 Internal Server Error";
             }
-            exit;
+            
         }
 
         private static function GetTest(&$response)
@@ -48,6 +48,9 @@ if ($TTDF_ROUTE) {
     $basePath = '/';
     if (strpos($requestUri, $basePath) === 0) {
         \Typecho\Response::getInstance()->setStatus(200); // 设置响应状态码
+        Get::Template('AppHeader');
         TTDF_Router::handleRequest();
+        Get::Template('AppFooter');
+        exit;
     }
 }
