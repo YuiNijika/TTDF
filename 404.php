@@ -12,7 +12,7 @@ class useSeoMeta
         echo '404, error, 错误';
     }
 }
-Get::Template('AppHeaderRouter');
+Get::Template('AppHeader');
 ?>
 <div class="error">
     <div style="text-align: center;">
