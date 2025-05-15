@@ -2,10 +2,216 @@
 
 > 一个 Typecho 主题开发框架 v2 版，~~还算不上框架只能说让开发变得更简单些~~
 
-特别感谢  
+配置要求: PHP 7.4+ Typecho 1.2+
+
+## 框架特点
+
+ - 轻量
+ - TyAjax
+ - REST API
+ - 钩子系统
+ - 选项框架
+ - 快速调用
+ - 字段查询
+ - 数据库查询
+ - jQuery&Qmsg
+
+## 特别感谢  
 [@Sualiu](https://github.com/Sualiu) & [@李初一](https://github.com/DearLicy)
 
-[开发示例](https://www.bilibili.com/video/BV1qLQKYmE6j)
+---
+
+### 选项框架
+
+#### 主题设置项
+
+> Core/Setup.php
+
+|   字段   |      描述      |
+| :------: | :------------: |
+|   Text   |     文本框     |
+| Textarea |     文本域     |
+|  Radio   |     单选框     |
+|  Select  |     下拉框     |
+| Checkbox |     多选框     |
+|   Html   | 自定义HTML标签 |
+
+```php
+[
+    '基础设置' => [
+        'title' => '基础设置',
+        'fields' => [
+            // 'Html' => '自定义HTML标签',
+            [
+                'type' => 'Html',
+                'content' => '<h3>感谢使用 TTDF 进行开发</h3>'
+            ],
+            [
+                // 'Text' => '文本框',
+                'type' => 'Text',
+                'name' => 'SubTitle',
+                'value' => null,
+                'label' => '副标题',
+                'description' => '这是一个文本框，用于设置网站副标题，如果为空则不显示。'
+            ],
+            [
+                // 'Textarea' => '文本域',
+                'type' => 'Textarea',
+                'name' => 'TTDF_Textarea',
+                'value' => null,
+                'label' => '文本域',
+                'description' => '这是一个文本域~'
+            ]
+        ]
+    ],
+    'select-elements' => [
+        'title' => '选择设置',
+        'fields' => [
+            [
+                // 'Radio' => '单选框',
+                'type' => 'Radio',
+                'name' => 'TTDF_Radio',
+                'value' => 'option1',
+                'label' => '单选框',
+                'description' => '这是一个单选框~',
+                'options' => [
+                    'option1' => '选项一',
+                    'option2' => '选项二',
+                    'option3' => '选项三'
+                ]
+            ],
+            [
+                // 'Select' => '下拉框',
+                'type' => 'Select',
+                'name' => 'TTDF_Select',
+                'value' => 'option2',
+                'label' => '下拉框',
+                'description' => '这是一个下拉框~',
+                'options' => [
+                    'option1' => '选项一',
+                    'option2' => '选项二',
+                    'option3' => '选项三'
+                ]
+            ],
+            [
+                // 'Checkbox' => '多选框',
+                'type' => 'Checkbox',
+                'name' => 'TTDF_Checkbox',
+                'value' => ['option1', 'option3'],
+                'label' => '多选框',
+                'description' => '这是一个多选框~',
+                'options' => [
+                    'option1' => '选项一',
+                    'option2' => '选项二',
+                    'option3' => '选项三'
+                ]
+            ]
+        ]
+    ],
+    'TTDF-Options' => [
+        'title' => '其他设置',
+        'fields' => [
+            [
+                'type' => 'Select',
+                'name' => 'TTDF_RESTAPI_Switch',
+                'value' => 'false',
+                'label' => 'REST API',
+                'description' => 'TTDF框架内置的 REST API<br/>使用教程可参见 <a href="https://github.com/Typecho-Framework/Typecho-Theme-Development-Framework#rest-api" target="_blank">*这里*</a>',
+                'options' => [
+                    'true' => '开启',
+                    'false' => '关闭'
+                ]
+            ],
+        ]
+    ],
+    'HTML-Demo' => [
+        'title' => 'HTML示例',
+        // 定义HTML TAB栏
+        'html' => [
+            [
+                // 'Content' => '自定义输出HTML内容',
+                'content' => '<h2>欢迎使用TTDF框架</h2>
+            <p>Typecho Theme Development Framework</p>
+            <blockquote style="border-left: 4px solid #ccc; padding-left: 20px; margin: 20px 0;">
+                <p>一个 Typecho 主题开发框架，设计之初是写给自己用的。<br>
+                <del>还算不上框架只能说让开发变得更简单些</del></p>
+            </blockquote>'
+            ],
+        ]
+    ],
+];
+```
+
+#### 文章字段
+
+> Core/Fields.php
+
+```php
+[
+    [
+        // Text
+        'type' => 'Text',
+        'name' => 'TTDF_Fields_Text',
+        'value' => null, // 默认值为 null
+        'label' => '文本框',
+        'description' => '这是一个文本框~',
+        'attributes' => [
+            'style' => 'width: 100%;'
+        ]
+    ],
+    [
+        // Textarea
+        'type' => 'Textarea',
+        'name' => 'TTDF_Fields_Textarea',
+        'value' => null, // 默认值为 null
+        'label' => '文本域',
+        'description' => '这是一个文本域~',
+        // 设置字段属性
+        'attributes' => [
+            'style' => 'width: 100%;height: 100px;'
+        ]
+    ],
+    [
+        // Radio
+        'type' => 'Radio',
+        'name' => 'TTDF_Fields_Radio',
+        'value' => null, // 默认值为 null
+        'label' => '单选框',
+        'description' => '这是一个单选框~',
+        'options' => [
+            'option1' => '选项一',
+            'option2' => '选项二',
+            'option3' => '选项三'
+        ]
+    ],
+    [
+        // Select
+        'type' => 'Select',
+        'name' => 'TTDF_Fields_Select',
+        'value' => null, // 默认值为 null
+        'label' => '下拉框',
+        'description' => '这是一个下拉框~',
+        'options' => [
+            'option1' => '选项一',
+            'option2' => '选项二',
+            'option3' => '选项三'
+        ]
+    ],
+    [
+        // Checkbox
+        'type' => 'Checkbox',
+        'name' => 'TTDF_Fields_Checkbox',
+        'value' => [], // 默认值为空数组
+        'label' => '多选框',
+        'description' => '这是一个多选框~',
+        'options' => [
+            'option1' => '选项一',
+            'option2' => '选项二',
+            'option3' => '选项三'
+        ]
+    ]
+];
+```
 
 ### 类与方法
 
@@ -131,15 +337,16 @@ class useSeoMeta
 |     Author()      |   获取文章作者   |     GetPost::Author();      |
 | AuthorPermalink() |   获取作者链接   | GetPost::AuthorPermalink(); |
 
-> GetPost:List() 方法可自定义输出，示例如下：  
-> 默认调用
-> 
-`` php
+> GetPost:List() 方法可自定义输出，示例如下： 
+ 
+默认调用
+
+```php
  while (GetPost::List()) {
     
 };
 ```
-> 自定义调用
+自定义调用
 
 ``` php
 <?php 
@@ -262,8 +469,6 @@ TyAjax_Core::init();
 ```
 
  - 前端按钮需要添加 ty-ajax-submit 类，并通过 form-action 属性指定 action 名称
- - 确保 jQuery 已加载（框架会通过 bootcdn 自动加载最新版 jQuery）
- - 如果需要自定义样式，可以覆盖默认的 message.css 文件
 
 #### 响应格式
 
