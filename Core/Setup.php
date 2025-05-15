@@ -5,7 +5,13 @@ $config = [
     '基础设置' => [
         'title' => '基础设置',
         'fields' => [
+            // 'Html' => '自定义HTML标签',
             [
+                'type' => 'Html',
+                'content' => '<h3>感谢使用 TTDF 进行开发</h3>'
+            ],
+            [
+                // 'Text' => '文本框',
                 'type' => 'Text',
                 'name' => 'SubTitle',
                 'value' => null,
@@ -13,6 +19,7 @@ $config = [
                 'description' => '这是一个文本框，用于设置网站副标题，如果为空则不显示。'
             ],
             [
+                // 'Textarea' => '文本域',
                 'type' => 'Textarea',
                 'name' => 'TTDF_Textarea',
                 'value' => null,
@@ -25,6 +32,7 @@ $config = [
         'title' => '选择设置',
         'fields' => [
             [
+                // 'Radio' => '单选框',
                 'type' => 'Radio',
                 'name' => 'TTDF_Radio',
                 'value' => 'option1',
@@ -37,6 +45,7 @@ $config = [
                 ]
             ],
             [
+                // 'Select' => '下拉框',
                 'type' => 'Select',
                 'name' => 'TTDF_Select',
                 'value' => 'option2',
@@ -49,6 +58,7 @@ $config = [
                 ]
             ],
             [
+                // 'Checkbox' => '多选框',
                 'type' => 'Checkbox',
                 'name' => 'TTDF_Checkbox',
                 'value' => ['option1', 'option3'],
@@ -80,8 +90,10 @@ $config = [
     ],
     'HTML-Demo' => [
         'title' => 'HTML示例',
+        // 定义HTML TAB栏
         'html' => [
             [
+                // 'Content' => '自定义输出HTML内容',
                 'content' => '<h2>欢迎使用TTDF框架</h2>
             <p>Typecho Theme Development Framework</p>
             <blockquote style="border-left: 4px solid #ccc; padding-left: 20px; margin: 20px 0;">

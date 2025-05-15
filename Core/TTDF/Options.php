@@ -139,7 +139,8 @@ function themeConfig($form)
             width: 240px;
             max-height: 520px;
             overflow-y: auto;
-            overflow:auto;overflow-x: hidden;
+            overflow: auto;
+            overflow-x: hidden;
             background-color: var(--secondary-light);
         }
 
@@ -439,10 +440,10 @@ function themeConfig($form)
         foreach ($tabs as $tab_id => $tab) {
             $active = $first_tab ? 'active' : '';
             $form->addItem(new EchoHtml('
-        <div class="tab-button ' . $active . '" onclick="openTab(event, \'' . $tab_id . '\')" 
-                data-tab="' . $tab_id . '">
-            ' . $tab['title'] . '
-        </div>'));
+    <div class="tab-button ' . $active . '" onclick="openTab(event, \'' . $tab_id . '\')" 
+            data-tab="' . $tab_id . '">
+        ' . $tab['title'] . '
+    </div>'));
             $first_tab = false;
         }
 
@@ -461,14 +462,18 @@ function themeConfig($form)
                 }
             } else {
                 foreach ($tab['fields'] as $field) {
-                    $form->addInput(TTDF_FormElement(
-                        $field['type'],
-                        $field['name'],
-                        $field['value'] ?? null,
-                        $field['label'] ?? '',
-                        $field['description'] ?? '',
-                        $field['options'] ?? []
-                    ));
+                    if ($field['type'] === 'Html') {
+                        $form->addItem(new EchoHtml($field['content']));
+                    } else {
+                        $form->addInput(TTDF_FormElement(
+                            $field['type'],
+                            $field['name'],
+                            $field['value'] ?? null,
+                            $field['label'] ?? '',
+                            $field['description'] ?? '',
+                            $field['options'] ?? []
+                        ));
+                    }
                 }
             }
 
