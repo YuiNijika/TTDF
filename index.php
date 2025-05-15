@@ -11,4 +11,10 @@ Get::Template('AppHeader');
 
 TTDF::HelloWorld();
 
+echo <<<HTML
+<br>
+<button class="ty-ajax-submit" form-action="framework">获取框架版本</button>
+<button class="ty-ajax-submit" form-action="ty_web_agent">获取浏览器信息</button>
+HTML;
+
 Get::Template('AppFooter');
