@@ -55,12 +55,20 @@ function TTDF_TimerStop($display = 0, $precision = 3)
  */
 TTDF_Hook::add_action('load_head', function ($skipHead = false) {
     TTDF_Widget::HeadMeta(); // 添加头部信息
+?>
+    <link rel="stylesheet" href="<?php GetTheme::AssetsUrl() ?>/main.css?ver=<?php GetTheme::Ver(); ?>">
+    <link rel="stylesheet" href="<?php GetTheme::AssetsUrl() ?>/_ttdf/message.css?ver=<?php GetTheme::Ver(); ?>">
+    <script src="<?php GetTheme::AssetsUrl() ?>/_ttdf/jquery.min.js?ver=<?php GetTheme::Ver(); ?>"></script>
+<?php
 });
 
 TTDF_Hook::add_action('load_foot', function () {
     Get::Footer(true);
 ?>
-<script type="text/javascript">
+<script src="<?php GetTheme::AssetsUrl() ?>/main.js?ver=<?php GetTheme::Ver(); ?>"></script>
+    <script src="<?php GetTheme::AssetsUrl() ?>/_ttdf/ajax.js?ver=<?php GetTheme::Ver(); ?>"></script>
+    <script src="<?php GetTheme::AssetsUrl() ?>/_ttdf/message.min.js?ver=<?php GetTheme::Ver(); ?>"></script>
+    <script type="text/javascript">
         console.log("\n %c %s \n", "color: #fff; background: #34495e; padding:5px 0;", "TTDF v<?php TTDF::Ver() ?>", );
         console.log('页面加载耗时 <?php TTDF_Widget::TimerStop(); ?>');
     </script>

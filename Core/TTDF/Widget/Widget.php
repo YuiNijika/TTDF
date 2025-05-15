@@ -63,5 +63,4 @@ class TTDF_Widget
     <link rel="canonical" href="<?php Get::PageUrl(true, false, null, true); ?>" />
 <?php
     }
-
 }
