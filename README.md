@@ -595,7 +595,7 @@ GET /api/advancedFields/title/%重要%?operator=LIKE
 
 #### 使用方法
 
-注意，`load_head`&`load_foot`为挂载到页面模板，`load_code`为functions代码
+注意，`load_head`&`load_foot`为挂载到页面模板
 
 在页面 如index.php写
 ```php
