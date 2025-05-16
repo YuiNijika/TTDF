@@ -50,19 +50,61 @@ function TTDF_TimerStop($display = 0, $precision = 3)
 
 /**
  * 默认钩子
- * @return void
- * @throws Exception
+ * 添加头部元信息
  */
 TTDF_Hook::add_action('load_head', function ($skipHead = false) {
-    TTDF_Widget::HeadMeta(); // 添加头部信息
+    TTDF_Widget::HeadMeta();
 });
 
+if (__LOAD_SWITCH__) {
+    // 初始化可能未定义的变量
+    $load_dir_name = $load_dir_name ?? null;
+    $load_head_css = $load_head_css ?? [];
+    $load_head_js = $load_head_js ?? [];
+    $load_foot_js = $load_foot_js ?? [];
+    
+    // 获取资源URL和版本号的公共函数
+    $getAssetsUrl = function ($dirName = null) {
+        return GetTheme::Url(false) . '/' . ($dirName ?? 'Assets');
+    };
+    $ver = GetTheme::Ver(false);
+    
+    // 加载头部CSS和JS资源
+    TTDF_Hook::add_action('load_head', function ($skipHead = false) use ($load_head_css, $load_head_js, $load_dir_name, $getAssetsUrl, $ver) {
+        $assetsUrl = $getAssetsUrl($load_dir_name);
+        $output = '';
+        
+        // 生成CSS链接
+        foreach ($load_head_css as $style) {
+            $output .= "    <link rel=\"stylesheet\" href=\"{$assetsUrl}/{$style}?ver={$ver}\">\n";
+        }
+        
+        // 生成JS链接
+        foreach ($load_head_js as $script) {
+            $output .= "    <script src=\"{$assetsUrl}/{$script}?ver={$ver}\"></script>\n";
+        }
+        
+        echo $output;
+    });
+
+    // 加载底部JS资源
+    TTDF_Hook::add_action('load_foot', function () use ($load_foot_js, $load_dir_name, $getAssetsUrl, $ver) {
+        $assetsUrl = $getAssetsUrl($load_dir_name);
+        $output = '';
+        
+        foreach ($load_foot_js as $index => $script) {
+            $output .= ($index !== 0 ? "    " : "") . "<script src=\"{$assetsUrl}/{$script}?ver={$ver}\"></script>\n";
+        }
+        
+        echo $output;
+    });
+};
 TTDF_Hook::add_action('load_foot', function () {
     Get::Footer(true);
-?>
-<script type="text/javascript">
-        console.log("\n %c %s \n", "color: #fff; background: #34495e; padding:5px 0;", "TTDF v<?php TTDF::Ver() ?>", );
+    ?>
+    <script type="text/javascript">
+        console.log("\n %c %s \n", "color: #fff; background: #34495e; padding:5px 0;", "TTDF v<?php TTDF::Ver() ?>");
         console.log('页面加载耗时 <?php TTDF_Widget::TimerStop(); ?>');
     </script>
-<?php
+    <?php
 });

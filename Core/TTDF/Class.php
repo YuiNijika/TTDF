@@ -46,6 +46,6 @@ require_once 'Widget/TyAjax.php';
 require_once 'Widget/Api.php';
 require_once 'Widget/Functions.php';
 require_once 'Widget/Options.php';
-if ($TTDF_Fields == true) {
+if (__TTDF_FIELDS__ == true) {
     require_once 'Widget/Fields.php';
 }
