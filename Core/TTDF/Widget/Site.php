@@ -16,7 +16,7 @@ class Site
     public static function Name(?bool $echo = true)
     {
         try {
-            $name = Get::Options('title', true);
+            $name = Get::Options('title');
             if ($echo) echo $name;
             return $name;
         } catch (Exception $e) {
@@ -32,7 +32,7 @@ class Site
     public static function Description(?bool $echo = true)
     {
         try {
-            $description = Get::Options('description', true);
+            $description = Get::Options('description');
             if ($echo) echo $description;
             return $description;
         } catch (Exception $e) {
@@ -48,7 +48,7 @@ class Site
     public static function Keywords(?bool $echo = true)
     {
         try {
-            $keywords = Get::Options('keywords', true);
+            $keywords = Get::Options('keywords');
             if ($echo) echo $keywords;
             return $keywords;
         } catch (Exception $e) {
@@ -64,7 +64,7 @@ class Site
     public static function Language(?bool $echo = true)
     {
         try {
-            $language = Get::Options('lang', true);
+            $language = Get::Options('lang');
             if ($echo) echo $language;
             return $language;
         } catch (Exception $e) {
@@ -80,7 +80,7 @@ class Site
     public static function Charset(?bool $echo = true)
     {
         try {
-            $charset = Get::Options('charset', true);
+            $charset = Get::Options('charset');
             if ($echo) echo $charset;
             return $charset;
         } catch (Exception $e) {
@@ -96,7 +96,7 @@ class Site
     public static function Url(?bool $echo = true)
     {
         try {
-            $url = Get::Options('siteUrl', true);
+            $url = Get::Options('siteUrl');
             if ($echo) echo $url;
             return $url;
         }catch (Exception $e) {
@@ -128,7 +128,7 @@ class Site
     public static function Theme(?bool $echo = true)
     {
         try {
-            $theme = Get::Options('theme', true);
+            $theme = Get::Options('theme');
             if ($echo) echo $theme;
             return $theme;
         } catch (Exception $e) {
