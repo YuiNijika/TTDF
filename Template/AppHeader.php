@@ -6,8 +6,8 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
 <head>
     <?php TTDF_Hook::do_action('load_head'); ?>
+    <link rel="stylesheet" href="<?php get_theme_file_url('Assets/main.css?ver=') . get_theme_version(); ?>">
 </head>
 
 <body>
     <main id="app">
-    

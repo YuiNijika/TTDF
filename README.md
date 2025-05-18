@@ -15,7 +15,6 @@
  - 快速调用
  - 字段查询
  - 数据库查询
- - jQuery&Qmsg
 
 ## 特别感谢  
 [@Sualiu](https://github.com/Sualiu) & [@李初一](https://github.com/DearLicy)
