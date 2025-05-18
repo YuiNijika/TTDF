@@ -1,11 +1,7 @@
 <?php
-
-/**
- * Fields Functions
- */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 // 定义字段配置
-$fieldElements = [
+$Fields = [
     [
         // Text
         'type' => 'Text',
@@ -13,6 +9,7 @@ $fieldElements = [
         'value' => null, // 默认值为 null
         'label' => '文本框',
         'description' => '这是一个文本框~',
+        // 设置字段属性
         'attributes' => [
             'style' => 'width: 100%;'
         ]
@@ -69,3 +66,5 @@ $fieldElements = [
         ]
     ]
 ];
+
+return $Fields;

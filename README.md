@@ -234,7 +234,7 @@ Get::SiteUrl(false) 为 return 返回值
 |        Widget('SEO')        |   调用SEO标签    |       TTDF::Widget('SEO');        |
 |     Widget('SEO', $OG)      |   不输出OG标签   |    TTDF::Widget('SEO', false);    |
 |     Widget('HeadMeta')      |   调用Meta标签   |    TTDF::Widget('HeadMeta') ;     |
-| Widget('HeadMeta' $HeadSeo) |  不输出SEO标签   | TTDF::Widget('HeadMeta', false) ; |
+| Widget('HeadMeta' $UseSeo) |  不输出SEO标签   | TTDF::Widget('HeadMeta', false) ; |
 |     Widget('TimerStop')     | 输出页面加载时间 |    TTDF::Widget('TimerStop');     |
 
 自定义SEO信息

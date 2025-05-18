@@ -5,8 +5,8 @@ $config = [
     '基础设置' => [
         'title' => '基础设置',
         'fields' => [
-            // 'Html' => '自定义HTML标签',
             [
+                // 'Html' => '自定义HTML标签',
                 'type' => 'Html',
                 'content' => '<h3>感谢使用 TTDF 进行开发</h3>'
             ],
