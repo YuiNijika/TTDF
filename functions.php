@@ -12,7 +12,7 @@ class Main
         // 引入框架配置文件
         require_once 'Core/TTDF.Config.php';
         // 引入主题自定义代码
-        if(file_exists('/Core/Code.php')) {
+        if(file_exists(__DIR__ . '/Core/Code.php')) {
             // 先在`Code`目录下创建`Code.php`文件
             require_once 'Core/Code.php';
         }
