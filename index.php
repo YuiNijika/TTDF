@@ -4,7 +4,7 @@
  * @package TTDF v2.3
  * @author 鼠子(Tomoriゞ)
  * @version 1.0.0
- * @link https://github.com/ShuShuicu/Typecho-Theme-Development-Framework
+ * @link https://github.com/ShuShuicu/TTDF
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 // 面向过程调用
