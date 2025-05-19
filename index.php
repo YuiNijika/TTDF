@@ -1,7 +1,7 @@
 <?php 
 /**
  * 欢迎使用Typecho主题模板开发框架！
- * @package TTDF v2.3
+ * @package TTDF
  * @author 鼠子(Tomoriゞ)
  * @version 1.0.0
  * @link https://github.com/ShuShuicu/TTDF
