@@ -584,7 +584,7 @@ TyAjax($('button'), {}, null, 'stop');
 ### REST API
 
 一个简单的 REST API，你可以使用它来获取一些数据。
-> `API`路由及状态在`functions.php`中定义。 
+> `API`路由及状态在`Core/TTDF.Config.php`中定义。 
 >
 
 全局参数
