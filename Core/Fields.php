@@ -1,7 +1,7 @@
 <?php
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 // 定义字段配置
-$Fields = [
+return [
     [
         // Text
         'type' => 'Text',
@@ -66,5 +66,3 @@ $Fields = [
         ]
     ]
 ];
-
-return $Fields;

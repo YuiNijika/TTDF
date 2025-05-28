@@ -1,7 +1,7 @@
 <?php
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 // 定义所有设置项
-$config = [
+return [
     '基础设置' => [
         'title' => '基础设置',
         'fields' => [
@@ -104,5 +104,3 @@ $config = [
         ]
     ],
 ];
-
-return $config;
