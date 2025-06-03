@@ -10,7 +10,7 @@ if (version_compare(PHP_VERSION, '7.4', '<')) {
 }
 
 // 设置框架版本
-define('__FRAMEWORK_VER__', '2.2.3'); 
+define('__FRAMEWORK_VER__', '2.3.1'); 
 
 trait ErrorHandler
 {
@@ -51,10 +51,11 @@ class TTDF_Main
         require_once 'Widget/GetTheme.php';
         require_once 'Widget/GetPost.php';
         require_once 'Widget/Comment.php';
+        require_once 'Widget/GetUser.php';
         require_once 'Widget/UserInfo.php';
         require_once 'Widget/TTDF.php';
         /** Modules */
-        require_once 'Modules/OOP.php';
+        require_once 'Modules/OPP.php';
         require_once 'Modules/Api.php';
         require_once 'Modules/TyAjax.php';
         require_once 'Modules/FormElement.php';

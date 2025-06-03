@@ -379,7 +379,8 @@ $featuredPosts = GetPost::List (
 <?php GetPost::unbindArchive(); // 结束当前绑定 ?>
 ```
 
-#### UserInfo 类
+#### GetUser 类
+> 继承UserInfo类
 
 获取用户的相关信息。
 
@@ -406,15 +407,15 @@ $featuredPosts = GetPost::List (
 
 |      方法      |     描述      |             示例             |
 | :------------: | :-----------: | :--------------------------: |
-|   Comments()   |   获取评论    |   GetComments::Comments();   |
-| CommentsPage() | 获取评论页面  | GetComments::CommentsPage(); |
-| CommentsList() | 获取评论列表  | GetComments::CommentsList(); |
-| CommentsNum()  |  获取评论数   | GetComments::CommentsNum();  |
-| CommentsForm() | 获取评论表单  | GetComments::CommentsForm(); |
-|  RespondId()   |  获取评论 id  |  GetComments::RespondId();>  |
-| CancelReply()  | 获取取消回复  | GetComments::CancelReply();  |
-|   Remember()   | 获取 Remember |   GetComments::Remember();   |
-|   PageNav()    | 获取评论分页  |   GetComments::PageNav();    |
+|   Comments()   |   获取评论    |   Comment::Comments();   |
+| CommentsPage() | 获取评论页面  | Comment::CommentsPage(); |
+| CommentsList() | 获取评论列表  | Comment::CommentsList(); |
+| CommentsNum()  |  获取评论数   | Comment::CommentsNum();  |
+| CommentsForm() | 获取评论表单  | Comment::CommentsForm(); |
+|  RespondId()   |  获取评论 id  |  Comment::RespondId();>  |
+| CancelReply()  | 获取取消回复  | Comment::CancelReply();  |
+|   Remember()   | 获取 Remember |   Comment::Remember();   |
+|   PageNav()    | 获取评论分页  |   Comment::PageNav();    |
 
 ### 基础函数
 
