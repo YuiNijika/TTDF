@@ -586,7 +586,6 @@ TyAjax($('button'), {}, null, 'stop');
 
 一个简单的 REST API，你可以使用它来获取一些数据。
 > `API`路由及状态在`Core/TTDF.Config.php`中定义。 
->
 
 全局参数
 
@@ -630,13 +629,13 @@ GET /API/fields/{name}/{value}
 ##### 复杂查询​​使用 JSON
 
 ```bash
-GET /api/advancedFields?conditions=[{"name":"color","value":"red"},{"name":"price","operator":">=","value":100}]
+GET /API/advancedFields?conditions=[{"name":"color","value":"red"},{"name":"price","operator":">=","value":100}]
 ```
 
 ##### 模糊搜索​
 
 ```bash
-GET /api/advancedFields/title/%重要%?operator=LIKE
+GET /API/advancedFields/title/%重要%?operator=LIKE
 ```
 
 #### 查询运算符与值类型规范
