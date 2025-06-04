@@ -62,10 +62,6 @@ function TTDF_SEO_Title()
         return;
     }
 
-    if (!Get::Is("index") && !Get::Is("post") && !Get::Is("archive") && !Get::Is("category") && !Get::Is("tag") && !Get::Is("author") && !Get::Is("search")) {
-        echo "404 Not Found";
-        return;
-    }
     $archiveTitle = GetPost::ArchiveTitle(
         [
             "category" => _t("%s 分类"),
