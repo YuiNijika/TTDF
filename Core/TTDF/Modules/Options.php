@@ -8,8 +8,6 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 function themeConfig($form)
 {
 ?>
-    </div>
-
     <style text="text/css">
         /* Typecho CSS 重置部分 */
         .typecho-foot {
@@ -54,434 +52,282 @@ function themeConfig($form)
             width: unset;
         }
 
-        /* TTDF Options 蓝色主题 */
-        #TTDF_Options {
-            --primary-color: #3498db;
-            --primary-dark: #2980b9;
-            --primary-light: #5dade2;
-            --secondary-color: #2c3e50;
-            --secondary-light: #34495e;
-            --text-color: #333;
-            --text-light: #ecf0f1;
-            --border-radius: 6px;
-            --transition-speed: 0.25s;
-            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            padding: 20px;
+        /* TTDF */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, sans-serif;
         }
 
-        #TTDF_Options .header {
+        /* 主容器 */
+        .TTDF-container {
+            margin: 20px auto;
+            background: white;
+            border-radius: 3px;
+            box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+        }
+
+        /* 顶部标题栏 */
+        .TTDF-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 18px 30px;
-            background: linear-gradient(135deg, var(--secondary-color), var(--secondary-light));
-            color: var(--text-light);
-            box-shadow: var(--shadow);
-            border-radius: var(--border-radius) var(--border-radius) 0 0;
-            position: relative;
+            padding: 10px 15px;
+            border-bottom: 1px solid #dcdcde;
         }
 
-        #TTDF_Options .header::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
+        .TTDF-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1d2327;
         }
 
-        #TTDF_Options .header h1 {
-            font-size: 24px;
-            font-weight: 500;
-            margin: 0;
-            letter-spacing: 0.5px;
+        .TTDF-actions {
+            display: flex;
+            gap: 10px;
         }
 
-        #TTDF_Options .header h1 small {
-            font-size: 14px;
-            opacity: 0.8;
-            margin-left: 8px;
-            font-weight: 400;
-        }
-
-        #TTDF_Options .save-btn {
-            padding: 10px 24px;
-            background-color: var(--primary-color);
+        /* 保存按钮 */
+        .TTDF-save {
+            background-color: #2271b1;
             color: white;
             border: none;
-            border-radius: var(--border-radius);
+            border-radius: 3px;
+            padding: 8px 16px;
             font-size: 14px;
             font-weight: 500;
             cursor: pointer;
-            transition: all var(--transition-speed) ease;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.2s;
         }
 
-        #TTDF_Options .save-btn:hover {
-            background-color: var(--primary-dark);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        .TTDF-save:hover {
+            background-color: #135e96;
         }
 
-        #TTDF_Options .tab-container {
+        /* 主体内容区域 */
+        .TTDF-body {
             display: flex;
-            width: 100%;
-            border-radius: 0 0 var(--border-radius) var(--border-radius);
-            overflow: hidden;
-            box-shadow: var(--shadow);
-            background-color: white;
+            min-height: 500px;
         }
 
-        #TTDF_Options .tab-buttons {
-            display: flex;
-            flex-direction: column;
-            width: 240px;
+        /* 垂直选项卡导航 */
+        .TTDF-nav {
+            width: 200px;
+            border-right: 1px solid #dcdcde;
+            background: #f6f7f7;
             max-height: 520px;
             overflow-y: auto;
-            overflow: auto;
-            overflow-x: hidden;
-            background-color: var(--secondary-light);
         }
 
-        #TTDF_Options .tab-button {
-            padding: 16px 25px;
-            text-align: left;
-            background-color: inherit;
-            border: none;
-            outline: none;
-            cursor: pointer;
-            color: var(--text-light);
-            font-size: 15px;
-            font-weight: 500;
-            transition: all var(--transition-speed) ease;
-            border-left: 4px solid transparent;
-            position: relative;
-        }
-
-        #TTDF_Options .tab-button:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-            color: white;
-        }
-
-        #TTDF_Options .tab-button.active {
-            background-color: rgba(0, 0, 0, 0.2);
-            color: white;
-            border-left: 4px solid var(--primary-color);
-        }
-
-        #TTDF_Options .tab-button.active::after {
-            content: '';
-            position: absolute;
-            right: -10px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 0;
-            height: 0;
-            border-top: 10px solid transparent;
-            border-bottom: 10px solid transparent;
-            border-right: 10px solid white;
-        }
-
-        #TTDF_Options .tab-contents {
-            flex: 1;
-            padding: 10px 20px;
-            background-color: white;
-            max-height: 500px;
-            /* 设置固定高度 */
-            overflow-y: auto;
-            /* 启用垂直滚动 */
-        }
-
-        #TTDF_Options .tab-content {
-            display: none;
-            animation: fadeEffect 0.3s;
-        }
-
-        #TTDF_Options .tab-content.active {
+        .TTDF-nav-item {
             display: block;
+            width: 100%;
+            padding: 12px 15px;
+            text-align: left;
+            background: transparent;
+            color: #1d2327;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+            border: none;
         }
 
-        #TTDF_Options .tab-content h2 {
-            color: var(--secondary-color);
-            margin-bottom: 20px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid #eee;
+        .TTDF-nav-item:hover {
+            background-color: #f0f0f1;
+            color: #2271b1;
+        }
+
+        .TTDF-nav-item.active {
+            background-color: white;
+            border-left-color: #2271b1;
+            color: #2271b7;
             font-weight: 500;
         }
 
-        #TTDF_Options .tab-content p {
-            line-height: 1.7;
-            color: var(--text-color);
+        /* 选项卡内容区域 */
+        .TTDF-content {
+            flex: 1;
+            padding: 20px;
+            max-height: 520px;
+            overflow-y: auto;
+        }
+
+        .TTDF-tab-panel {
+            display: none;
+        }
+
+        .TTDF-tab-panel.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* 表单样式 */
+        .TTDF-fieldset {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #dcdcde;
+        }
+
+        .TTDF-fieldset:last-child {
+            border-bottom: none;
+        }
+
+        .TTDF-field-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #1d2327;
+        }
+
+        .TTDF-field {
             margin-bottom: 15px;
         }
 
-        /* 表单元素样式 */
-        #TTDF_Options .typecho-label {
+        .TTDF-label {
             display: block;
-            margin: 20px 0 8px;
+            margin-bottom: 5px;
             font-weight: 500;
-            color: var(--secondary-color);
-            font-size: 15px;
         }
 
-        #TTDF_Options .typecho-input,
-        #TTDF_Options .typecho-textarea {
+        .TTDF-input {
             width: 100%;
-            padding: 10px 14px;
-            border: 1px solid #ddd;
-            border-radius: var(--border-radius);
+            max-width: 500px;
+            padding: 8px;
+            border: 1px solid #8c8f94;
+            border-radius: 3px;
             font-size: 14px;
-            transition: border-color var(--transition-speed);
         }
 
-        #TTDF_Options .typecho-input:focus,
-        #TTDF_Options .typecho-textarea:focus {
-            border-color: var(--primary-light);
+        .TTDF-input:focus {
+            border-color: #2271b1;
+            box-shadow: 0 0 0 1px #2271b1;
             outline: none;
-            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
         }
 
-        #TTDF_Options .typecho-textarea {
-            min-height: 120px;
-            resize: vertical;
-        }
-
-        #TTDF_Options .typecho-radio,
-        #TTDF_Options .typecho-checkbox {
-            margin-right: 10px;
-            vertical-align: middle;
-        }
-
-        #TTDF_Options .typecho-option {
-            margin: 8px 0;
-            display: block;
-        }
-
-        #TTDF_Options .typecho-description {
+        .TTDF-description {
             font-size: 13px;
-            color: #777;
-            margin-top: 6px;
-            line-height: 1.5;
+            color: #646970;
+            margin-top: 5px;
         }
 
-        /* 新增底部版权区块样式 */
-        #TTDF_Options .footer {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-top: 25px;
+        /* 自定义滚动条 */
+        .TTDF-nav::-webkit-scrollbar,
+        .TTDF-content::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
         }
 
-        /* 调整主容器圆角 */
-        #TTDF_Options .tab-container {
-            border-radius: 0;
+        .TTDF-nav::-webkit-scrollbar-track,
+        .TTDF-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
         }
 
-        /* 动画效果 */
-        @keyframes fadeEffect {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
+        .TTDF-nav::-webkit-scrollbar-thumb,
+        .TTDF-content::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
 
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .TTDF-nav::-webkit-scrollbar-thumb:hover,
+        .TTDF-content::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
         }
 
         /* 响应式设计 */
-        @media screen and (max-width: 1024px) {
-            #TTDF_Options .tab-container {
-                margin-top: 10px;
+        @media (max-width: 782px) {
+            .TTDF-body {
                 flex-direction: column;
-                border-radius: var(--border-radius);
             }
-
-            #TTDF_Options .tab-buttons {
+            
+            .TTDF-nav {
                 width: 100%;
-                flex-direction: row;
-                overflow-x: auto;
-                white-space: nowrap;
+                max-height: 200px;
                 border-right: none;
-                border-bottom: 1px solid #ddd;
-                padding: 5px;
+                border-bottom: 1px solid #dcdcde;
+                display: flex;
+                overflow-x: auto;
+                overflow-y: hidden;
             }
-
-            #TTDF_Options .tab-button {
-                padding: 12px 20px;
+            
+            .TTDF-nav-item {
+                text-align: center;
+                white-space: nowrap;
                 border-left: none;
-                border-bottom: 4px solid transparent;
-                display: inline-block;
-                width: auto;
+                border-bottom: 3px solid transparent;
             }
-
-            #TTDF_Options .tab-button.active {
+            
+            .TTDF-nav-item.active {
                 border-left: none;
-                border-bottom: 4px solid var(--primary-color);
+                border-bottom-color: #2271b1;
             }
 
-            #TTDF_Options .tab-button.active::after {
-                display: none;
-            }
-
-            #TTDF_Options .tab-contents {
-                padding: 20px;
-            }
-
-            #TTDF_Options .header {
-                padding: 15px;
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            #TTDF_Options .header h1 {
-                font-size: 20px;
-                margin-bottom: 10px;
-            }
-
-            #TTDF_Options .save-btn {
-                align-self: flex-end;
-                margin-top: -40px;
+            .TTDF-content {
+                max-height: none;
+                overflow-y: visible;
             }
         }
 
-        @media screen and (max-width: 480px) {
-            #TTDF_Options .tab-button {
-                padding: 10px 16px;
-                font-size: 14px;
-            }
-
-            #TTDF_Options .tab-contents {
-                padding: 15px;
-            }
-
-            #TTDF_Options .typecho-input,
-            #TTDF_Options .typecho-textarea {
-                padding: 8px 12px;
-            }
-
-            #TTDF_Options .header {
-                padding: 12px 15px;
-            }
-
-            #TTDF_Options .save-btn {
-                padding: 8px 16px;
-                font-size: 13px;
-            }
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
     </style>
     <script type="text/javascript">
-        // 打开指定标签页
-        function openTab(evt, tabId) {
-            // 隐藏所有内容
-            var tabContents = document.getElementsByClassName("tab-content");
-            for (var i = 0; i < tabContents.length; i++) {
-                tabContents[i].classList.remove("active");
-            }
-
-            // 移除所有按钮的 active 类
-            var tabButtons = document.getElementsByClassName("tab-button");
-            for (var i = 0; i < tabButtons.length; i++) {
-                tabButtons[i].classList.remove("active");
-            }
-
-            // 显示当前标签页内容并激活按钮
-            document.getElementById(tabId).classList.add("active");
-            evt.currentTarget.classList.add("active");
-
-            // 更新 URL hash 并滚动到顶部
-            window.location.hash = tabId;
-            window.scrollTo(0, 0);
-        }
-
-        // 页面加载时检查 hash 并打开对应标签页
         document.addEventListener('DOMContentLoaded', function() {
-            // 获取当前 hash
-            var hash = window.location.hash.substring(1);
-
-            // 如果有 hash 且对应的标签页存在，则打开它
-            if (hash) {
-                var tabContent = document.getElementById(hash);
-                if (tabContent) {
-                    // 隐藏所有内容
-                    var tabContents = document.getElementsByClassName("tab-content");
-                    for (var i = 0; i < tabContents.length; i++) {
-                        tabContents[i].classList.remove("active");
+            const tabButtons = document.querySelectorAll('.TTDF-nav-item');
+            const tabPanels = document.querySelectorAll('.TTDF-tab-panel');
+            const saveButton = document.querySelector('.TTDF-save');
+            
+            // 初始化
+            function initTabsFromHash() {
+                const hash = window.location.hash.substring(1);
+                if (hash) {
+                    const targetTab = document.getElementById(hash);
+                    if (targetTab) {
+                        // 找到对应的按钮
+                        const correspondingBtn = document.querySelector(`.TTDF-nav-item[data-tab="${hash}"]`);
+                        if (correspondingBtn) {
+                            switchTab(correspondingBtn);
+                        }
                     }
-
-                    // 移除所有按钮的 active 类
-                    var tabButtons = document.getElementsByClassName("tab-button");
-                    for (var i = 0; i < tabButtons.length; i++) {
-                        tabButtons[i].classList.remove("active");
-                    }
-
-                    // 显示对应内容并激活按钮
-                    tabContent.classList.add("active");
-
-                    // 找到对应的按钮并激活
-                    var buttons = document.querySelectorAll('.tab-button[data-tab="' + hash + '"]');
-                    if (buttons.length > 0) {
-                        buttons[0].classList.add("active");
-                    }
-
-                    // 滚动到顶部
-                    window.scrollTo(0, 0);
                 }
             }
+            
+            // 切换标签页
+            function switchTab(clickedBtn) {
+                // 移除所有活动状态
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                tabPanels.forEach(panel => panel.classList.remove('active'));
+                
+                // 添加活动状态到点击的按钮
+                clickedBtn.classList.add('active');
+                
+                // 显示对应的面板
+                const tabId = clickedBtn.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+                
+                // 更新URL哈希
+                window.location.hash = tabId;
+            }
+            
+            // 添加点击事件
+            tabButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    switchTab(this);
+                });
+            });
+            
+            // 初始化标签页
+            initTabsFromHash();
+            
+            // 监听哈希变化
+            window.addEventListener('hashchange', initTabsFromHash);
         });
     </script>
 <?php
-    TTDF_Hook::add_action('TTDF_Options_Code', function ($form) {
-        $tabs = require __DIR__ . '/../../Setup.php';
-        // 生成Tab按钮
-        $first_tab = true;
-        foreach ($tabs as $tab_id => $tab) {
-            $active = $first_tab ? 'active' : '';
-            $form->addItem(new EchoHtml('
-    <div class="tab-button ' . $active . '" onclick="openTab(event, \'' . $tab_id . '\')" 
-            data-tab="' . $tab_id . '">
-        ' . $tab['title'] . '
-    </div>'));
-            $first_tab = false;
-        }
-
-        // 关闭Tab按钮区域，开始内容区域
-        $form->addItem(new EchoHtml('</div><div class="tab-contents">'));
-
-        // 生成Tab内容
-        $first_tab = true;
-        foreach ($tabs as $tab_id => $tab) {
-            $active = $first_tab ? 'active' : '';
-            $form->addItem(new EchoHtml('<div id="' . $tab_id . '" class="tab-content ' . $active . '">'));
-
-            if (isset($tab['html'])) {
-                foreach ($tab['html'] as $html) {
-                    $form->addItem(new EchoHtml($html['content']));
-                }
-            } else {
-                foreach ($tab['fields'] as $field) {
-                    if ($field['type'] === 'Html') {
-                        $form->addItem(new EchoHtml($field['content']));
-                    } else {
-                        $form->addInput(TTDF_FormElement(
-                            $field['type'],
-                            $field['name'],
-                            $field['value'] ?? null,
-                            $field['label'] ?? '',
-                            $field['description'] ?? '',
-                            $field['options'] ?? []
-                        ));
-                    }
-                }
-            }
-
-            $form->addItem(new EchoHtml('</div>'));
-            $first_tab = false;
-        }
-    });
-
     // 辅助类用于输出HTML
     class EchoHtml extends Typecho_Widget_Helper_Layout
     {
@@ -498,21 +344,71 @@ function themeConfig($form)
     // 初始化HTML结构
     $form->addItem(new EchoHtml('
     <div id="TTDF_Options">
-        <div class="header">
-            <h1>' . GetTheme::Name(false) . '<small> · ' . GetTheme::Ver(false) . '</small></h1>
-            <button class="save-btn" type="submit">保存设置</button>
-        </div>
-        <div class="tab-container">
-            <div class="tab-buttons">'));
+        <div class="TTDF-container">
+            <div class="TTDF-header">
+                <h1 class="TTDF-title">' . GetTheme::Name(false) . '<small> · ' . GetTheme::Ver(false) . '</small></h1>
+                <div class="TTDF-actions">
+                    <button class="TTDF-save" type="submit">保存设置</button>
+                </div>
+            </div>
+            
+            <div class="TTDF-body">
+                <nav class="TTDF-nav">'));
 
-    TTDF_Hook::do_action('TTDF_Options_Code', $form);
+    // 生成Tab导航按钮
+    $tabs = require __DIR__ . '/../../Setup.php';
+    $first_tab = true;
+    foreach ($tabs as $tab_id => $tab) {
+        $active = $first_tab ? 'active' : '';
+        $form->addItem(new EchoHtml('
+            <div class="TTDF-nav-item ' . $active . '" data-tab="' . $tab_id . '">
+                ' . $tab['title'] . '
+            </div>'));
+        $first_tab = false;
+    }
 
-    // 关闭所有HTML标签并添加底部版权信息
     $form->addItem(new EchoHtml('
+                </nav>
+                <div class="TTDF-content">'));
+
+    // 生成Tab内容
+    $first_tab = true;
+    foreach ($tabs as $tab_id => $tab) {
+        $active = $first_tab ? 'active' : '';
+        $form->addItem(new EchoHtml('<div id="' . $tab_id . '" class="TTDF-tab-panel ' . $active . '">'));
+
+        if (isset($tab['html'])) {
+            foreach ($tab['html'] as $html) {
+                $form->addItem(new EchoHtml($html['content']));
+            }
+        } else {
+            foreach ($tab['fields'] as $field) {
+                if ($field['type'] === 'Html') {
+                    $form->addItem(new EchoHtml($field['content']));
+                } else {
+                    $form->addInput(TTDF_FormElement(
+                        $field['type'],
+                        $field['name'],
+                        $field['value'] ?? null,
+                        $field['label'] ?? '',
+                        $field['description'] ?? '',
+                        $field['options'] ?? []
+                    ));
+                }
+            }
+        }
+
+        $form->addItem(new EchoHtml('</div>'));
+        $first_tab = false;
+    }
+
+    // 关闭所有HTML标签
+    $form->addItem(new EchoHtml('
+                </div>
+            </div>
         </div>
-    </div>
-    <div class="footer">
-        © Framework By<a href="https://github.com/ShuShuicu/TTDF" target="_blank" style="padding: 0px 3px;">TTDF</a>v' . TTDF::Ver(false) . '
-    </div>
+        <div style="text-align: center; margin-top: 20px;">
+            © Framework By <a href="https://github.com/ShuShuicu/TTDF" target="_blank" style="padding: 0px 3px;">TTDF</a> v' . TTDF::Ver(false) . '
+        </div>
     </div>'));
 }
