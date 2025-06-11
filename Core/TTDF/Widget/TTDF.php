@@ -209,7 +209,7 @@ class TTDF_Widget
     <meta name="framework" content="TTDF <?php TTDF::Ver(true) ?>" />
     <meta name="template" content="<?php GetTheme::Name(true) ?>" />
 <?php 
-        Get::Header(true, 'description,keywords,generator,template,pingback,EditURI,wlwmanifest,alternate');
+        Get::Header(true, 'description,keywords,generator,template,pingback,EditURI,wlwmanifest,alternate,twitter:domain,twitter:card,twitter:description,twitter:title,og:url,og:site_name,og:type');
 ?>
     <link rel="canonical" href="<?php Get::PageUrl(true, false, null, true); ?>" />
 <?php
