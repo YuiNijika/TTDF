@@ -10,7 +10,7 @@ if (version_compare(PHP_VERSION, '7.4', '<')) {
 }
 
 // 设置框架版本
-define('__FRAMEWORK_VER__', '2.3.1'); 
+define('__FRAMEWORK_VER__', '2.3.2'); 
 
 trait ErrorHandler
 {
@@ -43,7 +43,7 @@ class TTDF_Main
 
     public static function init()
     {
-        /** Class */
+        /** Widget */
         require_once 'Widget/DB.php';
         require_once 'Widget/Tools.php';
         require_once 'Widget/Get.php';
