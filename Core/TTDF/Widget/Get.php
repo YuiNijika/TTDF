@@ -50,9 +50,9 @@ class Get
                 $excluded = explode(',', $exclude);
                 foreach ($excluded as $item) {
                     $item = trim($item);
-                    // 匹配 meta name="xxx" 或 link rel="xxx"
+                    // 匹配 meta
                     $content = preg_replace(
-                        '/\s*<(meta\s+name=["\']' . preg_quote($item, '/') . '["\']|link\s+rel=["\']' . preg_quote($item, '/') . '["\'])[^>]*>\s*/i',
+                        '/\s*<(meta\s+(name|property)=["\']' . preg_quote($item, '/') . '["\']|link\s+rel=["\']' . preg_quote($item, '/') . '["\'])[^>]*>\s*/i',
                         '',
                         $content
                     );
