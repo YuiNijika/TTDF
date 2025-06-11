@@ -44,7 +44,8 @@ function themeConfig($form)
             }
 
             .col-tb-8 {
-                width: unset;
+                flex: unset;
+                max-width: unset;
             }
         }
 
@@ -240,7 +241,7 @@ function themeConfig($form)
             .TTDF-body {
                 flex-direction: column;
             }
-            
+
             .TTDF-nav {
                 width: 100%;
                 max-height: 200px;
@@ -250,14 +251,14 @@ function themeConfig($form)
                 overflow-x: auto;
                 overflow-y: hidden;
             }
-            
+
             .TTDF-nav-item {
                 text-align: center;
                 white-space: nowrap;
                 border-left: none;
                 border-bottom: 3px solid transparent;
             }
-            
+
             .TTDF-nav-item.active {
                 border-left: none;
                 border-bottom-color: #2271b1;
@@ -271,8 +272,13 @@ function themeConfig($form)
 
         /* 动画效果 */
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
         }
     </style>
     <script type="text/javascript">
@@ -280,7 +286,7 @@ function themeConfig($form)
             const tabButtons = document.querySelectorAll('.TTDF-nav-item');
             const tabPanels = document.querySelectorAll('.TTDF-tab-panel');
             const saveButton = document.querySelector('.TTDF-save');
-            
+
             // 初始化
             function initTabsFromHash() {
                 const hash = window.location.hash.substring(1);
@@ -295,34 +301,34 @@ function themeConfig($form)
                     }
                 }
             }
-            
+
             // 切换标签页
             function switchTab(clickedBtn) {
                 // 移除所有活动状态
                 tabButtons.forEach(btn => btn.classList.remove('active'));
                 tabPanels.forEach(panel => panel.classList.remove('active'));
-                
+
                 // 添加活动状态到点击的按钮
                 clickedBtn.classList.add('active');
-                
+
                 // 显示对应的面板
                 const tabId = clickedBtn.getAttribute('data-tab');
                 document.getElementById(tabId).classList.add('active');
-                
+
                 // 更新URL哈希
                 window.location.hash = tabId;
             }
-            
+
             // 添加点击事件
             tabButtons.forEach(btn => {
                 btn.addEventListener('click', function() {
                     switchTab(this);
                 });
             });
-            
+
             // 初始化标签页
             initTabsFromHash();
-            
+
             // 监听哈希变化
             window.addEventListener('hashchange', initTabsFromHash);
         });
