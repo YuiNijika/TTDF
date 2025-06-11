@@ -35,7 +35,7 @@
 | Html     | 自定义 HTML 标签 |
 
 ```php
-$options = [
+return [
     '基础设置' => [
         'title' => '基础设置',
         'fields' => [
@@ -138,8 +138,6 @@ $options = [
         ]
     ],
 ];
-
-return $options;
 ```
 
 ### 文章字段
@@ -154,7 +152,7 @@ return $options;
 | Checkbox | 多选框         |
 
 ```php
-$fields =  [
+return [
     [
         // Text
         'type' => 'Text',
@@ -219,8 +217,6 @@ $fields =  [
         ]
     ]
 ];
-
-return $fields;
 ```
 
 ### 类与方法
