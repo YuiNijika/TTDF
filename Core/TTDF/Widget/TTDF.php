@@ -185,12 +185,16 @@ class TTDF_Widget
     {
         TTDF::Modules('UseSeo');
     if ($OG) { ?>
-    <meta name="og:description" content="<?php echo TTDF_SEO_Description(); ?>" />
     <meta property="og:locale" content="<?php echo Get::Options('lang') ? Get::Options('lang') : 'zh-CN' ?>" />
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="<?php Get::Options('title', true) ?>" />
-    <meta property="og:title" content="<?php echo TTDF_SEO_Title(); ?>" />
     <meta property="og:url" content="<?php Get::PageUrl(); ?>" />
+    <meta property="og:site_name" content="<?php Get::Options('title', true) ?>" />
+    <meta property="og:title" content="<?php TTDF_SEO_Title(); ?>" />
+    <meta name="og:description" content="<?php TTDF_SEO_Description(); ?>" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:domain" content="<?php Get::Options('siteDomain', true) ?>" />
+    <meta name="twitter:title" property="og:title" itemprop="name" content="<?php TTDF_SEO_Title(); ?>" />
+    <meta name="twitter:description" property="og:description" itemprop="description" content="<?php TTDF_SEO_Description(); ?>" />
     <?php }
     }
 
