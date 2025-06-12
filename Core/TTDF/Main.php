@@ -36,46 +36,46 @@ class TTDF_Main
     public static function run()
     {
         $widgetFiles = [
-            'Widget/DB.php',
-            'Widget/Tools.php',
-            'Widget/Get.php',
-            'Widget/Site.php',
-            'Widget/GetTheme.php',
-            'Widget/GetPost.php',
-            'Widget/Comment.php',
-            'Widget/GetUser.php',
-            'Widget/UserInfo.php',
-            'Widget/TTDF.php'
+            'DB.php',
+            'Tools.php',
+            'Get.php',
+            'Site.php',
+            'GetTheme.php',
+            'GetPost.php',
+            'Comment.php',
+            '/GetUser.php',
+            'UserInfo.php',
+            'TTDF.php'
         ];
 
         $moduleFiles = [
-            'Modules/OPP.php',
-            'Modules/Api.php',
-            'Modules/FormElement.php',
-            'Modules/Options.php'
+            'OPP.php',
+            'Api.php',
+            'FormElement.php',
+            'Options.php'
         ];
 
         foreach ($widgetFiles as $file) {
-            require_once $file;
+            require_once __DIR__ . '/Widget/' . $file;
         }
 
         foreach ($moduleFiles as $file) {
-            require_once $file;
+            require_once __DIR__ . '/Modules/' . $file;
         }
 
         if (!empty($GLOBALS['defineTTDFConfig']['Modules']['TyAjax'])) {
-            require_once 'Modules/TyAjax.php';
+            require_once __DIR__ . '/Modules/TyAjax.php';
         }
 
         if (!empty($GLOBALS['defineTTDFConfig']['Modules']['Fields'])) {
-            require_once 'Modules/Fields.php';
+            require_once __DIR__ . '/Modules/Fields.php';
         }
     }
 
     public static function init()
     {
         if (version_compare(PHP_VERSION, '7.4', '<')) {
-            die('PHP版本需要7.4及以上');
+            die('PHP版本需要7.4及以上, 请先升级!');
         }
     
         self::run();
