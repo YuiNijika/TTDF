@@ -46,6 +46,19 @@ if (!function_exists('get_site_url')) {
     }
 }
 
+if (!function_exists('get_site_domain')) {
+    /**
+     * 获取站点域名
+     * 
+     * @param bool|null $echo 是否直接输出
+     * @return string
+     */
+    function get_site_domain(?bool $echo = true): string
+    {
+        return Get::SiteDomain($echo);
+    }
+}
+
 if (!function_exists('get_site_name')) {
     /**
      * 获取站点名称

@@ -9,6 +9,22 @@ class Site
     public function __wakeup() {}
 
     /**
+     * 输出站点域名
+     * @param bool $echo 是否输出
+     * @return string
+     */
+    public static function Domain(?bool $echo = true)
+    {
+        try {
+            $domain = Get::Options('siteDomain');
+            if ($echo) echo $domain;
+            return $domain;
+        } catch (Exception $e) {
+            return self::handleError('获取站点域名失败', $e);
+        }
+    }
+
+    /**
      * 输出站点名称
      * @param bool $echo 是否输出
      * @return string

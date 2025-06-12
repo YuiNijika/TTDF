@@ -131,6 +131,25 @@ class Get
         }
     }
     /**
+     * 获取站点域名
+     * 
+     * @param bool|null $echo 当设置为 true 时，会直接输出；
+     *                        当设置为 false 时，则返回结果值。
+     * @return string
+     */
+    public static function SiteDomain(?bool $echo = true)
+    {
+        try {
+            $SiteDomain = \Helper::options()->siteDomain;
+
+            if ($echo) echo $SiteDomain;
+
+            return $SiteDomain;
+        } catch (Exception $e) {
+            return self::handleError('获取站点域名失败', $e);
+        }
+    }
+    /**
      * 获取站点名称
      * 
      * @param bool|null $echo 当设置为 true 时，会直接输出；
