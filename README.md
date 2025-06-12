@@ -25,13 +25,13 @@
 ### 主题设置项
 > 文件路径：`Core/Setup.php`
 
-| 字段类型 | 描述           |
-| -------- | -------------- |
-| Text     | 文本框         |
-| Textarea | 文本域         |
-| Radio    | 单选框         |
-| Select   | 下拉框         |
-| Checkbox | 多选框         |
+| 字段类型 | 描述             |
+| -------- | ---------------- |
+| Text     | 文本框           |
+| Textarea | 文本域           |
+| Radio    | 单选框           |
+| Select   | 下拉框           |
+| Checkbox | 多选框           |
 | Html     | 自定义 HTML 标签 |
 
 ```php
@@ -143,13 +143,13 @@ return [
 ### 文章字段
 > 文件路径：`Core/Fields.php`
 
-| 字段类型 | 描述           |
-| -------- | -------------- |
-| Text     | 文本框         |
-| Textarea | 文本域         |
-| Radio    | 单选框         |
-| Select   | 下拉框         |
-| Checkbox | 多选框         |
+| 字段类型 | 描述   |
+| -------- | ------ |
+| Text     | 文本框 |
+| Textarea | 文本域 |
+| Radio    | 单选框 |
+| Select   | 下拉框 |
+| Checkbox | 多选框 |
 
 ```php
 return [
@@ -234,13 +234,13 @@ Get::SiteUrl(false) 为 return 返回值
 | Widget($TTDF) |    调用功能函数     | TTDF::Widget($TTDF); |
 
 #####  Widget 方法
-|            方法             |       描述       |               示例                |
-| :-------------------------: | :--------------: | :-------------------------------: |
-|        Widget('SEO')        |   调用SEO标签    |       TTDF::Widget('SEO');        |
-|     Widget('SEO', $OG)      |   不输出OG标签   |    TTDF::Widget('SEO', false);    |
-|     Widget('HeadMeta')      |   调用Meta标签   |    TTDF::Widget('HeadMeta') ;     |
+|            方法            |       描述       |               示例                |
+| :------------------------: | :--------------: | :-------------------------------: |
+|       Widget('SEO')        |   调用SEO标签    |       TTDF::Widget('SEO');        |
+|     Widget('SEO', $OG)     |   不输出OG标签   |    TTDF::Widget('SEO', false);    |
+|     Widget('HeadMeta')     |   调用Meta标签   |    TTDF::Widget('HeadMeta') ;     |
 | Widget('HeadMeta' $UseSeo) |  不输出SEO标签   | TTDF::Widget('HeadMeta', false) ; |
-|     Widget('TimerStop')     | 输出页面加载时间 |    TTDF::Widget('TimerStop');     |
+|    Widget('TimerStop')     | 输出页面加载时间 |    TTDF::Widget('TimerStop');     |
 
 自定义SEO信息
 
@@ -269,6 +269,7 @@ class useSeo
 | :-------------------------: | :--------------: | :---------------------: |
 |          SiteUrl()          |  获取网站的 URL  |     Get::SiteUrl();     |
 |          PageUrl()          |   获取当前url    |     Get::PageUrl();     |
+|        SiteDomain()         |   获取网站域名   |   Get::SiteDomain();    |
 |         SiteName()          |   获取网站名称   |    Get::SiteName();     |
 |       SiteKeywords()        |  获取网站关键词  |  Get::SiteKeywords();   |
 |      SiteDescription()      |   获取网站描述   | Get::SiteDescription(); |
@@ -306,6 +307,7 @@ class useSeo
 |  Language   |   获取网站语言   |  Site::Language();   |
 |   Charset   |  获取网站字符集  |   Site::Charset();   |
 |     Url     |   获取网站地址   |     Site::Url();     |
+|   Domain    |   获取网站域名   |   Site::Domain();    |
 |   PageUrl   | 获取当前页面地址 |   Site::PageUrl();   |
 |    Theme    |   获取主题名称   |    Site::Theme();    |
 
@@ -313,12 +315,14 @@ class useSeo
 
 获取主题的相关信息。
 
-|   方法   |      描述      |        示例         |
-| :------: | :------------: | :-----------------: |
-|  Url()   | 获取主题的 URL |  GetTheme::Url();   |
-|  Name()  |  获取主题名称  |  GetTheme::Name();  |
-| Author() |  获取主题作者  | GetTheme::Author(); |
-|  Ver()   | 获取主题版本号 |  GetTheme::Ver();   |
+|    方法     |       描述        |          示例          |
+| :---------: | :---------------: | :--------------------: |
+|   Name()    |   获取主题名称    |   GetTheme::Name();    |
+|  Author()   |   获取主题作者    |  GetTheme::Author();   |
+|    Ver()    |  获取主题版本号   |    GetTheme::Ver();    |
+|    Dir()    | 获取主题绝对路径  |    GetTheme::Dir();    |
+| Url($path)  |  获取主题的 URL   | GetTheme::Url($path);  |
+| AssetsUrl() | 获取主题AssetsUrl | GetTheme::AssetsUrl(); |
 
 #### GetPost 类
 
@@ -401,8 +405,8 @@ $featuredPosts = GetPost::List (
 
 获取评论的相关信息。
 
-|      方法      |     描述      |             示例             |
-| :------------: | :-----------: | :--------------------------: |
+|      方法      |     描述      |           示例           |
+| :------------: | :-----------: | :----------------------: |
 |   Comments()   |   获取评论    |   Comment::Comments();   |
 | CommentsPage() | 获取评论页面  | Comment::CommentsPage(); |
 | CommentsList() | 获取评论列表  | Comment::CommentsList(); |
@@ -422,63 +426,64 @@ $featuredPosts = GetPost::List (
 
 #### 网站信息函数
 
-| 函数名称 | 描述 | 示例 | 参数说明 |
-|---------|------|------|----------|
-| `get_site_url()` | 获取网站URL | `get_site_url(true)` | `$echo`: true直接输出，false返回字符串 |
-| `get_site_name()` | 获取网站名称 | `get_site_name(false)` | 同上 |
-| `get_site_keywords()` | 获取网站关键词 | `get_site_keywords()` | 同上 |
-| `get_site_description()` | 获取网站描述 | `get_site_description(true)` | 同上 |
-| `get_site_language()` | 获取网站语言 | `get_site_language()` | 同上 |
-| `get_site_charset()` | 获取网站编码 | `get_site_charset(false)` | 同上 |
-| `get_site_page_url()` | 获取当前页面URL | `get_site_page_url(true)` | 同上 |
-| `get_site_theme_name()` | 获取主题名称 | `get_site_theme_name()` | 同上 |
+| 函数名称                 | 描述            | 示例                         | 参数说明                               |
+| ------------------------ | --------------- | ---------------------------- | -------------------------------------- |
+| `get_site_url()`         | 获取网站URL     | `get_site_url(true)`         | `$echo`: true直接输出，false返回字符串 |
+| `get_site_title()`       | 获取网站标题    | `get_site_title(false)`      | 同上                                   |
+| `get_site_name()`        | 获取网站名称    | `get_site_name(false)`       | 同上                                   |
+| `get_site_keywords()`    | 获取网站关键词  | `get_site_keywords()`        | 同上                                   |
+| `get_site_description()` | 获取网站描述    | `get_site_description(true)` | 同上                                   |
+| `get_site_language()`    | 获取网站语言    | `get_site_language()`        | 同上                                   |
+| `get_site_charset()`     | 获取网站编码    | `get_site_charset(false)`    | 同上                                   |
+| `get_site_page_url()`    | 获取当前页面URL | `get_site_page_url(true)`    | 同上                                   |
+| `get_site_theme_name()`  | 获取主题名称    | `get_site_theme_name()`      | 同上                                   |
 
 #### 主题相关函数
 
-| 函数名称 | 描述 | 示例 | 参数说明 |
-|---------|------|------|----------|
-| `get_theme_url()` | 获取主题URL | `get_theme_url(true, 'css/style.css')` | `$echo`, `$path`: 子路径, `$theme`: 自定义模板 |
-| `get_theme_dir()` | 获取主题绝对路径 | `get_theme_dir(false)` | `$echo` |
-| `get_theme_assets_url()` | 获取资源目录URL | `get_theme_assets_url()` | 无参数 |
-| `get_theme_name()` | 获取主题名称 | `get_theme_name(true)` | `$echo` |
-| `get_theme_file_url()` | 获取主题文件URL | `get_theme_file_url('images/logo.png')` | `$file`: 文件路径, `$echo` |
+| 函数名称                 | 描述             | 示例                                    | 参数说明                                       |
+| ------------------------ | ---------------- | --------------------------------------- | ---------------------------------------------- |
+| `get_theme_url()`        | 获取主题URL      | `get_theme_url(true, 'css/style.css')`  | `$echo`, `$path`: 子路径, `$theme`: 自定义模板 |
+| `get_theme_dir()`        | 获取主题绝对路径 | `get_theme_dir(false)`                  | `$echo`                                        |
+| `get_theme_assets_url()` | 获取资源目录URL  | `get_theme_assets_url()`                | 无参数                                         |
+| `get_theme_name()`       | 获取主题名称     | `get_theme_name(true)`                  | `$echo`                                        |
+| `get_theme_file_url()`   | 获取主题文件URL  | `get_theme_file_url('images/logo.png')` | `$file`: 文件路径, `$echo`                     |
 
 ### 文章相关函数
 
 ##### 基础信息
 
-| 函数名称 | 描述 | 示例 | 参数说明 |
-|---------|------|------|----------|
-| `get_post()` | 获取当前文章对象 | `$post = get_post()` | 无参数 |
-| `get_post_id()` | 获取文章ID | `get_post_id(true)` | `$echo` |
-| `get_post_title()` | 获取文章标题 | `get_post_title(false)` | `$echo` |
-| `get_post_content()` | 获取文章内容 | `get_post_content(true)` | `$echo` |
+| 函数名称             | 描述             | 示例                     | 参数说明 |
+| -------------------- | ---------------- | ------------------------ | -------- |
+| `get_post()`         | 获取当前文章对象 | `$post = get_post()`     | 无参数   |
+| `get_post_id()`      | 获取文章ID       | `get_post_id(true)`      | `$echo`  |
+| `get_post_title()`   | 获取文章标题     | `get_post_title(false)`  | `$echo`  |
+| `get_post_content()` | 获取文章内容     | `get_post_content(true)` | `$echo`  |
 
 ##### 高级功能
 
-| 函数名称 | 描述 | 示例 | 参数说明 |
-|---------|------|------|----------|
-| `get_post_excerpt()` | 获取文章摘要 | `get_post_excerpt(100, true)` | `$length`: 摘要长度, `$echo` |
-| `get_post_date()` | 获取文章日期 | `get_post_date('Y-m-d')` | `$format`: 日期格式, `$echo` |
+| 函数名称              | 描述         | 示例                           | 参数说明                                       |
+| --------------------- | ------------ | ------------------------------ | ---------------------------------------------- |
+| `get_post_excerpt()`  | 获取文章摘要 | `get_post_excerpt(100, true)`  | `$length`: 摘要长度, `$echo`                   |
+| `get_post_date()`     | 获取文章日期 | `get_post_date('Y-m-d')`       | `$format`: 日期格式, `$echo`                   |
 | `get_post_category()` | 获取文章分类 | `get_post_category(',', true)` | `$split`: 分隔符, `$link`: 是否带链接, `$echo` |
-| `get_random_posts()` | 获取随机文章 | `get_random_posts(5)` | `$limit`: 数量限制 |
+| `get_random_posts()`  | 获取随机文章 | `get_random_posts(5)`          | `$limit`: 数量限制                             |
 
 #### 用户相关函数
 
-| 函数名称 | 描述 | 示例 | 参数说明 |
-|---------|------|------|----------|
-| `get_user_name()` | 获取用户名 | `get_user_name(true)` | `$echo` |
-| `get_user_avatar()` | 获取用户头像 | `get_user_avatar(80)` | `$size`: 尺寸, `$echo` |
-| `get_user_email()` | 获取用户邮箱 | `get_user_email(false)` | `$echo` |
-| `get_user_permalink()` | 获取用户主页链接 | `get_user_permalink()` | `$echo` |
+| 函数名称               | 描述             | 示例                    | 参数说明               |
+| ---------------------- | ---------------- | ----------------------- | ---------------------- |
+| `get_user_name()`      | 获取用户名       | `get_user_name(true)`   | `$echo`                |
+| `get_user_avatar()`    | 获取用户头像     | `get_user_avatar(80)`   | `$size`: 尺寸, `$echo` |
+| `get_user_email()`     | 获取用户邮箱     | `get_user_email(false)` | `$echo`                |
+| `get_user_permalink()` | 获取用户主页链接 | `get_user_permalink()`  | `$echo`                |
 
 #### 实用函数
 
-| 函数名称 | 描述 | 示例 | 参数说明 |
-|---------|------|------|----------|
-| `get_template_part()` | 引入模板文件 | `get_template_part('sidebar')` | `$file`: 文件名 |
-| `is_page()` | 判断页面类型 | `if(is_page('archive'))` | `$type`: 页面类型 |
-| `get_page_nav()` | 输出分页导航 | `get_page_nav('上一页', '下一页')` | `$prev`: 上一页文本, `$next`: 下一页文本 |
+| 函数名称              | 描述         | 示例                               | 参数说明                                 |
+| --------------------- | ------------ | ---------------------------------- | ---------------------------------------- |
+| `get_template_part()` | 引入模板文件 | `get_template_part('sidebar')`     | `$file`: 文件名                          |
+| `is_page()`           | 判断页面类型 | `if(is_page('archive'))`           | `$type`: 页面类型                        |
+| `get_page_nav()`      | 输出分页导航 | `get_page_nav('上一页', '下一页')` | `$prev`: 上一页文本, `$next`: 下一页文本 |
 
 ### TyAjax
 > 提供简单易用的 AJAX 请求处理功能
