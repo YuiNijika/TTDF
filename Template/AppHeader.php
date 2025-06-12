@@ -1,7 +1,7 @@
 <?php
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 ?>
-<!doctype html>
+<!DOCTYPE html>
 <html lang="<?php echo Get::Options('lang', false) ? Get::Options('lang', false) : 'zh-CN' ?>">
 
 <head>
@@ -10,4 +10,4 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 </head>
 
 <body>
-    <main id="app">
+    <div id="app">

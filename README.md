@@ -586,7 +586,7 @@ TyAjax($('button'), {}, null, 'stop');
 ### REST API
 
 一个简单的 REST API，你可以使用它来获取一些数据。
-> `API`路由及状态在`Core/TTDF.Config.php`中定义。 
+> `ty-json`路由及状态在`Core/TTDF.Config.php`中定义。 
 
 全局参数
 
@@ -597,22 +597,22 @@ TyAjax($('button'), {}, null, 'stop');
 
 | 调用  |                路由                | 其他参数&路由 |         描述         |
 | :---: | :--------------------------------: | :-----------: | :------------------: |
-|  Get  |                /API                |     null      |     获取网站信息     |
-|  Get  |             /API/posts             |     null      |     获取文章列表     |
-|  Get  |             /API/pages             |     null      |     获取页面列表     |
-|  Get  |        /API/search/{string}        |    string     |     搜索文章列表     |
-|  Get  |       /API/category/{string}       |   mid, slug   |     获取分类列表     |
-|  Get  |         /API/tag/{string}          |   mid, slug   |     获取标签列表     |
-|  Get  |       /API/content/{string}        |   cid, slug   |     获取内容数据     |
-|  Get  |          /API/attachments          |     null      |     获取附件列表     |
-|  Get  |           /API/comments            |     post      |     获取评论列表     |
-|  Get  |    /API/comments/post/{string}     |    string     |   获取文章评论列表   |
-|  Get  |     /API/fields/{name}/{value}     |    string     |   获取字段文章列表   |
-|  Get  | /API/advancedFields/{name}/{value} |    string     | 获取高级字段查询列表 |
-|  Get  |           /API/options/            |     null      |    获取设置项列表    |
-|  Get  |    /API/options/{name}/{value}     |    string     |    获取设置项详情    |
-|  Get  |         /API/themeOptions          |     null      |  获取主题设置项列表  |
-|  Get  |      /API/themeOptions/{name}      |    string     |  获取主题设置项详情  |
+|  Get  |                /ty-json                |     null      |     获取网站信息     |
+|  Get  |             /ty-json/posts             |     null      |     获取文章列表     |
+|  Get  |             /ty-json/pages             |     null      |     获取页面列表     |
+|  Get  |        /ty-json/search/{string}        |    string     |     搜索文章列表     |
+|  Get  |       /ty-json/category/{string}       |   mid, slug   |     获取分类列表     |
+|  Get  |         /ty-json/tag/{string}          |   mid, slug   |     获取标签列表     |
+|  Get  |       /ty-json/content/{string}        |   cid, slug   |     获取内容数据     |
+|  Get  |          /ty-json/attachments          |     null      |     获取附件列表     |
+|  Get  |           /ty-json/comments            |     post      |     获取评论列表     |
+|  Get  |    /ty-json/comments/post/{string}     |    string     |   获取文章评论列表   |
+|  Get  |     /ty-json/fields/{name}/{value}     |    string     |   获取字段文章列表   |
+|  Get  | /ty-json/advancedFields/{name}/{value} |    string     | 获取高级字段查询列表 |
+|  Get  |           /ty-json/options/            |     null      |    获取设置项列表    |
+|  Get  |    /ty-json/options/{name}/{value}     |    string     |    获取设置项详情    |
+|  Get  |         /ty-json/themeOptions          |     null      |  获取主题设置项列表  |
+|  Get  |      /ty-json/themeOptions/{name}      |    string     |  获取主题设置项详情  |
 
 ### 字段查询
 > TTDF内置了字段查询文章列表功能
@@ -622,7 +622,7 @@ TyAjax($('button'), {}, null, 'stop');
 普通字段查询文章
 
 ```bash
-GET /API/fields/{name}/{value}
+GET /ty-json/fields/{name}/{value}
 ```
 
 #### 高级查询
@@ -630,13 +630,13 @@ GET /API/fields/{name}/{value}
 ##### 复杂查询​​使用 JSON
 
 ```bash
-GET /API/advancedFields?conditions=[{"name":"color","value":"red"},{"name":"price","operator":">=","value":100}]
+GET /ty-json/advancedFields?conditions=[{"name":"color","value":"red"},{"name":"price","operator":">=","value":100}]
 ```
 
 ##### 模糊搜索​
 
 ```bash
-GET /API/advancedFields/title/%重要%?operator=LIKE
+GET /ty-json/advancedFields/title/%重要%?operator=LIKE
 ```
 
 #### 查询运算符与值类型规范
