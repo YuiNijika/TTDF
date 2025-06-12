@@ -57,12 +57,12 @@ class TTDF_Main
         /** Modules */
         require_once 'Modules/OPP.php';
         require_once 'Modules/Api.php';
-        if ($TTDFConfig['TyAjax'] ?? false == true) {
+        if ($defineTTDFConfig['Modules']['TyAjax'] ?? false) {
             require_once 'Modules/TyAjax.php';
         }
         require_once 'Modules/FormElement.php';
         require_once 'Modules/Options.php';
-        if ($TTDFConfig['Fields'] ?? false == true) {
+        if ($defineTTDFConfig['Modules']['Fields'] ?? false) {
             require_once 'Modules/Fields.php';
         }
     }

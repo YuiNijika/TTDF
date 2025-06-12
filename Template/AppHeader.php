@@ -2,7 +2,7 @@
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 ?>
 <!DOCTYPE html>
-<html lang="<?php echo Get::Options('lang', false) ? Get::Options('lang', false) : 'zh-CN' ?>">
+<html lang="<?php $defineTTDFConfig['App']['Lang'] ?? 'zh-CN' ?>">
 
 <head>
     <?php TTDF_Hook::do_action('load_head'); ?>
