@@ -11,6 +11,11 @@ if (version_compare(PHP_VERSION, '7.4', '<')) {
 
 // 设置框架版本
 define('__FRAMEWORK_VER__', '2.3.2'); 
+// 配置默认头像源
+define('__TYPECHO_GRAVATAR_PREFIX__', $defineTTDFConfig['Modules']['GravatarPrefix'] ?? 'https://cravatar.cn/avatar/');
+// 主题注册设置项为 * TTDF_RESTAPI_Switch * 则代理启用REST API
+define('__TTDF_RESTAPI__', $defineTTDFConfig['Modules']['RestApi'] ?? false);
+define('__TTDF_RESTAPI_ROUTE__', $defineTTDFConfig['Modules']['RestApiRoute'] ?? 'ty-json');
 
 trait ErrorHandler
 {
