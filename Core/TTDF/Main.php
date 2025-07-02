@@ -43,7 +43,7 @@ class TTDF_Main
             'GetTheme.php',
             'GetPost.php',
             'Comment.php',
-            '/GetUser.php',
+            'GetUser.php',
             'UserInfo.php',
             'TTDF.php'
         ];
@@ -63,11 +63,11 @@ class TTDF_Main
             require_once __DIR__ . '/Modules/' . $file;
         }
 
-        if (!empty($GLOBALS['defineTTDFConfig']['Modules']['TyAjax'])) {
+        if (!empty($GLOBALS['defineConfig']['Modules']['TyAjax'])) {
             require_once __DIR__ . '/Modules/TyAjax.php';
         }
 
-        if (!empty($GLOBALS['defineTTDFConfig']['Modules']['Fields'])) {
+        if (!empty($GLOBALS['defineConfig']['Modules']['Fields'])) {
             require_once __DIR__ . '/Modules/Fields.php';
         }
     }
@@ -81,15 +81,15 @@ class TTDF_Main
         self::run();
     
         // 获取全局配置
-        $defineTTDFConfig = $GLOBALS['defineTTDFConfig'];
+        $defineConfig = $GLOBALS['defineConfig'];
     
-        define('__FRAMEWORK_VER__', '2.3.2');
-        define('__TYPECHO_GRAVATAR_PREFIX__', $defineTTDFConfig['GravatarPrefix'] ?? 'https://cravatar.cn/avatar/');
-        define('__TTDF_RESTAPI__', !empty($defineTTDFConfig['RestApi']));
-        define('__TTDF_RESTAPI_ROUTE__', $defineTTDFConfig['RestApiRoute'] ?? 'ty-json');
+        define('__FRAMEWORK_VER__', '2.3.3');
+        define('__TYPECHO_GRAVATAR_PREFIX__', $defineConfig['GravatarPrefix'] ?? 'https://cravatar.cn/avatar/');
+        define('__TTDF_RESTAPI__', !empty($defineConfig['RestApi']));
+        define('__TTDF_RESTAPI_ROUTE__', $defineConfig['RestApiRoute'] ?? 'ty-json');
     
         // 在初始化时注册HTML压缩钩子
-        if (!empty($defineTTDFConfig['CompressHtml'])) {
+        if (!empty($defineConfig['CompressHtml'])) {
             ob_start(function ($buffer) {
                 return TTDF::CompressHtml($buffer);
             });

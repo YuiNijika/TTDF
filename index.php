@@ -10,8 +10,8 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 // 面向过程调用
 get_template('AppHeader');
 
-// 输出 TTDF 默认内容，开发前删除即可
-TTDF::Modules('WelCome');
+// 开发前删除即可
+WelCome();
 
 // 面向对象调用
 Get::Template('AppFooter');

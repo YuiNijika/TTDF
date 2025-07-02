@@ -17,7 +17,7 @@ class Main
         // 引入主题自定义代码
         if(file_exists(__DIR__ . '/Core/Code.php')) {
             // 先在`Core`目录下创建`Code.php`文件
-            require_once 'Core/Code.php';
+            require_once __DIR__ . '/Core/Code.php';
         }
     }
 }

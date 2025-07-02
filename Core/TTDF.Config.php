@@ -6,8 +6,8 @@
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 // 定义 TTDF 配置
-global $defineTTDFConfig;
-$defineTTDFConfig = [
+global $defineConfig;
+$defineConfig = [
     'Fields' => false, // 是否启用自定义字段
     'TyAjax' => false, // 是否启用TyAjax模块
     'CompressHtml' => true, // 是否启用HTML压缩
