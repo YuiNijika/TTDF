@@ -63,12 +63,16 @@ class TTDF_Main
             require_once __DIR__ . '/Modules/' . $file;
         }
 
-        if (!empty($GLOBALS['defineConfig']['Modules']['TyAjax'])) {
+        if (!empty($GLOBALS['defineConfig']['TyAjax'])) {
             require_once __DIR__ . '/Modules/TyAjax.php';
         }
 
-        if (!empty($GLOBALS['defineConfig']['Modules']['Fields'])) {
+        if (!empty($GLOBALS['defineConfig']['Fields'])) {
             require_once __DIR__ . '/Modules/Fields.php';
+        }
+
+        if (!isset($GLOBALS['defineConfig'])) {
+            throw new RuntimeException('TTDF配置未初始化');
         }
     }
 
@@ -77,17 +81,17 @@ class TTDF_Main
         if (version_compare(PHP_VERSION, '7.4', '<')) {
             die('PHP版本需要7.4及以上, 请先升级!');
         }
-    
+
         self::run();
-    
+
         // 获取全局配置
         $defineConfig = $GLOBALS['defineConfig'];
-    
+
         define('__FRAMEWORK_VER__', '2.3.3');
         define('__TYPECHO_GRAVATAR_PREFIX__', $defineConfig['GravatarPrefix'] ?? 'https://cravatar.cn/avatar/');
         define('__TTDF_RESTAPI__', !empty($defineConfig['RestApi']));
         define('__TTDF_RESTAPI_ROUTE__', $defineConfig['RestApiRoute'] ?? 'ty-json');
-    
+
         // 在初始化时注册HTML压缩钩子
         if (!empty($defineConfig['CompressHtml'])) {
             ob_start(function ($buffer) {
