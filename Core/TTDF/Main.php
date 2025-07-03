@@ -1,6 +1,10 @@
 <?php
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
+define('__TYPECHO_GRAVATAR_PREFIX__', $defineConfig['GravatarPrefix'] ?? 'https://cravatar.cn/avatar/');
+define('__TTDF_RESTAPI__', !empty($defineConfig['RestApi']));
+define('__TTDF_RESTAPI_ROUTE__', $defineConfig['RestApiRoute'] ?? 'ty-json');
+
 trait ErrorHandler
 {
     protected static function handleError($message, $e, $defaultValue = '', $logLevel = E_USER_WARNING)
@@ -88,9 +92,6 @@ class TTDF_Main
         $defineConfig = $GLOBALS['defineConfig'];
 
         define('__FRAMEWORK_VER__', '2.3.3');
-        define('__TYPECHO_GRAVATAR_PREFIX__', $defineConfig['GravatarPrefix'] ?? 'https://cravatar.cn/avatar/');
-        define('__TTDF_RESTAPI__', !empty($defineConfig['RestApi']));
-        define('__TTDF_RESTAPI_ROUTE__', $defineConfig['RestApiRoute'] ?? 'ty-json');
 
         // 在初始化时注册HTML压缩钩子
         if (!empty($defineConfig['CompressHtml'])) {
