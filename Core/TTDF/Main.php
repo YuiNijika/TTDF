@@ -91,7 +91,7 @@ class TTDF_Main
         // 获取全局配置
         $defineConfig = $GLOBALS['defineConfig'];
 
-        define('__FRAMEWORK_VER__', '2.3.3');
+        define('__FRAMEWORK_VER__', '2.3.4_beta');
 
         // 在初始化时注册HTML压缩钩子
         if (!empty($defineConfig['CompressHtml'])) {

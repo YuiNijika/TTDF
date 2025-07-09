@@ -322,11 +322,54 @@ class Get
         return self::Need(self::buildFilePath('', $file));
     }
 
-    // 引入Template目录文件
+    /**
+     * 引入Template目录文件
+     * 
+     * @param string $file 模板文件名
+     * @return mixed
+     */
     public static function Template($file)
     {
-        return self::Need(self::buildFilePath('Template', $file));
+        return self::loadDirFile('Template', $file, '加载Template失败');
     }
+
+    /**
+     * 引入Layouts目录文件
+     * 
+     * @param string $file 布局文件名
+     * @return mixed
+     */
+    public static function Layouts($file)
+    {
+        return self::loadDirFile('Layouts', $file, '加载Layouts失败');
+    }
+
+    /**
+     * 通用目录文件加载方法
+     * 
+     * @param string $dirName 目录名（默认大小写）
+     * @param string $file 文件名
+     * @param string $errorMsg 错误消息
+     * @return mixed
+     */
+    private static function loadDirFile($dirName, $file, $errorMsg)
+    {
+        try {
+            $themeDir = self::getArchive()->getThemeDir();
+            $items = scandir($themeDir);
+
+            foreach ($items as $item) {
+                if (strtolower($item) === strtolower($dirName) && is_dir($themeDir . '/' . $item)) {
+                    return self::Need(self::buildFilePath($item, $file));
+                }
+            }
+
+            return self::Need(self::buildFilePath($dirName, $file));
+        } catch (Exception $e) {
+            return self::handleError($errorMsg, $e);
+        }
+    }
+
     // 判断页面类型
     public static function Is($type)
     {
