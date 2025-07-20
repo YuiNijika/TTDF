@@ -85,9 +85,20 @@ class TTDF_Main
         if (version_compare(PHP_VERSION, '7.4', '<')) {
             die('PHP版本需要7.4及以上, 请先升级!');
         }
-
+        
         self::run();
-
+        
+        // 注册Typecho路由
+        Utils\Helper::addRoute(
+            'TTDF_API', // 路由名称
+            '/' . __TTDF_RESTAPI_ROUTE__ . '/', // 路由路径
+            'Widget_Archive', // 组件名称
+            'render' // 组件动作方法
+        );
+        
+        // 注销路由，这个应该用插件来实现的，不然这样就得手动取消代码注释注销路由了。
+        //Utils\Helper::removeRoute('TTDF_API');
+        
         // 获取全局配置
         $defineConfig = $GLOBALS['defineConfig'];
 
