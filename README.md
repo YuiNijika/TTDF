@@ -4,6 +4,8 @@
 
 配置要求: PHP 8.1+ Typecho 1.2+
 
+该仓库为开发版随手提交, 暂不保证稳定。生产环境请使用[最新发行版](https://github.com/YuiNijika/TTDF/releases)
+
 ## 框架特点  
 
  - 轻量
