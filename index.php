@@ -4,7 +4,7 @@
  * @package TTDF
  * @author 鼠子(Tomoriゞ)
  * @version 1.0.0
- * @link https://github.com/ShuShuicu/TTDF
+ * @link https://github.com/YuiNijika/TTDF
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 // 面向过程调用

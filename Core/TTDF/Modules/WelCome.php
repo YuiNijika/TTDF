@@ -71,10 +71,10 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
                     <br />Typecho Theme Development Framework
                 </p>
                 <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                    <a href="https://github.com/ShuShuicu/TTDF/blob/master/README.md" target="_blank" class="px-8 py-4 bg-primary text-white rounded-xl hover:bg-primary/90 transition-all shadow-lg hover:shadow-primary/20 hover:shadow-xl text-lg font-medium w-full sm:w-auto">
+                    <a href="https://github.com/YuiNijika/TTDF/blob/master/README.md" target="_blank" class="px-8 py-4 bg-primary text-white rounded-xl hover:bg-primary/90 transition-all shadow-lg hover:shadow-primary/20 hover:shadow-xl text-lg font-medium w-full sm:w-auto">
                         快速开始 <i class="fa fa-arrow-right ml-2"></i>
                     </a>
-                    <a href="https://github.com/ShuShuicu/TTDF" target="_blank" class="px-8 py-4 bg-white text-dark border border-gray-200 rounded-xl hover:bg-gray-50 transition-all shadow-md hover:shadow-lg text-lg font-medium w-full sm:w-auto">
+                    <a href="https://github.com/YuiNijika/TTDF" target="_blank" class="px-8 py-4 bg-white text-dark border border-gray-200 rounded-xl hover:bg-gray-50 transition-all shadow-md hover:shadow-lg text-lg font-medium w-full sm:w-auto">
                         GitHub <i class="fa fa-brands fa-github ml-2"></i> 
                     </a>
                 </div>

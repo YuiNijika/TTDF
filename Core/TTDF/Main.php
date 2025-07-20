@@ -1,9 +1,10 @@
 <?php
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
-define('__TYPECHO_GRAVATAR_PREFIX__', $defineConfig['GravatarPrefix'] ?? 'https://cravatar.cn/avatar/');
-define('__TTDF_RESTAPI__', !empty($defineConfig['RestApi']));
-define('__TTDF_RESTAPI_ROUTE__', $defineConfig['RestApiRoute'] ?? 'ty-json');
+define('__FRAMEWORK_VER__', '2.3.5_Pre');  
+define('__TYPECHO_GRAVATAR_PREFIX__', $defineConfig['GravatarPrefix'] ?? 'https://cravatar.cn/avatar/');  
+define('__TTDF_RESTAPI__', !empty($defineConfig['RestApi']));  
+define('__TTDF_RESTAPI_ROUTE__', $defineConfig['RestApiRoute'] ?? 'ty-json');  
 
 trait ErrorHandler
 {
@@ -97,12 +98,10 @@ class TTDF_Main
         );
         
         // 注销路由，这个应该用插件来实现的，不然这样就得手动取消代码注释注销路由了。
-        //Utils\Helper::removeRoute('TTDF_API');
+        // Utils\Helper::removeRoute('TTDF_API');
         
         // 获取全局配置
         $defineConfig = $GLOBALS['defineConfig'];
-
-        define('__FRAMEWORK_VER__', '2.3.4');
 
         // 在初始化时注册HTML压缩钩子
         if (!empty($defineConfig['CompressHtml'])) {

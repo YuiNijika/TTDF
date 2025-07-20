@@ -414,7 +414,7 @@ function themeConfig($form)
             </div>
         </div>
         <div style="text-align: center; margin-top: 20px;">
-            © Framework By <a href="https://github.com/ShuShuicu/TTDF" target="_blank" style="padding: 0px 3px;">TTDF</a> v' . TTDF::Ver(false) . '
+            © Framework By <a href="https://github.com/YuiNijika/TTDF" target="_blank" style="padding: 0px 3px;">TTDF</a> v' . TTDF::Ver(false) . '
         </div>
     </div>'));
 }
