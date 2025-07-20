@@ -18,11 +18,19 @@ define('TTDF_CONFIG', [
     'REST_API' => [
         'ENABLED' => true, // 是否启用REST API
         'ROUTE' => 'ty-json', // REST API路由
-        'TOKEN' => [
-            'ENABLED' => true, // 是否启用Token验证
-            'VALUE' => '1778273540' // Token值
+        'OVERRIDE_SETTING' => 'TTDF_RESTAPI_Switch', // 主题设置项名称，用于覆盖REST API开关
+        'ACCESS' => [
+            'METHOD' => 'GET,POST', // 请求方法
+            'TOKEN' => [
+                'ENABLED' => true, // 是否启用Token验证
+                'VALUE' => 'test' // Token值
+            ],
         ],
-        'OVERRIDE_SETTING' => 'TTDF_RESTAPI_Switch' // 主题设置项名称，用于覆盖REST API开关
+        'HEADERS' => [
+            'CACHE_CONTROL' => 'no-cache, no-store, must-revalidate', // 缓存控制
+            'CORS' => $_SERVER['HTTP_HOST'], // 跨域设置
+            'CSP' => "default-src 'self'" // 内容安全策略
+        ]
     ]
 ]);
 // 加载核心文件

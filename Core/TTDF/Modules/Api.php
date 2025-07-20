@@ -187,18 +187,17 @@ final class ApiResponse
     private function setSecurityHeaders(): void
     {
         $headers = [
-            'Cache-Control' => 'no-cache, no-store, must-revalidate',
-            'Pragma' => 'no-cache',
-            'Expires' => '0',
-            'Strict-Transport-Security' => 'max-age=31536000; includeSubDomains; preload',
-            'Content-Security-Policy' => "default-src 'self'; object-src 'none';",
-            'X-Content-Type-Options' => 'nosniff',
-            'X-Frame-Options' => 'SAMEORIGIN',
-            'Referrer-Policy' => 'no-referrer-when-downgrade',
-            'Permissions-Policy' => 'interest-cohort=()',
-            'Access-Control-Allow-Origin' => '*', // 生产环境建议收紧，是否安全？
-            'Vary' => 'Origin',
+            'Cache-Control' => TTDF_CONFIG['REST_API']['HEADERS']['CACHE_CONTROL'],
+            'Content-Security-Policy' => TTDF_CONFIG['REST_API']['HEADERS']['CSP'],
+            'Access-Control-Allow-Origin' => TTDF_CONFIG['REST_API']['HEADERS']['CORS'],
+            'Access-Control-Allow-Methods' => TTDF_CONFIG['REST_API']['ACCESS']['METHOD']
         ];
+
+        // 如果是Token验证模式，添加相关头
+        if (TTDF_CONFIG['REST_API']['ACCESS']['TOKEN']['ENABLED']) {
+            $headers['Access-Control-Allow-Headers'] = 'Authorization, Content-Type';
+        }
+
         foreach ($headers as $name => $value) {
             if (!headers_sent()) {
                 header("$name: $value");
@@ -941,7 +940,7 @@ if (str_starts_with($requestUri, $basePath)) {
         // 实例化所有依赖组件
         $request   = new ApiRequest();
         $response  = new ApiResponse($request->contentFormat);
-        $db        = new DB_API(); // 假设 DB_API 存在且可被实例化
+        $db        = new DB_API();
         $formatter = new ApiFormatter($db, $request->contentFormat, $request->excerptLength);
 
         // 将依赖注入到主 API 类中
