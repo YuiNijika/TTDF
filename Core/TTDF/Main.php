@@ -1,10 +1,10 @@
 <?php
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
-define('__FRAMEWORK_VER__', '2.3.5_Pre');  
-define('__TYPECHO_GRAVATAR_PREFIX__', $defineConfig['GravatarPrefix'] ?? 'https://cravatar.cn/avatar/');  
-define('__TTDF_RESTAPI__', !empty($defineConfig['RestApi']));  
-define('__TTDF_RESTAPI_ROUTE__', $defineConfig['RestApiRoute'] ?? 'ty-json');  
+define('__FRAMEWORK_VER__', '2.3.5_Pre');
+define('__TYPECHO_GRAVATAR_PREFIX__', TTDF_CONFIG['GRAVATAR_PREFIX'] ?? 'https://cravatar.cn/avatar/');
+define('__TTDF_RESTAPI__', TTDF_CONFIG['REST_API']['ENABLED'] ?? false);
+define('__TTDF_RESTAPI_ROUTE__', TTDF_CONFIG['REST_API']['ROUTE'] ?? 'ty-json');
 
 trait ErrorHandler
 {
@@ -68,15 +68,15 @@ class TTDF_Main
             require_once __DIR__ . '/Modules/' . $file;
         }
 
-        if (!empty($GLOBALS['defineConfig']['TyAjax'])) {
+        if (TTDF_CONFIG['TYAJAX_ENABLED']) {
             require_once __DIR__ . '/Modules/TyAjax.php';
         }
 
-        if (!empty($GLOBALS['defineConfig']['Fields'])) {
+        if (TTDF_CONFIG['FIELDS_ENABLED']) {
             require_once __DIR__ . '/Modules/Fields.php';
         }
 
-        if (!isset($GLOBALS['defineConfig'])) {
+        if (!TTDF_CONFIG) {
             throw new RuntimeException('TTDF配置未初始化');
         }
     }
@@ -86,9 +86,9 @@ class TTDF_Main
         if (version_compare(PHP_VERSION, '8.1', '<')) {
             die('PHP版本需要8.1及以上, 请先升级!');
         }
-        
+
         self::run();
-        
+
         // 注册Typecho路由
         Utils\Helper::addRoute(
             'TTDF_API', // 路由名称
@@ -96,15 +96,12 @@ class TTDF_Main
             'Widget_Archive', // 组件名称
             'render' // 组件动作方法
         );
-        
+
         // 注销路由，这个应该用插件来实现的，不然这样就得手动取消代码注释注销路由了。
         // Utils\Helper::removeRoute('TTDF_API');
-        
-        // 获取全局配置
-        $defineConfig = $GLOBALS['defineConfig'];
 
         // 在初始化时注册HTML压缩钩子
-        if (!empty($defineConfig['CompressHtml'])) {
+        if (TTDF_CONFIG['COMPRESS_HTML']) {
             ob_start(function ($buffer) {
                 return TTDF::CompressHtml($buffer);
             });

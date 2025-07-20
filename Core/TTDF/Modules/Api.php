@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 /**
@@ -9,14 +10,22 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 // -----------------------------------------------------------------------------
 // 配置与常量定义
 // -----------------------------------------------------------------------------
-$restApiSwitch = Get::Options('TTDF_RESTAPI_Switch');
+// 检查REST API是否启用
+$restApiEnabled = true; // 默认值
+
+// 检查主题设置项
+$restApiSwitch = Get::Options(TTDF_CONFIG['REST_API']['OVERRIDE_SETTING'] ?? 'TTDF_RESTAPI_Switch');
 if ($restApiSwitch === 'false') {
+    $restApiEnabled = false;
+}
+// 如果没有设置项，则使用常量配置
+elseif (!isset($restApiSwitch)) {
+    $restApiEnabled = TTDF_CONFIG['REST_API']['ENABLED'] ?? false;
+}
+
+// 最终检查
+if (!$restApiEnabled) {
     // 确保 Router::$current 是一个空字符串而不是 null
-    if (!isset(Typecho\Router::$current)) {
-        Typecho\Router::$current = '';
-    }
-    return;
-} elseif (!isset($restApiSwitch) && (!defined('__TTDF_RESTAPI__') || !__TTDF_RESTAPI__)) {
     if (!isset(Typecho\Router::$current)) {
         Typecho\Router::$current = '';
     }
@@ -69,17 +78,17 @@ readonly class ApiRequest
     {
         $requestUri = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '';
         $basePath = '/' . ltrim(__TTDF_RESTAPI_ROUTE__ ?? '', '/');
-        
+
         $this->path = str_starts_with($requestUri, $basePath)
             ? (substr($requestUri, strlen($basePath)) ?: '/')
-            : '/';      
+            : '/';
 
         $this->pathParts = explode('/', trim($this->path, '/'));
-        
+
         $this->contentFormat = ContentFormat::tryFrom(strtolower($this->getQuery('format', 'html'))) ?? ContentFormat::HTML;
-        
+
         $this->pageSize = max(1, min((int)$this->getQuery('pageSize', 10), 100));
-            
+
         $this->currentPage = max(1, (int)$this->getQuery('page', 1));
 
         $this->excerptLength = max(0, (int)$this->getQuery('excerptLength', 200));
@@ -105,8 +114,7 @@ readonly class ApiRequest
  */
 final class ApiResponse
 {
-    public function __construct(private ContentFormat $contentFormat)
-    {}
+    public function __construct(private ContentFormat $contentFormat) {}
 
     /**
      * 发送JSON格式的API响应
@@ -460,9 +468,9 @@ final class TTDF_API
             if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
                 $this->response->error('Method Not Allowed', HttpCode::METHOD_NOT_ALLOWED);
             }
-            
+
             $endpoint = $this->request->pathParts[0] ?? '';
-            
+
             $data = match ($endpoint) {
                 '' => $this->handleIndex(),
                 'posts' => $this->handlePostList(),
@@ -481,7 +489,6 @@ final class TTDF_API
             };
 
             $this->response->send($data);
-
         } catch (Throwable $e) {
             $this->response->error('Internal Server Error', HttpCode::INTERNAL_ERROR, $e);
         }
@@ -548,7 +555,7 @@ final class TTDF_API
             'meta' => ['pagination' => $this->buildPagination($total)]
         ];
     }
-    
+
     /**
      * 处理页面列表数据
      * 
@@ -590,7 +597,7 @@ final class TTDF_API
         if (!$post) {
             $this->response->error('Post not found', HttpCode::NOT_FOUND);
         }
-        
+
         return ['data' => $this->formatter->formatPost($post)];
     }
 
@@ -619,7 +626,7 @@ final class TTDF_API
 
         $category = is_numeric($identifier) ? $this->db->getCategoryByMid($identifier) : $this->db->getCategoryBySlug($identifier);
         if (!$category) $this->response->error('Category not found', HttpCode::NOT_FOUND);
-        
+
         $posts = $this->db->getPostsInCategory($category['mid'], $this->request->pageSize, $this->request->currentPage);
         $total = $this->db->getTotalPostsInCategory($category['mid']);
 
@@ -794,7 +801,7 @@ final class TTDF_API
         if ($fieldName === null || $fieldValue === null) {
             $this->response->error('Missing field parameters', HttpCode::BAD_REQUEST);
         }
-        
+
         $decodedValue = urldecode($fieldValue);
         $posts = $this->db->getPostsByField($fieldName, $decodedValue, $this->request->pageSize, $this->request->currentPage);
         $total = $this->db->getPostsCountByField($fieldName, $decodedValue);
@@ -827,12 +834,12 @@ final class TTDF_API
     {
         $conditions = $this->request->getQuery('conditions');
         if (empty($conditions)) {
-             $this->response->error('Invalid search conditions', HttpCode::BAD_REQUEST);
+            $this->response->error('Invalid search conditions', HttpCode::BAD_REQUEST);
         }
         try {
             $decodedConditions = json_decode($conditions, true, 512, JSON_THROW_ON_ERROR);
         } catch (JsonException) {
-             $this->response->error('Invalid JSON in conditions parameter', HttpCode::BAD_REQUEST);
+            $this->response->error('Invalid JSON in conditions parameter', HttpCode::BAD_REQUEST);
         }
 
         $posts = $this->db->getPostsByAdvancedFields($decodedConditions, $this->request->pageSize, $this->request->currentPage);
@@ -942,7 +949,6 @@ if (str_starts_with($requestUri, $basePath)) {
 
         // 运行 API
         $api->handleRequest();
-
     } catch (Throwable $e) {
         // 兜底错误处理，防止因组件初始化失败导致白屏
         if (!headers_sent()) {
