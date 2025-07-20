@@ -82,8 +82,8 @@ class TTDF_Main
 
     public static function init()
     {
-        if (version_compare(PHP_VERSION, '7.4', '<')) {
-            die('PHP版本需要7.4及以上, 请先升级!');
+        if (version_compare(PHP_VERSION, '8.1', '<')) {
+            die('PHP版本需要8.1及以上, 请先升级!');
         }
         
         self::run();
