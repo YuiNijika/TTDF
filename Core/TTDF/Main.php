@@ -60,6 +60,10 @@ class TTDF_Main
             'Options.php'
         ];
 
+        if (TTDF_CONFIG['DEBUG']) {
+            require_once __DIR__ . '/Modules/Debug.php';
+        }
+
         foreach ($widgetFiles as $file) {
             require_once __DIR__ . '/Widget/' . $file;
         }
