@@ -1,7 +1,9 @@
 <?php
+
 /**
  * Debug Functions
  */
+
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
 // 定义路由异常类
@@ -57,9 +59,9 @@ class TTDF_Debug
                 }
 
                 @file_put_contents(
-                    self::$logFile, 
-                    "=== DEBUG LOG STARTED " . date('Y-m-d H:i:s') . " ===\n" . 
-                    "PID: " . getmypid() . " | PHP: " . PHP_VERSION . "\n",
+                    self::$logFile,
+                    "=== DEBUG LOG STARTED " . date('Y-m-d H:i:s') . " ===\n" .
+                        "PID: " . getmypid() . " | PHP: " . PHP_VERSION . "\n",
                     LOCK_EX
                 );
 
@@ -74,7 +76,6 @@ class TTDF_Debug
 
                 self::registerRouteHooks();
                 self::logSystemInfo();
-
             } catch (Exception $e) {
                 self::$enabled = false;
                 error_log("TTDF_Debug init failed: " . $e->getMessage());
@@ -173,7 +174,7 @@ class TTDF_Debug
     {
         $currentMemory = memory_get_usage(true);
         $peakMemory = memory_get_peak_usage(true);
-        
+
         self::log(sprintf(
             "Performance: %.2fms | Memory: %s | Peak: %s",
             (microtime(true) - self::$startTime) * 1000,
@@ -290,7 +291,7 @@ class TTDF_Debug
                     $error['line']
                 );
             }
-            
+
             // 确保所有日志已写入
             if (self::$logFile && file_exists(self::$logFile)) {
                 @fflush(fopen(self::$logFile, 'a'));
@@ -342,14 +343,14 @@ class TTDF_Debug
 
         $lines = explode("\n", $message);
         $fullMessage = '';
-        
+
         foreach ($lines as $line) {
             $fullMessage .= $prefix . $line . "\n";
         }
 
         @file_put_contents(
-            self::$logFile, 
-            $fullMessage, 
+            self::$logFile,
+            $fullMessage,
             FILE_APPEND | LOCK_EX
         );
     }
@@ -360,11 +361,11 @@ class TTDF_Debug
     private static function formatMemory($bytes)
     {
         $units = ['B', 'KB', 'MB', 'GB', 'TB'];
-        
+
         for ($i = 0; $bytes >= 1024 && $i < 4; $i++) {
             $bytes /= 1024;
         }
-        
+
         return round($bytes, 2) . $units[$i];
     }
 
@@ -391,7 +392,7 @@ class TTDF_Debug
             E_USER_DEPRECATED => 'USER_DEPRECATED'
         ];
 
-        return $map[$level] ?? 'UNKNOWN('.$level.')';
+        return $map[$level] ?? 'UNKNOWN(' . $level . ')';
     }
 
     /**
