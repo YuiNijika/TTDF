@@ -89,7 +89,7 @@ final class TokenValidator
     private static function sendErrorResponse(string $message, HttpCode $code): never
     {
         if (!headers_sent()) {
-            http_response_code($code->value);
+            \Typecho\Response::getInstance()->setStatus($code->value);
             header('Content-Type: application/json; charset=UTF-8');
         }
 
@@ -154,7 +154,7 @@ final class ApiResponse
     public function send(array $data = [], HttpCode $code = HttpCode::OK): never
     {
         if (!headers_sent()) {
-            http_response_code($code->value);
+            \Typecho\Response::getInstance()->setStatus($code->value);
             header('Content-Type: application/json; charset=UTF-8');
             $this->setSecurityHeaders();
         }
