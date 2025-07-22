@@ -7,6 +7,9 @@ const useSeo = [
     'keywords' => '404, error, 错误'
 ];
 
+// 确保 Archive 部件已初始化
+$archive = Typecho_Widget::widget('Widget_Archive', array('type' => 'error'));
+
 Get::Template('AppHeader');
 ?>
 <div class="error">
