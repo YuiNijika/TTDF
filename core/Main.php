@@ -61,6 +61,7 @@ class TTDF_Main
         $moduleFiles = [
             'OPP.php',
             'Api.php',
+            'Router.php',
             'Function.php',
             'Options.php'
         ];
