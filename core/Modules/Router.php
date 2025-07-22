@@ -25,6 +25,8 @@ class TTDF_AutoRouter
     
     private static function getRequestPath()
     {
+        $response = Typecho_Response::getInstance();
+        $response->setStatus(200);
         $requestUri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
         return trim($requestUri, '/');
     }
