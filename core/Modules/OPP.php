@@ -33,116 +33,116 @@ if (!function_exists('get_footer')) {
     }
 }
 
-if (!function_exists('get_site_url')) {
+if (!function_exists('get_GetSite_url')) {
     /**
      * 获取站点URL
      * 
      * @param bool|null $echo 是否直接输出
      * @return string
      */
-    function get_site_url(?bool $echo = true): string
+    function get_GetSite_url(?bool $echo = true): string
     {
-        return Get::SiteUrl($echo);
+        return Get::GetSiteUrl($echo);
     }
 }
 
-if (!function_exists('get_site_domain')) {
+if (!function_exists('get_GetSite_domain')) {
     /**
      * 获取站点域名
      * 
      * @param bool|null $echo 是否直接输出
      * @return string
      */
-    function get_site_domain(?bool $echo = true): string
+    function get_GetSite_domain(?bool $echo = true): string
     {
-        return Get::SiteDomain($echo);
+        return Get::GetSiteDomain($echo);
     }
 }
 
-if (!function_exists('get_site_name')) {
+if (!function_exists('get_GetSite_name')) {
     /**
      * 获取站点名称
      * 
      * @param bool|null $echo 是否直接输出
      * @return string
      */
-    function get_site_name(?bool $echo = true): string
+    function get_GetSite_name(?bool $echo = true): string
     {
-        return Get::SiteName($echo);
+        return Get::GetSiteName($echo);
     }
 }
 
-if (!function_exists('get_site_keywords')) {
+if (!function_exists('get_GetSite_keywords')) {
     /**
      * 获取站点关键词
      * 
      * @param bool|null $echo 是否直接输出
      * @return string
      */
-    function get_site_keywords(?bool $echo = true): string
+    function get_GetSite_keywords(?bool $echo = true): string
     {
-        return Get::SiteKeywords($echo);
+        return Get::GetSiteKeywords($echo);
     }
 }
 
-if (!function_exists('get_site_description')) {
+if (!function_exists('get_GetSite_description')) {
     /**
      * 获取站点描述
      * 
      * @param bool|null $echo 是否直接输出
      * @return string
      */
-    function get_site_description(?bool $echo = true): string
+    function get_GetSite_description(?bool $echo = true): string
     {
-        return Get::SiteDescription($echo);
+        return Get::GetSiteDescription($echo);
     }
 }
 
-if (!function_exists('get_site_language')) {
+if (!function_exists('get_GetSite_language')) {
     /**
      * 获取站点语言
      * @param bool $echo 是否直接输出
      * @return string|null
      */
-    function get_site_language(bool $echo = true): ?string
+    function get_GetSite_language(bool $echo = true): ?string
     {
-        return Site::Language($echo);
+        return GetSite::Language($echo);
     }
 }
 
-if (!function_exists('get_site_charset')) {
+if (!function_exists('get_GetSite_charset')) {
     /**
      * 获取站点编码
      * @param bool $echo 是否直接输出
      * @return string|null
      */
-    function get_site_charset(bool $echo = true): ?string
+    function get_GetSite_charset(bool $echo = true): ?string
     {
-        return Site::Charset($echo);
+        return GetSite::Charset($echo);
     }
 }
 
-if (!function_exists('get_site_page_url')) {
+if (!function_exists('get_GetSite_page_url')) {
     /**
      * 获取当前页面URL
      * @param bool $echo 是否直接输出
      * @return string|null
      */
-    function get_site_page_url(bool $echo = true): ?string
+    function get_GetSite_page_url(bool $echo = true): ?string
     {
-        return Site::PageUrl($echo);
+        return GetSite::PageUrl($echo);
     }
 }
 
-if (!function_exists('get_site_theme_name')) {
+if (!function_exists('get_GetSite_theme_name')) {
     /**
      * 获取站点主题名称
      * @param bool $echo 是否直接输出
      * @return string|null
      */
-    function get_site_theme_name(bool $echo = true): ?string
+    function get_GetSite_theme_name(bool $echo = true): ?string
     {
-        return Site::Theme($echo);
+        return GetSite::Theme($echo);
     }
 }
 
@@ -221,6 +221,19 @@ if (!function_exists('get_template')) {
     function get_template(string $file)
     {
         return Get::Template($file);
+    }
+}
+
+if (!function_exists('get_components')) {
+    /**
+     * 引入组件文件
+     * 
+     * @param string $file 文件名
+     * @return mixed
+     */
+    function get_components(string $file)
+    {
+        return Get::Components($file);
     }
 }
 
@@ -755,7 +768,7 @@ if (!function_exists('get_user_name')) {
      */
     function get_user_name(bool $echo = true): string
     {
-        return UserInfo::Name($echo);
+        return GetUser::Name($echo);
     }
 }
 
@@ -767,7 +780,7 @@ if (!function_exists('get_user_display_name')) {
      */
     function get_user_display_name(bool $echo = true): string
     {
-        return UserInfo::DisplayName($echo);
+        return GetUser::DisplayName($echo);
     }
 }
 
@@ -780,7 +793,7 @@ if (!function_exists('get_user_avatar')) {
      */
     function get_user_avatar(int $size = 128, bool $echo = true): string
     {
-        return UserInfo::Avatar($size, $echo);
+        return GetUser::Avatar($size, $echo);
     }
 }
 
@@ -795,7 +808,7 @@ if (!function_exists('get_user_avatar_url')) {
      */
     function get_user_avatar_url(int $size = 128, string $default = 'mm', string $rating = 'X', bool $echo = true): string
     {
-        return UserInfo::AvatarURL($size, $default, $rating, $echo);
+        return GetUser::AvatarURL($size, $default, $rating, $echo);
     }
 }
 
@@ -807,19 +820,19 @@ if (!function_exists('get_user_email')) {
      */
     function get_user_email(bool $echo = true): string
     {
-        return UserInfo::Email($echo);
+        return GetUser::Email($echo);
     }
 }
 
-if (!function_exists('get_user_website')) {
+if (!function_exists('get_user_webGetSite')) {
     /**
      * 获取用户网站
      * @param bool $echo 是否直接输出
      * @return string
      */
-    function get_user_website(bool $echo = true): string
+    function get_user_webGetSite(bool $echo = true): string
     {
-        return UserInfo::WebSite($echo);
+        return GetUser::WebGetSite($echo);
     }
 }
 
@@ -831,7 +844,7 @@ if (!function_exists('get_user_bio')) {
      */
     function get_user_bio(bool $echo = true): string
     {
-        return UserInfo::Bio($echo);
+        return GetUser::Bio($echo);
     }
 }
 
@@ -843,7 +856,7 @@ if (!function_exists('get_user_role')) {
      */
     function get_user_role(bool $echo = true): string
     {
-        return UserInfo::Role($echo);
+        return GetUser::Role($echo);
     }
 }
 
@@ -856,7 +869,7 @@ if (!function_exists('get_user_registered')) {
      */
     function get_user_registered(string $format = 'Y-m-d H:i:s', bool $echo = true): string
     {
-        return UserInfo::Registered($format, $echo);
+        return GetUser::Registered($format, $echo);
     }
 }
 
@@ -869,7 +882,7 @@ if (!function_exists('get_user_last_login')) {
      */
     function get_user_last_login(string $format = 'Y-m-d H:i:s', bool $echo = true): string
     {
-        return UserInfo::LastLogin($format, $echo);
+        return GetUser::LastLogin($format, $echo);
     }
 }
 
@@ -881,7 +894,7 @@ if (!function_exists('get_user_post_count')) {
      */
     function get_user_post_count(bool $echo = true): int
     {
-        return UserInfo::PostCount($echo);
+        return GetUser::PostCount($echo);
     }
 }
 
@@ -893,7 +906,7 @@ if (!function_exists('get_user_page_count')) {
      */
     function get_user_page_count(bool $echo = true): int
     {
-        return UserInfo::PageCount($echo);
+        return GetUser::PageCount($echo);
     }
 }
 
@@ -905,6 +918,6 @@ if (!function_exists('get_user_permalink')) {
      */
     function get_user_permalink(bool $echo = true): string
     {
-        return UserInfo::Permalink($echo);
+        return GetUser::Permalink($echo);
     }
 }

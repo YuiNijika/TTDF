@@ -1,6 +1,7 @@
 <?php
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
+// 先定义 SEO 信息
 const useSeo = [
     'title' => '出错啦',
     'description' => '您访问的页面不存在',
@@ -19,4 +20,3 @@ Get::Template('AppHeader');
 </div>
 <?php
 Get::Template('AppFooter');
-?>

@@ -1,6 +1,6 @@
 <?php
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
-class Site
+class GetSite
 {
     use ErrorHandler;
 
@@ -16,7 +16,7 @@ class Site
     public static function Domain(?bool $echo = true)
     {
         try {
-            $domain = Get::Options('siteDomain');
+            $domain = Get::Options('GetSiteDomain');
             if ($echo) echo $domain;
             return $domain;
         } catch (Exception $e) {
@@ -112,7 +112,7 @@ class Site
     public static function Url(?bool $echo = true)
     {
         try {
-            $url = Get::Options('siteUrl');
+            $url = Get::Options('GetSiteUrl');
             if ($echo) echo $url;
             return $url;
         }catch (Exception $e) {

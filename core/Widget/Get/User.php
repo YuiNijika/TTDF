@@ -1,5 +1,11 @@
 <?php
+
+/**
+ * GetUser 方法
+ */
+
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
+
 class GetUser
 {
     use ErrorHandler, SingletonWidget;
@@ -243,7 +249,7 @@ class GetUser
                 ->where('type = ?', 'page')
                 ->where('authorId = ?', self::getArchive()->author->uid)
                 ->where('status = ?', 'publish'))->num;
-            
+
             if ($echo) {
                 echo $count;
             } else {
