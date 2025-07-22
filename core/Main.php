@@ -4,7 +4,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 if (file_exists(__DIR__ . '/../app/TTDF.Config.php')) {
     require_once __DIR__ . '/../app/TTDF.Config.php';
 } else {
-    throw new Exception('TTDF配置文件未找到，请检查路径：' . __DIR__ . '/../app/TTDF.Config.php');
+    throw new Exception('TTDF配置文件未找到! 请检查路径: ' . __DIR__ . '/../app/TTDF.Config.php');
 }
 
 define('__FRAMEWORK_VER__', '3.0.0_dev');
