@@ -37,7 +37,7 @@ class TTDF_Debug
 
         if (defined('TTDF_CONFIG') && TTDF_CONFIG['DEBUG']) {
             self::$enabled = true;
-            self::$logFile = dirname(__DIR__, 3) . '/debug.log';
+            self::$logFile = dirname(__DIR__, 2) . '/debug.log';
 
             try {
                 $logDir = dirname(self::$logFile);

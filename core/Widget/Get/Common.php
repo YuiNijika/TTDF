@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 /**
  * Get 方法
@@ -367,6 +367,11 @@ class Get
     private static function loadDirFile($dirName, $file, $errorMsg)
     {
         try {
+            // 如果是 404 页面，特殊处理
+            if (strpos($file, '404.php') !== false) {
+                Typecho_Widget::widget('Widget_Archive', array('type' => 'error'));
+            }
+
             $themeDir = self::getArchive()->getThemeDir();
             $items = scandir($themeDir);
 
@@ -378,6 +383,8 @@ class Get
 
             return self::Need(self::buildFilePath($dirName, $file));
         } catch (Exception $e) {
+            error_log("Searching for dir: {$dirName} in {$themeDir}");
+            error_log("Trying to load: " . self::buildFilePath($dirName, $file));
             return self::handleError($errorMsg, $e);
         }
     }
