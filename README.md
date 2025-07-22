@@ -2,6 +2,8 @@
 
 > The Intuitive Theme Develop Framework for Typecho.
 
+如果你是Vue&Nuxt的开发者, 那么这款框架非常适合你。
+
 配置要求: PHP 8.1+ Typecho 1.2+
 
 该仓库为开发版随手提交, 暂不保证稳定。生产环境请使用[最新发行版](https://github.com/YuiNijika/TTDF/releases)

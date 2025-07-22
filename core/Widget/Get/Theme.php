@@ -1,8 +1,9 @@
 <?php
 
 /**
- * GetTheme Class
+ * GetTheme 方法
  */
+
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
 class GetTheme
@@ -132,7 +133,7 @@ class GetTheme
     public static function Ver(?bool $echo = true)
     {
         try {
-            $infoFile = dirname(__DIR__, 3) . '/index.php'; // 主题根目录的 index.php
+            $infoFile = dirname(__DIR__, 4) . '/index.php'; // 主题根目录的 index.php
 
             if (!file_exists($infoFile)) {
                 throw new Exception("主题信息文件不存在: {$infoFile}");

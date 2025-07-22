@@ -91,7 +91,7 @@ return [
                 'name' => 'TTDF_RESTAPI_Switch',
                 'value' => 'false',
                 'label' => 'REST API',
-                'description' => 'TTDF框架内置的 REST API<br/>详细教程见 <a href="https://github.com/Typecho-Framework/Typecho-Theme-Development-Framework#rest-api" target="_blank">官方文档 REST API 部分</a>',
+                'description' => 'TTDF框架内置的 REST API<br/>详细教程见 <a href="https://github.com/YuiNijika/TTDF#rest-api" target="_blank">官方文档 REST API 部分</a>',
                 'options' => [
                     'true' => '开启',
                     'false' => '关闭'
@@ -199,8 +199,8 @@ return [
 ### 类与方法
 
 调用方法时值为 true 直接 echo 输出，如果为 false 则返回值。  
-Get::SiteUrl(true) 为 echo 输出  
-Get::SiteUrl(false) 为 return 返回值
+Get::GetSiteUrl(true) 为 echo 输出  
+Get::GetSiteUrl(false) 为 return 返回值
 
 #### TTDF 类
 
@@ -244,12 +244,12 @@ class useSeo
 
 |            方法             |       描述       |          示例           |
 | :-------------------------: | :--------------: | :---------------------: |
-|          SiteUrl()          |  获取网站的 URL  |     Get::SiteUrl();     |
+|          GetSiteUrl()          |  获取网站的 URL  |     Get::GetSiteUrl();     |
 |          PageUrl()          |   获取当前url    |     Get::PageUrl();     |
-|        SiteDomain()         |   获取网站域名   |   Get::SiteDomain();    |
-|         SiteName()          |   获取网站名称   |    Get::SiteName();     |
-|       SiteKeywords()        |  获取网站关键词  |  Get::SiteKeywords();   |
-|      SiteDescription()      |   获取网站描述   | Get::SiteDescription(); |
+|        GetSiteDomain()         |   获取网站域名   |   Get::GetSiteDomain();    |
+|         GetSiteName()          |   获取网站名称   |    Get::GetSiteName();     |
+|       GetSiteKeywords()        |  获取网站关键词  |  Get::GetSiteKeywords();   |
+|      GetSiteDescription()      |   获取网站描述   | Get::GetSiteDescription(); |
 |       Options($param)       |    获取配置项    |  Get::Options('name');  |
 |       Fields($param)        |     获取字段     |  Get::Fields('name');   |
 |          Is($type)          | 判断当前页面类型 |    Get::Is('type');     |
@@ -272,21 +272,21 @@ class useSeo
 > 移除所有查询参数并移除端口  
 > Get::PageUrl(true, true, null, true);  
 
-#### Site 类
+#### GetSite 类
 
 获取网站信息。
 
 |    方法     |       描述       |         示例         |
 | :---------: | :--------------: | :------------------: |
-|    Name     |   获取网站名称   |    Site::Name();     |
-| Description |   获取网站描述   | Site::description(); |
-|  Keywords   |  获取网站关键词  |  Site::Keywords();   |
-|  Language   |   获取网站语言   |  Site::Language();   |
-|   Charset   |  获取网站字符集  |   Site::Charset();   |
-|     Url     |   获取网站地址   |     Site::Url();     |
-|   Domain    |   获取网站域名   |   Site::Domain();    |
-|   PageUrl   | 获取当前页面地址 |   Site::PageUrl();   |
-|    Theme    |   获取主题名称   |    Site::Theme();    |
+|    Name     |   获取网站名称   |    GetSite::Name();     |
+| Description |   获取网站描述   | GetSite::description(); |
+|  Keywords   |  获取网站关键词  |  GetSite::Keywords();   |
+|  Language   |   获取网站语言   |  GetSite::Language();   |
+|   Charset   |  获取网站字符集  |   GetSite::Charset();   |
+|     Url     |   获取网站地址   |     GetSite::Url();     |
+|   Domain    |   获取网站域名   |   GetSite::Domain();    |
+|   PageUrl   | 获取当前页面地址 |   GetSite::PageUrl();   |
+|    Theme    |   获取主题名称   |    GetSite::Theme();    |
 
 #### GetTheme 类
 
@@ -357,7 +357,6 @@ $featuredPosts = GetPost::List (
 ```
 
 #### GetUser 类
-> 继承UserInfo类
 
 获取用户的相关信息。
 
@@ -368,7 +367,7 @@ $featuredPosts = GetPost::List (
 |               Avatar()                |   获取用户头像   |   GetUser::Avatar();    |
 |              AvatarURL()              |   获取用户头像   |  GetUser::AvatarURL();  |
 |                Email()                |   获取用户邮箱   |    GetUser::Email();    |
-|               WebSite()               |   获取用户网站   |   GetUser::WebSite();   |
+|               WebGetSite()               |   获取用户网站   |   GetUser::WebGetSite();   |
 |                 Bio()                 |   获取用户简介   |     GetUser::Bio();     |
 |                Group()                |    获取用户组    |    GetUser::Role();     |
 |             Registered()              |   获取注册时间   | GetUser::Registered();  |
@@ -378,21 +377,21 @@ $featuredPosts = GetPost::List (
 |              Permalink()              |   获取作者链接   |  GetUser::Permalink();  |
 
 
-#### Comment 类
+#### GetComment 类
 
 获取评论的相关信息。
 
 |      方法      |     描述      |           示例           |
 | :------------: | :-----------: | :----------------------: |
-|   Comments()   |   获取评论    |   Comment::Comments();   |
-| CommentsPage() | 获取评论页面  | Comment::CommentsPage(); |
-| CommentsList() | 获取评论列表  | Comment::CommentsList(); |
-| CommentsNum()  |  获取评论数   | Comment::CommentsNum();  |
-| CommentsForm() | 获取评论表单  | Comment::CommentsForm(); |
-|  RespondId()   |  获取评论 id  |  Comment::RespondId();>  |
-| CancelReply()  | 获取取消回复  | Comment::CancelReply();  |
-|   Remember()   | 获取 Remember |   Comment::Remember();   |
-|   PageNav()    | 获取评论分页  |   Comment::PageNav();    |
+|   GetComments()   |   获取评论    |   GetComment::GetComments();   |
+| GetCommentsPage() | 获取评论页面  | GetComment::GetCommentsPage(); |
+| GetCommentsList() | 获取评论列表  | GetComment::GetCommentsList(); |
+| GetCommentsNum()  |  获取评论数   | GetComment::GetCommentsNum();  |
+| GetCommentsForm() | 获取评论表单  | GetComment::GetCommentsForm(); |
+|  RespondId()   |  获取评论 id  |  GetComment::RespondId();>  |
+| CancelReply()  | 获取取消回复  | GetComment::CancelReply();  |
+|   Remember()   | 获取 Remember |   GetComment::Remember();   |
+|   PageNav()    | 获取评论分页  |   GetComment::PageNav();    |
 
 ### 基础函数
 
@@ -405,15 +404,15 @@ $featuredPosts = GetPost::List (
 
 | 函数名称                 | 描述            | 示例                         | 参数说明                               |
 | ------------------------ | --------------- | ---------------------------- | -------------------------------------- |
-| `get_site_url()`         | 获取网站URL     | `get_site_url(true)`         | `$echo`: true直接输出，false返回字符串 |
-| `get_site_title()`       | 获取网站标题    | `get_site_title(false)`      | 同上                                   |
-| `get_site_name()`        | 获取网站名称    | `get_site_name(false)`       | 同上                                   |
-| `get_site_keywords()`    | 获取网站关键词  | `get_site_keywords()`        | 同上                                   |
-| `get_site_description()` | 获取网站描述    | `get_site_description(true)` | 同上                                   |
-| `get_site_language()`    | 获取网站语言    | `get_site_language()`        | 同上                                   |
-| `get_site_charset()`     | 获取网站编码    | `get_site_charset(false)`    | 同上                                   |
-| `get_site_page_url()`    | 获取当前页面URL | `get_site_page_url(true)`    | 同上                                   |
-| `get_site_theme_name()`  | 获取主题名称    | `get_site_theme_name()`      | 同上                                   |
+| `get_GetSite_url()`         | 获取网站URL     | `get_GetSite_url(true)`         | `$echo`: true直接输出，false返回字符串 |
+| `get_GetSite_title()`       | 获取网站标题    | `get_GetSite_title(false)`      | 同上                                   |
+| `get_GetSite_name()`        | 获取网站名称    | `get_GetSite_name(false)`       | 同上                                   |
+| `get_GetSite_keywords()`    | 获取网站关键词  | `get_GetSite_keywords()`        | 同上                                   |
+| `get_GetSite_description()` | 获取网站描述    | `get_GetSite_description(true)` | 同上                                   |
+| `get_GetSite_language()`    | 获取网站语言    | `get_GetSite_language()`        | 同上                                   |
+| `get_GetSite_charset()`     | 获取网站编码    | `get_GetSite_charset(false)`    | 同上                                   |
+| `get_GetSite_page_url()`    | 获取当前页面URL | `get_GetSite_page_url(true)`    | 同上                                   |
+| `get_GetSite_theme_name()`  | 获取主题名称    | `get_GetSite_theme_name()`      | 同上                                   |
 
 #### 主题相关函数
 
@@ -582,8 +581,8 @@ TyAjax($('button'), {}, null, 'stop');
 |  Get  |         /ty-json/tag/{string}          |   mid, slug   |     获取标签列表     |
 |  Get  |       /ty-json/content/{string}        |   cid, slug   |     获取内容数据     |
 |  Get  |          /ty-json/attachments          |     null      |     获取附件列表     |
-|  Get  |           /ty-json/comments            |     post      |     获取评论列表     |
-|  Get  |    /ty-json/comments/post/{string}     |    string     |   获取文章评论列表   |
+|  Get  |           /ty-json/GetComments            |     post      |     获取评论列表     |
+|  Get  |    /ty-json/GetComments/post/{string}     |    string     |   获取文章评论列表   |
 |  Get  |     /ty-json/fields/{name}/{value}     |    string     |   获取字段文章列表   |
 |  Get  | /ty-json/advancedFields/{name}/{value} |    string     | 获取高级字段查询列表 |
 |  Get  |           /ty-json/options/            |     null      |    获取设置项列表    |

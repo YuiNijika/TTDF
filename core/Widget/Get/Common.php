@@ -1,8 +1,9 @@
-<?php
+<?php 
 
 /**
- * Get Class
+ * Get 方法
  */
+
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
 class Get
@@ -330,18 +331,29 @@ class Get
      */
     public static function Template($file)
     {
-        return self::loadDirFile('Template', $file, '加载Template失败');
+        return self::loadDirFile('app/template', $file, '加载Template失败');
     }
 
     /**
-     * 引入Layouts目录文件
+     * 引入app/layouts目录文件
      * 
      * @param string $file 布局文件名
      * @return mixed
      */
     public static function Layouts($file)
     {
-        return self::loadDirFile('Layouts', $file, '加载Layouts失败');
+        return self::loadDirFile('app/layouts', $file, '加载Layouts失败');
+    }
+
+    /**
+     * 引入app/components目录文件
+     * 
+     * @param string $file 组件文件名
+     * @return mixed
+     */
+    public static function Components($file)
+    {
+        return self::loadDirFile('app/components', $file, '加载Components失败');
     }
 
     /**

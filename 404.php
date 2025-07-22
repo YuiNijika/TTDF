@@ -7,7 +7,7 @@ const useSeo = [
     'keywords' => '404, error, 错误'
 ];
 
-Get::Template('AppHeader');
+Get::Components('AppHeader');
 ?>
 <div class="error">
     <div style="text-align: center;">
@@ -15,5 +15,5 @@ Get::Template('AppHeader');
     </div>
 </div>
 <?php
-Get::Template('AppFooter');
+Get::Components('AppFooter');
 ?>

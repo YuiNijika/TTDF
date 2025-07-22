@@ -11,8 +11,8 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  * TTDF Config
  */
 define('TTDF_CONFIG', [
-    'DEBUG' => false, // TTDF Debug
-    'FIELDS_ENABLED' => false, // 是否启用自定义字段
+    'DEBUG' => true, // TTDF Debug
+    'FIELDS_ENABLED' => true, // 是否启用自定义字段
     'TYAJAX_ENABLED' => false, // 是否启用TyAjax模块
     'COMPRESS_HTML' => true, // 是否启用HTML压缩
     'GRAVATAR_PREFIX' => 'https://cravatar.cn/avatar/', // Gravatar前缀
@@ -33,6 +33,3 @@ define('TTDF_CONFIG', [
         ],
     ]
 ]);
-
-// 加载核心文件
-require_once __DIR__ . '/TTDF/Main.php';

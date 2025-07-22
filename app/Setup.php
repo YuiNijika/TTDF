@@ -80,7 +80,7 @@ return [
                 'name' => 'TTDF_RESTAPI_Switch',
                 'value' => 'false',
                 'label' => 'REST API',
-                'description' => 'TTDF框架内置的 REST API<br/>使用教程可参见 <a href="https://github.com/Typecho-Framework/Typecho-Theme-Development-Framework#rest-api" target="_blank">*这里*</a>',
+                'description' => 'TTDF框架内置的 REST API<br/>使用教程可参见 <a href="https://github.com/YuiNijika/TTDF/blob/master/README_DOC.md#rest-api" target="_blank">*这里*</a>',
                 'options' => [
                     'true' => '开启',
                     'false' => '关闭'

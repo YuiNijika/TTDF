@@ -1,11 +1,9 @@
 <?php
 
 /**
- * GetPost Class
- * 
- * 该类用于封装 Typecho 文章相关的操作，提供获取文章标题、内容、分类、标签等功能。
- * 使用单例模式（通过 `SingletonWidget` trait 实现）确保实例唯一性，并通过静态方法提供便捷访问。
+ * GetPost 方法
  */
+
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
 class GetPost extends Typecho_Widget

@@ -9,10 +9,6 @@ return [
         'value' => null, // 默认值为 null
         'label' => '文本框',
         'description' => '这是一个文本框~',
-        // 设置字段属性
-        'attributes' => [
-            'style' => 'width: 100%;'
-        ]
     ],
     [
         // Textarea
@@ -23,7 +19,7 @@ return [
         'description' => '这是一个文本域~',
         // 设置字段属性
         'attributes' => [
-            'style' => 'width: 100%;height: 100px;'
+            'style' => 'height: 100px;'
         ]
     ],
     [

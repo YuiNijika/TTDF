@@ -362,7 +362,7 @@ function themeConfig($form)
                 <nav class="TTDF-nav">'));
 
     // 生成Tab导航按钮
-    $tabs = require __DIR__ . '/../../Setup.php';
+    $tabs = require __DIR__ . '/../../app/Setup.php';
     $first_tab = true;
     foreach ($tabs as $tab_id => $tab) {
         $active = $first_tab ? 'active' : '';

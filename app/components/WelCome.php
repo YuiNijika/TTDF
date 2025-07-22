@@ -51,9 +51,8 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
 <main>
-<section class="min-h-screen-no-scroll relative overflow-hidden">
+    <section class="min-h-screen-no-scroll relative overflow-hidden">
         <div class="absolute inset-0 bg-gradient-to-br from-primary/5 to-primary/10 -z-10"></div>
         <div class="absolute -top-20 -right-20 w-80 h-80 bg-primary/10 rounded-full blur-3xl -z-10"></div>
         <div class="absolute -bottom-40 -left-20 w-96 h-96 bg-secondary/10 rounded-full blur-3xl -z-10"></div>
@@ -75,7 +74,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
                         快速开始 <i class="fa fa-arrow-right ml-2"></i>
                     </a>
                     <a href="https://github.com/YuiNijika/TTDF" target="_blank" class="px-8 py-4 bg-white text-dark border border-gray-200 rounded-xl hover:bg-gray-50 transition-all shadow-md hover:shadow-lg text-lg font-medium w-full sm:w-auto">
-                        GitHub <i class="fa fa-brands fa-github ml-2"></i> 
+                        GitHub <i class="fa fa-brands fa-github ml-2"></i>
                     </a>
                 </div>
 

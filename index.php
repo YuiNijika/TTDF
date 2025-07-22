@@ -8,10 +8,10 @@
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 // 面向过程调用
-get_template('AppHeader');
+get_components('AppHeader');
 
 // 开发前删除即可
 WelCome();
 
 // 面向对象调用
-Get::Template('AppFooter');
+Get::Components('AppFooter');
