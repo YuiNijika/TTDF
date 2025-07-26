@@ -1,8 +1,6 @@
 <?php
 /**
- * 欢迎使用Typecho主题模板开发框架！
- * @author 鼠子(Tomoriゞ)
- * @link https://github.com/YuiNijika/TTDF
+ * 这是TTDF的配置主文件
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
