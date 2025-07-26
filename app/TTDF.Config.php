@@ -11,13 +11,13 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  * TTDF Config
  */
 define('TTDF_CONFIG', [
-    'DEBUG' => true, // TTDF Debug
-    'FIELDS_ENABLED' => true, // 是否启用自定义字段
+    'DEBUG' => false, // TTDF Debug
+    'FIELDS_ENABLED' => false, // 是否启用自定义字段
     'TYAJAX_ENABLED' => false, // 是否启用TyAjax模块
     'COMPRESS_HTML' => true, // 是否启用HTML压缩
     'GRAVATAR_PREFIX' => 'https://cravatar.cn/avatar/', // Gravatar前缀
     'REST_API' => [
-        'ENABLED' => true, // 是否启用REST API
+        'ENABLED' => false, // 是否启用REST API
         'ROUTE' => 'ty-json', // REST API路由
         'OVERRIDE_SETTING' => 'TTDF_RESTAPI_Switch', // 主题设置项名称，用于覆盖REST API开关
         'TOKEN' => [

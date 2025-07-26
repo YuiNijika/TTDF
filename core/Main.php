@@ -7,7 +7,7 @@ if (file_exists(__DIR__ . '/../app/TTDF.Config.php')) {
     throw new Exception('TTDF配置文件未找到! 请检查路径: ' . __DIR__ . '/../app/TTDF.Config.php');
 }
 
-define('__FRAMEWORK_VER__', '3.0.0_alpha');
+define('__FRAMEWORK_VER__', '3.0.0_rc');
 define('__TYPECHO_GRAVATAR_PREFIX__', TTDF_CONFIG['GRAVATAR_PREFIX'] ?? 'https://cravatar.cn/avatar/');
 define('__TTDF_RESTAPI__', TTDF_CONFIG['REST_API']['ENABLED'] ?? false);
 define('__TTDF_RESTAPI_ROUTE__', TTDF_CONFIG['REST_API']['ROUTE'] ?? 'ty-json');
@@ -50,6 +50,7 @@ class TTDF_Main
             'DB.php',
             'Tools.php',
             'TTDF.php',
+            'AddRoute.php',
             'Get/Common.php',
             'Get/Site.php',
             'Get/Post.php',
@@ -94,17 +95,6 @@ class TTDF_Main
         }
 
         self::run();
-
-        // 注册Typecho路由
-        Utils\Helper::addRoute(
-            'TTDF_API', // 路由名称
-            '/' . __TTDF_RESTAPI_ROUTE__ . '/', // 路由路径
-            'Widget_Archive', // 组件名称
-            'render' // 组件动作方法
-        );
-
-        // 注销路由，这个应该用插件来实现的，不然这样就得手动取消代码注释注销路由了。
-        // Utils\Helper::removeRoute('TTDF_API');
 
         // 在初始化时注册HTML压缩钩子
         if (TTDF_CONFIG['COMPRESS_HTML']) {
