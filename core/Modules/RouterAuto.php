@@ -12,6 +12,11 @@ class TTDF_AutoRouter
 
     public static function init()
     {
+        // 判断 pagesDir 是否存在且为目录，并且目录下有文件
+        if (!is_dir(self::$pagesDir) || empty(array_diff(scandir(self::$pagesDir), ['.', '..']))) {
+            return; // 如果目录不存在或为空，则不启用自定义路由
+        }
+
         $path = self::getRequestPath();
         $matchedFile = self::findMatchingFile($path);
 

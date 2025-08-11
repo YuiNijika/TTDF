@@ -62,9 +62,9 @@ class TTDF_Main
         $moduleFiles = [
             'OPP.php',
             'Api.php',
-            'Router.php',
             'Function.php',
-            'Options.php'
+            'Options.php',
+            'RouterAuto.php',
         ];
 
         if (TTDF_CONFIG['DEBUG']) {
