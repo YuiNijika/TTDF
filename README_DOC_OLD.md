@@ -1,26 +1,255 @@
-## 类与方法
+## 选项框架
+### 主题设置项
+> 文件路径：`Core/Setup.php`
 
-调用方法时值为 true 直接 echo 输出，如果为 false 则返回值。  
+| 字段类型 | 描述             |
+| -------- | ---------------- |
+| Text     | 文本框           |
+| Textarea | 文本域           |
+| Radio    | 单选框           |
+| Select   | 下拉框           |
+| Checkbox | 多选框           |
+| Html     | 自定义 HTML 标签 |
 
-#### 示例
-
-``` php
-Get::GetSiteUrl(true) // 为 echo 输出  
-Get::GetSiteUrl(false) // 为 return 返回值
+```php
+return [
+    '基础设置' => [
+        'title' => '基础设置',
+        'fields' => [
+            [
+                // 'Html' => '自定义HTML标签',
+                'type' => 'Html',
+                'content' => '<h3>感谢使用 TTDF 进行开发</h3>'
+            ],
+            [
+                // 'Text' => '文本框',
+                'type' => 'Text',
+                'name' => 'SubTitle',
+                'value' => null,
+                'label' => '副标题',
+                'description' => '这是一个文本框，用于设置网站副标题，如果为空则不显示。'
+            ],
+            [
+                // 'Textarea' => '文本域',
+                'type' => 'Textarea',
+                'name' => 'TTDF_Textarea',
+                'value' => null,
+                'label' => '文本域',
+                'description' => '用于输入多行文本'
+            ]
+        ]
+    ],
+    'select-elements' => [
+        'title' => '选择设置',
+        'fields' => [
+            [
+                // 'Radio' => '单选框',
+                'type' => 'Radio',
+                'name' => 'TTDF_Radio',
+                'value' => 'option1',
+                'label' => '单选框',
+                'description' => '用于选择一个选项',
+                'options' => [
+                    'option1' => '选项一',
+                    'option2' => '选项二',
+                    'option3' => '选项三'
+                ]
+            ],
+            [
+                // 'Select' => '下拉框',
+                'type' => 'Select',
+                'name' => 'TTDF_Select',
+                'value' => 'option2',
+                'label' => '下拉框',
+                'description' => '用于从列表中选择',
+                'options' => [
+                    'option1' => '选项一',
+                    'option2' => '选项二',
+                    'option3' => '选项三'
+                ]
+            ],
+            [
+                // 'Checkbox' => '多选框',
+                'type' => 'Checkbox',
+                'name' => 'TTDF_Checkbox',
+                'value' => ['option1', 'option3'],
+                'label' => '多选框',
+                'description' => '用于选择多个选项',
+                'options' => [
+                    'option1' => '选项一',
+                    'option2' => '选项二',
+                    'option3' => '选项三'
+                ]
+            ]
+        ]
+    ],
+    'TTDF-Options' => [
+        'title' => '其他设置',
+        'fields' => [
+            [
+                'type' => 'Select',
+                'name' => 'TTDF_RESTAPI_Switch',
+                'value' => 'false',
+                'label' => 'REST API',
+                'description' => 'TTDF框架内置的 REST API<br/>详细教程见 <a href="https://github.com/YuiNijika/TTDF#rest-api" target="_blank">官方文档 REST API 部分</a>',
+                'options' => [
+                    'true' => '开启',
+                    'false' => '关闭'
+                ]
+            ],
+        ]
+    ],
+    'HTML-Demo' => [
+        'title' => 'HTML示例',
+        // 定义HTML TAB栏
+        'html' => [
+            [
+                // 'Content' => '自定义输出HTML内容',
+                'content' => '<h2>欢迎使用TTDF框架</h2>
+            <p>Typecho Theme Development Framework</p>
+            <blockquote style="border-left: 4px solid #ccc; padding-left: 20px; margin: 20px 0;">
+                <p>一个 Typecho 主题开发框架，设计之初是写给自己用的。<br>
+                <del>还算不上框架只能说让开发变得更简单些</del></p>
+            </blockquote>'
+            ],
+        ]
+    ],
+];
 ```
 
-### Get
+### 文章字段
+> 文件路径：`Core/Fields.php`
+
+| 字段类型 | 描述   |
+| -------- | ------ |
+| Text     | 文本框 |
+| Textarea | 文本域 |
+| Radio    | 单选框 |
+| Select   | 下拉框 |
+| Checkbox | 多选框 |
+
+```php
+return [
+    [
+        // Text
+        'type' => 'Text',
+        'name' => 'TTDF_Fields_Text',
+        'value' => null, // 默认值为 null
+        'label' => '文本框',
+        'description' => '用于输入单行文本',
+        // 添加字段属性
+        'attributes' => [
+            'style' => 'width: 100%;'
+        ]
+    ],
+    [
+        // Textarea
+        'type' => 'Textarea',
+        'name' => 'TTDF_Fields_Textarea',
+        'value' => null, // 默认值为 null
+        'label' => '文本域',
+        'description' => '用于输入多行文本',
+        // 添加字段属性
+        'attributes' => [
+            'style' => 'width: 100%;height: 100px;'
+        ]
+    ],
+    [
+        // Radio
+        'type' => 'Radio',
+        'name' => 'TTDF_Fields_Radio',
+        'value' => null, // 默认值为 null
+        'label' => '单选框',
+        'description' => '用于选择一个选项',
+        'options' => [
+            'option1' => '选项一',
+            'option2' => '选项二',
+            'option3' => '选项三'
+        ]
+    ],
+    [
+        // Select
+        'type' => 'Select',
+        'name' => 'TTDF_Fields_Select',
+        'value' => null, // 默认值为 null
+        'label' => '下拉框',
+        'description' => '用于从列表中选择',
+        'options' => [
+            'option1' => '选项一',
+            'option2' => '选项二',
+            'option3' => '选项三'
+        ]
+    ],
+    [
+        // Checkbox
+        'type' => 'Checkbox',
+        'name' => 'TTDF_Fields_Checkbox',
+        'value' => [], // 默认值为空数组
+        'label' => '多选框',
+        'description' => '用于选择多个选项',
+        'options' => [
+            'option1' => '选项一',
+            'option2' => '选项二',
+            'option3' => '选项三'
+        ]
+    ]
+];
+```
+
+### 类与方法
+
+调用方法时值为 true 直接 echo 输出，如果为 false 则返回值。  
+Get::GetSiteUrl(true) 为 echo 输出  
+Get::GetSiteUrl(false) 为 return 返回值
+
+#### TTDF 类
+
+|     方法      |        描述         |         示例         |
+| :-----------: | :-----------------: | :------------------: |
+|     Ver()     |   获取框架版本号    |     TTDF::Ver();     |
+| TypechoVer()  | 获取 Typecho 版本号 | TTDF::TypechoVer();  |
+| Widget($TTDF) |    调用功能函数     | TTDF::Widget($TTDF); |
+
+#####  Widget 方法
+|            方法            |       描述       |               示例                |
+| :------------------------: | :--------------: | :-------------------------------: |
+|       Widget('SEO')        |   调用SEO标签    |       TTDF::Widget('SEO');        |
+|     Widget('SEO', $OG)     |   不输出OG标签   |    TTDF::Widget('SEO', false);    |
+|     Widget('HeadMeta')     |   调用Meta标签   |    TTDF::Widget('HeadMeta') ;     |
+| Widget('HeadMeta' $UseSeo) |  不输出SEO标签   | TTDF::Widget('HeadMeta', false) ; |
+|    Widget('TimerStop')     | 输出页面加载时间 |    TTDF::Widget('TimerStop');     |
+
+自定义SEO信息
+
+只需要在引入`AppHeader`之前定义一个`useSeo`类即可实现自定义SEO信息。
+
+```php
+class useSeo
+{
+    public static function Title() {
+        echo '自定义标题';
+    }
+    public static function Description() {
+        echo '自定义描述';
+    }
+    public static function Keywords() {
+        echo '自定义关键词';
+    }
+}
+```
+
+#### Get 类
 
 获取网站信息及其他通用功能。
 
 |            方法             |       描述       |          示例           |
 | :-------------------------: | :--------------: | :---------------------: |
-|          SiteUrl()          |  获取网站的 URL  |     Get::GetSiteUrl();     |
+|          GetSiteUrl()          |  获取网站的 URL  |     Get::GetSiteUrl();     |
 |          PageUrl()          |   获取当前url    |     Get::PageUrl();     |
-|        SiteDomain()         |   获取网站域名   |   Get::GetSiteDomain();    |
-|         SiteName()          |   获取网站名称   |    Get::SiteName();     |
-|       SiteKeywords()        |  获取网站关键词  |  Get::SiteKeywords();   |
-|      SiteDescription()      |   获取网站描述   | Get::SiteDescription(); |
+|        GetSiteDomain()         |   获取网站域名   |   Get::GetSiteDomain();    |
+|         GetSiteName()          |   获取网站名称   |    Get::GetSiteName();     |
+|       GetSiteKeywords()        |  获取网站关键词  |  Get::GetSiteKeywords();   |
+|      GetSiteDescription()      |   获取网站描述   | Get::GetSiteDescription(); |
 |       Options($param)       |    获取配置项    |  Get::Options('name');  |
 |       Fields($param)        |     获取字段     |  Get::Fields('name');   |
 |          Is($type)          | 判断当前页面类型 |    Get::Is('type');     |
@@ -43,7 +272,7 @@ Get::GetSiteUrl(false) // 为 return 返回值
 > 移除所有查询参数并移除端口  
 > Get::PageUrl(true, true, null, true);  
 
-### GetSite
+#### GetSite 类
 
 获取网站信息。
 
@@ -59,7 +288,7 @@ Get::GetSiteUrl(false) // 为 return 返回值
 |   PageUrl   | 获取当前页面地址 |   GetSite::PageUrl();   |
 |    Theme    |   获取主题名称   |    GetSite::Theme();    |
 
-### GetTheme
+#### GetTheme 类
 
 获取主题的相关信息。
 
@@ -72,7 +301,7 @@ Get::GetSiteUrl(false) // 为 return 返回值
 | Url($path)  |  获取主题的 URL   | GetTheme::Url($path);  |
 | AssetsUrl() | 获取主题AssetsUrl | GetTheme::AssetsUrl(); |
 
-### GetPost
+#### GetPost 类
 
 获取文章相关信息。
 
@@ -94,8 +323,6 @@ Get::GetSiteUrl(false) // 为 return 返回值
 |  ArchiveTitle()   | 获取当前页面标题 |  GetPost::ArchiveTitle();   |
 |     Author()      |   获取文章作者   |     GetPost::Author();      |
 | AuthorPermalink() |   获取作者链接   | GetPost::AuthorPermalink(); |
-
-#### 自定义输出
 
 > GetPost:List() 方法可自定义输出，示例如下： 
  
@@ -129,8 +356,7 @@ $featuredPosts = GetPost::List (
 <?php GetPost::unbindArchive(); // 结束当前绑定 ?>
 ```
 
-### GetUser
-
+#### GetUser 类
 
 获取用户的相关信息。
 
@@ -150,7 +376,8 @@ $featuredPosts = GetPost::List (
 |              PageCount()              |   获取页面数量   |  GetUser::PageCount();  |
 |              Permalink()              |   获取作者链接   |  GetUser::Permalink();  |
 
-### GetComment
+
+#### GetComment 类
 
 获取评论的相关信息。
 
@@ -166,9 +393,14 @@ $featuredPosts = GetPost::List (
 |   Remember()   | 获取 Remember |   GetComment::Remember();   |
 |   PageNav()    | 获取评论分页  |   GetComment::PageNav();    |
 
-## 函数封装
+### 基础函数
 
-### 网站信息函数
+> 提示：所有函数的 `$echo` 参数用法一致：
+> - `true`: 直接输出内容
+> - `false`: 返回字符串值
+> - 不传参数时多数函数默认 `true`
+
+#### 网站信息函数
 
 | 函数名称                 | 描述            | 示例                         | 参数说明                               |
 | ------------------------ | --------------- | ---------------------------- | -------------------------------------- |
@@ -182,7 +414,7 @@ $featuredPosts = GetPost::List (
 | `get_GetSite_page_url()`    | 获取当前页面URL | `get_GetSite_page_url(true)`    | 同上                                   |
 | `get_GetSite_theme_name()`  | 获取主题名称    | `get_GetSite_theme_name()`      | 同上                                   |
 
-### 主题相关函数
+#### 主题相关函数
 
 | 函数名称                 | 描述             | 示例                                    | 参数说明                                       |
 | ------------------------ | ---------------- | --------------------------------------- | ---------------------------------------------- |
@@ -194,18 +426,25 @@ $featuredPosts = GetPost::List (
 
 ### 文章相关函数
 
+##### 基础信息
+
 | 函数名称             | 描述             | 示例                     | 参数说明 |
 | -------------------- | ---------------- | ------------------------ | -------- |
 | `get_post()`         | 获取当前文章对象 | `$post = get_post()`     | 无参数   |
 | `get_post_id()`      | 获取文章ID       | `get_post_id(true)`      | `$echo`  |
 | `get_post_title()`   | 获取文章标题     | `get_post_title(false)`  | `$echo`  |
 | `get_post_content()` | 获取文章内容     | `get_post_content(true)` | `$echo`  |
+
+##### 高级功能
+
+| 函数名称              | 描述         | 示例                           | 参数说明                                       |
+| --------------------- | ------------ | ------------------------------ | ---------------------------------------------- |
 | `get_post_excerpt()`  | 获取文章摘要 | `get_post_excerpt(100, true)`  | `$length`: 摘要长度, `$echo`                   |
 | `get_post_date()`     | 获取文章日期 | `get_post_date('Y-m-d')`       | `$format`: 日期格式, `$echo`                   |
 | `get_post_category()` | 获取文章分类 | `get_post_category(',', true)` | `$split`: 分隔符, `$link`: 是否带链接, `$echo` |
 | `get_random_posts()`  | 获取随机文章 | `get_random_posts(5)`          | `$limit`: 数量限制                             |
 
-### 用户相关函数
+#### 用户相关函数
 
 | 函数名称               | 描述             | 示例                    | 参数说明               |
 | ---------------------- | ---------------- | ----------------------- | ---------------------- |
@@ -214,7 +453,7 @@ $featuredPosts = GetPost::List (
 | `get_user_email()`     | 获取用户邮箱     | `get_user_email(false)` | `$echo`                |
 | `get_user_permalink()` | 获取用户主页链接 | `get_user_permalink()`  | `$echo`                |
 
-### 实用函数
+#### 实用函数
 
 | 函数名称              | 描述         | 示例                               | 参数说明                                 |
 | --------------------- | ------------ | ---------------------------------- | ---------------------------------------- |
@@ -222,9 +461,8 @@ $featuredPosts = GetPost::List (
 | `is_page()`           | 判断页面类型 | `if(is_page('archive'))`           | `$type`: 页面类型                        |
 | `get_page_nav()`      | 输出分页导航 | `get_page_nav('上一页', '下一页')` | `$prev`: 上一页文本, `$next`: 下一页文本 |
 
-## TyAjax
+### TyAjax
 > 提供简单易用的 AJAX 请求处理功能
-> 需要自行引入jquery
 
 #### 基本使用
 ``` php
@@ -321,7 +559,7 @@ TyAjax($('button'), {}, null, 'stop');
 
 框架会自动处理表单数据，支持数组形式的表单字段。
 
-## REST API
+### REST API
 
 一个简单的 REST API，你可以使用它来获取一些数据。
 > `ty-json`路由及状态在`Core/TTDF.Config.php`中定义。 
@@ -352,10 +590,10 @@ TyAjax($('button'), {}, null, 'stop');
 |  Get  |         /ty-json/themeOptions          |     null      |  获取主题设置项列表  |
 |  Get  |      /ty-json/themeOptions/{name}      |    string     |  获取主题设置项详情  |
 
-## 字段查询
+### 字段查询
 > TTDF内置了字段查询文章列表功能
 
-### 普通查询  
+#### 普通查询  
 
 普通字段查询文章
 
@@ -363,23 +601,23 @@ TyAjax($('button'), {}, null, 'stop');
 GET /ty-json/fields/{name}/{value}
 ```
 
-### 高级查询
+#### 高级查询
 
-#### 复杂查询​​使用 JSON
+##### 复杂查询​​使用 JSON
 
 ```bash
 GET /ty-json/advancedFields?conditions=[{"name":"color","value":"red"},{"name":"price","operator":">=","value":100}]
 ```
 
-#### 模糊搜索​
+##### 模糊搜索​
 
 ```bash
 GET /ty-json/advancedFields/title/%重要%?operator=LIKE
 ```
 
-### 查询运算符与值类型规范
+#### 查询运算符与值类型规范
 
-#### 运算符对照表
+##### 运算符对照表
 
 | 运算符 | 名称     | 描述           | 使用示例            |
 | ------ | -------- | -------------- | ------------------- |
@@ -391,7 +629,7 @@ GET /ty-json/advancedFields/title/%重要%?operator=LIKE
 | <=     | 小于等于 | 数值比较       | `price<=200`        |
 | LIKE   | 模糊匹配 | 支持通配符%    | `title LIKE %重要%` |
 
-#### 值类型定义
+##### 值类型定义
 
 | 类型  | 说明               | 典型应用场景      | 示例             |
 | ----- | ------------------ | ----------------- | ---------------- |
@@ -400,15 +638,15 @@ GET /ty-json/advancedFields/title/%重要%?operator=LIKE
 | float | 浮点数字           | 价格等精确数值    | `price<=19.99`   |
 | text  | 长文本             | 内容全文检索      | `content=查询词` |
 
-### 注意事项
+#### 注意事项
 
  - 字段名和值区分大小写
  - 特殊字符需要进行 URL 编码
 
-## 钩子
+### 钩子
 > TTDF默认有三个钩子可以挂，分别为`load_head`&`load_foot`&`load_code`
 
-### 使用方法
+#### 使用方法
 
 注意，`load_head`&`load_foot`为挂载到页面模板
 
