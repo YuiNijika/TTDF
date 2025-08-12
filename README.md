@@ -1,29 +1,36 @@
-# 最直观的 Typecho 主题开发框架  
+# Typecho 主题开发框架
 
-> The Intuitive Theme Develop Framework for Typecho.
+> Typecho Theme Development Framework
 
-如果你是Vue&Nuxt的开发者, 那么这款框架非常适合你。
+✨ **核心特性**  
+- 🧩 组件化
+- 🛣️ 自动路由
+- 🔧 配置管理
+- 🔌 内置API支持
 
-配置要求: PHP 8.1+ Typecho 1.2+
+**运行环境**  
+PHP 8.1+ / Typecho 1.2+
 
-该仓库为开发版随手提交, 暂不保证稳定。生产环境请使用[最新发行版](https://github.com/YuiNijika/TTDF/releases)
+🚧 **注意**  
+当前为开发版本，生产环境请使用[稳定版](https://github.com/YuiNijika/TTDF/releases)
 
-## 框架特点  
+## 快速入门
+[开发指南](README_DOC.md)
 
- - 轻量
- - TyAjax
- - REST API
- - 钩子系统
- - 路由系统
- - 选项框架
- - 快速调用
- - 字段查询
- - 数据库查询
+### 功能亮点
+- 轻量核心
+- Ajax支持
+- REST API
+- 事件系统
+- 路由管理
+- 配置框架
+- 快捷调用
+- 数据查询
+- 数据库操作
 
-## 快速开始  
+## 贡献者
+感谢所有贡献者的付出
 
-[开发文档](README_DOC.md)
-
-## 特别感谢  
-
-[@Sualiu](https://github.com/Sualiu) & [@李初一](https://github.com/DearLicy)
+<a href="https://github.com/YuiNijika/TTDF/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=YuiNijika/TTDF" />
+</a>
