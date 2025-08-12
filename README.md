@@ -1,6 +1,6 @@
-# Typecho 主题开发框架
+# 最直观的 Typecho 主题开发框架  
 
-> Typecho Theme Development Framework
+> The Intuitive Typecho Theme Framework.  
 
 ✨ **核心特性**  
 - 🧩 组件化
