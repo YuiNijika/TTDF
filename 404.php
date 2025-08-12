@@ -11,7 +11,7 @@ const useSeo = [
 // 确保 Archive 部件已初始化
 $archive = Typecho_Widget::widget('Widget_Archive', array('type' => 'error'));
 
-Get::Template('AppHeader');
+Get::Components('AppHeader');
 ?>
 <div class="error">
     <div style="text-align: center;">
@@ -19,4 +19,4 @@ Get::Template('AppHeader');
     </div>
 </div>
 <?php
-Get::Template('AppFooter');
+Get::Components('AppFooter');
