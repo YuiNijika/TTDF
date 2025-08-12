@@ -7,7 +7,7 @@ if (file_exists(__DIR__ . '/../app/TTDF.Config.php')) {
     throw new Exception('TTDF配置文件未找到! 请检查路径: ' . __DIR__ . '/../app/TTDF.Config.php');
 }
 
-define('__FRAMEWORK_VER__', '3.0.0_rc');
+define('__FRAMEWORK_VER__', '3.0.1');
 define('__TYPECHO_GRAVATAR_PREFIX__', TTDF_CONFIG['GRAVATAR_PREFIX'] ?? 'https://cravatar.cn/avatar/');
 define('__TTDF_RESTAPI__', TTDF_CONFIG['REST_API']['ENABLED'] ?? false);
 define('__TTDF_RESTAPI_ROUTE__', TTDF_CONFIG['REST_API']['ROUTE'] ?? 'ty-json');
@@ -47,7 +47,6 @@ class TTDF_Main
     public static function run()
     {
         $widgetFiles = [
-            'DB.php',
             'Tools.php',
             'TTDF.php',
             'AddRoute.php',
@@ -66,6 +65,8 @@ class TTDF_Main
             'Options.php',
             'RouterAuto.php',
         ];
+
+        require_once __DIR__ . '/Modules/Database.php';
 
         if (TTDF_CONFIG['DEBUG']) {
             require_once __DIR__ . '/Modules/Debug.php';
