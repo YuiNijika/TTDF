@@ -8,7 +8,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  * TTDF配置
  * TTDF Config
  */
-define('TTDF_CONFIG', [
+return [
     'DEBUG' => false, // TTDF Debug
     'FIELDS_ENABLED' => false, // 是否启用自定义字段
     'TYAJAX_ENABLED' => false, // 是否启用TyAjax模块
@@ -30,4 +30,4 @@ define('TTDF_CONFIG', [
             'Access-Control-Allow-Methods' => 'GET,POST', // 请求方法
         ],
     ]
-]);
+];
