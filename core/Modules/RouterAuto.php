@@ -44,6 +44,16 @@ class TTDF_AutoRouter
 
     private static function scanDirectory($currentDir, $remainingParts, $index = 0)
     {
+        // 确保当前路径是目录
+        if (!is_dir($currentDir)) {
+            return null;
+        }
+
+        $files = scandir($currentDir);
+        if ($files === false) {
+            return null; // scandir 失败
+        }
+
         // 如果是最后一部分，优先检查精确匹配
         if ($index >= count($remainingParts)) {
             $exactFile = $currentDir . '/index.php';
@@ -57,7 +67,6 @@ class TTDF_AutoRouter
         }
 
         $currentPart = $remainingParts[$index];
-        $files = scandir($currentDir);
 
         // 检查精确匹配的目录/文件
         if (in_array($currentPart . '.php', $files)) {
@@ -90,14 +99,18 @@ class TTDF_AutoRouter
                     ];
                 }
 
-                $result = self::scanDirectory(
-                    $currentDir . '/' . $file,
-                    $remainingParts,
-                    $index
-                );
-                if ($result) {
-                    $result['params'][$paramName] = $currentPart;
-                    return $result;
+                // 确保 $currentDir . '/' . $file 是目录才继续递归
+                $nextDir = $currentDir . '/' . $file;
+                if (is_dir($nextDir)) {
+                    $result = self::scanDirectory(
+                        $nextDir,
+                        $remainingParts,
+                        $index + 1
+                    );
+                    if ($result) {
+                        $result['params'][$paramName] = $currentPart;
+                        return $result;
+                    }
                 }
             }
         }
@@ -106,17 +119,21 @@ class TTDF_AutoRouter
         foreach ($files as $file) {
             if (preg_match('/^\[\[(\w+)\]\]\.php$/', $file, $matches)) {
                 $paramName = $matches[1];
-                // 尝试作为目录继续匹配
-                $result = self::scanDirectory(
-                    $currentDir . '/' . $file,
-                    $remainingParts,
-                    $index
-                );
-                if ($result) {
-                    if ($index < count($remainingParts)) {
-                        $result['params'][$paramName] = $currentPart;
+                $nextDir = $currentDir . '/' . $file;
+
+                // 确保 $nextDir 是目录才继续递归
+                if (is_dir($nextDir)) {
+                    $result = self::scanDirectory(
+                        $nextDir,
+                        $remainingParts,
+                        $index + 1
+                    );
+                    if ($result) {
+                        if ($index < count($remainingParts)) {
+                            $result['params'][$paramName] = $currentPart;
+                        }
+                        return $result;
                     }
-                    return $result;
                 }
 
                 // 或者作为终止文件
