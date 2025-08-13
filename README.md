@@ -14,6 +14,8 @@ PHP 8.1+ / Typecho 1.2+
 🚧 **注意**  
 当前为开发版本，生产环境请使用[稳定版](https://github.com/YuiNijika/TTDF/releases)
 
+[集成Vite(开发中)](https://github.com/YuiNijika/TTDF-Vite)
+
 ## 快速入门
 [开发指南](README_DOC.md)
 
