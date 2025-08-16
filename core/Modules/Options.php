@@ -163,6 +163,7 @@ function themeConfig($form)
         .TTDF-content {
             flex: 1;
             padding: 20px;
+            max-height: 520px;
             overflow-y: auto;
         }
 
