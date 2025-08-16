@@ -124,11 +124,12 @@ function themeConfig($form)
 
         .TTDF-body {
             display: flex;
-            min-height: 500px;
+            min-height: 520px;
         }
 
         .TTDF-nav {
             width: 200px;
+            max-height: 520px;
             border-right: 1px solid #dcdcde;
             background: #f6f7f7;
             overflow-y: auto;
