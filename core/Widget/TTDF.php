@@ -228,6 +228,44 @@ class TTDF_Widget
     }
 
     /**
+     * 获取客户端真实IP
+     * @return string
+     */
+    public static function GetClientIp()
+    {
+        // 可能的IP来源数组
+        $sources = [
+            'HTTP_CLIENT_IP',
+            'HTTP_X_FORWARDED_FOR',
+            'REMOTE_ADDR'
+        ];
+
+        foreach ($sources as $source) {
+            if (!empty($_SERVER[$source])) {
+                $ip = $_SERVER[$source];
+
+                // 处理X-Forwarded-For可能有多个IP的情况
+                if ($source === 'HTTP_X_FORWARDED_FOR') {
+                    $ips = explode(',', $ip);
+                    $ip = trim($ips[0]);
+                }
+
+                // 验证IP格式
+                if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                    // 将IPv6本地回环地址转换为IPv4格式
+                    if ($ip === '::1') {
+                        return '127.0.0.1';
+                    }
+                    return $ip;
+                }
+            }
+        }
+
+        // 所有来源都找不到有效IP时返回默认值
+        return null;
+    }
+
+    /**
      * HeadMeta
      * @return string
      */
@@ -248,9 +286,9 @@ class TTDF_Widget
     <link rel="pingback" href="<?php Get::SiteUrl(true) ?>action/xmlrpc" />
     <link rel="EditURI" type="application/rsd+xml" title="RSD" href="<?php Get::SiteUrl(true) ?>action/xmlrpc?rsd" />
     <link rel="wlwmanifest" type="application/wlwmanifest+xml" href="<?php Get::SiteUrl(true) ?>action/xmlrpc?wlw" />
-    <link rel="alternate" type="application/rss+xml" title="Hello World &raquo; RSS 2.0" href="<?php Get::SiteUrl(true) ?>feed/" />
-    <link rel="alternate" type="application/rdf+xml" title="Hello World &raquo; RSS 1.0" href="<?php Get::SiteUrl(true) ?>feed/rss/" />
-    <link rel="alternate" type="application/atom+xml" title="Hello World &raquo; ATOM 1.0" href="<?php Get::SiteUrl(true) ?>feed/atom/" />
+    <link rel="alternate" type="application/rss+xml" title="<?php Get::SiteName(true) ?> &raquo; RSS 2.0" href="<?php Get::SiteUrl(true) ?>feed/" />
+    <link rel="alternate" type="application/rdf+xml" title="<?php Get::SiteName(true) ?> &raquo; RSS 1.0" href="<?php Get::SiteUrl(true) ?>feed/rss/" />
+    <link rel="alternate" type="application/atom+xml" title="<?php Get::SiteName(true) ?> &raquo; ATOM 1.0" href="<?php Get::SiteUrl(true) ?>feed/atom/" />
 <?php
     }
 }
