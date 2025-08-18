@@ -256,6 +256,137 @@ class IndexController extends BaseController
                             ]
                         ]
                     ],
+                    'comments' => [
+                        'post' => [
+                            'method' => 'POST',
+                            'path' => '/comments',
+                            'description' => '提交评论',
+                            'parameters' => [
+                                'cid' => [
+                                    'type' => 'integer',
+                                    'description' => '文章ID',
+                                    'required' => true,
+                                ],
+                                'author' => [
+                                    'type' => 'string',
+                                    'description' => '评论者姓名',
+                                    'required' => true,
+                                ],
+                                'mail' => [
+                                    'type' => 'string',
+                                    'description' => '评论者邮箱',
+                                    'required' => true,
+                                ],
+                                'text' => [
+                                    'type' => 'string',
+                                    'description' => '评论内容',
+                                    'required' => true,
+                                ],
+                                'url' => [
+                                    'type' => 'string',
+                                    'description' => '评论者网站',
+                                    'required' => false,
+                                ],
+                                'parent' => [
+                                    'type' => 'integer',
+                                    'description' => '父评论ID（用于回复）',
+                                    'required' => false,
+                                ]
+                            ],
+                            'response' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'data' => [
+                                        'type' => 'object',
+                                        'properties' => [
+                                            'coid' => ['type' => 'integer', 'description' => '评论ID'],
+                                            'cid' => ['type' => 'integer', 'description' => '文章ID'],
+                                            'created' => ['type' => 'string', 'format' => 'date-time', 'description' => '创建时间'],
+                                            'author' => ['type' => 'string', 'description' => '评论者姓名'],
+                                            'mail' => ['type' => 'string', 'description' => '评论者邮箱'],
+                                            'url' => ['type' => 'string', 'description' => '评论者网站'],
+                                            'ip' => ['type' => 'string', 'description' => '评论者IP'],
+                                            'agent' => ['type' => 'string', 'description' => '用户代理'],
+                                            'text' => ['type' => 'string', 'description' => '评论内容'],
+                                            'type' => ['type' => 'string', 'description' => '评论类型'],
+                                            'status' => ['type' => 'string', 'description' => '评论状态'],
+                                            'parent' => ['type' => 'integer', 'description' => '父评论ID'],
+                                        ]
+                                    ],
+                                    'message' => ['type' => 'string', 'description' => '操作结果信息']
+                                ]
+                            ]
+                        ],
+                        'get' => [
+                            'method' => 'GET',
+                            'path' => '/comments[/{id}|/cid/{cid}]',
+                            'description' => '获取评论列表或详情',
+                            'parameters' => [
+                                'id' => [
+                                    'type' => 'integer',
+                                    'description' => '评论ID（获取单个评论）',
+                                    'required' => false,
+                                ],
+                                'cid' => [
+                                    'type' => 'integer',
+                                    'description' => '文章ID（获取文章下的评论）',
+                                    'required' => false,
+                                ],
+                                'page' => [
+                                    'type' => 'integer',
+                                    'description' => '页码',
+                                    'required' => false,
+                                    'default' => 1,
+                                ],
+                                'pageSize' => [
+                                    'type' => 'integer',
+                                    'description' => '每页数量',
+                                    'required' => false,
+                                    'default' => 10,
+                                ]
+                            ],
+                            'response' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'data' => [
+                                        'type' => 'array|object',
+                                        'description' => '评论数据或评论列表',
+                                        'items' => [
+                                            'type' => 'object',
+                                            'properties' => [
+                                                'coid' => ['type' => 'integer', 'description' => '评论ID'],
+                                                'cid' => ['type' => 'integer', 'description' => '文章ID'],
+                                                'created' => ['type' => 'string', 'format' => 'date-time', 'description' => '创建时间'],
+                                                'author' => ['type' => 'string', 'description' => '评论者姓名'],
+                                                'mail' => ['type' => 'string', 'description' => '评论者邮箱'],
+                                                'url' => ['type' => 'string', 'description' => '评论者网站'],
+                                                'ip' => ['type' => 'string', 'description' => '评论者IP'],
+                                                'agent' => ['type' => 'string', 'description' => '用户代理'],
+                                                'text' => ['type' => 'string', 'description' => '评论内容'],
+                                                'type' => ['type' => 'string', 'description' => '评论类型'],
+                                                'status' => ['type' => 'string', 'description' => '评论状态'],
+                                                'parent' => ['type' => 'integer', 'description' => '父评论ID'],
+                                            ]
+                                        ]
+                                    ],
+                                    'meta' => [
+                                        'type' => 'object',
+                                        'properties' => [
+                                            'pagination' => [
+                                                'type' => 'object',
+                                                'properties' => [
+                                                    'total' => ['type' => 'integer'],
+                                                    'pageSize' => ['type' => 'integer'],
+                                                    'currentPage' => ['type' => 'integer'],
+                                                    'totalPages' => ['type' => 'integer']
+                                                ]
+                                            ]
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ],
                 ]
             ]
         ];
@@ -525,6 +656,127 @@ class CommentController extends BaseController
 
         // 其他情况返回404
         $this->response->error('Endpoint not found', HttpCode::NOT_FOUND);
+    }
+
+    public function handlePostComment(): array
+    {
+        try {
+            // 记录请求开始
+            error_log("开始处理评论提交请求");
+
+            // 获取POST数据
+            $input = file_get_contents('php://input');
+            $postData = json_decode($input, true);
+
+            // 如果JSON解析失败，尝试使用表单数据
+            if (!is_array($postData) && !empty($_POST)) {
+                $postData = $_POST;
+            }
+
+            // 如果仍然没有数据，返回错误
+            if (!is_array($postData)) {
+                $error_msg = "无法解析POST数据";
+                error_log($error_msg);
+                $this->response->error($error_msg, HttpCode::BAD_REQUEST);
+                return [];
+            }
+
+            error_log("接收到的POST数据: " . json_encode($postData));
+
+            // 验证必需字段（包括mail）
+            $requiredFields = ['cid', 'text', 'author', 'mail'];
+            foreach ($requiredFields as $field) {
+                if (empty($postData[$field])) {
+                    $error_msg = "缺少必需字段: {$field}";
+                    error_log($error_msg);
+                    $this->response->error($error_msg, HttpCode::BAD_REQUEST);
+                    return []; // 添加返回以避免继续执行
+                }
+            }
+
+            // 验证邮箱格式
+            if (!filter_var($postData['mail'], FILTER_VALIDATE_EMAIL)) {
+                $error_msg = "邮箱格式无效";
+                error_log($error_msg);
+                $this->response->error($error_msg, HttpCode::BAD_REQUEST);
+                return [];
+            }
+
+            // 验证文章是否存在
+            $cid = (int)$postData['cid'];
+            $post = $this->db->getPostDetail($cid);
+            if (!$post) {
+                $error_msg = "文章未找到，ID: {$cid}";
+                error_log($error_msg);
+                $this->response->error($error_msg, HttpCode::NOT_FOUND);
+                return [];
+            }
+
+            // 获取客户端IP地址
+            $clientIp = TTDF_Widget::GetClientIp();
+            if (empty($clientIp)) {
+                $clientIp = 'unknown';
+            }
+
+            // 准备评论数据
+            $commentData = [
+                'cid' => $cid,
+                'created' => time(),
+                'author' => $postData['author'],
+                'mail' => $postData['mail'],
+                'text' => $postData['text'],
+                'status' => Helper::options()->commentsRequireModeration ? 'waiting' : 'approved',
+                'agent' => $_SERVER['HTTP_USER_AGENT'] ?? '',
+                'ip' => $clientIp,
+                'type' => 'comment',
+                'parent' => 0
+            ];
+
+            // 添加可选字段
+            if (!empty($postData['url'])) {
+                // 验证URL格式
+                $url = $postData['url'];
+                if (strpos($url, 'http://') !== 0 && strpos($url, 'https://') !== 0) {
+                    $url = 'http://' . $url;
+                }
+                $commentData['url'] = $url;
+            }
+
+            if (!empty($postData['parent']) && is_numeric($postData['parent'])) {
+                $commentData['parent'] = (int)$postData['parent'];
+            }
+
+            error_log("准备插入的评论数据: " . json_encode($commentData));
+
+            // 插入评论到数据库
+            $insertId = $this->db->insertComment($commentData);
+            error_log("评论插入完成，ID: " . $insertId);
+
+            if ($insertId) {
+                // 获取刚插入的评论
+                $comment = $this->db->getCommentById($insertId);
+                error_log("获取到插入的评论: " . json_encode($comment));
+
+                $result = [
+                    'data' => $this->formatter->formatComment($comment),
+                    'message' => 'Comment submitted successfully'
+                ];
+
+                error_log("返回结果: " . json_encode($result));
+                return $result;
+            } else {
+                $error_msg = "评论提交失败";
+                error_log($error_msg);
+                $this->response->error($error_msg, HttpCode::INTERNAL_ERROR);
+                return [];
+            }
+        } catch (Exception $e) {
+            $error_msg = "提交评论时发生错误: " . $e->getMessage();
+            error_log($error_msg);
+            error_log("堆栈跟踪: " . $e->getTraceAsString());
+            $this->response->error($error_msg, HttpCode::INTERNAL_ERROR);
+            return [];
+        }
     }
 }
 

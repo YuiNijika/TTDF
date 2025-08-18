@@ -506,6 +506,12 @@ class DB_API
         return $this->getCount('table.comments', 'cid = ?', $cid);
     }
 
+    /**
+     * 获取评论详情
+     *
+     * @param int $commentId
+     * @return array|null
+     */
     public function getCommentById(int $commentId): ?array
     {
         try {
@@ -516,6 +522,19 @@ class DB_API
         } catch (Exception $e) {
             error_log("Database error in getCommentById: " . $e->getMessage());
             return null;
+        }
+    }
+
+    /**
+     * 插入评论
+     */
+    public function insertComment(array $commentData): int
+    {
+        try {
+            return $this->db->query($this->db->insert('table.comments')->rows($commentData));
+        } catch (Exception $e) {
+            error_log("插入评论失败: " . $e->getMessage());
+            throw $e;
         }
     }
 

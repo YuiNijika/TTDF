@@ -44,7 +44,8 @@ final class TTDF_API
                 $this->response->send([], HttpCode::OK);
             }
 
-            if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
+            // 允许 GET 和 POST 方法
+            if (!in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'POST'])) {
                 TTDF_Debug::logApiProcess('METHOD_NOT_ALLOWED', [
                     'method' => $_SERVER['REQUEST_METHOD'] ?? 'UNKNOWN'
                 ]);
@@ -66,7 +67,9 @@ final class TTDF_API
                 'options' => $this->handleOptions(),
                 'fields' => $this->handleFieldSearch(),
                 'advancedFields' => $this->handleAdvancedFieldSearch(),
-                'comments' => $this->handleComments(),
+                'comments' => ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST'
+                    ? $this->handlePostComment()
+                    : $this->handleComments(),
                 'attachments' => $this->handleAttachmentList(),
                 default => $this->handleNotFound($endpoint),
             };
@@ -81,6 +84,7 @@ final class TTDF_API
             $this->response->error('Internal Server Error', HttpCode::INTERNAL_ERROR, $e);
         }
     }
+    
     private function handleIndex(): array
     {
         $controller = new IndexController($this->request, $this->response, $this->db, $this->formatter);
@@ -145,6 +149,12 @@ final class TTDF_API
     {
         $controller = new CommentController($this->request, $this->response, $this->db, $this->formatter);
         return $controller->handle();
+    }
+
+    private function handlePostComment(): array
+    {
+        $controller = new CommentController($this->request, $this->response, $this->db, $this->formatter);
+        return $controller->handlePostComment();
     }
 
     private function handleAttachmentList(): array

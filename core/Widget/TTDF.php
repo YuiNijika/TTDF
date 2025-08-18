@@ -228,6 +228,44 @@ class TTDF_Widget
     }
 
     /**
+     * 获取客户端真实IP
+     * @return string
+     */
+    public static function GetClientIp()
+    {
+        // 可能的IP来源数组
+        $sources = [
+            'HTTP_CLIENT_IP',
+            'HTTP_X_FORWARDED_FOR',
+            'REMOTE_ADDR'
+        ];
+
+        foreach ($sources as $source) {
+            if (!empty($_SERVER[$source])) {
+                $ip = $_SERVER[$source];
+
+                // 处理X-Forwarded-For可能有多个IP的情况
+                if ($source === 'HTTP_X_FORWARDED_FOR') {
+                    $ips = explode(',', $ip);
+                    $ip = trim($ips[0]);
+                }
+
+                // 验证IP格式
+                if (filter_var($ip, FILTER_VALIDATE_IP)) {
+                    // 将IPv6本地回环地址转换为IPv4格式
+                    if ($ip === '::1') {
+                        return '127.0.0.1';
+                    }
+                    return $ip;
+                }
+            }
+        }
+
+        // 所有来源都找不到有效IP时返回默认值
+        return null;
+    }
+
+    /**
      * HeadMeta
      * @return string
      */
