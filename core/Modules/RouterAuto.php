@@ -18,6 +18,12 @@ class TTDF_AutoRouter
         }
 
         $path = self::getRequestPath();
+        
+        // 检查路由是否应该跳过
+        if (self::shouldSkipRoute($path)) {
+            return; // 让 Typecho 继续处理
+        }
+        
         $matchedFile = self::findMatchingFile($path);
 
         if ($matchedFile) {
@@ -34,6 +40,16 @@ class TTDF_AutoRouter
     {
         $requestUri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
         return trim($requestUri, '/');
+    }
+
+    // 检查是否应该跳过路由处理
+    private static function shouldSkipRoute($path)
+    {
+        // 不处理以 feed 开头的路径
+        if (strpos($path, 'feed') === 0) {
+            return true;
+        }
+        return false;
     }
 
     private static function findMatchingFile($requestPath)

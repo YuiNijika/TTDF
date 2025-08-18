@@ -188,5 +188,15 @@ function TTDF_SEO_Description()
 }
 ?>
 <title><?php TTDF_SEO_Title(); ?></title>
-<meta name="keywords" content="<?php TTDF_SEO_Keywords(); ?>" />
-<meta name="description" content="<?php TTDF_SEO_Description(); ?>" />
+    <meta name="keywords" content="<?php TTDF_SEO_Keywords(); ?>" />
+    <meta name="description" content="<?php TTDF_SEO_Description(); ?>" />
+    <meta property="og:locale" content="<?php echo Get::Options('lang') ?: 'zh-CN' ?>" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="<?php Get::PageUrl(); ?>" />
+    <meta property="og:site_name" content="<?php Get::Options('title', true) ?>" />
+    <meta property="og:title" content="<?php TTDF_SEO_Title(); ?>" />
+    <meta name="og:description" content="<?php TTDF_SEO_Description(); ?>" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:domain" content="<?php Get::Options('siteDomain', true) ?>" />
+    <meta name="twitter:title" property="og:title" itemprop="name" content="<?php TTDF_SEO_Title(); ?>" />
+    <meta name="twitter:description" property="og:description" itemprop="description" content="<?php TTDF_SEO_Description(); ?>" />

@@ -44,13 +44,18 @@ class TTDF
         }
         return $r;
     }
-
     /**
      * HTML压缩
      * @param string $html HTML内容
      * @return string
      */
-    public static function CompressHtml($html) {
+    public static function CompressHtml($html)
+    {
+        // 不处理 feed 内容
+        if (self::isFeedContent($html)) {
+            return $html;
+        }
+
         // 跳过标签
         $chunks = preg_split('/(<script.*?>.*?<\/script>|<style.*?>.*?<\/style>|<pre.*?>.*?<\/pre>)/msi', $html, -1, PREG_SPLIT_DELIM_CAPTURE);
         $compressed = '';
@@ -65,6 +70,35 @@ class TTDF
             }
         }
         return $compressed;
+    }
+
+    /**
+     * 检查是否为 Feed 内容
+     * @param string $content 内容
+     * @return bool
+     */
+    private static function isFeedContent($content)
+    {
+        // 检查是否包含典型的 feed 标识
+        if (
+            strpos($content, '<feed') === 0 ||
+            strpos($content, '<?xml') === 0 ||
+            (strpos($content, '<rss') !== false && strpos($content, '<rss') < 10) ||
+            (strpos($content, '<rdf:RDF') !== false && strpos($content, '<rdf:RDF') < 10)
+        ) {
+            return true;
+        }
+
+        // 检查全局路由信息是否为 feed
+        if (
+            isset($GLOBALS['_ttdf_route']) &&
+            isset($GLOBALS['_ttdf_route']['path']) &&
+            strpos($GLOBALS['_ttdf_route']['path'], 'feed') === 0
+        ) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -193,28 +227,6 @@ class TTDF_Widget
         }
     }
 
-
-    /**
-     * SEO
-     * @return string
-     */
-    public static function SEO($OG = true)
-    {
-        TTDF::Modules('UseSeo');
-    if ($OG) { ?>
-    <meta property="og:locale" content="<?php echo Get::Options('lang') ? Get::Options('lang') : 'zh-CN' ?>" />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="<?php Get::PageUrl(); ?>" />
-    <meta property="og:site_name" content="<?php Get::Options('title', true) ?>" />
-    <meta property="og:title" content="<?php TTDF_SEO_Title(); ?>" />
-    <meta name="og:description" content="<?php TTDF_SEO_Description(); ?>" />
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:domain" content="<?php Get::Options('siteDomain', true) ?>" />
-    <meta name="twitter:title" property="og:title" itemprop="name" content="<?php TTDF_SEO_Title(); ?>" />
-    <meta name="twitter:description" property="og:description" itemprop="description" content="<?php TTDF_SEO_Description(); ?>" />
-    <?php }
-    }
-
     /**
      * HeadMeta
      * @return string
@@ -223,16 +235,22 @@ class TTDF_Widget
     {
 ?>
 <meta charset="<?php Get::Options('charset', true) ?>">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" />
     <meta name="renderer" content="webkit" />
-    <?php if ($HeadSeo) { self::SEO(); } ?>
-<meta name="generator" content="Typecho <?php TTDF::TypechoVer(true) ?>" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" />
+    <?php if ($HeadSeo) { TTDF::Modules('UseSeo'); } ?>
+    <meta name="generator" content="Typecho <?php TTDF::TypechoVer(true) ?>" />
     <meta name="framework" content="TTDF <?php TTDF::Ver(true) ?>" />
     <meta name="template" content="<?php GetTheme::Name(true) ?>" />
 <?php 
-        Get::Header(true, 'description,keywords,generator,template,pingback,EditURI,wlwmanifest,alternate,twitter:domain,twitter:card,twitter:description,twitter:title,og:url,og:site_name,og:type');
+    Get::Header(true, 'description,keywords,generator,template,pingback,EditURI,wlwmanifest,alternate,twitter:domain,twitter:card,twitter:description,twitter:title,og:url,og:site_name,og:type');
 ?>
     <link rel="canonical" href="<?php Get::PageUrl(true, false, null, true); ?>" />
+    <link rel="pingback" href="<?php Get::SiteUrl(true) ?>action/xmlrpc" />
+    <link rel="EditURI" type="application/rsd+xml" title="RSD" href="<?php Get::SiteUrl(true) ?>action/xmlrpc?rsd" />
+    <link rel="wlwmanifest" type="application/wlwmanifest+xml" href="<?php Get::SiteUrl(true) ?>action/xmlrpc?wlw" />
+    <link rel="alternate" type="application/rss+xml" title="Hello World &raquo; RSS 2.0" href="<?php Get::SiteUrl(true) ?>feed/" />
+    <link rel="alternate" type="application/rdf+xml" title="Hello World &raquo; RSS 1.0" href="<?php Get::SiteUrl(true) ?>feed/rss/" />
+    <link rel="alternate" type="application/atom+xml" title="Hello World &raquo; ATOM 1.0" href="<?php Get::SiteUrl(true) ?>feed/atom/" />
 <?php
     }
 }
@@ -249,8 +267,8 @@ TTDF_Hook::add_action('load_head', function ($skipHead = false) {
 });
 TTDF_Hook::add_action('load_foot', function () {
     Get::Footer(true);
-    ?>
-    <script type="text/javascript">
+?>
+<script type="text/javascript">
         console.log("\n %c %s \n", "color: #fff; background: #34495e; padding:5px 0;", "TTDF v<?php TTDF::Ver() ?>");
         console.log('页面加载耗时 <?php TTDF_Widget::TimerStop(); ?>');
     </script>
