@@ -46,13 +46,14 @@ class IndexController extends BaseController
         return [
             'data' => [
                 'site' => [
-                    'theme' => Get::Options('theme'),
+                    'lang' => Get::Options('lang', false) ?: 'zh-CN',
                     'title' => Get::Options('title'),
                     'description' => $this->formatter->formatCategory(['description' => Get::Options('description')])['description'],
                     'keywords' => Get::Options('keywords'),
                     'siteUrl' => Get::Options('siteUrl'),
                     'timezone' => Get::Options('timezone'),
-                    'lang' => Get::Options('lang', false) ?: 'zh-CN',
+                    'theme' => Get::Options('theme'),
+                    'framework' => 'TTDF',
                 ],
                 'version' => [
                     'typecho' => TTDF::TypechoVer(false),
@@ -190,9 +191,9 @@ class IndexController extends BaseController
                             ]
                         ]
                     ],
-                    'post' => [
+                    'content' => [
                         'method' => 'GET',
-                        'path' => '/posts/{id|slug}',
+                        'path' => '/content/{id|slug}',
                         'description' => '获取文章详情',
                         'parameters' => [
                             'id|slug' => [
@@ -252,31 +253,6 @@ class IndexController extends BaseController
                                         'timestamp' => ['type' => 'integer']
                                     ]
                                 ]
-                            ]
-                        ]
-                    ],
-                    'content' => [
-                        'type' => 'object',
-                        'description' => '文章内容',
-                        'properties' => [
-                            'title' => [
-                                'type' => 'string',
-                                'description' => '标题',
-                                'required' => true,
-                            ],
-                            'content' => [
-                                'type' => 'string',
-                                'description' => '内容',
-                                'required' => true,
-                            ],
-                            'status' => [
-                                'type' => 'string',
-                                'description' => '状态',
-                                'required' => true,
-                            ],
-                            'slug' => [
-                                'type' => 'string',
-                                'description' => '别名',
                             ]
                         ]
                     ],
