@@ -9,7 +9,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  * TTDF Config
  */
 return [
-    'DEBUG' => false, // TTDF Debug
+    'DEBUG' => true, // TTDF Debug
     'FIELDS_ENABLED' => false, // 是否启用自定义字段
     'TYAJAX_ENABLED' => false, // 是否启用TyAjax模块
     'COMPRESS_HTML' => true, // 是否启用HTML压缩
@@ -22,6 +22,10 @@ return [
             'ENABLED' => false, // 是否启用Token
             'VALUE' => '1778273540', // Token值
             'FORMAT' => 'Bearer' // 传输格式，可选 'Bearer', 'Token', 'Basic' 或 null
+        ],
+        'ENABLE' => [
+            'GET' => '', // 允许GET请求类
+            'POST' => '', // 允许POST请求类
         ],
         'HEADERS' => [
             'Cache-Control' => 'no-cache, no-store, must-revalidate', // 缓存控制

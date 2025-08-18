@@ -420,6 +420,49 @@ class TTDF_Debug
     {
         return self::$routeErrors;
     }
+
+    /**
+     * 记录API相关调试信息
+     */
+    public static function logApiInfo($message, $data = null)
+    {
+        if (!self::$enabled) return;
+
+        $logMessage = "API_DEBUG: " . $message;
+        if ($data !== null) {
+            $logMessage .= " | Data: " . self::sanitizeOutput($data);
+        }
+
+        self::log($logMessage, E_USER_NOTICE);
+    }
+
+    /**
+     * 记录API错误
+     */
+    public static function logApiError($message, $exception = null)
+    {
+        if (!self::$enabled) return;
+
+        $logMessage = "API_ERROR: " . $message;
+        if ($exception instanceof Throwable) {
+            $logMessage .= " | Exception: " . $exception->getMessage() .
+                " in " . $exception->getFile() .
+                " on line " . $exception->getLine();
+        }
+
+        self::log($logMessage, E_USER_WARNING);
+    }
+
+    /**
+     * 记录API请求处理过程
+     */
+    public static function logApiProcess($stage, $details = [])
+    {
+        if (!self::$enabled) return;
+
+        $logMessage = "API_PROCESS[" . $stage . "]: " . json_encode($details, JSON_UNESCAPED_UNICODE);
+        self::log($logMessage, E_USER_NOTICE);
+    }
 }
 
 // 初始化
