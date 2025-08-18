@@ -55,6 +55,9 @@ final class TTDF_API
             $endpoint = $this->request->pathParts[0] ?? '';
             TTDF_Debug::logApiProcess('DETERMINING_ENDPOINT', ['endpoint' => $endpoint]);
 
+            // 检查限制逻辑
+            $this->checkRestrictions($endpoint);
+
             $data = match ($endpoint) {
                 '' => $this->handleIndex(),
                 'index' => $this->handleIndex(),
@@ -84,7 +87,40 @@ final class TTDF_API
             $this->response->error('Internal Server Error', HttpCode::INTERNAL_ERROR, $e);
         }
     }
-    
+
+    private function checkRestrictions(string $endpoint): void
+    {
+        $limitConfig = TTDF_CONFIG['REST_API']['LIMIT'] ?? [];
+
+        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+
+        // 检查GET请求限制
+        if ($method === 'GET' && !empty($limitConfig['GET'])) {
+            $restrictedEndpoints = explode(',', $limitConfig['GET']);
+            if (in_array($endpoint, $restrictedEndpoints)) {
+                TTDF_Debug::logApiProcess('ACCESS_FORBIDDEN', [
+                    'endpoint' => $endpoint,
+                    'method' => $method,
+                    'reason' => 'GET request forbidden'
+                ]);
+                $this->response->error('Access Forbidden', HttpCode::FORBIDDEN);
+            }
+        }
+
+        // 检查POST请求限制
+        if ($method === 'POST' && !empty($limitConfig['POST'])) {
+            $restrictedEndpoints = explode(',', $limitConfig['POST']);
+            if (in_array($endpoint, $restrictedEndpoints)) {
+                TTDF_Debug::logApiProcess('ACCESS_FORBIDDEN', [
+                    'endpoint' => $endpoint,
+                    'method' => $method,
+                    'reason' => 'POST request forbidden'
+                ]);
+                $this->response->error('Access Forbidden', HttpCode::FORBIDDEN);
+            }
+        }
+    }
+
     private function handleIndex(): array
     {
         $controller = new IndexController($this->request, $this->response, $this->db, $this->formatter);

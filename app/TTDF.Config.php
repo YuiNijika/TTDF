@@ -23,9 +23,11 @@ return [
             'VALUE' => '1778273540', // Token值
             'FORMAT' => 'Bearer' // 传输格式，可选 'Bearer', 'Token', 'Basic' 或 null
         ],
-        'ENABLE' => [
-            'GET' => '', // 允许GET请求类
-            'POST' => '', // 允许POST请求类
+        'LIMIT' => [
+            'GET' => 'attachments', // 禁止GET请求类
+            'POST' => 'comments', // 禁止POST请求类
+            'FIELDS' => null, // 禁止获取的字段值
+            'OPTIONS' => 'key', // 禁止获取的设置项值
         ],
         'HEADERS' => [
             'Cache-Control' => 'no-cache, no-store, must-revalidate', // 缓存控制
