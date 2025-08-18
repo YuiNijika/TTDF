@@ -286,9 +286,9 @@ class TTDF_Widget
     <link rel="pingback" href="<?php Get::SiteUrl(true) ?>action/xmlrpc" />
     <link rel="EditURI" type="application/rsd+xml" title="RSD" href="<?php Get::SiteUrl(true) ?>action/xmlrpc?rsd" />
     <link rel="wlwmanifest" type="application/wlwmanifest+xml" href="<?php Get::SiteUrl(true) ?>action/xmlrpc?wlw" />
-    <link rel="alternate" type="application/rss+xml" title="Hello World &raquo; RSS 2.0" href="<?php Get::SiteUrl(true) ?>feed/" />
-    <link rel="alternate" type="application/rdf+xml" title="Hello World &raquo; RSS 1.0" href="<?php Get::SiteUrl(true) ?>feed/rss/" />
-    <link rel="alternate" type="application/atom+xml" title="Hello World &raquo; ATOM 1.0" href="<?php Get::SiteUrl(true) ?>feed/atom/" />
+    <link rel="alternate" type="application/rss+xml" title="<?php Get::SiteName(true) ?> &raquo; RSS 2.0" href="<?php Get::SiteUrl(true) ?>feed/" />
+    <link rel="alternate" type="application/rdf+xml" title="<?php Get::SiteName(true) ?> &raquo; RSS 1.0" href="<?php Get::SiteUrl(true) ?>feed/rss/" />
+    <link rel="alternate" type="application/atom+xml" title="<?php Get::SiteName(true) ?> &raquo; ATOM 1.0" href="<?php Get::SiteUrl(true) ?>feed/atom/" />
 <?php
     }
 }
