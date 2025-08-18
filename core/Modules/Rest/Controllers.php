@@ -534,15 +534,34 @@ class OptionController extends BaseController
     {
         $optionName = $this->request->pathParts[1] ?? null;
         if ($optionName === null) {
+            // 处理获取所有选项的请求
             $allowedOptions = ['title', 'description', 'keywords', 'theme', 'plugins', 'timezone', 'lang', 'charset', 'contentType', 'siteUrl', 'rootUrl', 'rewrite', 'generator', 'feedUrl', 'searchUrl'];
             $allOptions = Helper::options();
             $publicOptions = [];
+
+            // 检查是否有受限选项
+            $limitConfig = TTDF_CONFIG['REST_API']['LIMIT'] ?? [];
+            $restrictedOptions = !empty($limitConfig['OPTIONS']) ? explode(',', $limitConfig['OPTIONS']) : [];
+
             foreach ($allowedOptions as $option) {
+                // 跳过受限选项
+                if (in_array($option, $restrictedOptions)) {
+                    continue;
+                }
+
                 if (isset($allOptions->$option)) {
                     $publicOptions[$option] = $allOptions->$option;
                 }
             }
             return ['data' => $publicOptions];
+        }
+
+        // 检查单个选项是否受限
+        $limitConfig = TTDF_CONFIG['REST_API']['LIMIT'] ?? [];
+        $restrictedOptions = !empty($limitConfig['OPTIONS']) ? explode(',', $limitConfig['OPTIONS']) : [];
+
+        if (in_array($optionName, $restrictedOptions)) {
+            $this->response->error('Access Forbidden', HttpCode::FORBIDDEN);
         }
 
         $optionValue = Get::Options($optionName);
@@ -554,6 +573,7 @@ class OptionController extends BaseController
 }
 
 // 字段控制器
+// 字段控制器
 class FieldController extends BaseController
 {
     public function handleFieldSearch(): array
@@ -563,6 +583,14 @@ class FieldController extends BaseController
 
         if ($fieldName === null || $fieldValue === null) {
             $this->response->error('Missing field parameters', HttpCode::BAD_REQUEST);
+        }
+
+        // 检查字段是否受限
+        $limitConfig = TTDF_CONFIG['REST_API']['LIMIT'] ?? [];
+        $restrictedFields = !empty($limitConfig['FIELDS']) ? explode(',', $limitConfig['FIELDS']) : [];
+        
+        if (in_array($fieldName, $restrictedFields)) {
+            $this->response->error('Access Forbidden', HttpCode::FORBIDDEN);
         }
 
         $decodedValue = urldecode($fieldValue);
@@ -588,6 +616,17 @@ class FieldController extends BaseController
             $decodedConditions = json_decode($conditions, true, 512, JSON_THROW_ON_ERROR);
         } catch (JsonException) {
             $this->response->error('Invalid JSON in conditions parameter', HttpCode::BAD_REQUEST);
+        }
+
+        // 检查字段是否受限
+        $limitConfig = TTDF_CONFIG['REST_API']['LIMIT'] ?? [];
+        $restrictedFields = !empty($limitConfig['FIELDS']) ? explode(',', $limitConfig['FIELDS']) : [];
+        
+        // 检查条件中是否包含受限字段
+        foreach ($decodedConditions as $condition) {
+            if (isset($condition['name']) && in_array($condition['name'], $restrictedFields)) {
+                $this->response->error('Access Forbidden', HttpCode::FORBIDDEN);
+            }
         }
 
         $posts = $this->db->getPostsByAdvancedFields($decodedConditions, $this->request->pageSize, $this->request->currentPage);

@@ -27,7 +27,7 @@ return [
             'GET' => 'attachments', // 禁止GET请求类
             'POST' => 'comments', // 禁止POST请求类
             'FIELDS' => null, // 禁止获取的字段值
-            'OPTIONS' => 'key', // 禁止获取的设置项值
+            'OPTIONS' => null, // 禁止获取的设置项值
         ],
         'HEADERS' => [
             'Cache-Control' => 'no-cache, no-store, must-revalidate', // 缓存控制
