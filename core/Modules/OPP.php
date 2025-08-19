@@ -33,114 +33,114 @@ if (!function_exists('get_footer')) {
     }
 }
 
-if (!function_exists('get_GetSite_url')) {
+if (!function_exists('get_site_url')) {
     /**
      * 获取站点URL
      * 
      * @param bool|null $echo 是否直接输出
      * @return string
      */
-    function get_GetSite_url(?bool $echo = true): string
+    function get_site_url(?bool $echo = true): string
     {
-        return Get::GetSiteUrl($echo);
+        return Get::SiteUrl($echo);
     }
 }
 
-if (!function_exists('get_GetSite_domain')) {
+if (!function_exists('get_site_domain')) {
     /**
      * 获取站点域名
      * 
      * @param bool|null $echo 是否直接输出
      * @return string
      */
-    function get_GetSite_domain(?bool $echo = true): string
+    function get_site_domain(?bool $echo = true): string
     {
-        return Get::GetSiteDomain($echo);
+        return Get::SiteDomain($echo);
     }
 }
 
-if (!function_exists('get_GetSite_name')) {
+if (!function_exists('get_site_name')) {
     /**
      * 获取站点名称
      * 
      * @param bool|null $echo 是否直接输出
      * @return string
      */
-    function get_GetSite_name(?bool $echo = true): string
+    function get_site_name(?bool $echo = true): string
     {
-        return Get::GetSiteName($echo);
+        return Get::SiteName($echo);
     }
 }
 
-if (!function_exists('get_GetSite_keywords')) {
+if (!function_exists('get_site_keywords')) {
     /**
      * 获取站点关键词
      * 
      * @param bool|null $echo 是否直接输出
      * @return string
      */
-    function get_GetSite_keywords(?bool $echo = true): string
+    function get_site_keywords(?bool $echo = true): string
     {
-        return Get::GetSiteKeywords($echo);
+        return Get::SiteKeywords($echo);
     }
 }
 
-if (!function_exists('get_GetSite_description')) {
+if (!function_exists('get_site_description')) {
     /**
      * 获取站点描述
      * 
      * @param bool|null $echo 是否直接输出
      * @return string
      */
-    function get_GetSite_description(?bool $echo = true): string
+    function get_site_description(?bool $echo = true): string
     {
-        return Get::GetSiteDescription($echo);
+        return Get::SiteDescription($echo);
     }
 }
 
-if (!function_exists('get_GetSite_language')) {
+if (!function_exists('get_site_language')) {
     /**
      * 获取站点语言
      * @param bool $echo 是否直接输出
      * @return string|null
      */
-    function get_GetSite_language(bool $echo = true): ?string
+    function get_site_language(bool $echo = true): ?string
     {
         return GetSite::Language($echo);
     }
 }
 
-if (!function_exists('get_GetSite_charset')) {
+if (!function_exists('get_site_charset')) {
     /**
      * 获取站点编码
      * @param bool $echo 是否直接输出
      * @return string|null
      */
-    function get_GetSite_charset(bool $echo = true): ?string
+    function get_site_charset(bool $echo = true): ?string
     {
         return GetSite::Charset($echo);
     }
 }
 
-if (!function_exists('get_GetSite_page_url')) {
+if (!function_exists('get_site_page_url')) {
     /**
      * 获取当前页面URL
      * @param bool $echo 是否直接输出
      * @return string|null
      */
-    function get_GetSite_page_url(bool $echo = true): ?string
+    function get_site_page_url(bool $echo = true): ?string
     {
         return GetSite::PageUrl($echo);
     }
 }
 
-if (!function_exists('get_GetSite_theme_name')) {
+if (!function_exists('get_site_theme_name')) {
     /**
      * 获取站点主题名称
      * @param bool $echo 是否直接输出
      * @return string|null
      */
-    function get_GetSite_theme_name(bool $echo = true): ?string
+    function get_site_theme_name(bool $echo = true): ?string
     {
         return GetSite::Theme($echo);
     }
@@ -600,6 +600,54 @@ if (!function_exists('get_post_db_content')) {
     }
 }
 
+if (!function_exists('get_post_db_content_html')) {
+    /**
+     * 从数据库获取文章内容并转换为HTML
+     * @param bool $echo 是否直接输出
+     * @return string|null
+     */
+    function get_post_db_content_html(bool $echo = true)
+    {
+        return GetPost::DB_Content_Html($echo);
+    }
+}
+
+if (!function_exists('render_random_posts')) {
+    /**
+     * 渲染随机文章列表
+     * @param int $pageSize 随机文章数量
+     * @param bool $echo 是否直接输出
+     * @return array|null
+     */
+    function render_random_posts(int $pageSize = 3, bool $echo = true)
+    {
+        return GetPost::RenderRandomPosts($pageSize, $echo);
+    }
+}
+
+if (!function_exists('bind_post_archive')) {
+    /**
+     * 绑定文章实例
+     * @param mixed $archive 文章实例
+     * @return void
+     */
+    function bind_post_archive($archive): void
+    {
+        GetPost::bindArchive($archive);
+    }
+}
+
+if (!function_exists('unbind_post_archive')) {
+    /**
+     * 解除文章实例绑定
+     * @return void
+     */
+    function unbind_post_archive(): void
+    {
+        GetPost::unbindArchive();
+    }
+}
+
 if (!function_exists('get_post_db_html')) {
     /**
      * 从数据库获取文章HTML内容
@@ -824,27 +872,15 @@ if (!function_exists('get_user_email')) {
     }
 }
 
-if (!function_exists('get_user_webGetSite')) {
+if (!function_exists('get_user_website')) {
     /**
      * 获取用户网站
      * @param bool $echo 是否直接输出
      * @return string
      */
-    function get_user_webGetSite(bool $echo = true): string
+    function get_user_website(bool $echo = true): string
     {
-        return GetUser::WebGetSite($echo);
-    }
-}
-
-if (!function_exists('get_user_bio')) {
-    /**
-     * 获取用户简介
-     * @param bool $echo 是否直接输出
-     * @return string
-     */
-    function get_user_bio(bool $echo = true): string
-    {
-        return GetUser::Bio($echo);
+        return GetUser::WebSite($echo);
     }
 }
 
@@ -919,5 +955,184 @@ if (!function_exists('get_user_permalink')) {
     function get_user_permalink(bool $echo = true): string
     {
         return GetUser::Permalink($echo);
+    }
+}
+
+// ==================== 评论相关函数 ====================
+
+if (!function_exists('get_comments')) {
+    /**
+     * 获取评论
+     * @return void
+     */
+    function get_comments(): void
+    {
+        GetComment::Comments();
+    }
+}
+
+if (!function_exists('get_comments_page')) {
+    /**
+     * 获取评论页面
+     * @return void
+     */
+    function get_comments_page(): void
+    {
+        GetComment::CommentsPage();
+    }
+}
+
+if (!function_exists('get_comments_list')) {
+    /**
+     * 获取评论列表
+     * @return void
+     */
+    function get_comments_list(): void
+    {
+        GetComment::CommentsList();
+    }
+}
+
+if (!function_exists('get_comments_num')) {
+    /**
+     * 获取评论数
+     * @return void
+     */
+    function get_comments_num(): void
+    {
+        GetComment::CommentsNum();
+    }
+}
+
+if (!function_exists('get_respond_id')) {
+    /**
+     * 获取评论响应ID
+     * @return void
+     */
+    function get_respond_id(): void
+    {
+        GetComment::RespondId();
+    }
+}
+
+if (!function_exists('get_cancel_reply')) {
+    /**
+     * 取消回复
+     * @return void
+     */
+    function get_cancel_reply(): void
+    {
+        GetComment::CancelReply();
+    }
+}
+
+if (!function_exists('get_remember')) {
+    /**
+     * 获取记住的字段值
+     * @param string $field 字段名
+     * @return void
+     */
+    function get_remember(string $field): void
+    {
+        GetComment::Remember($field);
+    }
+}
+
+if (!function_exists('get_comments_form')) {
+    /**
+     * 获取评论表单
+     * @return void
+     */
+    function get_comments_form(): void
+    {
+        GetComment::CommentsForm();
+    }
+}
+
+if (!function_exists('get_comments_page_nav')) {
+    /**
+     * 获取评论分页导航
+     * @param string $prev 上一页文本
+     * @param string $next 下一页文本
+     * @param bool $echo 是否直接输出
+     * @return string|null
+     */
+    function get_comments_page_nav(string $prev = '&laquo; 前一页', string $next = '后一页 &raquo;', bool $echo = true)
+    {
+        return GetComment::PageNav($prev, $next, $echo);
+    }
+}
+
+// ========== Common 相关函数 ==========
+
+if (!function_exists('get_file')) {
+    /**
+     * 引入文件
+     * @param string $file 文件名
+     * @return mixed
+     */
+    function get_file(string $file)
+    {
+        return Get::File($file);
+    }
+}
+
+if (!function_exists('get_layouts')) {
+    /**
+     * 引入app/layouts目录文件
+     * @param string $file 布局文件名
+     * @return mixed
+     */
+    function get_layouts(string $file)
+    {
+        return Get::Layouts($file);
+    }
+}
+
+if (!function_exists('get_components')) {
+    /**
+     * 引入app/components目录文件
+     * @param string $file 组件文件名
+     * @return mixed
+     */
+    function get_components(string $file)
+    {
+        return Get::Components($file);
+    }
+}
+
+if (!function_exists('get_need')) {
+    /**
+     * 引入文件（原始方法）
+     * @param string $file 文件名
+     * @return mixed
+     */
+    function get_need(string $file)
+    {
+        return Get::Need($file);
+    }
+}
+
+if (!function_exists('get_site_language')) {
+    /**
+     * 获取站点语言
+     * @param bool $echo 是否直接输出
+     * @return string|null
+     */
+    function get_site_language(bool $echo = true)
+    {
+        return Get::Options('lang', $echo);
+    }
+}
+
+if (!function_exists('get_site_charset')) {
+    /**
+     * 获取站点字符集
+     * @param bool $echo 是否直接输出
+     * @return string|null
+     */
+    function get_site_charset(bool $echo = true)
+    {
+        return Get::Options('charset', $echo);
     }
 }
