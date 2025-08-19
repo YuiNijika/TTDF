@@ -20,34 +20,48 @@ readonly class ApiRequest
 
     public function __construct()
     {
-        TTDF_Debug::logApiProcess('APIREQUEST_CONSTRUCT_START');
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+            TTDF_Debug::logApiProcess('APIREQUEST_CONSTRUCT_START');
+        }
         
         $requestUri = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '';
-        TTDF_Debug::logApiProcess('PARSED_REQUEST_URI', ['uri' => $requestUri]);
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+            TTDF_Debug::logApiProcess('PARSED_REQUEST_URI', ['uri' => $requestUri]);
+        }
         
         $basePath = '/' . ltrim(__TTDF_RESTAPI_ROUTE__ ?? '', '/');
-        TTDF_Debug::logApiProcess('BASE_PATH', ['path' => $basePath]);
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+            TTDF_Debug::logApiProcess('BASE_PATH', ['path' => $basePath]);
+        }
         
         $this->path = str_starts_with($requestUri, $basePath)
             ? (substr($requestUri, strlen($basePath)) ?: '/')
             : '/';
-        TTDF_Debug::logApiProcess('COMPUTED_PATH', ['path' => $this->path]);
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+            TTDF_Debug::logApiProcess('COMPUTED_PATH', ['path' => $this->path]);
+        }
 
         $this->pathParts = array_values(array_filter(explode('/', trim($this->path, '/'))));
-        TTDF_Debug::logApiProcess('PATH_PARTS', ['parts' => $this->pathParts]);
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+            TTDF_Debug::logApiProcess('PATH_PARTS', ['parts' => $this->pathParts]);
+        }
 
         $this->contentFormat = ContentFormat::tryFrom(strtolower($this->getQuery('format', 'html'))) ?? ContentFormat::HTML;
-        TTDF_Debug::logApiProcess('CONTENT_FORMAT', ['format' => $this->contentFormat->value]);
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+            TTDF_Debug::logApiProcess('CONTENT_FORMAT', ['format' => $this->contentFormat->value]);
+        }
 
         $this->pageSize = max(1, min((int)$this->getQuery('pageSize', 10), 100));
         $this->currentPage = max(1, (int)$this->getQuery('page', 1));
         $this->excerptLength = max(0, (int)$this->getQuery('excerptLength', 200));
         
-        TTDF_Debug::logApiProcess('APIREQUEST_CONSTRUCT_END', [
-            'pageSize' => $this->pageSize,
-            'currentPage' => $this->currentPage,
-            'excerptLength' => $this->excerptLength
-        ]);
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+            TTDF_Debug::logApiProcess('APIREQUEST_CONSTRUCT_END', [
+                'pageSize' => $this->pageSize,
+                'currentPage' => $this->currentPage,
+                'excerptLength' => $this->excerptLength
+            ]);
+        }
     }
 
     public function getQuery(string $key, mixed $default = null): mixed
@@ -63,15 +77,19 @@ final class ApiResponse
 {
     public function __construct(private ContentFormat $contentFormat) 
     {
-        TTDF_Debug::logApiProcess('APIRESPONSE_CONSTRUCT', ['format' => $contentFormat->value]);
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+            TTDF_Debug::logApiProcess('APIRESPONSE_CONSTRUCT', ['format' => $contentFormat->value]);
+        }
     }
 
     public function send(array $data = [], HttpCode $code = HttpCode::OK): never
     {
-        TTDF_Debug::logApiProcess('APIRESPONSE_SEND_START', [
-            'code' => $code->value,
-            'has_data' => !empty($data)
-        ]);
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+            TTDF_Debug::logApiProcess('APIRESPONSE_SEND_START', [
+                'code' => $code->value,
+                'has_data' => !empty($data)
+            ]);
+        }
         
         try {
             if (!headers_sent()) {
@@ -96,26 +114,34 @@ final class ApiResponse
                 $options |= JSON_PRETTY_PRINT;
             }
 
-            TTDF_Debug::logApiProcess('SENDING_RESPONSE', [
-                'response_size' => strlen(json_encode($response, $options))
-            ]);
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+                TTDF_Debug::logApiProcess('SENDING_RESPONSE', [
+                    'response_size' => strlen(json_encode($response, $options))
+                ]);
+            }
             
             echo json_encode($response, $options);
-            TTDF_Debug::logApiProcess('RESPONSE_SENT');
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+                TTDF_Debug::logApiProcess('RESPONSE_SENT');
+            }
             exit;
         } catch (Throwable $e) {
-            TTDF_Debug::logApiError('Error in ApiResponse::send', $e);
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+                TTDF_Debug::logApiError('Error in ApiResponse::send', $e);
+            }
             throw $e;
         }
     }
 
     public function error(string $message, HttpCode $code, ?Throwable $e = null): never
     {
-        TTDF_Debug::logApiProcess('APIRESPONSE_ERROR', [
-            'message' => $message,
-            'code' => $code->value,
-            'has_exception' => $e !== null
-        ]);
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+            TTDF_Debug::logApiProcess('APIRESPONSE_ERROR', [
+                'message' => $message,
+                'code' => $code->value,
+                'has_exception' => $e !== null
+            ]);
+        }
         
         $response = ['message' => $message];
         if ($e !== null && (defined('__DEBUG__') && __DEBUG__)) {
@@ -129,7 +155,9 @@ final class ApiResponse
 
     private function setSecurityHeaders(): void
     {
-        TTDF_Debug::logApiProcess('SETTING_SECURITY_HEADERS');
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+            TTDF_Debug::logApiProcess('SETTING_SECURITY_HEADERS');
+        }
         
         try {
             $headers = $GLOBALS['TTDF_CONFIG']['REST_API']['HEADERS'] ?? [];
@@ -157,9 +185,13 @@ final class ApiResponse
                 }
             }
             
-            TTDF_Debug::logApiProcess('SECURITY_HEADERS_SET');
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+                TTDF_Debug::logApiProcess('SECURITY_HEADERS_SET');
+            }
         } catch (Throwable $e) {
-            TTDF_Debug::logApiError('Error in setSecurityHeaders', $e);
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+                TTDF_Debug::logApiError('Error in setSecurityHeaders', $e);
+            }
         }
     }
 }

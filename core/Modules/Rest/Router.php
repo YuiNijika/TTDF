@@ -29,31 +29,41 @@ final class TTDF_API
 
     private function handleNotFound(string $endpoint): never
     {
-        TTDF_Debug::logApiProcess('ENDPOINT_NOT_FOUND', ['endpoint' => $endpoint]);
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+            TTDF_Debug::logApiProcess('ENDPOINT_NOT_FOUND', ['endpoint' => $endpoint]);
+        }
         $this->response->error('Endpoint not found', HttpCode::NOT_FOUND);
     }
 
     public function handleRequest(): never
     {
-        TTDF_Debug::logApiProcess('HANDLE_REQUEST_START');
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+            TTDF_Debug::logApiProcess('HANDLE_REQUEST_START');
+        }
 
         try {
             // 处理OPTIONS预检请求
             if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'OPTIONS') {
-                TTDF_Debug::logApiProcess('HANDLING_OPTIONS_REQUEST');
+                if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+                    TTDF_Debug::logApiProcess('HANDLING_OPTIONS_REQUEST');
+                }
                 $this->response->send([], HttpCode::OK);
             }
 
             // 允许 GET 和 POST 方法
             if (!in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'POST'])) {
-                TTDF_Debug::logApiProcess('METHOD_NOT_ALLOWED', [
-                    'method' => $_SERVER['REQUEST_METHOD'] ?? 'UNKNOWN'
-                ]);
+                if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+                    TTDF_Debug::logApiProcess('METHOD_NOT_ALLOWED', [
+                        'method' => $_SERVER['REQUEST_METHOD'] ?? 'UNKNOWN'
+                    ]);
+                }
                 $this->response->error('Method Not Allowed', HttpCode::METHOD_NOT_ALLOWED);
             }
 
             $endpoint = $this->request->pathParts[0] ?? '';
-            TTDF_Debug::logApiProcess('DETERMINING_ENDPOINT', ['endpoint' => $endpoint]);
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+                TTDF_Debug::logApiProcess('DETERMINING_ENDPOINT', ['endpoint' => $endpoint]);
+            }
 
             // 检查限制逻辑
             $this->checkRestrictions($endpoint);
@@ -77,13 +87,17 @@ final class TTDF_API
                 default => $this->handleNotFound($endpoint),
             };
 
-            TTDF_Debug::logApiProcess('SENDING_RESPONSE_DATA', [
-                'endpoint' => $endpoint,
-                'data_size' => strlen(json_encode($data, JSON_UNESCAPED_UNICODE))
-            ]);
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+                TTDF_Debug::logApiProcess('SENDING_RESPONSE_DATA', [
+                    'endpoint' => $endpoint,
+                    'data_size' => strlen(json_encode($data, JSON_UNESCAPED_UNICODE))
+                ]);
+            }
             $this->response->send($data);
         } catch (Throwable $e) {
-            TTDF_Debug::logApiError('Error in handleRequest', $e);
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+                TTDF_Debug::logApiError('Error in handleRequest', $e);
+            }
             $this->response->error('Internal Server Error', HttpCode::INTERNAL_ERROR, $e);
         }
     }
@@ -98,11 +112,13 @@ final class TTDF_API
         if ($method === 'GET' && !empty($limitConfig['GET'])) {
             $restrictedEndpoints = explode(',', $limitConfig['GET']);
             if (in_array($endpoint, $restrictedEndpoints)) {
-                TTDF_Debug::logApiProcess('ACCESS_FORBIDDEN', [
-                    'endpoint' => $endpoint,
-                    'method' => $method,
-                    'reason' => 'GET request forbidden'
-                ]);
+                if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+                    TTDF_Debug::logApiProcess('ACCESS_FORBIDDEN', [
+                        'endpoint' => $endpoint,
+                        'method' => $method,
+                        'reason' => 'GET request forbidden'
+                    ]);
+                }
                 $this->response->error('Access Forbidden', HttpCode::FORBIDDEN);
             }
         }
@@ -111,11 +127,13 @@ final class TTDF_API
         if ($method === 'POST' && !empty($limitConfig['POST'])) {
             $restrictedEndpoints = explode(',', $limitConfig['POST']);
             if (in_array($endpoint, $restrictedEndpoints)) {
-                TTDF_Debug::logApiProcess('ACCESS_FORBIDDEN', [
-                    'endpoint' => $endpoint,
-                    'method' => $method,
-                    'reason' => 'POST request forbidden'
-                ]);
+                if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+                    TTDF_Debug::logApiProcess('ACCESS_FORBIDDEN', [
+                        'endpoint' => $endpoint,
+                        'method' => $method,
+                        'reason' => 'POST request forbidden'
+                    ]);
+                }
                 $this->response->error('Access Forbidden', HttpCode::FORBIDDEN);
             }
         }

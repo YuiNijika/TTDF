@@ -46,43 +46,65 @@ $basePath = '/' . ltrim(__TTDF_RESTAPI_ROUTE__ ?? '', '/');
 if (str_starts_with($requestUri, $basePath)) {
     try {
         // 记录API请求开始
-        TTDF_Debug::logApiProcess('START', [
-            'request_uri' => $requestUri,
-            'base_path' => $basePath,
-            'method' => $_SERVER['REQUEST_METHOD'] ?? 'UNKNOWN'
-        ]);
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+            TTDF_Debug::logApiProcess('START', [
+                'request_uri' => $requestUri,
+                'base_path' => $basePath,
+                'method' => $_SERVER['REQUEST_METHOD'] ?? 'UNKNOWN'
+            ]);
+        }
         
         // 验证Token
-        TTDF_Debug::logApiProcess('TOKEN_VALIDATION');
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+            TTDF_Debug::logApiProcess('TOKEN_VALIDATION');
+        }
         TokenValidator::validate();
-        TTDF_Debug::logApiProcess('TOKEN_VALIDATION_SUCCESS');
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+            TTDF_Debug::logApiProcess('TOKEN_VALIDATION_SUCCESS');
+        }
         
         // 初始化组件
-        TTDF_Debug::logApiProcess('INITIALIZING_COMPONENTS');
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+            TTDF_Debug::logApiProcess('INITIALIZING_COMPONENTS');
+        }
         $request   = new ApiRequest();
-        TTDF_Debug::logApiProcess('API_REQUEST_CREATED', [
-            'path' => $request->path,
-            'path_parts' => $request->pathParts
-        ]);
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+            TTDF_Debug::logApiProcess('API_REQUEST_CREATED', [
+                'path' => $request->path,
+                'path_parts' => $request->pathParts
+            ]);
+        }
         
         $response  = new ApiResponse($request->contentFormat);
-        TTDF_Debug::logApiProcess('API_RESPONSE_CREATED');
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+            TTDF_Debug::logApiProcess('API_RESPONSE_CREATED');
+        }
         
         $db        = new DB_API();
-        TTDF_Debug::logApiProcess('DB_API_CREATED');
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+            TTDF_Debug::logApiProcess('DB_API_CREATED');
+        }
         
         $formatter = new ApiFormatter($db, $request->contentFormat, $request->excerptLength);
-        TTDF_Debug::logApiProcess('API_FORMATTER_CREATED');
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+            TTDF_Debug::logApiProcess('API_FORMATTER_CREATED');
+        }
         
         $api = new TTDF_API($request, $response, $db, $formatter);
-        TTDF_Debug::logApiProcess('TTDF_API_CREATED');
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+            TTDF_Debug::logApiProcess('TTDF_API_CREATED');
+        }
         
         // 处理请求
-        TTDF_Debug::logApiProcess('HANDLING_REQUEST');
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+            TTDF_Debug::logApiProcess('HANDLING_REQUEST');
+        }
         $api->handleRequest();
         
     } catch (Throwable $e) {
-        TTDF_Debug::logApiError('API Bootstrap Error', $e);
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+            TTDF_Debug::logApiError('API Bootstrap Error', $e);
+        }
         
         if (!headers_sent()) {
             http_response_code(500);
