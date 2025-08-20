@@ -137,26 +137,6 @@ class GetUser
         }
     }
 
-    // 获取用户简介
-    public static function Bio($echo = true)
-    {
-        try {
-            $bio = self::getArchive()->author->userBio;
-            if ($echo) {
-                echo $bio;
-            } else {
-                return $bio;
-            }
-        } catch (Exception $e) {
-            self::handleError('获取作者简介失败', $e);
-            if ($echo) {
-                echo '';
-            } else {
-                return '';
-            }
-        }
-    }
-
     // 获取用户组/角色
     public static function Role($echo = true)
     {

@@ -1,162 +1,106 @@
 <?php
-
-/**
- * DB Class
- */
-
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
 class DB
 {
-    private static $instance = null;
-    private $db;
+    private static ?self $instance = null;
+    private Typecho_Db $db;
 
     private function __construct()
     {
         $this->db = Typecho_Db::get();
     }
 
-    public static function getInstance()
+    public static function getInstance(): self
     {
-        if (self::$instance === null) {
-            self::$instance = new self();
-        }
-        return self::$instance;
+        return self::$instance ??= new self();
     }
 
-
     /**
-     * 获取文章字数
-     * @param int $cid 文章cid
-     * @return int
+     * 获取文章内容/字数
      */
-    public function getArticleText($cid)
+    public function getArticleContent(int $cid): string
     {
-        $rs = $this->db->fetchRow($this->db->select('table.contents.text')
+        $rs = $this->db->fetchRow($this->db->select('text')
             ->from('table.contents')
-            ->where('table.contents.cid = ?', $cid)
-            ->order('table.contents.cid', Typecho_Db::SORT_ASC)
+            ->where('cid = ?', $cid)
             ->limit(1));
         return $rs['text'] ?? '';
     }
 
     /**
      * 获取文章标题
-     * @param int $cid 文章cid
-     * @return string
-     * @throws Typecho_Db_Exception
      */
-    public function getArticleTitle($cid)
+    public function getArticleTitle(int $cid): string
     {
-        $rs = $this->db->fetchRow($this->db->select('table.contents.title')
+        $rs = $this->db->fetchRow($this->db->select('title')
             ->from('table.contents')
-            ->where('table.contents.cid = ?', $cid)
-            ->order('table.contents.cid', Typecho_Db::SORT_ASC)
+            ->where('cid = ?', $cid)
             ->limit(1));
         return $rs['title'] ?? '';
     }
 
     /**
-     * 获取文章内容
-     * @param int $cid 文章cid
-     * @return string
-     * @throws Typecho_Db_Exception
-     */
-    public function getArticleContent($cid)
-    {
-        $rs = $this->db->fetchRow($this->db->select('table.contents.text')
-            ->from('table.contents')
-            ->where('table.contents.cid = ?', $cid)
-            ->order('table.contents.cid', Typecho_Db::SORT_ASC)
-            ->limit(1));
-        return $rs['text'] ?? '';
-    }
-
-    /**
      * 获取文章分类
-     * @param int $cid 文章ID
-     * @return string 返回分类名称，多个分类用逗号分隔
      */
-    public function getPostCategories($cid)
+    public function getPostCategories(int $cid): string
     {
-        $query = $this->db->select()->from('table.metas')
+        $categories = $this->db->fetchAll($this->db->select('name')
+            ->from('table.metas')
             ->join('table.relationships', 'table.metas.mid = table.relationships.mid')
-            ->where('table.relationships.cid = ?', $cid)
-            ->where('table.metas.type = ?', 'category');
+            ->where('table.relationships.cid = ? AND table.metas.type = ?', $cid, 'category'));
 
-        $categories = $this->db->fetchAll($query);
-
-        // 提取分类名称并拼接成字符串
-        $categoryNames = array_map(function ($category) {
-            return $category['name'];
-        }, $categories);
-
-        return implode(', ', $categoryNames);
+        return implode(', ', array_column($categories, 'name'));
     }
 
     /**
      * 获取文章数量
      */
-    public function getArticleCount()
+    public function getArticleCount(): int
     {
-        $rs = $this->db->fetchRow($this->db->select('COUNT(*)')
+        $rs = $this->db->fetchRow($this->db->select(['COUNT(*)' => 'count'])
             ->from('table.contents')
-            ->where('table.contents.type = ?', 'post')
-            ->order('table.contents.cid', Typecho_Db::SORT_ASC)
-            ->limit(1));
-        return $rs['COUNT(*)'] ?? 0;
+            ->where('type = ?', 'post'));
+        return (int)($rs['count'] ?? 0);
     }
 
     /**
      * 获取文章列表
-     * @param int $pageSize 每页数量
-     * @param int $currentPage 当前页码
-     * @returnarray
      */
-    public function getPostList($pageSize, $currentPage)
+    public function getPostList(int $pageSize, int $currentPage): array
     {
-        $query = $this->db->select()->from('table.contents')
-            ->where('status = ?', 'publish')
-            ->where('type = ?', 'post')
+        return $this->db->fetchAll($this->db->select()
+            ->from('table.contents')
+            ->where('status = ? AND type = ?', 'publish', 'post')
             ->order('created', Typecho_Db::SORT_DESC)
-            ->page($currentPage, $pageSize);
-
-        return $this->db->fetchAll($query);
+            ->page($currentPage, $pageSize));
     }
 
     /**
      * 获取随机文章列表
-     * @param int $pageSize 随机文章数量
-     * @return array 返回随机文章数组
      */
-    public function getRandomPosts($pageSize)
+    public function getRandomPosts(int $limit): array
     {
-        $query = $this->db->select()->from('table.contents')
-            ->where("table.contents.password IS NULL OR table.contents.password = ''")
-            ->where('table.contents.status = ?', 'publish')
-            ->where('table.contents.created <= ?', time())
-            ->where('table.contents.type = ?', 'post')
-            ->limit($pageSize)
-            ->order('RAND()');
+        $posts = $this->db->fetchAll($this->db->select()
+            ->from('table.contents')
+            ->where("password IS NULL OR password = ''")
+            ->where('status = ? AND created <= ? AND type = ?', 'publish', time(), 'post')
+            ->limit($limit)
+            ->order('RAND()'));
 
-        $posts = $this->db->fetchAll($query);
-
-        // 将数组转换为对象并提取所需字段
-        return array_map(function ($post) {
-            return [
-                'cid' => $post['cid'],
-                'title' => $post['title'],
-                'permalink' => Typecho_Router::url('post', ['cid' => $post['cid']], Typecho_Common::url('', Helper::options()->index)),
-                'created' => $post['created'],
-                'category' => $this->getPostCategories($post['cid']),
-            ];
-        }, $posts);
+        return array_map(fn($post) => [
+            'cid' => $post['cid'],
+            'title' => $post['title'],
+            'permalink' => Typecho_Router::url('post', ['cid' => $post['cid']], Typecho_Common::url('', Helper::options()->index)),
+            'created' => $post['created'],
+            'category' => $this->getPostCategories($post['cid']),
+        ], $posts);
     }
 }
 
 class DB_API
 {
-    private $db;
+    private Typecho_Db $db;
 
     public function __construct()
     {
@@ -164,327 +108,233 @@ class DB_API
     }
 
     /**
-     * 获取文章字数
-     * @param int $cid 文章cid
-     * @return int
+     * 获取内容通用方法
      */
-    public function getArticleText($cid)
+    private function getContent(string $field, int $cid): string
     {
-        $rs = $this->db->fetchRow($this->db->select('table.contents.text')
+        $rs = $this->db->fetchRow($this->db->select($field)
             ->from('table.contents')
-            ->where('table.contents.cid = ?', $cid)
-            ->order('table.contents.cid', Typecho_Db::SORT_ASC)
+            ->where('cid = ?', $cid)
             ->limit(1));
-        return $rs['text'] ?? '';
+        return $rs[$field] ?? '';
+    }
+
+    public function getArticleText(int $cid): string
+    {
+        return $this->getContent('text', $cid);
+    }
+
+    public function getArticleTitle(int $cid): string
+    {
+        return $this->getContent('title', $cid);
+    }
+
+    public function getArticleContent(int $cid): string
+    {
+        return $this->getContent('text', $cid);
     }
 
     /**
-     * 获取文章标题
-     * @param int $cid 文章cid
-     * @return string
+     * 获取数量通用方法
      */
-    public function getArticleTitle($cid)
+    private function getCount(string $table, ?string $where = null, ...$args): int
     {
-        $rs = $this->db->fetchRow($this->db->select('table.contents.title')
+        $query = $this->db->select(['COUNT(*)' => 'count'])->from($table);
+        if ($where) {
+            $query->where($where, ...$args);
+        }
+        $rs = $this->db->fetchRow($query);
+        return (int)($rs['count'] ?? 0);
+    }
+
+    public function getArticleCount(): int
+    {
+        return $this->getCount('table.contents', 'type = ?', 'post');
+    }
+
+    public function getTotalPages(): int
+    {
+        return $this->getCount('table.contents', 'type = ?', 'page');
+    }
+
+    public function getTotalPosts(): int
+    {
+        return $this->getCount('table.contents', 'status = ? AND type = ?', 'publish', 'post');
+    }
+
+    public function getTotalPostsInCategory(int $mid): int
+    {
+        $query = $this->db->select(['COUNT(*)' => 'count'])
             ->from('table.contents')
-            ->where('table.contents.cid = ?', $cid)
-            ->order('table.contents.cid', Typecho_Db::SORT_ASC)
-            ->limit(1));
-        return $rs['title'] ?? '';
-    }
-
-    /**
-     * 获取文章内容
-     * @param int $cid 文章cid
-     * @return string
-     */
-    public function getArticleContent($cid)
-    {
-        $rs = $this->db->fetchRow($this->db->select('table.contents.text')
-            ->from('table.contents')
-            ->where('table.contents.cid = ?', $cid)
-            ->order('table.contents.cid', Typecho_Db::SORT_ASC)
-            ->limit(1));
-        return $rs['text'] ?? '';
-    }
-
-    /**
-     * 获取文章数量
-     * @return int
-     */
-    public function getArticleCount()
-    {
-        $rs = $this->db->fetchRow($this->db->select('COUNT(*)')
-            ->from('table.contents')
-            ->where('table.contents.type = ?', 'post')
-            ->order('table.contents.cid', Typecho_Db::SORT_ASC)
-            ->limit(1));
-        return $rs['COUNT(*)'] ?? 0;
-    }
-
-    /**
-     * 获取文章列表
-     * @param int $pageSize 每页数量
-     * @param int $currentPage 当前页码
-     * @return array
-     */
-    public function getPostList($pageSize, $currentPage)
-    {
-        $query = $this->db->select()->from('table.contents')
-            ->where('status = ?', 'publish')
-            ->where('type = ?', 'post')
-            ->order('created', Typecho_Db::SORT_DESC)
-            ->page($currentPage, $pageSize);
-
-        return $this->db->fetchAll($query);
-    }
-
-    /**
-     * 获取所有页面
-     * @param int $pageSize 每页数量
-     * @param int $currentPage 当前页码
-     * @return array
-     */
-    public function getAllPages($pageSize, $currentPage)
-    {
-        $query = $this->db->select()->from('table.contents')
-            ->where('type = ?', 'page')
-            ->order('created', Typecho_Db::SORT_DESC)
-            ->page($currentPage, $pageSize);
-
-        return $this->db->fetchAll($query);
-    }
-
-    /**
-     * 获取页面总数
-     * @return int
-     */
-    public function getTotalPages()
-    {
-        $rs = $this->db->fetchRow($this->db->select('COUNT(*)')
-            ->from('table.contents')
-            ->where('type = ?', 'page'));
-        return (int) ($rs['COUNT(*)'] ?? 0);
-    }
-
-    /**
-     * 获取总文章数
-     * @return int
-     */
-    public function getTotalPosts()
-    {
-        $rs = $this->db->fetchRow($this->db->select('COUNT(*)')
-            ->from('table.contents')
-            ->where('status = ?', 'publish')
-            ->where('type = ?', 'post'));
-        return $rs['COUNT(*)'] ?? 0;
-    }
-
-    /**
-     * 获取分类下的文章列表
-     * @param int $cid 分类ID
-     * @return array
-     */
-    public function getPostsInCategory($mid, $pageSize = 10, $currentPage = 1)
-    {
-        $query = $this->db->select()->from('table.contents')
             ->join('table.relationships', 'table.contents.cid = table.relationships.cid')
-            ->where('table.relationships.mid = ?', $mid)
-            ->where('table.contents.status = ?', 'publish')
-            ->where('table.contents.type = ?', 'post')
+            ->where(
+                'table.relationships.mid = ? AND table.contents.status = ? AND table.contents.type = ?',
+                $mid,
+                'publish',
+                'post'
+            );
+        $rs = $this->db->fetchRow($query);
+        return (int)($rs['count'] ?? 0);
+    }
+
+    public function getTotalPostsInTag(int $mid): int
+    {
+        return $this->getTotalPostsInCategory($mid); // 逻辑相同
+    }
+
+    /**
+     * 获取列表通用方法
+     */
+    private function getList(string $table, array $conditions, int $pageSize, int $currentPage, string $order = 'created', string $sort = Typecho_Db::SORT_DESC): array
+    {
+        $query = $this->db->select()->from($table);
+
+        foreach (array_chunk($conditions, 3) as [$field, $op, $value]) {
+            $query->where("{$field} {$op} ?", $value);
+        }
+
+        return $this->db->fetchAll($query->order($order, $sort)->page($currentPage, $pageSize));
+    }
+
+    public function getPostList(int $pageSize, int $currentPage): array
+    {
+        return $this->getList('table.contents', [
+            'status',
+            '=',
+            'publish',
+            'type',
+            '=',
+            'post'
+        ], $pageSize, $currentPage);
+    }
+
+    public function getAllPages(int $pageSize, int $currentPage): array
+    {
+        return $this->getList('table.contents', [
+            'type',
+            '=',
+            'page'
+        ], $pageSize, $currentPage);
+    }
+
+    public function getPostsInCategory(int $mid, int $pageSize = 10, int $currentPage = 1): array
+    {
+        return $this->db->fetchAll($this->db->select()
+            ->from('table.contents')
+            ->join('table.relationships', 'table.contents.cid = table.relationships.cid')
+            ->where(
+                'table.relationships.mid = ? AND table.contents.status = ? AND table.contents.type = ?',
+                $mid,
+                'publish',
+                'post'
+            )
             ->order('table.contents.created', Typecho_Db::SORT_DESC)
-            ->page($currentPage, $pageSize);
+            ->page($currentPage, $pageSize));
+    }
 
-        return $this->db->fetchAll($query);
+    public function getPostsInTag(int $mid, int $pageSize = 10, int $currentPage = 1): array
+    {
+        return $this->getPostsInCategory($mid, $pageSize, $currentPage);
     }
 
     /**
-     * 获取分类下的文章总数
-     * @param int $cid 分类ID
-     * @return int
+     * 获取分类/标签通用方法
      */
-    public function getTotalPostsInCategory($cid)
+    public function getAllCategories(): array
     {
-        $rs = $this->db->fetchRow($this->db->select('COUNT(*)')
-            ->from('table.contents')
-            ->join('table.relationships', 'table.contents.cid = table.relationships.cid')
-            ->where('table.relationships.mid = ?', $cid)
-            ->where('table.contents.status = ?', 'publish')
-            ->where('table.contents.type = ?', 'post'));
-        return $rs['COUNT(*)'] ?? 0;
-    }
-
-    /**
-     * 获取标签下的文章列表
-     * @param int $tid 标签ID
-     * @return array
-     */
-    public function getPostsInTag($mid, $pageSize = 10, $currentPage = 1)
-    {
-        $query = $this->db->select()->from('table.contents')
-            ->join('table.relationships', 'table.contents.cid = table.relationships.cid')
-            ->where('table.relationships.mid = ?', $mid)
-            ->where('table.contents.status = ?', 'publish')
-            ->where('table.contents.type = ?', 'post')
-            ->order('table.contents.created', Typecho_Db::SORT_DESC)
-            ->page($currentPage, $pageSize);
-
-        return $this->db->fetchAll($query);
-    }
-
-    /**
-     * 获取标签下的文章总数
-     * @param int $tid 标签ID
-     * @return int
-     */
-    public function getTotalPostsInTag($tid)
-    {
-        $rs = $this->db->fetchRow($this->db->select('COUNT(*)')
-            ->from('table.contents')
-            ->join('table.relationships', 'table.contents.cid = table.relationships.cid')
-            ->where('table.relationships.mid = ?', $tid)
-            ->where('table.contents.status = ?', 'publish')
-            ->where('table.contents.type = ?', 'post'));
-        return $rs['COUNT(*)'] ?? 0;
-    }
-
-    /**
-     * 获取所有分类
-     * @return array
-     */
-    public function getAllCategories()
-    {
-        $query = $this->db->select()->from('table.metas')
+        return $this->db->fetchAll($this->db->select()
+            ->from('table.metas')
             ->where('type = ?', 'category')
-            ->order('order', Typecho_Db::SORT_ASC);
+            ->order('order', Typecho_Db::SORT_ASC));
+    }
 
-        return $this->db->fetchAll($query);
-    }
-    /**
-     * 通过slug查询分类详情
-     * @param string $slug slug
-     * @return array
-     */
-    public function getCategoryBySlug($slug)
+    public function getAllTags(): array
     {
-        return $this->db->fetchRow($this->db->select()->from('table.metas')
-            ->where('slug = ?', $slug)
-            ->where('type = ?', 'category')
-            ->limit(1));
-    }
-    /**
-     * 通过mid查询分类详情
-     * @param int $mid mid
-     * @return array
-     */
-    public function getCategoryByMid($mid)
-    {
-        return $this->db->fetchRow($this->db->select()->from('table.metas')
-            ->where('mid = ?', $mid)
-            ->where('type = ?', 'category')
-            ->limit(1));
-    }
-    /**
-     * 获取所有标签
-     * @return array
-     */
-    public function getAllTags()
-    {
-        $query = $this->db->select()->from('table.metas')
+        return $this->db->fetchAll($this->db->select()
+            ->from('table.metas')
             ->where('type = ?', 'tag')
-            ->order('count', Typecho_Db::SORT_DESC);
+            ->order('count', Typecho_Db::SORT_DESC));
+    }
 
-        return $this->db->fetchAll($query);
-    }
-    /**
-     * 通过slug查询标签详情
-     * @param string $slug slug
-     * @return array
-     */
-    public function getTagBySlug($slug)
+    private function getMetaBy(string $field, $value, string $type): ?array
     {
-        return $this->db->fetchRow($this->db->select()->from('table.metas')
-            ->where('slug = ?', $slug)
-            ->where('type = ?', 'tag')
+        return $this->db->fetchRow($this->db->select()
+            ->from('table.metas')
+            ->where("{$field} = ? AND type = ?", $value, $type)
             ->limit(1));
     }
-    /**
-     * 通过mid查询标签详情
-     * @param int $mid mid
-     * @return array
-     */
-    public function getTagByMid($mid)
+
+    public function getCategoryBySlug(string $slug): ?array
     {
-        return $this->db->fetchRow($this->db->select()->from('table.metas')
-            ->where('mid = ?', $mid)
-            ->where('type = ?', 'tag')
-            ->limit(1));
+        return $this->getMetaBy('slug', $slug, 'category');
+    }
+
+    public function getCategoryByMid(int $mid): ?array
+    {
+        return $this->getMetaBy('mid', $mid, 'category');
+    }
+
+    public function getTagBySlug(string $slug): ?array
+    {
+        return $this->getMetaBy('slug', $slug, 'tag');
+    }
+
+    public function getTagByMid(int $mid): ?array
+    {
+        return $this->getMetaBy('mid', $mid, 'tag');
     }
 
     /**
      * 获取文章详情
-     * @param int $cid 文章ID
-     * @return array|null
      */
-    public function getPostDetail($cid)
+    public function getPostDetail(int $cid): ?array
     {
-        return $this->db->fetchRow($this->db->select()->from('table.contents')->where('cid = ?', $cid)->limit(1));
+        return $this->db->fetchRow($this->db->select()
+            ->from('table.contents')
+            ->where('cid = ?', $cid)
+            ->limit(1));
     }
-    /**
-     * 通过slug获取文章详情
-     * @param string $slug slug
-     * @return array|null
-     */
-    public function getPostDetailBySlug($slug)
+
+    public function getPostDetailBySlug(string $slug): ?array
     {
-        return $this->db->fetchRow($this->db->select()->from('table.contents')->where('slug = ?', $slug)->limit(1));
+        return $this->db->fetchRow($this->db->select()
+            ->from('table.contents')
+            ->where('slug = ?', $slug)
+            ->limit(1));
     }
 
     /**
-     * 获取文章分类
-     * @param int $cid 文章ID
-     * @return array
+     * 获取文章关联数据
      */
-    public function getPostCategories($cid)
+    private function getPostRelations(int $cid, string $type): array
     {
-        $query = $this->db->select()->from('table.metas')
+        return $this->db->fetchAll($this->db->select()
+            ->from('table.metas')
             ->join('table.relationships', 'table.metas.mid = table.relationships.mid')
-            ->where('table.relationships.cid = ?', $cid)
-            ->where('table.metas.type = ?', 'category');
+            ->where('table.relationships.cid = ? AND table.metas.type = ?', $cid, $type));
+    }
 
-        return $this->db->fetchAll($query);
+    public function getPostCategories(int $cid): array
+    {
+        return $this->getPostRelations($cid, 'category');
+    }
+
+    public function getPostTags(int $cid): array
+    {
+        return $this->getPostRelations($cid, 'tag');
     }
 
     /**
-     * 获取文章标签
-     * @param int $cid 文章ID
-     * @return array
+     * 获取文章自定义字段
      */
-    public function getPostTags($cid)
+    public function getPostFields(int $cid): array
     {
-        $query = $this->db->select()->from('table.metas')
-            ->join('table.relationships', 'table.metas.mid = table.relationships.mid')
-            ->where('table.relationships.cid = ?', $cid)
-            ->where('table.metas.type = ?', 'tag');
-
-        return $this->db->fetchAll($query);
-    }
-
-    /**
-     * 获取文章的自定义字段
-     * @param int $cid 文章ID
-     * @return array
-     */
-    public function getPostFields($cid)
-    {
-        $query = $this->db->select()->from('table.fields')
-            ->where('cid = ?', $cid);
-
-        $fields = $this->db->fetchAll($query);
+        $fields = $this->db->fetchAll($this->db->select()
+            ->from('table.fields')
+            ->where('cid = ?', $cid));
 
         $result = [];
         foreach ($fields as $field) {
-            // 根据字段类型获取对应的值
             $valueField = $field['type'] . '_value';
             $result[$field['name']] = $field[$valueField] ?? null;
         }
@@ -493,82 +343,62 @@ class DB_API
     }
 
     /**
-     * 根据字段值获取文章
-     * @param string $fieldName 字段名
-     * @param mixed $fieldValue 字段值
-     * @param int $pageSize 每页数量
-     * @param int $currentPage 当前页码
-     * @return array
+     * 高级查询方法
      */
-    public function getPostsByField($fieldName, $fieldValue, $pageSize, $currentPage)
+    public function getPostsByField(string $fieldName, $fieldValue, int $pageSize, int $currentPage): array
     {
-        $query = $this->db->select('table.contents.*')
+        return $this->db->fetchAll($this->db->select('DISTINCT table.contents.*')
             ->from('table.contents')
             ->join('table.fields', 'table.contents.cid = table.fields.cid')
-            ->where('table.fields.name = ?', $fieldName)
-            ->where('table.fields.str_value = ?', $fieldValue)
-            ->where('table.contents.status = ?', 'publish')
-            ->where('table.contents.type = ?', 'post')
+            ->where(
+                'table.fields.name = ? AND table.fields.str_value = ? AND table.contents.status = ? AND table.contents.type = ?',
+                $fieldName,
+                $fieldValue,
+                'publish',
+                'post'
+            )
             ->order('table.contents.created', Typecho_Db::SORT_DESC)
-            ->page($currentPage, $pageSize);
-
-        return $this->db->fetchAll($query);
+            ->page($currentPage, $pageSize));
     }
 
-    /**
-     * 获取符合字段条件的文章总数
-     * @param string $fieldName 字段名
-     * @param mixed $fieldValue 字段值
-     * @return int
-     */
-    public function getPostsCountByField($fieldName, $fieldValue)
+    public function getPostsCountByField(string $fieldName, $fieldValue): int
     {
-        $rs = $this->db->fetchRow($this->db->select('COUNT(*)')
+        $query = $this->db->select(['COUNT(DISTINCT table.contents.cid)' => 'count'])
             ->from('table.contents')
             ->join('table.fields', 'table.contents.cid = table.fields.cid')
-            ->where('table.fields.name = ?', $fieldName)
-            ->where('table.fields.str_value = ?', $fieldValue)
-            ->where('table.contents.status = ?', 'publish')
-            ->where('table.contents.type = ?', 'post'));
-
-        return (int) ($rs['COUNT(*)'] ?? 0);
+            ->where(
+                'table.fields.name = ? AND table.fields.str_value = ? AND table.contents.status = ? AND table.contents.type = ?',
+                $fieldName,
+                $fieldValue,
+                'publish',
+                'post'
+            );
+        $rs = $this->db->fetchRow($query);
+        return (int)($rs['count'] ?? 0);
     }
 
-    /**
-     * 高级字段查询方法
-     * @param array $conditions 查询条件数组
-     * @param int $pageSize 每页数量
-     * @param int $currentPage 当前页码
-     * @return array
-     */
-    public function getPostsByAdvancedFields($conditions, $pageSize, $currentPage)
+    public function getPostsByAdvancedFields(array $conditions, int $pageSize, int $currentPage): array
     {
         $query = $this->db->select('DISTINCT table.contents.*')
             ->from('table.contents')
-            ->join('table.fields', 'table.contents.cid = table.fields.cid');
+            ->join('table.fields', 'table.contents.cid = table.fields.cid')
+            ->where('status = ? AND type = ?', 'publish', 'post');
 
-        // 处理多个字段条件
         foreach ($conditions as $condition) {
             $fieldName = $condition['name'] ?? '';
             $operator = $condition['operator'] ?? '=';
             $value = $condition['value'] ?? '';
             $valueType = $condition['value_type'] ?? 'str';
 
-            // 验证操作符
-            $validOperators = ['=', '!=', '>', '>=', '<', '<=', 'LIKE', 'NOT LIKE', 'IN', 'NOT IN'];
-            if (!in_array($operator, $validOperators)) {
+            if (!in_array($operator, ['=', '!=', '>', '>=', '<', '<=', 'LIKE', 'NOT LIKE', 'IN', 'NOT IN'])) {
                 continue;
             }
 
-            // 构建条件
             $valueField = $valueType . '_value';
             $where = "table.fields.name = ? AND table.fields.{$valueField} {$operator} ?";
 
-            // 处理IN/NOT IN操作符
             if (in_array($operator, ['IN', 'NOT IN'])) {
-                if (!is_array($value)) {
-                    $value = explode(',', $value);
-                }
+                $value = is_array($value) ? $value : explode(',', $value);
                 $placeholders = implode(',', array_fill(0, count($value), '?'));
                 $where = "table.fields.name = ? AND table.fields.{$valueField} {$operator} ({$placeholders})";
             }
@@ -576,35 +406,23 @@ class DB_API
             $query->where($where, $fieldName, ...(array)$value);
         }
 
-        // 基本条件
-        $query->where('table.contents.status = ?', 'publish')
-            ->where('table.contents.type = ?', 'post')
-            ->order('table.contents.created', Typecho_Db::SORT_DESC)
-            ->page($currentPage, $pageSize);
-
-        return $this->db->fetchAll($query);
+        return $this->db->fetchAll($query->order('created', Typecho_Db::SORT_DESC)->page($currentPage, $pageSize));
     }
 
-    /**
-     * 获取高级字段查询的文章总数
-     * @param array $conditions 查询条件数组
-     * @return int
-     */
-    public function getPostsCountByAdvancedFields($conditions)
+    public function getPostsCountByAdvancedFields(array $conditions): int
     {
-        $query = $this->db->select('COUNT(DISTINCT table.contents.cid)')
+        $query = $this->db->select(['COUNT(DISTINCT table.contents.cid)' => 'count'])
             ->from('table.contents')
-            ->join('table.fields', 'table.contents.cid = table.fields.cid');
+            ->join('table.fields', 'table.contents.cid = table.fields.cid')
+            ->where('status = ? AND type = ?', 'publish', 'post');
 
-        // 处理多个字段条件
         foreach ($conditions as $condition) {
             $fieldName = $condition['name'] ?? '';
             $operator = $condition['operator'] ?? '=';
             $value = $condition['value'] ?? '';
             $valueType = $condition['value_type'] ?? 'str';
 
-            $validOperators = ['=', '!=', '>', '>=', '<', '<=', 'LIKE', 'NOT LIKE', 'IN', 'NOT IN'];
-            if (!in_array($operator, $validOperators)) {
+            if (!in_array($operator, ['=', '!=', '>', '>=', '<', '<=', 'LIKE', 'NOT LIKE', 'IN', 'NOT IN'])) {
                 continue;
             }
 
@@ -612,9 +430,7 @@ class DB_API
             $where = "table.fields.name = ? AND table.fields.{$valueField} {$operator} ?";
 
             if (in_array($operator, ['IN', 'NOT IN'])) {
-                if (!is_array($value)) {
-                    $value = explode(',', $value);
-                }
+                $value = is_array($value) ? $value : explode(',', $value);
                 $placeholders = implode(',', array_fill(0, count($value), '?'));
                 $where = "table.fields.name = ? AND table.fields.{$valueField} {$operator} ({$placeholders})";
             }
@@ -622,68 +438,41 @@ class DB_API
             $query->where($where, $fieldName, ...(array)$value);
         }
 
-        $query->where('table.contents.status = ?', 'publish')
-            ->where('table.contents.type = ?', 'post');
-
         $rs = $this->db->fetchRow($query);
-        return (int) ($rs['COUNT(DISTINCT table.contents.cid)'] ?? 0);
+        return (int)($rs['count'] ?? 0);
     }
 
     /**
      * 搜索文章
-     * @param string $keyword 搜索关键词
-     * @param int $pageSize 每页数量
-     * @param int $currentPage 当前页码
-     * @return array
      */
-    public function searchPosts($keyword, $pageSize, $currentPage)
+    public function searchPosts(string $keyword, int $pageSize, int $currentPage): array
     {
         try {
-            // 使用 Typecho 的过滤方法处理搜索词
-            $filteredKeyword = Typecho_Common::filterSearchQuery($keyword);
-            $searchKeyword = '%' . str_replace(' ', '%', $filteredKeyword) . '%';
+            $searchKeyword = '%' . str_replace(' ', '%', Typecho_Common::filterSearchQuery($keyword)) . '%';
 
-            $query = $this->db->select()->from('table.contents')
-                ->where('status = ?', 'publish')
-                ->where('type = ?', 'post')
-                ->where(
-                    '(title LIKE ? OR text LIKE ?)',
-                    $searchKeyword,
-                    $searchKeyword
-                )
+            return $this->db->fetchAll($this->db->select()
+                ->from('table.contents')
+                ->where('status = ? AND type = ? AND (title LIKE ? OR text LIKE ?)', 'publish', 'post', $searchKeyword, $searchKeyword)
                 ->order('created', Typecho_Db::SORT_DESC)
-                ->page($currentPage, $pageSize);
-
-            return $this->db->fetchAll($query);
+                ->page($currentPage, $pageSize));
         } catch (Exception $e) {
             error_log("Database search error: " . $e->getMessage());
             return [];
         }
     }
 
-    /**
-     * 获取搜索结果总数
-     * @param string $keyword 搜索关键词
-     * @return int
-     */
-    public function getSearchPostsCount($keyword)
+    public function getSearchPostsCount(string $keyword): int
     {
         try {
-            // 使用 Typecho 的过滤方法处理搜索词
-            $filteredKeyword = Typecho_Common::filterSearchQuery($keyword);
-            $searchKeyword = '%' . str_replace(' ', '%', $filteredKeyword) . '%';
-
-            $rs = $this->db->fetchRow($this->db->select('COUNT(*)')
-                ->from('table.contents')
-                ->where('status = ?', 'publish')
-                ->where('type = ?', 'post')
-                ->where(
-                    '(title LIKE ? OR text LIKE ?)',
-                    $searchKeyword,
-                    $searchKeyword
-                ));
-
-            return (int) ($rs['COUNT(*)'] ?? 0);
+            $searchKeyword = '%' . str_replace(' ', '%', Typecho_Common::filterSearchQuery($keyword)) . '%';
+            return $this->getCount(
+                'table.contents',
+                'status = ? AND type = ? AND (title LIKE ? OR text LIKE ?)',
+                'publish',
+                'post',
+                $searchKeyword,
+                $searchKeyword
+            );
         } catch (Exception $e) {
             error_log("Count search error: " . $e->getMessage());
             return 0;
@@ -691,82 +480,78 @@ class DB_API
     }
 
     /**
-     * 获取所有评论列表
-     * @param int $pageSize 每页数量
-     * @param int $currentPage 当前页码
-     * @return array
+     * 评论相关方法
      */
-    public function getAllComments($pageSize, $currentPage)
+    public function getAllComments(int $pageSize, int $currentPage): array
     {
-        $query = $this->db->select()->from('table.comments')
-            ->order('created', Typecho_Db::SORT_DESC)
-            ->limit($pageSize, ($currentPage - 1) * $pageSize);
+        return $this->getList('table.comments', [], $pageSize, $currentPage);
+    }
 
-        return $this->db->fetchAll($query);
-    }
-    /**
-     * 获取总评论数
-     * @return int
-     */
-    public function getTotalComments()
+    public function getTotalComments(): int
     {
-        $rs = $this->db->fetchRow($this->db->select('COUNT(*)')->from('table.comments'));
-        return (int) ($rs['COUNT(*)'] ?? 0);
+        return $this->getCount('table.comments');
     }
-    /**
-     * 获取文章的评论
-     * @param int $cid 文章ID
-     * @param int $pageSize 每页数量
-     * @param int $currentPage 当前页码
-     * @return array
-     */
-    public function getPostComments($cid, $pageSize, $currentPage)
-    {
-        $query = $this->db->select()->from('table.comments')
-            ->where('cid = ?', $cid)
-            ->order('created', Typecho_Db::SORT_ASC)
-            ->page($currentPage, $pageSize);
 
-        return $this->db->fetchAll($query);
-    }
-    /**
-     * 获取文章的评论总数
-     * @param int $cid 文章ID
-     * @return int
-     */
-    public function getTotalPostComments($cid)
+    public function getPostComments(int $cid, int $pageSize, int $currentPage): array
     {
-        $rs = $this->db->fetchRow($this->db->select('COUNT(*)')
-            ->from('table.comments')
-            ->where('cid = ?', $cid));
-        return (int) ($rs['COUNT(*)'] ?? 0);
+        return $this->getList('table.comments', [
+            'cid',
+            '=',
+            $cid
+        ], $pageSize, $currentPage, 'created', Typecho_Db::SORT_ASC);
+    }
+
+    public function getTotalPostComments(int $cid): int
+    {
+        return $this->getCount('table.comments', 'cid = ?', $cid);
     }
 
     /**
-     * 获取所有附件列表
-     * @param int $pageSize 每页数量
-     * @param int $currentPage 当前页码
-     * @return array
+     * 获取评论详情
+     *
+     * @param int $commentId
+     * @return array|null
      */
-    public function getAllAttachments($pageSize, $currentPage)
+    public function getCommentById(int $commentId): ?array
     {
-        $query = $this->db->select()->from('table.contents')
-            ->where('type = ?', 'attachment')
-            ->order('created', Typecho_Db::SORT_DESC)
-            ->page($currentPage, $pageSize);
-
-        return $this->db->fetchAll($query);
+        try {
+            return $this->db->fetchRow($this->db->select()
+                ->from('table.comments')
+                ->where('coid = ?', $commentId)
+                ->limit(1));
+        } catch (Exception $e) {
+            error_log("Database error in getCommentById: " . $e->getMessage());
+            return null;
+        }
     }
 
     /**
-     * 获取附件总数
-     * @return int
+     * 插入评论
      */
-    public function getTotalAttachments()
+    public function insertComment(array $commentData): int
     {
-        $rs = $this->db->fetchRow($this->db->select('COUNT(*)')
-            ->from('table.contents')
-            ->where('type = ?', 'attachment'));
-        return (int) ($rs['COUNT(*)'] ?? 0);
+        try {
+            return $this->db->query($this->db->insert('table.comments')->rows($commentData));
+        } catch (Exception $e) {
+            error_log("插入评论失败: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * 附件相关方法
+     */
+    public function getAllAttachments(int $pageSize, int $currentPage): array
+    {
+        return $this->getList('table.contents', [
+            'type',
+            '=',
+            'attachment'
+        ], $pageSize, $currentPage);
+    }
+
+    public function getTotalAttachments(): int
+    {
+        return $this->getCount('table.contents', 'type = ?', 'attachment');
     }
 }
