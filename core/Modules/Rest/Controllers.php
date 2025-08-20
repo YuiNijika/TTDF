@@ -191,6 +191,88 @@ class IndexController extends BaseController
                             ]
                         ]
                     ],
+                    'pages' => [
+                        'method' => 'GET',
+                        'path' => '/pages',
+                        'description' => '获取页面列表',
+                        'parameters' => [
+                            'page' => [
+                                'type' => 'integer',
+                                'description' => '页码',
+                                'required' => false,
+                                'default' => 1,
+                            ],
+                            'pageSize' => [
+                                'type' => 'integer',
+                                'description' => '每页数量',
+                                'required' => false,
+                                'default' => 10,
+                            ]
+                        ],
+                        'response' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'data' => [
+                                    'type' => 'array',
+                                    'items' => [
+                                        'type' => 'object',
+                                        'properties' => [
+                                            'cid' => ['type' => 'integer', 'description' => '页面ID'],
+                                            'title' => ['type' => 'string', 'description' => '页面标题'],
+                                            'slug' => ['type' => 'string', 'description' => '页面别名'],
+                                            'type' => ['type' => 'string', 'description' => '内容类型'],
+                                            'created' => ['type' => 'string', 'format' => 'date-time', 'description' => '创建时间'],
+                                            'modified' => ['type' => 'string', 'format' => 'date-time', 'description' => '修改时间'],
+                                            'commentsNum' => ['type' => 'integer', 'description' => '评论数'],
+                                            'authorId' => ['type' => 'integer', 'description' => '作者ID'],
+                                            'status' => ['type' => 'string', 'description' => '页面状态'],
+                                            'contentType' => ['type' => 'string', 'description' => '内容类型'],
+                                            'fields' => ['type' => 'array', 'description' => '自定义字段'],
+                                            'content' => ['type' => 'string', 'description' => '页面内容'],
+                                            'excerpt' => ['type' => 'string', 'description' => '页面摘要'],
+                                            'categories' => [
+                                                'type' => 'array',
+                                                'items' => [
+                                                    'type' => 'object',
+                                                    'properties' => [
+                                                        'mid' => ['type' => 'integer'],
+                                                        'name' => ['type' => 'string'],
+                                                        'slug' => ['type' => 'string'],
+                                                        'type' => ['type' => 'string'],
+                                                        'description' => ['type' => 'string'],
+                                                        'count' => ['type' => 'integer'],
+                                                        'order' => ['type' => 'integer'],
+                                                        'parent' => ['type' => 'integer'],
+                                                        'cid' => ['type' => 'integer']
+                                                    ]
+                                                ]
+                                            ],
+                                            'tags' => [
+                                                'type' => 'array',
+                                                'items' => [
+                                                    'type' => 'object'
+                                                ]
+                                            ]
+                                        ]
+                                    ]
+                                ],
+                                'meta' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'pagination' => [
+                                            'type' => 'object',
+                                            'properties' => [
+                                                'total' => ['type' => 'integer'],
+                                                'pageSize' => ['type' => 'integer'],
+                                                'currentPage' => ['type' => 'integer'],
+                                                'totalPages' => ['type' => 'integer']
+                                            ]
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ],
                     'content' => [
                         'method' => 'GET',
                         'path' => '/content/{id|slug}',
@@ -251,6 +333,442 @@ class IndexController extends BaseController
                                     'properties' => [
                                         'format' => ['type' => 'string'],
                                         'timestamp' => ['type' => 'integer']
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ],
+                    'category' => [
+                        'method' => 'GET',
+                        'path' => '/category[/{id|slug}]',
+                        'description' => '获取分类列表或分类详情',
+                        'parameters' => [
+                            'id|slug' => [
+                                'type' => 'string|integer',
+                                'description' => '分类ID或别名（获取单个分类）',
+                                'required' => false,
+                            ],
+                            'page' => [
+                                'type' => 'integer',
+                                'description' => '页码',
+                                'required' => false,
+                                'default' => 1,
+                            ],
+                            'pageSize' => [
+                                'type' => 'integer',
+                                'description' => '每页数量',
+                                'required' => false,
+                                'default' => 10,
+                            ]
+                        ],
+                        'response' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'data' => [
+                                    'type' => 'array|object',
+                                    'description' => '分类数据或分类列表',
+                                    'items' => [
+                                        'type' => 'object',
+                                        'properties' => [
+                                            'mid' => ['type' => 'integer'],
+                                            'name' => ['type' => 'string'],
+                                            'slug' => ['type' => 'string'],
+                                            'type' => ['type' => 'string'],
+                                            'description' => ['type' => 'string'],
+                                            'count' => ['type' => 'integer'],
+                                            'order' => ['type' => 'integer'],
+                                            'parent' => ['type' => 'integer']
+                                        ]
+                                    ]
+                                ],
+                                'meta' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'pagination' => [
+                                            'type' => 'object',
+                                            'properties' => [
+                                                'total' => ['type' => 'integer'],
+                                                'pageSize' => ['type' => 'integer'],
+                                                'currentPage' => ['type' => 'integer'],
+                                                'totalPages' => ['type' => 'integer']
+                                            ]
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ],
+                    'tag' => [
+                        'method' => 'GET',
+                        'path' => '/tag[/{id|slug}]',
+                        'description' => '获取标签列表或标签详情',
+                        'parameters' => [
+                            'id|slug' => [
+                                'type' => 'string|integer',
+                                'description' => '标签ID或别名（获取单个标签）',
+                                'required' => false,
+                            ],
+                            'page' => [
+                                'type' => 'integer',
+                                'description' => '页码',
+                                'required' => false,
+                                'default' => 1,
+                            ],
+                            'pageSize' => [
+                                'type' => 'integer',
+                                'description' => '每页数量',
+                                'required' => false,
+                                'default' => 10,
+                            ]
+                        ],
+                        'response' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'data' => [
+                                    'type' => 'array|object',
+                                    'description' => '标签数据或标签列表',
+                                    'items' => [
+                                        'type' => 'object',
+                                        'properties' => [
+                                            'mid' => ['type' => 'integer'],
+                                            'name' => ['type' => 'string'],
+                                            'slug' => ['type' => 'string'],
+                                            'type' => ['type' => 'string'],
+                                            'description' => ['type' => 'string'],
+                                            'count' => ['type' => 'integer'],
+                                            'order' => ['type' => 'integer'],
+                                            'parent' => ['type' => 'integer']
+                                        ]
+                                    ]
+                                ],
+                                'meta' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'pagination' => [
+                                            'type' => 'object',
+                                            'properties' => [
+                                                'total' => ['type' => 'integer'],
+                                                'pageSize' => ['type' => 'integer'],
+                                                'currentPage' => ['type' => 'integer'],
+                                                'totalPages' => ['type' => 'integer']
+                                            ]
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ],
+                    'search' => [
+                        'method' => 'GET',
+                        'path' => '/search/{keyword}',
+                        'description' => '搜索文章',
+                        'parameters' => [
+                            'keyword' => [
+                                'type' => 'string',
+                                'description' => '搜索关键词',
+                                'required' => true,
+                            ],
+                            'page' => [
+                                'type' => 'integer',
+                                'description' => '页码',
+                                'required' => false,
+                                'default' => 1,
+                            ],
+                            'pageSize' => [
+                                'type' => 'integer',
+                                'description' => '每页数量',
+                                'required' => false,
+                                'default' => 10,
+                            ]
+                        ],
+                        'response' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'data' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'keyword' => ['type' => 'string', 'description' => '搜索关键词'],
+                                        'posts' => [
+                                            'type' => 'array',
+                                            'items' => [
+                                                'type' => 'object',
+                                                'properties' => [
+                                                    'cid' => ['type' => 'integer', 'description' => '文章ID'],
+                                                    'title' => ['type' => 'string', 'description' => '文章标题'],
+                                                    'slug' => ['type' => 'string', 'description' => '文章别名'],
+                                                    'type' => ['type' => 'string', 'description' => '内容类型'],
+                                                    'created' => ['type' => 'string', 'format' => 'date-time', 'description' => '创建时间'],
+                                                    'modified' => ['type' => 'string', 'format' => 'date-time', 'description' => '修改时间'],
+                                                    'commentsNum' => ['type' => 'integer', 'description' => '评论数'],
+                                                    'authorId' => ['type' => 'integer', 'description' => '作者ID'],
+                                                    'status' => ['type' => 'string', 'description' => '文章状态'],
+                                                    'contentType' => ['type' => 'string', 'description' => '内容类型'],
+                                                    'fields' => ['type' => 'array', 'description' => '自定义字段'],
+                                                    'content' => ['type' => 'string', 'description' => '文章内容'],
+                                                    'excerpt' => ['type' => 'string', 'description' => '文章摘要'],
+                                                    'categories' => [
+                                                        'type' => 'array',
+                                                        'items' => [
+                                                            'type' => 'object',
+                                                            'properties' => [
+                                                                'mid' => ['type' => 'integer'],
+                                                                'name' => ['type' => 'string'],
+                                                                'slug' => ['type' => 'string'],
+                                                                'type' => ['type' => 'string'],
+                                                                'description' => ['type' => 'string'],
+                                                                'count' => ['type' => 'integer'],
+                                                                'order' => ['type' => 'integer'],
+                                                                'parent' => ['type' => 'integer'],
+                                                                'cid' => ['type' => 'integer']
+                                                            ]
+                                                        ]
+                                                    ],
+                                                    'tags' => [
+                                                        'type' => 'array',
+                                                        'items' => [
+                                                            'type' => 'object'
+                                                        ]
+                                                    ]
+                                                ]
+                                            ]
+                                        ]
+                                    ]
+                                ],
+                                'meta' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'pagination' => [
+                                            'type' => 'object',
+                                            'properties' => [
+                                                'total' => ['type' => 'integer'],
+                                                'pageSize' => ['type' => 'integer'],
+                                                'currentPage' => ['type' => 'integer'],
+                                                'totalPages' => ['type' => 'integer']
+                                            ]
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ],
+                    'options' => [
+                        'method' => 'GET',
+                        'path' => '/options[/{name}]',
+                        'description' => '获取站点选项',
+                        'parameters' => [
+                            'name' => [
+                                'type' => 'string',
+                                'description' => '选项名称（获取单个选项）',
+                                'required' => false,
+                            ]
+                        ],
+                        'response' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'data' => [
+                                    'type' => 'object|array',
+                                    'description' => '选项数据'
+                                ]
+                            ]
+                        ]
+                    ],
+                    'fields' => [
+                        'method' => 'GET',
+                        'path' => '/fields/{name}/{value}',
+                        'description' => '根据字段值搜索文章',
+                        'parameters' => [
+                            'name' => [
+                                'type' => 'string',
+                                'description' => '字段名称',
+                                'required' => true,
+                            ],
+                            'value' => [
+                                'type' => 'string',
+                                'description' => '字段值',
+                                'required' => true,
+                            ],
+                            'page' => [
+                                'type' => 'integer',
+                                'description' => '页码',
+                                'required' => false,
+                                'default' => 1,
+                            ],
+                            'pageSize' => [
+                                'type' => 'integer',
+                                'description' => '每页数量',
+                                'required' => false,
+                                'default' => 10,
+                            ]
+                        ],
+                        'response' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'data' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'conditions' => [
+                                            'type' => 'object',
+                                            'properties' => [
+                                                'name' => ['type' => 'string'],
+                                                'value' => ['type' => 'string']
+                                            ]
+                                        ],
+                                        'posts' => [
+                                            'type' => 'array',
+                                            'items' => [
+                                                'type' => 'object',
+                                                'properties' => [
+                                                    'cid' => ['type' => 'integer', 'description' => '文章ID'],
+                                                    'title' => ['type' => 'string', 'description' => '文章标题'],
+                                                    'slug' => ['type' => 'string', 'description' => '文章别名'],
+                                                    'type' => ['type' => 'string', 'description' => '内容类型'],
+                                                    'created' => ['type' => 'string', 'format' => 'date-time', 'description' => '创建时间'],
+                                                    'modified' => ['type' => 'string', 'format' => 'date-time', 'description' => '修改时间'],
+                                                    'commentsNum' => ['type' => 'integer', 'description' => '评论数'],
+                                                    'authorId' => ['type' => 'integer', 'description' => '作者ID'],
+                                                    'status' => ['type' => 'string', 'description' => '文章状态'],
+                                                    'contentType' => ['type' => 'string', 'description' => '内容类型'],
+                                                    'fields' => ['type' => 'array', 'description' => '自定义字段'],
+                                                    'content' => ['type' => 'string', 'description' => '文章内容'],
+                                                    'excerpt' => ['type' => 'string', 'description' => '文章摘要'],
+                                                    'categories' => [
+                                                        'type' => 'array',
+                                                        'items' => [
+                                                            'type' => 'object',
+                                                            'properties' => [
+                                                                'mid' => ['type' => 'integer'],
+                                                                'name' => ['type' => 'string'],
+                                                                'slug' => ['type' => 'string'],
+                                                                'type' => ['type' => 'string'],
+                                                                'description' => ['type' => 'string'],
+                                                                'count' => ['type' => 'integer'],
+                                                                'order' => ['type' => 'integer'],
+                                                                'parent' => ['type' => 'integer'],
+                                                                'cid' => ['type' => 'integer']
+                                                            ]
+                                                        ]
+                                                    ],
+                                                    'tags' => [
+                                                        'type' => 'array',
+                                                        'items' => [
+                                                            'type' => 'object'
+                                                        ]
+                                                    ]
+                                                ]
+                                            ]
+                                        ]
+                                    ]
+                                ],
+                                'meta' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'pagination' => [
+                                            'type' => 'object',
+                                            'properties' => [
+                                                'total' => ['type' => 'integer'],
+                                                'pageSize' => ['type' => 'integer'],
+                                                'currentPage' => ['type' => 'integer'],
+                                                'totalPages' => ['type' => 'integer']
+                                            ]
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ],
+                    'advancedFields' => [
+                        'method' => 'GET',
+                        'path' => '/advancedFields',
+                        'description' => '高级字段搜索',
+                        'parameters' => [
+                            'conditions' => [
+                                'type' => 'string',
+                                'description' => 'JSON格式的搜索条件',
+                                'required' => true,
+                            ],
+                            'page' => [
+                                'type' => 'integer',
+                                'description' => '页码',
+                                'required' => false,
+                                'default' => 1,
+                            ],
+                            'pageSize' => [
+                                'type' => 'integer',
+                                'description' => '每页数量',
+                                'required' => false,
+                                'default' => 10,
+                            ]
+                        ],
+                        'response' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'data' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'conditions' => [
+                                            'type' => 'array',
+                                            'items' => [
+                                                'type' => 'object'
+                                            ]
+                                        ],
+                                        'posts' => [
+                                            'type' => 'array',
+                                            'items' => [
+                                                'type' => 'object',
+                                                'properties' => [
+                                                    'cid' => ['type' => 'integer', 'description' => '文章ID'],
+                                                    'title' => ['type' => 'string', 'description' => '文章标题'],
+                                                    'slug' => ['type' => 'string', 'description' => '文章别名'],
+                                                    'type' => ['type' => 'string', 'description' => '内容类型'],
+                                                    'created' => ['type' => 'string', 'format' => 'date-time', 'description' => '创建时间'],
+                                                    'modified' => ['type' => 'string', 'format' => 'date-time', 'description' => '修改时间'],
+                                                    'commentsNum' => ['type' => 'integer', 'description' => '评论数'],
+                                                    'authorId' => ['type' => 'integer', 'description' => '作者ID'],
+                                                    'status' => ['type' => 'string', 'description' => '文章状态'],
+                                                    'contentType' => ['type' => 'string', 'description' => '内容类型'],
+                                                    'fields' => ['type' => 'array', 'description' => '自定义字段'],
+                                                    'content' => ['type' => 'string', 'description' => '文章内容'],
+                                                    'excerpt' => ['type' => 'string', 'description' => '文章摘要'],
+                                                    'categories' => [
+                                                        'type' => 'array',
+                                                        'items' => [
+                                                            'type' => 'object',
+                                                            'properties' => [
+                                                                'mid' => ['type' => 'integer'],
+                                                                'name' => ['type' => 'string'],
+                                                                'slug' => ['type' => 'string'],
+                                                                'type' => ['type' => 'string'],
+                                                                'description' => ['type' => 'string'],
+                                                                'count' => ['type' => 'integer'],
+                                                                'order' => ['type' => 'integer'],
+                                                                'parent' => ['type' => 'integer'],
+                                                                'cid' => ['type' => 'integer']
+                                                            ]
+                                                        ]
+                                                    ],
+                                                    'tags' => [
+                                                        'type' => 'array',
+                                                        'items' => [
+                                                            'type' => 'object'
+                                                        ]
+                                                    ]
+                                                ]
+                                            ]
+                                        ]
+                                    ]
+                                ],
+                                'meta' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'pagination' => [
+                                            'type' => 'object',
+                                            'properties' => [
+                                                'total' => ['type' => 'integer'],
+                                                'pageSize' => ['type' => 'integer'],
+                                                'currentPage' => ['type' => 'integer'],
+                                                'totalPages' => ['type' => 'integer']
+                                            ]
+                                        ]
                                     ]
                                 ]
                             ]
@@ -387,6 +905,88 @@ class IndexController extends BaseController
                             ]
                         ]
                     ],
+                    'attachments' => [
+                        'method' => 'GET',
+                        'path' => '/attachments',
+                        'description' => '获取附件列表',
+                        'parameters' => [
+                            'page' => [
+                                'type' => 'integer',
+                                'description' => '页码',
+                                'required' => false,
+                                'default' => 1,
+                            ],
+                            'pageSize' => [
+                                'type' => 'integer',
+                                'description' => '每页数量',
+                                'required' => false,
+                                'default' => 10,
+                            ]
+                        ],
+                        'response' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'data' => [
+                                    'type' => 'array',
+                                    'items' => [
+                                        'type' => 'object',
+                                        'properties' => [
+                                            'cid' => ['type' => 'integer', 'description' => '附件ID'],
+                                            'title' => ['type' => 'string', 'description' => '附件标题'],
+                                            'slug' => ['type' => 'string', 'description' => '附件别名'],
+                                            'type' => ['type' => 'string', 'description' => '内容类型'],
+                                            'created' => ['type' => 'string', 'format' => 'date-time', 'description' => '创建时间'],
+                                            'modified' => ['type' => 'string', 'format' => 'date-time', 'description' => '修改时间'],
+                                            'commentsNum' => ['type' => 'integer', 'description' => '评论数'],
+                                            'authorId' => ['type' => 'integer', 'description' => '作者ID'],
+                                            'status' => ['type' => 'string', 'description' => '附件状态'],
+                                            'contentType' => ['type' => 'string', 'description' => '内容类型'],
+                                            'fields' => ['type' => 'array', 'description' => '自定义字段'],
+                                            'content' => ['type' => 'string', 'description' => '附件内容'],
+                                            'excerpt' => ['type' => 'string', 'description' => '附件摘要'],
+                                            'categories' => [
+                                                'type' => 'array',
+                                                'items' => [
+                                                    'type' => 'object',
+                                                    'properties' => [
+                                                        'mid' => ['type' => 'integer'],
+                                                        'name' => ['type' => 'string'],
+                                                        'slug' => ['type' => 'string'],
+                                                        'type' => ['type' => 'string'],
+                                                        'description' => ['type' => 'string'],
+                                                        'count' => ['type' => 'integer'],
+                                                        'order' => ['type' => 'integer'],
+                                                        'parent' => ['type' => 'integer'],
+                                                        'cid' => ['type' => 'integer']
+                                                    ]
+                                                ]
+                                            ],
+                                            'tags' => [
+                                                'type' => 'array',
+                                                'items' => [
+                                                    'type' => 'object'
+                                                ]
+                                            ]
+                                        ]
+                                    ]
+                                ],
+                                'meta' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'pagination' => [
+                                            'type' => 'object',
+                                            'properties' => [
+                                                'total' => ['type' => 'integer'],
+                                                'pageSize' => ['type' => 'integer'],
+                                                'currentPage' => ['type' => 'integer'],
+                                                'totalPages' => ['type' => 'integer']
+                                            ]
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
                 ]
             ]
         ];
@@ -588,7 +1188,7 @@ class FieldController extends BaseController
         // 检查字段是否受限
         $limitConfig = TTDF_CONFIG['REST_API']['LIMIT'] ?? [];
         $restrictedFields = !empty($limitConfig['FIELDS']) ? explode(',', $limitConfig['FIELDS']) : [];
-        
+
         if (in_array($fieldName, $restrictedFields)) {
             $this->response->error('Access Forbidden', HttpCode::FORBIDDEN);
         }
@@ -621,7 +1221,7 @@ class FieldController extends BaseController
         // 检查字段是否受限
         $limitConfig = TTDF_CONFIG['REST_API']['LIMIT'] ?? [];
         $restrictedFields = !empty($limitConfig['FIELDS']) ? explode(',', $limitConfig['FIELDS']) : [];
-        
+
         // 检查条件中是否包含受限字段
         foreach ($decodedConditions as $condition) {
             if (isset($condition['name']) && in_array($condition['name'], $restrictedFields)) {
