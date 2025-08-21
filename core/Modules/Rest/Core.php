@@ -258,7 +258,7 @@ final class ApiFormatter
             'author' => $comment['author'] ?? '',
             'mail' => $comment['mail'] ?? '',
             'url' => $comment['url'] ?? '',
-            'ip' => $comment['ip'] ?? '',
+            // 'ip' => $comment['ip'] ?? '',
             'created' => date('c', $comment['created'] ?? time()),
             'modified' => date('c', $comment['modified'] ?? time()),
             'text' => $this->formatContent($comment['text'] ?? ''),
