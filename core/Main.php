@@ -126,7 +126,6 @@ class TTDF_Main
         $moduleFiles = [
             'OPP.php',
             'Api.php',
-            'Function.php',
             'Options.php',
             'RouterAuto.php',
         ];
