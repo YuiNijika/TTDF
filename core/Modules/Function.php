@@ -32,21 +32,8 @@ if (TTDF_CONFIG['FIELDS_ENABLED']) {
     function themeFields($layout)
     {
         $fieldElements = require __DIR__ . '/../../app/Fields.php';
-        
-        // 检查返回值是否为数组
-        if (!is_array($fieldElements)) {
-            // 如果不是数组，记录错误或处理异常情况
-            error_log('Fields.php did not return an array');
-            return;
-        }
-        
         // 循环添加字段
         foreach ($fieldElements as $field) {
-            // 确保 $field 是数组
-            if (!is_array($field)) {
-                continue;
-            }
-            
             $element = TTDF_FormElement(
                 $field['type'],
                 $field['name'],
