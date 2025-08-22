@@ -520,10 +520,15 @@ function themeConfig($form)
 
         .TTDF-content {
             flex: 1;
-            padding: 10px;
-            background: #ffffff;
+            padding: 14px;
             overflow-y: auto;
             max-height: 520px;
+        }
+
+        .TTDF-content-card {
+            border-radius: 4px;
+            padding: 14px;
+            border: 1px solid #ddd;
         }
 
         .TTDF-tab-panel {
@@ -750,11 +755,7 @@ function themeConfig($form)
 
         /* 表单样式 */
         .form-group {
-            margin-bottom: 20px;
-            background: #ffffff;
-            border-radius: 4px;
-            padding: 16px;
-            border: 1px solid #ddd;
+            margin-bottom: 10px;
         }
 
         .form-group label {
@@ -1096,31 +1097,33 @@ function themeConfig($form)
                     ?>
                 </nav>
                 <div class="TTDF-content">
-                    <?php
-                    // 生成Tab内容
-                    $first_tab = true;
-                    foreach ($tabs as $tab_id => $tab) {
-                        $show = $first_tab ? 'active' : '';
-                        echo '<div id="' . $tab_id . '" class="TTDF-tab-panel ' . $show . '">';
+                    <div class="TTDF-content-card">
+                        <?php
+                        // 生成Tab内容
+                        $first_tab = true;
+                        foreach ($tabs as $tab_id => $tab) {
+                            $show = $first_tab ? 'active' : '';
+                            echo '<div id="' . $tab_id . '" class="TTDF-tab-panel ' . $show . '">';
 
-                        if (isset($tab['html'])) {
-                            foreach ($tab['html'] as $html) {
-                                echo $html['content'];
-                            }
-                        } else {
-                            foreach ($tab['fields'] as $field) {
-                                if ($field['type'] === 'Html') {
-                                    echo $field['content'];
-                                } else {
-                                    echo TTDF_CreateFormElement($field);
+                            if (isset($tab['html'])) {
+                                foreach ($tab['html'] as $html) {
+                                    echo $html['content'];
+                                }
+                            } else {
+                                foreach ($tab['fields'] as $field) {
+                                    if ($field['type'] === 'Html') {
+                                        echo $field['content'];
+                                    } else {
+                                        echo TTDF_CreateFormElement($field);
+                                    }
                                 }
                             }
-                        }
 
-                        echo '</div>';
-                        $first_tab = false;
-                    }
-                    ?>
+                            echo '</div>';
+                            $first_tab = false;
+                        }
+                        ?>
+                    </div>
                 </div>
             </div>
         </div>
