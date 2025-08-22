@@ -17,7 +17,7 @@ return [
     'REST_API' => [
         'ENABLED' => false, // 是否启用REST API
         'ROUTE' => 'ty-json', // REST API路由
-        'OVERRIDE_SETTING' => 'TTDF_RESTAPI_Switch', // 主题设置项名称，用于覆盖REST API开关
+        'OVERRIDE_SETTING' => 'RESTAPI_Switch', // 主题设置项名称，用于覆盖REST API开关
         'TOKEN' => [
             'ENABLED' => false, // 是否启用Token
             'VALUE' => '1778273540', // Token值

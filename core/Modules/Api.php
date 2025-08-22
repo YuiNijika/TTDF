@@ -11,24 +11,32 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 // 配置与常量定义
 // -----------------------------------------------------------------------------
 // 检查REST API是否启用
-$restApiEnabled = true; // 默认值
+$requestUri = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '';
+$basePath = '/' . ltrim(__TTDF_RESTAPI_ROUTE__ ?? '', '/');
+$pathParts = explode('/', trim(str_replace($basePath, '', $requestUri), '/'));
+$endpoint = $pathParts[0] ?? '';
 
-// 检查主题设置项
-$restApiSwitch = Get::Options(TTDF_CONFIG['REST_API']['OVERRIDE_SETTING'] ?? 'TTDF_RESTAPI_Switch');
-if ($restApiSwitch === 'false') {
-    $restApiEnabled = false;
-}
-// 如果没有设置项，则使用常量配置
-elseif (!isset($restApiSwitch)) {
-    $restApiEnabled = TTDF_CONFIG['REST_API']['ENABLED'] ?? false;
-}
+// 检查REST API是否启用
+if ($endpoint !== 'ttdf') {
+    $restApiEnabled = true; // 默认值
 
-// 最终检查
-if (!$restApiEnabled) {
-    if (!isset(Typecho\Router::$current)) {
-        Typecho\Router::$current = '';
+    // 检查主题设置项
+    $restApiSwitch = Get::Options(TTDF_CONFIG['REST_API']['OVERRIDE_SETTING'] ?? 'TTDF_RESTAPI_Switch');
+    if ($restApiSwitch === 'false') {
+        $restApiEnabled = false;
     }
-    return;
+    // 如果没有设置项，则使用常量配置
+    elseif (!isset($restApiSwitch)) {
+        $restApiEnabled = TTDF_CONFIG['REST_API']['ENABLED'] ?? false;
+    }
+
+    // 最终检查
+    if (!$restApiEnabled) {
+        if (!isset(Typecho\Router::$current)) {
+            Typecho\Router::$current = '';
+        }
+        return;
+    }
 }
 
 // 引入REST API模块

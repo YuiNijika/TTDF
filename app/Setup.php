@@ -21,7 +21,7 @@ return [
             [
                 // 'Textarea' => '文本域',
                 'type' => 'Textarea',
-                'name' => 'TTDF_Textarea',
+                'name' => 'this_textarea',
                 'value' => null,
                 'label' => '文本域',
                 'description' => '这是一个文本域~'
@@ -34,7 +34,7 @@ return [
             [
                 // 'Radio' => '单选框',
                 'type' => 'Radio',
-                'name' => 'TTDF_Radio',
+                'name' => 'this_radio',
                 'value' => 'option1',
                 'label' => '单选框',
                 'description' => '这是一个单选框~',
@@ -47,7 +47,7 @@ return [
             [
                 // 'Select' => '下拉框',
                 'type' => 'Select',
-                'name' => 'TTDF_Select',
+                'name' => 'this_select',
                 'value' => 'option2',
                 'label' => '下拉框',
                 'description' => '这是一个下拉框~',
@@ -60,7 +60,7 @@ return [
             [
                 // 'Checkbox' => '多选框',
                 'type' => 'Checkbox',
-                'name' => 'TTDF_Checkbox',
+                'name' => 'this_checkbox',
                 'value' => ['option1', 'option3'],
                 'label' => '多选框',
                 'description' => '这是一个多选框~',
@@ -76,8 +76,12 @@ return [
         'title' => '其他设置',
         'fields' => [
             [
+                'type' => 'Html',
+                'content' => '<div class="alert warning">如果关闭将无法使用RestAPI</div>'
+            ],
+            [
                 'type' => 'Select',
-                'name' => 'TTDF_RESTAPI_Switch',
+                'name' => 'RESTAPI_Switch',
                 'value' => 'false',
                 'label' => 'REST API',
                 'description' => 'TTDF框架内置的 REST API<br/>使用教程可参见 <a href="https://github.com/YuiNijika/TTDF/blob/master/README_DOC.md#rest-api" target="_blank">*这里*</a>',

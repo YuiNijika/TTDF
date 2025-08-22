@@ -16,6 +16,79 @@ class DB
         return self::$instance ??= new self();
     }
 
+    public static function init()
+    {
+        $db = Typecho_Db::get();
+        $prefix = $db->getPrefix();
+
+        try {
+            // 尝试查询表，如果失败则创建
+            $db->fetchRow($db->select()->from('table.ttdf')->limit(1));
+        } catch (Exception $e) {
+            // 表不存在，创建表
+            $sql = "CREATE TABLE `{$prefix}ttdf` (
+            `tid` int(10) unsigned NOT NULL AUTO_INCREMENT,
+            `name` varchar(200) NOT NULL,
+            `value` text,
+            PRIMARY KEY (`tid`),
+            UNIQUE KEY `name` (`name`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
+
+            $db->query($sql);
+
+            // 插入默认数据
+            $siteUrl = Helper::options()->siteUrl;
+            self::setTtdf('siteUrl', $siteUrl);
+        }
+    }
+
+    // 添加或更新数据
+    public static function setTtdf($name, $value)
+    {
+        $db = Typecho_Db::get();
+
+        // 检查是否已存在
+        $exists = $db->fetchRow($db->select()->from('table.ttdf')->where('name = ?', $name));
+
+        if ($exists) {
+            // 更新
+            $db->query($db->update('table.ttdf')->rows(array('value' => $value))->where('name = ?', $name));
+        } else {
+            // 新增
+            $db->query($db->insert('table.ttdf')->rows(array(
+                'name' => $name,
+                'value' => $value
+            )));
+        }
+    }
+
+    // 获取数据
+    public static function getTtdf($name, $default = null)
+    {
+        $db = Typecho_Db::get();
+        $row = $db->fetchRow($db->select('value')->from('table.ttdf')->where('name = ?', $name));
+        return $row ? $row['value'] : $default;
+    }
+
+    // 删除数据
+    public static function deleteTtdf($name)
+    {
+        $db = Typecho_Db::get();
+        $db->query($db->delete('table.ttdf')->where('name = ?', $name));
+    }
+
+    // 获取所有数据
+    public static function getAllTtdf()
+    {
+        $db = Typecho_Db::get();
+        $rows = $db->fetchAll($db->select()->from('table.ttdf'));
+        $result = array();
+        foreach ($rows as $row) {
+            $result[$row['name']] = $row['value'];
+        }
+        return $result;
+    }
+
     /**
      * 获取文章内容/字数
      */
