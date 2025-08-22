@@ -25,6 +25,14 @@ return [
                 'value' => '',
                 'label' => '文本域',
                 'description' => '这是一个文本域~'
+            ],
+            [
+                // 'AddList' => '动态列表',
+                'type' => 'AddList',
+                'name' => 'this_addlist',
+                'value' => '项目1,项目2,项目3',
+                'label' => '动态列表测试',
+                'description' => '这是一个AddList组件，点击+1按钮可以添加新的输入框，数据以逗号分隔存储。'
             ]
         ]
     ],
