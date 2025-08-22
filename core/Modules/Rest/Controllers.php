@@ -1614,16 +1614,13 @@ class TTDFController extends BaseController
                     continue;
                 }
 
-                // 为主题设置项添加主题名前缀
-                $prefixedName = $themeName . '_' . $name;
-
                 // 处理数组值
                 if (is_array($value)) {
                     $value = implode(',', $value);
                 }
 
-                // 保存到数据库
-                DB::setTtdf($prefixedName, $value);
+                // 保存到数据库（DB::setTtdf会自动添加主题名前缀）
+                DB::setTtdf($name, $value);
                 $savedCount++;
             }
 
