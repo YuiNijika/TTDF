@@ -157,6 +157,41 @@ function TTDF_CreateHtmlElement($type, $name, $value, $label, $description, $opt
             $html .= '</div>';
             break;
 
+        case 'AddList':
+            // 处理逗号分隔的值
+            $listValues = [];
+            if (is_string($savedValue) && !empty($savedValue)) {
+                $listValues = array_filter(explode(',', $savedValue), function ($item) {
+                    return trim($item) !== '';
+                });
+            }
+
+            $html = '<div class="form-group">';
+            if ($escapedLabel) {
+                $html .= '<label class="form-label">' . $escapedLabel . '</label>';
+            }
+            if ($rawDescription) {
+                $html .= '<p class="description">' . $rawDescription . '</p>';
+            }
+            $html .= '<div class="addlist-container" data-name="' . $name . '">';
+            $html .= '<div class="addlist-items">';
+
+            // 如果有保存的值，显示为输入框
+            foreach ($listValues as $index => $listValue) {
+                $escapedValue = htmlspecialchars(trim($listValue), ENT_QUOTES, 'UTF-8');
+                $html .= '<div class="addlist-item">';
+                $html .= '<input type="text" class="form-control addlist-input" value="' . $escapedValue . '" placeholder="请输入内容" />';
+                $html .= '<button type="button" class="btn btn-danger addlist-remove">删除</button>';
+                $html .= '</div>';
+            }
+
+            $html .= '</div>';
+            $html .= '<button type="button" class="btn btn-primary addlist-add">+1</button>';
+            $html .= '<input type="hidden" name="' . $name . '" class="addlist-hidden" value="' . htmlspecialchars($savedValue ?? '', ENT_QUOTES, 'UTF-8') . '" />';
+            $html .= '</div>';
+            $html .= '</div>';
+            break;
+
         case 'Html':
             $html = $savedValue ?? '';
             break;
@@ -313,10 +348,45 @@ function TTDF_CreateFormElement($field)
                     $html .= '<label class="checkbox-label"><input type="checkbox" name="' . $field['name'] . '[]" value="' . htmlspecialchars($optValue) . '"' . $checked . ' /> ' . $optLabel . '</label>';
                 }
             }
-            // 修复：直接输出 description，不进行转义以支持 HTML
+            // 直接输出 description，不进行转义以支持 HTML
             if ($description) {
                 $html .= '<p class="description">' . $description . '</p>';
             }
+            $html .= '</div>';
+            break;
+
+        case 'AddList':
+            // 处理逗号分隔的值
+            $listValues = [];
+            if (is_string($value) && !empty($value)) {
+                $listValues = array_filter(explode(',', $value), function ($item) {
+                    return trim($item) !== '';
+                });
+            }
+
+            $html = '<div class="form-group">';
+            if ($label) {
+                $html .= '<label class="form-label">' . $label . '</label>';
+            }
+            if ($description) {
+                $html .= '<p class="description">' . $description . '</p>';
+            }
+            $html .= '<div class="addlist-container" data-name="' . $field['name'] . '">';
+            $html .= '<div class="addlist-items">';
+
+            // 如果有保存的值，显示为输入框
+            foreach ($listValues as $index => $listValue) {
+                $escapedValue = htmlspecialchars(trim($listValue), ENT_QUOTES, 'UTF-8');
+                $html .= '<div class="addlist-item">';
+                $html .= '<input type="text" class="form-control addlist-input" value="' . $escapedValue . '" placeholder="请输入内容" />';
+                $html .= '<button type="button" class="btn btn-danger addlist-remove">删除</button>';
+                $html .= '</div>';
+            }
+
+            $html .= '</div>';
+            $html .= '<button type="button" class="btn btn-primary addlist-add">+1</button>';
+            $html .= '<input type="hidden" name="' . $field['name'] . '" class="addlist-hidden" value="' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '" />';
+            $html .= '</div>';
             $html .= '</div>';
             break;
     }
@@ -568,7 +638,7 @@ function themeConfig($form)
             line-height: 1.2;
         }
 
-        /* 简化的响应式设计 */
+        /* 响应式设计 */
         @media (max-width: 768px) {
             .TTDF-container {
                 margin: 10px;
@@ -777,6 +847,80 @@ function themeConfig($form)
             color: #333;
             background-color: #ffffff;
             transition: border-color 0.2s;
+        }
+
+        /* AddList 组件样式 */
+        .addlist-container {
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 16px;
+            background-color: #f9fafb;
+        }
+
+        .addlist-items {
+            margin-bottom: 12px;
+        }
+
+        .addlist-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            padding: 8px;
+            background-color: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+        }
+
+        .addlist-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .addlist-input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .addlist-remove {
+            padding: 6px 12px;
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            white-space: nowrap;
+        }
+
+        .addlist-remove:hover {
+            background-color: #dc2626;
+        }
+
+        .addlist-add {
+            padding: 8px 16px;
+            background-color: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .addlist-add:hover {
+            background-color: #4338ca;
+        }
+
+        .addlist-hidden {
+            display: none;
             box-sizing: border-box;
         }
 
@@ -1071,6 +1215,75 @@ function themeConfig($form)
                         });
                 });
             }
+
+            // AddList 功能
+            function initAddListFunctionality() {
+                // 为所有 AddList 容器添加事件监听
+                document.querySelectorAll('.addlist-container').forEach(container => {
+                    const addButton = container.querySelector('.addlist-add');
+                    const itemsContainer = container.querySelector('.addlist-items');
+                    const hiddenInput = container.querySelector('.addlist-hidden');
+
+                    // 添加新项目
+                    if (addButton) {
+                        addButton.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            addNewItem(itemsContainer, hiddenInput);
+                        });
+                    }
+
+                    // 为现有的删除按钮添加事件监听
+                    container.addEventListener('click', function(e) {
+                        if (e.target.classList.contains('addlist-remove')) {
+                            e.preventDefault();
+                            removeItem(e.target.closest('.addlist-item'), hiddenInput);
+                        }
+                    });
+
+                    // 为输入框添加变化监听
+                    container.addEventListener('input', function(e) {
+                        if (e.target.classList.contains('addlist-input')) {
+                            updateHiddenValue(container, hiddenInput);
+                        }
+                    });
+                });
+            }
+
+            function addNewItem(itemsContainer, hiddenInput) {
+                const newItem = document.createElement('div');
+                newItem.className = 'addlist-item';
+                newItem.innerHTML = `
+            <input type="text" class="form-control addlist-input" placeholder="请输入内容" />
+            <button type="button" class="btn btn-danger addlist-remove">删除</button>
+        `;
+                itemsContainer.appendChild(newItem);
+
+                // 聚焦到新添加的输入框
+                newItem.querySelector('.addlist-input').focus();
+
+                updateHiddenValue(itemsContainer.closest('.addlist-container'), hiddenInput);
+            }
+
+            function removeItem(item, hiddenInput) {
+                const container = item.closest('.addlist-container');
+                item.remove();
+                updateHiddenValue(container, hiddenInput);
+            }
+
+            function updateHiddenValue(container, hiddenInput) {
+                const inputs = container.querySelectorAll('.addlist-input');
+                const values = [];
+                inputs.forEach(input => {
+                    const value = input.value.trim();
+                    if (value) {
+                        values.push(value);
+                    }
+                });
+                hiddenInput.value = values.join(',');
+            }
+
+            // 初始化 AddList 功能
+            initAddListFunctionality();
         });
     </script>
 
