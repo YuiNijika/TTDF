@@ -39,6 +39,43 @@ class DB
             // 插入默认数据
             $siteUrl = Helper::options()->siteUrl;
             self::setTtdf('siteUrl', $siteUrl);
+
+            // 自动写入Setup.php中定义的所有默认设置项
+            try {
+                $setupPath = __DIR__ . '/../../app/Setup.php';
+                if (file_exists($setupPath)) {
+                    $tabs = require $setupPath;
+
+                    // 遍历所有设置项
+                    foreach ($tabs as $tab) {
+                        // 只处理有fields字段的标签页，跳过只有html的标签页
+                        if (isset($tab['fields']) && is_array($tab['fields'])) {
+                            foreach ($tab['fields'] as $field) {
+                                // 跳过HTML类型的字段和没有name的字段
+                                if (!isset($field['name']) || !isset($field['value']) || $field['type'] === 'Html') {
+                                    continue;
+                                }
+
+                                $name = $field['name'];
+                                $value = $field['value'];
+
+                                // 处理复选框的数组默认值
+                                if ($field['type'] === 'Checkbox' && is_array($value)) {
+                                    $value = implode(',', $value);
+                                }
+
+                                // 只有当值不为null时才写入数据库
+                                if ($value !== null) {
+                                    self::setTtdf($name, $value);
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (Exception $setupException) {
+                // 如果Setup.php有问题，记录错误但不影响表创建
+                error_log('TTDF Database Init: Failed to load default settings from Setup.php - ' . $setupException->getMessage());
+            }
         }
     }
 

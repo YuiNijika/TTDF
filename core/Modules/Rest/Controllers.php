@@ -1136,7 +1136,7 @@ class OptionController extends BaseController
         if ($optionName === null) {
             // 处理获取所有选项的请求
             $allowedOptions = ['title', 'description', 'keywords', 'theme', 'plugins', 'timezone', 'lang', 'charset', 'contentType', 'siteUrl', 'rootUrl', 'rewrite', 'generator', 'feedUrl', 'searchUrl'];
-            $allOptions = Helper::options();
+            $allOptions = Get::Options();
             $publicOptions = [];
 
             // 检查是否有受限选项
@@ -1172,7 +1172,6 @@ class OptionController extends BaseController
     }
 }
 
-// 字段控制器
 // 字段控制器
 class FieldController extends BaseController
 {
@@ -1451,34 +1450,30 @@ class TTDFController extends BaseController
 
     private function checkAdminPermission(): bool
     {
-        // 记录开始检查权限（仅在调试模式下）
-        if (defined('TTDF_DEBUG') && TTDF_DEBUG) {
+        // 记录开始检查权限
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
             TTDF_Debug::logApiProcess('permission_check', ['stage' => 'start']);
         }
 
         $user = Typecho_Widget::widget('Widget_User');
 
-        // 记录用户状态信息（仅在调试模式下）
-        if (defined('TTDF_DEBUG') && TTDF_DEBUG) {
-            $loginStatus = $user->hasLogin();
-            $userGroup = $user->group ?? 'none';
-            $passCheck = $user->pass('administrator', true);
+        // 记录用户状态信息
+        $loginStatus = $user->hasLogin();
+        $userGroup = $user->group ?? 'none';
+        $passCheck = $user->pass('administrator', true);
 
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
             TTDF_Debug::logApiProcess('permission_check', [
                 'login_status' => $loginStatus,
                 'user_group' => $userGroup,
                 'pass_check' => $passCheck
             ]);
-        } else {
-            $loginStatus = $user->hasLogin();
-            $userGroup = $user->group ?? 'none';
-            $passCheck = $user->pass('administrator', true);
         }
 
         $result = $loginStatus && ($userGroup === 'administrator' || $passCheck);
 
-        // 记录最终结果（仅在调试模式下）
-        if (defined('TTDF_DEBUG') && TTDF_DEBUG) {
+        // 记录最终结果
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
             TTDF_Debug::logApiProcess('permission_check', [
                 'stage' => 'completed',
                 'result' => $result ? 'granted' : 'denied'
@@ -1490,8 +1485,7 @@ class TTDFController extends BaseController
 
     private function handleOptions(): array
     {
-        // 仅在调试模式下记录
-        if (defined('TTDF_DEBUG') && TTDF_DEBUG) {
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
             TTDF_Debug::logApiProcess('handle_options', [
                 'method' => $_SERVER['REQUEST_METHOD'] ?? 'UNKNOWN',
                 'stage' => 'start'
@@ -1501,17 +1495,17 @@ class TTDFController extends BaseController
         $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
         if ($method === 'GET') {
-            if (defined('TTDF_DEBUG') && TTDF_DEBUG) {
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
                 TTDF_Debug::logApiProcess('handle_options', ['action' => 'get_options']);
             }
             return $this->getOptions();
         } elseif ($method === 'POST') {
-            if (defined('TTDF_DEBUG') && TTDF_DEBUG) {
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
                 TTDF_Debug::logApiProcess('handle_options', ['action' => 'save_options']);
             }
             return $this->saveOptions();
         } else {
-            if (defined('TTDF_DEBUG') && TTDF_DEBUG) {
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
                 TTDF_Debug::logApiProcess('handle_options', [
                     'action' => 'error',
                     'reason' => 'method_not_allowed'
@@ -1523,12 +1517,12 @@ class TTDFController extends BaseController
 
     private function getOptions(): array
     {
-        if (defined('TTDF_DEBUG') && TTDF_DEBUG) {
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
             TTDF_Debug::logApiProcess('get_options', ['stage' => 'start']);
         }
 
         if (!$this->checkAdminPermission()) {
-            if (defined('TTDF_DEBUG') && TTDF_DEBUG) {
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
                 TTDF_Debug::logApiProcess('get_options', [
                     'stage' => 'error',
                     'reason' => 'unauthorized'
@@ -1537,14 +1531,14 @@ class TTDFController extends BaseController
             $this->response->error('Unauthorized', HttpCode::UNAUTHORIZED);
         }
 
-        if (defined('TTDF_DEBUG') && TTDF_DEBUG) {
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
             TTDF_Debug::logApiProcess('get_options', ['stage' => 'fetching_data']);
         }
 
         // 获取所有 ttdf 选项
         $options = DB::getAllTtdf();
 
-        if (defined('TTDF_DEBUG') && TTDF_DEBUG) {
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
             TTDF_Debug::logApiProcess('get_options', [
                 'stage' => 'completed',
                 'options_count' => count($options)
@@ -1556,12 +1550,12 @@ class TTDFController extends BaseController
 
     private function saveOptions(): array
     {
-        if (defined('TTDF_DEBUG') && TTDF_DEBUG) {
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
             TTDF_Debug::logApiProcess('save_options', ['stage' => 'start']);
         }
 
         if (!$this->checkAdminPermission()) {
-            if (defined('TTDF_DEBUG') && TTDF_DEBUG) {
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
                 TTDF_Debug::logApiProcess('save_options', [
                     'stage' => 'error',
                     'reason' => 'unauthorized'
@@ -1574,7 +1568,7 @@ class TTDFController extends BaseController
         $input = file_get_contents('php://input');
         $postData = json_decode($input, true);
 
-        if (defined('TTDF_DEBUG') && TTDF_DEBUG) {
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
             TTDF_Debug::logApiProcess('save_options', [
                 'stage' => 'data_received',
                 'data_type' => gettype($postData),
@@ -1585,13 +1579,13 @@ class TTDFController extends BaseController
         // 如果JSON解析失败，尝试使用表单数据
         if (!is_array($postData) && !empty($_POST)) {
             $postData = $_POST;
-            if (defined('TTDF_DEBUG') && TTDF_DEBUG) {
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
                 TTDF_Debug::logApiProcess('save_options', ['data_source' => 'form_data']);
             }
         }
 
         if (!is_array($postData)) {
-            if (defined('TTDF_DEBUG') && TTDF_DEBUG) {
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
                 TTDF_Debug::logApiProcess('save_options', [
                     'stage' => 'error',
                     'reason' => 'invalid_data_format'
@@ -1604,7 +1598,7 @@ class TTDFController extends BaseController
             // 获取当前主题名
             $themeName = Helper::options()->theme;
 
-            if (defined('TTDF_DEBUG') && TTDF_DEBUG) {
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
                 TTDF_Debug::logApiProcess('save_options', [
                     'stage' => 'processing',
                     'theme_name' => $themeName,
@@ -1633,7 +1627,7 @@ class TTDFController extends BaseController
                 $savedCount++;
             }
 
-            if (defined('TTDF_DEBUG') && TTDF_DEBUG) {
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
                 TTDF_Debug::logApiProcess('save_options', [
                     'stage' => 'completed',
                     'saved_items' => $savedCount
@@ -1645,7 +1639,7 @@ class TTDFController extends BaseController
                 'meta' => ['timestamp' => time()]
             ];
         } catch (Exception $e) {
-            if (defined('TTDF_DEBUG') && TTDF_DEBUG) {
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
                 TTDF_Debug::logApiProcess('save_options', [
                     'stage' => 'error',
                     'reason' => 'exception',
