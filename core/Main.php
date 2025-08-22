@@ -13,7 +13,7 @@ if (!is_array($TTDF_CONFIG)) {
 }
 
 define('TTDF_CONFIG', $TTDF_CONFIG);
-define('__FRAMEWORK_VER__', '3.1.0_alpha');
+define('__FRAMEWORK_VER__', '3.1.0_alpha1');
 define('__TYPECHO_GRAVATAR_PREFIX__', TTDF_CONFIG['GRAVATAR_PREFIX'] ?? 'https://cravatar.cn/avatar/');
 define('__TTDF_RESTAPI__', TTDF_CONFIG['REST_API']['ENABLED'] ?? false);
 define('__TTDF_RESTAPI_ROUTE__', TTDF_CONFIG['REST_API']['ROUTE'] ?? 'ty-json');
@@ -27,11 +27,11 @@ trait ErrorHandler
     {
         $errorMessage = $message . ': ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine();
         error_log($errorMessage);
-        
+
         if (TTDF_CONFIG['DEBUG'] ?? false) {
             trigger_error($errorMessage, $logLevel);
         }
-        
+
         return $defaultValue;
     }
 }
@@ -71,17 +71,20 @@ class TTDF_Main
     {
         // 加载核心模块
         self::loadCoreModules();
-        
+
         // 加载Widgets
         self::loadWidgets();
-        
+
         // 加载可选模块
         self::loadOptionalModules();
-        
+
         // 配置检查
         if (!defined('TTDF_CONFIG')) {
             throw new RuntimeException('TTDF配置未初始化');
         }
+
+        // 初始化数据库
+        DB::init();
     }
 
     /**
@@ -90,7 +93,7 @@ class TTDF_Main
     private static function loadCoreModules()
     {
         require_once __DIR__ . '/Modules/Database.php';
-        
+
         if (TTDF_CONFIG['DEBUG'] ?? false) {
             require_once __DIR__ . '/Modules/Debug.php';
         }
@@ -126,7 +129,6 @@ class TTDF_Main
         $moduleFiles = [
             'OPP.php',
             'Api.php',
-            'Function.php',
             'Options.php',
             'RouterAuto.php',
         ];

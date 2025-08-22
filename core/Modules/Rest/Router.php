@@ -84,6 +84,7 @@ final class TTDF_API
                     ? $this->handlePostComment()
                     : $this->handleComments(),
                 'attachments' => $this->handleAttachmentList(),
+                'ttdf' => $this->handleTtdf(),
                 default => $this->handleNotFound($endpoint),
             };
 
@@ -215,5 +216,11 @@ final class TTDF_API
     {
         $controller = new AttachmentController($this->request, $this->response, $this->db, $this->formatter);
         return $controller->handleList();
+    }
+
+    private function handleTtdf(): array
+    {
+        $controller = new TTDFController($this->request, $this->response, $this->db, $this->formatter);
+        return $controller->handle();
     }
 }

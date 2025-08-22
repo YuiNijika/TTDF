@@ -264,11 +264,44 @@ class Get
         }
     }
 
+    /**
+     * 从 ttdf 表获取配置参数
+     * 
+     * @param string $name 配置名称
+     * @param mixed $default 默认值
+     * @return mixed 配置值
+     */
+    private static function TtdfOption(string $name, $default = null)
+    {
+        try {
+            $themeName = Helper::options()->theme;
+            $fullName = $themeName . '_' . $name;
+
+            // 首先尝试获取带主题名前缀的配置项
+            $value = DB::getTtdf($fullName, null);
+
+            // 如果没有找到，则回退到原来的名称
+            if ($value === null) {
+                $value = DB::getTtdf($name, $default);
+            }
+
+            return $value;
+        } catch (Exception $e) {
+            return $default;
+        }
+    }
+
     // 获取配置参数
     public static function Options($param, ?bool $echo = false)
     {
         try {
-            $value = Helper::options()->$param;
+            // 首先尝试从 ttdf 表获取配置参数
+            $value = self::TtdfOption($param, null);
+
+            // 如果 ttdf 表中没有该配置
+            if ($value === null) {
+                $value = Helper::options()->$param;
+            }
 
             if ($echo) {
                 echo $value;

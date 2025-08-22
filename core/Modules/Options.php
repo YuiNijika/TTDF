@@ -5,20 +5,121 @@
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
+/**
+ * 辅助创建表单元素
+ */
+function TTDF_FormElement($type, $name, $value, $label, $description, $options = [])
+{
+    // 获取保存的值
+    $savedValue = DB::getTtdf($name, $value);
+
+    // 确保 _t() 的参数不为 null
+    $label = $label ?? '';
+    $description = $description ?? '';
+
+    $class = '\\Typecho\\Widget\\Helper\\Form\\Element\\' . $type;
+    if ($type === 'Radio' || $type === 'Select' || $type === 'Checkbox') {
+        // Radio、Select、Checkbox 类型需要额外的 options 参数
+        $element = new $class($name, $options, null, _t($label), _t($description));
+    } else {
+        $element = new $class($name, null, null, _t($label), _t($description));
+    }
+
+    // 手动设置元素的值，确保使用我们从ttdf表中获取的值
+    if ($savedValue !== null) {
+        // 特殊处理复选框值
+        if ($type === 'Checkbox' && is_string($savedValue)) {
+            $savedValue = explode(',', $savedValue);
+        }
+        $element->value($savedValue);
+    }
+
+    return $element;
+}
+
+if (TTDF_CONFIG['FIELDS_ENABLED']) {
+    /**
+     * 添加字段
+     */
+    function themeFields($layout)
+    {
+        $fieldElements = require __DIR__ . '/../../app/Fields.php';
+        // 循环添加字段
+        foreach ($fieldElements as $field) {
+            $element = TTDF_FormElement(
+                $field['type'],
+                $field['name'],
+                $field['value'] ?? null,
+                $field['label'] ?? '',
+                $field['description'] ?? '',
+                $field['options'] ?? []
+            );
+
+            // 设置字段属性
+            if (isset($field['attributes'])) {
+                foreach ($field['attributes'] as $attr => $value) {
+                    $element->input->setAttribute($attr, $value);
+                }
+            }
+
+            $layout->addItem($element);
+        }
+    }
+}
+
+// 辅助类用于输出HTML
+class EchoHtml extends Typecho_Widget_Helper_Layout
+{
+    public function __construct($html)
+    {
+        $this->html($html);
+        $this->start();
+        $this->end();
+    }
+    public function start() {}
+    public function end() {}
+}
+
 function themeConfig($form)
 {
-    // 辅助类用于输出HTML
-    class EchoHtml extends Typecho_Widget_Helper_Layout
-    {
-        public function __construct($html)
-        {
-            $this->html($html);
-            $this->start();
-            $this->end();
+    // 处理表单提交
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ttdf_ajax_save'])) {
+        // 禁用所有可能的重定向和额外输出
+        ob_clean();
+        header('Content-Type: application/json');
+
+        try {
+            // 获取所有设置项
+            $tabs = require __DIR__ . '/../../app/Setup.php';
+
+            // 遍历所有设置项并保存
+            foreach ($tabs as $tab) {
+                if (isset($tab['fields'])) {
+                    foreach ($tab['fields'] as $field) {
+                        if (isset($field['name']) && $field['type'] !== 'Html') {
+                            $value = $_POST[$field['name']] ?? null;
+
+                            // 处理复选框的多值情况
+                            if (is_array($value)) {
+                                $value = implode(',', $value);
+                            }
+
+                            // 保存到数据库
+                            DB::setTtdf($field['name'], $value);
+                        }
+                    }
+                }
+            }
+
+            echo json_encode(['success' => true, 'message' => '设置已保存!']);
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'message' => '保存失败: ' . $e->getMessage()]);
         }
-        public function start() {}
-        public function end() {}
+
+        // 确保脚本终止，不执行后续代码
+        exit;
     }
+
 ?>
     <style type="text/css">
         /* Typecho CSS 重置部分 */
@@ -274,6 +375,44 @@ function themeConfig($form)
         .alert.error::before {
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23dc2626'%3E%3Cpath fill-rule='evenodd' d='M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z' clip-rule='evenodd'/%3E%3C/svg%3E");
         }
+
+        /* 消息提示 */
+        .ttdf-message {
+            margin: 10px;
+        }
+
+        /* 遮罩层 */
+        .ttdf-loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .ttdf-loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #2271b1;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
     </style>
 
     <script>
@@ -303,9 +442,107 @@ function themeConfig($form)
                     document.getElementById(tabId).classList.add('active');
                 });
             });
+
+            // 无刷新保存设置
+            const saveButton = document.querySelector('.TTDF-save');
+            if (saveButton) {
+                saveButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+
+                    // 显示加载遮罩
+                    const loading = document.createElement('div');
+                    loading.className = 'ttdf-loading';
+                    loading.innerHTML = '<div class="ttdf-loading-spinner"></div>';
+                    document.body.appendChild(loading);
+                    loading.style.display = 'flex';
+
+                    // 收集表单数据
+                    const form = document.querySelector('form');
+                    const formData = new FormData(form);
+
+                    // 转换为普通对象
+                    const data = {};
+                    for (let [key, value] of formData.entries()) {
+                        // 处理复选框的多值情况
+                        if (data[key]) {
+                            if (Array.isArray(data[key])) {
+                                data[key].push(value);
+                            } else {
+                                data[key] = [data[key], value];
+                            }
+                        } else {
+                            data[key] = value;
+                        }
+                    }
+
+                    // 发送AJAX请求到新的API端点
+                    fetch('<?php echo Typecho_Common::url(__TTDF_RESTAPI_ROUTE__ . '/ttdf/options', Helper::options()->siteUrl); ?>', {
+                            method: 'POST',
+                            body: JSON.stringify(data),
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            // 确保不跟随重定向
+                            redirect: 'error'
+                        })
+                        .then(response => {
+                            // 检查响应是否为JSON
+                            const contentType = response.headers.get('content-type');
+                            if (contentType && contentType.indexOf('application/json') !== -1) {
+                                return response.json();
+                            } else {
+                                throw new Error('服务器返回了非JSON响应');
+                            }
+                        })
+                        .then(data => {
+                            // 隐藏加载遮罩
+                            document.body.removeChild(loading);
+
+                            // 显示消息
+                            let messageDiv = document.querySelector('.ttdf-message');
+                            if (!messageDiv) {
+                                messageDiv = document.createElement('div');
+                                messageDiv.className = 'message ttdf-message';
+                                document.querySelector('.TTDF-header').after(messageDiv);
+                            }
+
+                            messageDiv.className = 'alert success ttdf-message';
+                            messageDiv.innerHTML = '<span>设置已保存!</span>';
+
+                            // 3秒后自动隐藏消息
+                            setTimeout(() => {
+                                if (messageDiv.parentNode) {
+                                    messageDiv.parentNode.removeChild(messageDiv);
+                                }
+                            }, 3000);
+                        })
+                        .catch(error => {
+                            // 隐藏加载遮罩
+                            document.body.removeChild(loading);
+
+                            // 显示错误消息
+                            let messageDiv = document.querySelector('.ttdf-message');
+                            if (!messageDiv) {
+                                messageDiv = document.createElement('div');
+                                messageDiv.className = 'alert error ttdf-message';
+                                document.querySelector('.TTDF-header').after(messageDiv);
+                            }
+                            messageDiv.innerHTML = '<span>保存失败: ' + error.message + '</span>';
+
+                            // 3秒后自动隐藏消息
+                            setTimeout(() => {
+                                if (messageDiv.parentNode) {
+                                    messageDiv.parentNode.removeChild(messageDiv);
+                                }
+                            }, 3000);
+                        });
+                });
+            }
         });
     </script>
-<?php
+
+    <form method="post">
+    <?php
     // 初始化HTML结构
     $form->addItem(new EchoHtml('
     <div class="TTDF-container">
@@ -335,7 +572,7 @@ function themeConfig($form)
             </nav>
             <div class="TTDF-content">'));
 
-    // 生成Tab内容（默认显示第一个）
+    // 生成Tab内容
     $first_tab = true;
     foreach ($tabs as $tab_id => $tab) {
         $show = $first_tab ? 'active' : '';
@@ -374,4 +611,6 @@ function themeConfig($form)
     <div style="text-align: center; margin-top: 20px;">
         © Framework By <a href="https://github.com/YuiNijika/TTDF" target="_blank" style="padding: 0px 3px;">TTDF</a> v' . TTDF::Ver(false) . '
     </div>'));
+
+    $form->addItem(new EchoHtml('</form>'));
 }

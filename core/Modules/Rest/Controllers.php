@@ -1433,3 +1433,185 @@ class AttachmentController extends BaseController
         ];
     }
 }
+
+// TTDF控制器
+class TTDFController extends BaseController
+{
+    public function handle(): array
+    {
+        $subPath = $this->request->pathParts[1] ?? null;
+
+        switch ($subPath) {
+            case 'options':
+                return $this->handleOptions();
+            default:
+                $this->response->error('Endpoint not found', HttpCode::NOT_FOUND);
+        }
+    }
+
+    private function checkAdminPermission(): bool
+    {
+        // 记录开始检查权限
+        TTDF_Debug::logApiProcess('permission_check', ['stage' => 'start']);
+
+        $user = Typecho_Widget::widget('Widget_User');
+
+        // 记录用户状态信息
+        $loginStatus = $user->hasLogin();
+        $userGroup = $user->group ?? 'none';
+        $passCheck = $user->pass('administrator', true);
+
+        TTDF_Debug::logApiProcess('permission_check', [
+            'login_status' => $loginStatus,
+            'user_group' => $userGroup,
+            'pass_check' => $passCheck
+        ]);
+
+        $result = $loginStatus && ($userGroup === 'administrator' || $passCheck);
+
+        // 记录最终结果
+        TTDF_Debug::logApiProcess('permission_check', [
+            'stage' => 'completed',
+            'result' => $result ? 'granted' : 'denied'
+        ]);
+
+        return $result;
+    }
+
+    private function handleOptions(): array
+    {
+        TTDF_Debug::logApiProcess('handle_options', [
+            'method' => $_SERVER['REQUEST_METHOD'] ?? 'UNKNOWN',
+            'stage' => 'start'
+        ]);
+
+        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+
+        if ($method === 'GET') {
+            TTDF_Debug::logApiProcess('handle_options', ['action' => 'get_options']);
+            return $this->getOptions();
+        } elseif ($method === 'POST') {
+            TTDF_Debug::logApiProcess('handle_options', ['action' => 'save_options']);
+            return $this->saveOptions();
+        } else {
+            TTDF_Debug::logApiProcess('handle_options', [
+                'action' => 'error',
+                'reason' => 'method_not_allowed'
+            ]);
+            $this->response->error('Method Not Allowed', HttpCode::METHOD_NOT_ALLOWED);
+        }
+    }
+
+    private function getOptions(): array
+    {
+        TTDF_Debug::logApiProcess('get_options', ['stage' => 'start']);
+
+        if (!$this->checkAdminPermission()) {
+            TTDF_Debug::logApiProcess('get_options', [
+                'stage' => 'error',
+                'reason' => 'unauthorized'
+            ]);
+            $this->response->error('Unauthorized', HttpCode::UNAUTHORIZED);
+        }
+
+        TTDF_Debug::logApiProcess('get_options', ['stage' => 'fetching_data']);
+
+        // 获取所有 ttdf 选项
+        $options = DB::getAllTtdf();
+
+        TTDF_Debug::logApiProcess('get_options', [
+            'stage' => 'completed',
+            'options_count' => count($options)
+        ]);
+
+        return ['data' => $options];
+    }
+
+    private function saveOptions(): array
+    {
+        TTDF_Debug::logApiProcess('save_options', ['stage' => 'start']);
+
+        if (!$this->checkAdminPermission()) {
+            TTDF_Debug::logApiProcess('save_options', [
+                'stage' => 'error',
+                'reason' => 'unauthorized'
+            ]);
+            $this->response->error('Unauthorized', HttpCode::UNAUTHORIZED);
+        }
+
+        // 获取POST数据
+        $input = file_get_contents('php://input');
+        $postData = json_decode($input, true);
+
+        TTDF_Debug::logApiProcess('save_options', [
+            'stage' => 'data_received',
+            'data_type' => gettype($postData),
+            'raw_input_length' => strlen($input)
+        ]);
+
+        // 如果JSON解析失败，尝试使用表单数据
+        if (!is_array($postData) && !empty($_POST)) {
+            $postData = $_POST;
+            TTDF_Debug::logApiProcess('save_options', ['data_source' => 'form_data']);
+        }
+
+        if (!is_array($postData)) {
+            TTDF_Debug::logApiProcess('save_options', [
+                'stage' => 'error',
+                'reason' => 'invalid_data_format'
+            ]);
+            $this->response->error('Invalid data format', HttpCode::BAD_REQUEST);
+        }
+
+        try {
+            // 获取当前主题名
+            $themeName = Helper::options()->theme;
+
+            TTDF_Debug::logApiProcess('save_options', [
+                'stage' => 'processing',
+                'theme_name' => $themeName,
+                'items_count' => count($postData)
+            ]);
+
+            // 保存每个选项
+            $savedCount = 0;
+            foreach ($postData as $name => $value) {
+                // 跳过系统字段
+                if (in_array($name, ['action', '_'])) {
+                    continue;
+                }
+
+                // 为主题设置项添加主题名前缀
+                $prefixedName = $themeName . '_' . $name;
+
+                // 处理数组值
+                if (is_array($value)) {
+                    $value = implode(',', $value);
+                }
+
+                // 保存到数据库
+                DB::setTtdf($prefixedName, $value);
+                $savedCount++;
+            }
+
+            TTDF_Debug::logApiProcess('save_options', [
+                'stage' => 'completed',
+                'saved_items' => $savedCount
+            ]);
+
+            return [
+                'data' => ['message' => 'Options saved successfully'],
+                'meta' => ['timestamp' => time()]
+            ];
+        } catch (Exception $e) {
+            TTDF_Debug::logApiProcess('save_options', [
+                'stage' => 'error',
+                'reason' => 'exception',
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+            $this->response->error('Failed to save options: ' . $e->getMessage(), HttpCode::INTERNAL_ERROR);
+        }
+    }
+}

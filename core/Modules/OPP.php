@@ -809,6 +809,27 @@ if (!function_exists('get_theme_file_path')) {
 // ==================== 用户基本信息 ====================
 
 if (!function_exists('get_user_name')) {
+
+    /**
+     * 获取UID
+     * @param bool $echo 是否直接输出
+     * @return string
+     */
+    function get_user_uid(bool $echo = true): string
+    {
+        return GetUser::Uid($echo);
+    }
+
+    /**
+     * 获取登录状态
+     * @param bool $echo 是否直接输出
+     * @return string
+     */
+    function get_user_login(bool $echo = true): string
+    {
+        return GetUser::Login($echo);
+    }
+
     /**
      * 获取用户名
      * @param bool $echo 是否直接输出

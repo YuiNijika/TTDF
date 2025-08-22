@@ -14,6 +14,48 @@ class GetUser
     private function __clone() {}
     public function __wakeup() {}
 
+    // 获取uid
+    public static function Uid($echo = true)
+    {
+        try {
+            $uid = self::getArchive()->author->uid;
+            if ($echo) {
+                echo $uid;
+            } else {
+                return $uid;
+            }
+        } catch (Exception $e) {
+            self::handleError('获取作者UID失败', $e);
+            if ($echo) {
+                echo '0';
+            } else {
+                return 0;
+            }
+        }
+    }
+
+    // 判断登录状态
+    public static function Login($echo = true)
+    {
+        try {
+            $user = Typecho_Widget::widget('Widget_User');
+            $isLoggedIn = $user->hasLogin();
+
+            if ($echo) {
+                echo $isLoggedIn ? 'true' : 'false';
+            } else {
+                return $isLoggedIn;
+            }
+        } catch (Exception $e) {
+            self::handleError('获取用户登录状态失败', $e);
+            if ($echo) {
+                echo 'false';
+            } else {
+                return false;
+            }
+        }
+    }
+
     // 获取用户名
     public static function Name($echo = true)
     {
