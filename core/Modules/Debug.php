@@ -13,7 +13,6 @@ if (!class_exists('RouteException', false)) {
 
 class TTDF_Debug
 {
-    use ErrorHandler;
 
     private static $logFile;
     private static $enabled = false;

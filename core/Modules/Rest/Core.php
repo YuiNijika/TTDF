@@ -256,7 +256,7 @@ final class ApiFormatter
             'coid' => (int)($comment['coid'] ?? 0),
             'cid' => (int)($comment['cid'] ?? 0),
             'author' => $comment['author'] ?? '',
-            'mail' => $comment['mail'] ?? '',
+            'mail' => md5($comment['mail'] ?? ''),
             'url' => $comment['url'] ?? '',
             // 'ip' => $comment['ip'] ?? '',
             'created' => date('c', $comment['created'] ?? time()),

@@ -10,8 +10,17 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  */
 function TTDF_FormElement($type, $name, $value, $label, $description, $options = [])
 {
-    // 获取保存的值
-    $savedValue = DB::getTtdf($name, $value);
+    // 获取当前主题名并构建带前缀的字段名
+    $themeName = Helper::options()->theme;
+    $prefixedName = $themeName . '_' . $name;
+    
+    // 检查数据库中是否存在该记录
+    $db = Typecho_Db::get();
+    $row = $db->fetchRow($db->select('value')->from('table.ttdf')->where('name = ?', $prefixedName));
+    
+    // 如果数据库中存在记录，使用数据库中的值（包括空值）
+    // 如果数据库中不存在记录，使用默认值
+    $savedValue = $row !== false ? $row['value'] : $value;
 
     // 确保 _t() 的参数不为 null
     $label = $label ?? '';
@@ -25,14 +34,13 @@ function TTDF_FormElement($type, $name, $value, $label, $description, $options =
         $element = new $class($name, null, null, _t($label), _t($description));
     }
 
-    // 手动设置元素的值，确保使用我们从ttdf表中获取的值
-    if ($savedValue !== null) {
-        // 特殊处理复选框值
-        if ($type === 'Checkbox' && is_string($savedValue)) {
-            $savedValue = explode(',', $savedValue);
-        }
-        $element->value($savedValue);
+    // 特殊处理复选框值
+    if ($type === 'Checkbox' && is_string($savedValue)) {
+        $savedValue = explode(',', $savedValue);
     }
+    
+    // 设置元素值（包括空字符串）
+    $element->value($savedValue);
 
     return $element;
 }
@@ -89,6 +97,9 @@ function themeConfig($form)
         header('Content-Type: application/json');
 
         try {
+            // 获取当前主题名
+            $themeName = Helper::options()->theme;
+            
             // 获取所有设置项
             $tabs = require __DIR__ . '/../../app/Setup.php';
 
@@ -104,8 +115,11 @@ function themeConfig($form)
                                 $value = implode(',', $value);
                             }
 
+                            // 为主题设置项添加主题名前缀
+                            $prefixedName = $themeName . '_' . $field['name'];
+                            
                             // 保存到数据库
-                            DB::setTtdf($field['name'], $value);
+                            DB::setTtdf($prefixedName, $value);
                         }
                     }
                 }

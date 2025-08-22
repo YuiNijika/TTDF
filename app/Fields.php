@@ -6,7 +6,7 @@ return [
         // Text
         'type' => 'Text',
         'name' => 'TTDF_Fields_Text',
-        'value' => null, // 默认值为 null
+        'value' => '', // 默认值为空字符串
         'label' => '文本框',
         'description' => '这是一个文本框~',
     ],
@@ -14,7 +14,7 @@ return [
         // Textarea
         'type' => 'Textarea',
         'name' => 'TTDF_Fields_Textarea',
-        'value' => null, // 默认值为 null
+        'value' => '', // 默认值为空字符串
         'label' => '文本域',
         'description' => '这是一个文本域~',
         // 设置字段属性
@@ -26,7 +26,7 @@ return [
         // Radio
         'type' => 'Radio',
         'name' => 'TTDF_Fields_Radio',
-        'value' => null, // 默认值为 null
+        'value' => '', // 默认值为空字符串
         'label' => '单选框',
         'description' => '这是一个单选框~',
         'options' => [
@@ -39,7 +39,7 @@ return [
         // Select
         'type' => 'Select',
         'name' => 'TTDF_Fields_Select',
-        'value' => null, // 默认值为 null
+        'value' => '', // 默认值为空字符串
         'label' => '下拉框',
         'description' => '这是一个下拉框~',
         'options' => [

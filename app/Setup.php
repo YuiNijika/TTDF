@@ -14,7 +14,7 @@ return [
                 // 'Text' => '文本框',
                 'type' => 'Text',
                 'name' => 'SubTitle',
-                'value' => null,
+                'value' => '',
                 'label' => '副标题',
                 'description' => '这是一个文本框，用于设置网站副标题，如果为空则不显示。'
             ],
@@ -22,7 +22,7 @@ return [
                 // 'Textarea' => '文本域',
                 'type' => 'Textarea',
                 'name' => 'this_textarea',
-                'value' => null,
+                'value' => '',
                 'label' => '文本域',
                 'description' => '这是一个文本域~'
             ]
