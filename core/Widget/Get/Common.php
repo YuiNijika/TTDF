@@ -265,16 +265,32 @@ class Get
     }
 
     /**
-     * 从 ttdf 表获取配置参数
+     * 获取TTDF主题配置项
      * 
      * @param string $name 配置名称
      * @param mixed $default 默认值
+     * @param bool $ignoreTheme 是否忽略主题名前缀，默认为false
      * @return mixed 配置值
      */
-    private static function TtdfOption(string $name, $default = null)
+    private static function TtdfOption(string $name, $default = null, bool $ignoreTheme = false)
     {
         try {
             $themeName = Helper::options()->theme;
+            
+            // 如果忽略主题名，需要动态处理主题名前缀
+            if ($ignoreTheme) {
+                // 检查字段名是否以当前主题名开头
+                $themePrefix = $themeName . '_';
+                if (strpos($name, $themePrefix) === 0) {
+                    // 移除当前主题名前缀
+                    $nameWithoutPrefix = substr($name, strlen($themePrefix));
+                    return DB::getTtdf($nameWithoutPrefix, $default);
+                } else {
+                    // 直接使用原字段名查询
+                    return DB::getTtdf($name, $default);
+                }
+            }
+
             $fullName = $themeName . '_' . $name;
 
             // 首先尝试获取带主题名前缀的配置项
@@ -291,12 +307,19 @@ class Get
         }
     }
 
-    // 获取配置参数
-    public static function Options($param, ?bool $echo = false)
+    /**
+     * 获取配置参数
+     * 
+     * @param string $param 参数名
+     * @param bool|null $echo 是否输出，默认为false
+     * @param bool $ignoreTheme 是否忽略主题名前缀，默认为false
+     * @return mixed 配置值
+     */
+    public static function Options($param, ?bool $echo = false, bool $ignoreTheme = false)
     {
         try {
             // 首先尝试从 ttdf 表获取配置参数
-            $value = self::TtdfOption($param, null);
+            $value = self::TtdfOption($param, null, $ignoreTheme);
 
             // 如果 ttdf 表中没有该配置
             if ($value === null) {
