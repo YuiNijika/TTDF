@@ -9,7 +9,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  * TTDF Config
  */
 return [
-    'DEBUG' => true, // TTDF Debug
+    'DEBUG' => false, // TTDF Debug
     'FIELDS_ENABLED' => false, // 是否启用自定义字段
     'TYAJAX_ENABLED' => false, // 是否启用TyAjax模块
     'COMPRESS_HTML' => true, // 是否启用HTML压缩

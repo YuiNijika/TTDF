@@ -1136,7 +1136,7 @@ class OptionController extends BaseController
         if ($optionName === null) {
             // 处理获取所有选项的请求
             $allowedOptions = ['title', 'description', 'keywords', 'theme', 'plugins', 'timezone', 'lang', 'charset', 'contentType', 'siteUrl', 'rootUrl', 'rewrite', 'generator', 'feedUrl', 'searchUrl'];
-            $allOptions = Helper::options();
+            $allOptions = Get::Options();
             $publicOptions = [];
 
             // 检查是否有受限选项
@@ -1172,7 +1172,6 @@ class OptionController extends BaseController
     }
 }
 
-// 字段控制器
 // 字段控制器
 class FieldController extends BaseController
 {

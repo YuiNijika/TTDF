@@ -16,6 +16,30 @@ class DB
         return self::$instance ??= new self();
     }
 
+    /**
+     * 获取完整的字段名（主题名_字段名）
+     * @param string $name 原字段名
+     * @return string 完整字段名
+     */
+    private static function getFullFieldName($name)
+    {
+        try {
+            // 获取主题名
+            $themeName = Helper::options()->theme;
+            
+            // 如果主题名存在且不为空，则拼接
+            if (!empty($themeName)) {
+                return $themeName . '_' . $name;
+            }
+            
+            // 如果没有主题名，直接返回原字段名
+            return $name;
+        } catch (Exception $e) {
+            // 如果获取主题名失败，直接返回原字段名
+            return $name;
+        }
+    }
+
     public static function init()
     {
         $db = Typecho_Db::get();
@@ -38,7 +62,56 @@ class DB
 
             // 插入默认数据
             $siteUrl = Helper::options()->siteUrl;
-            self::setTtdf('siteUrl', $siteUrl);
+            
+            // 直接插入siteUrl，不使用主题前缀（保持兼容性）
+            $db->query($db->insert('table.ttdf')->rows(array(
+                'name' => 'siteUrl',
+                'value' => $siteUrl
+            )));
+
+            // 自动写入Setup.php中定义的所有默认设置项
+            try {
+                $setupPath = __DIR__ . '/../../app/Setup.php';
+                if (file_exists($setupPath)) {
+                    $tabs = require $setupPath;
+
+                    // 遍历所有设置项
+                    foreach ($tabs as $tab) {
+                        // 只处理有fields字段的标签页，跳过只有html的标签页
+                        if (isset($tab['fields']) && is_array($tab['fields'])) {
+                            foreach ($tab['fields'] as $field) {
+                                // 跳过HTML类型的字段和没有name的字段
+                                if (!isset($field['name']) || !isset($field['value']) || $field['type'] === 'Html') {
+                                    continue;
+                                }
+
+                                $name = $field['name'];
+                                $value = $field['value'];
+
+                                // 处理复选框的数组默认值
+                                if ($field['type'] === 'Checkbox' && is_array($value)) {
+                                    $value = implode(',', $value);
+                                }
+
+                                // 只有当值不为null时才写入数据库
+                                if ($value !== null) {
+                                    // 获取完整字段名（主题名_字段名）
+                                    $fullName = self::getFullFieldName($name);
+                                    
+                                    // 直接插入数据库，避免递归调用
+                                    $db->query($db->insert('table.ttdf')->rows(array(
+                                        'name' => $fullName,
+                                        'value' => $value
+                                    )));
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (Exception $setupException) {
+                // 如果Setup.php有问题，记录错误但不影响表创建
+                error_log('TTDF Database Init: Failed to load default settings from Setup.php - ' . $setupException->getMessage());
+            }
         }
     }
 
@@ -46,17 +119,20 @@ class DB
     public static function setTtdf($name, $value)
     {
         $db = Typecho_Db::get();
+        
+        // 获取主题名并拼接字段名
+        $fullName = self::getFullFieldName($name);
 
         // 检查是否已存在
-        $exists = $db->fetchRow($db->select()->from('table.ttdf')->where('name = ?', $name));
+        $exists = $db->fetchRow($db->select()->from('table.ttdf')->where('name = ?', $fullName));
 
         if ($exists) {
             // 更新
-            $db->query($db->update('table.ttdf')->rows(array('value' => $value))->where('name = ?', $name));
+            $db->query($db->update('table.ttdf')->rows(array('value' => $value))->where('name = ?', $fullName));
         } else {
             // 新增
             $db->query($db->insert('table.ttdf')->rows(array(
-                'name' => $name,
+                'name' => $fullName,
                 'value' => $value
             )));
         }
@@ -66,7 +142,18 @@ class DB
     public static function getTtdf($name, $default = null)
     {
         $db = Typecho_Db::get();
-        $row = $db->fetchRow($db->select('value')->from('table.ttdf')->where('name = ?', $name));
+        
+        // 获取主题名并拼接字段名
+        $fullName = self::getFullFieldName($name);
+        
+        // 首先尝试获取带主题名前缀的配置项
+        $row = $db->fetchRow($db->select('value')->from('table.ttdf')->where('name = ?', $fullName));
+        
+        // 如果没有找到，则回退到原来的名称（向后兼容）
+        if (!$row) {
+            $row = $db->fetchRow($db->select('value')->from('table.ttdf')->where('name = ?', $name));
+        }
+        
         return $row ? $row['value'] : $default;
     }
 
@@ -74,18 +161,51 @@ class DB
     public static function deleteTtdf($name)
     {
         $db = Typecho_Db::get();
+        
+        // 获取主题名并拼接字段名
+        $fullName = self::getFullFieldName($name);
+        
+        // 删除带主题名前缀的配置项
+        $db->query($db->delete('table.ttdf')->where('name = ?', $fullName));
+        
+        // 同时删除原来的名称（向后兼容清理）
         $db->query($db->delete('table.ttdf')->where('name = ?', $name));
     }
 
     // 获取所有数据
-    public static function getAllTtdf()
+    public static function getAllTtdf($currentThemeOnly = false)
     {
         $db = Typecho_Db::get();
         $rows = $db->fetchAll($db->select()->from('table.ttdf'));
         $result = array();
-        foreach ($rows as $row) {
-            $result[$row['name']] = $row['value'];
+        
+        if ($currentThemeOnly) {
+            // 只获取当前主题的设置项
+            try {
+                $themeName = Helper::options()->theme;
+                $prefix = $themeName . '_';
+                
+                foreach ($rows as $row) {
+                    $name = $row['name'];
+                    // 如果是当前主题的设置项，去掉前缀
+                    if (strpos($name, $prefix) === 0) {
+                        $shortName = substr($name, strlen($prefix));
+                        $result[$shortName] = $row['value'];
+                    }
+                }
+            } catch (Exception $e) {
+                // 如果获取主题名失败，返回所有数据
+                foreach ($rows as $row) {
+                    $result[$row['name']] = $row['value'];
+                }
+            }
+        } else {
+            // 获取所有数据
+            foreach ($rows as $row) {
+                $result[$row['name']] = $row['value'];
+            }
         }
+        
         return $result;
     }
 
