@@ -10,9 +10,6 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  */
 function TTDF_FormElement($type, $name, $value, $label, $description, $options = [])
 {
-    // 获取保存的值
-    $savedValue = DB::getTtdf($name, $value);
-
     // 确保 _t() 的参数不为 null
     $label = $label ?? '';
     $description = $description ?? '';
@@ -20,21 +17,156 @@ function TTDF_FormElement($type, $name, $value, $label, $description, $options =
     $class = '\\Typecho\\Widget\\Helper\\Form\\Element\\' . $type;
     if ($type === 'Radio' || $type === 'Select' || $type === 'Checkbox') {
         // Radio、Select、Checkbox 类型需要额外的 options 参数
-        $element = new $class($name, $options, null, _t($label), _t($description));
+        return new $class($name, $options, $value, _t($label), _t($description));
     } else {
-        $element = new $class($name, null, null, _t($label), _t($description));
+        return new $class($name, null, $value, _t($label), _t($description));
     }
+}
 
-    // 手动设置元素的值，确保使用我们从ttdf表中获取的值
-    if ($savedValue !== null) {
-        // 特殊处理复选框值
-        if ($type === 'Checkbox' && is_string($savedValue)) {
-            $savedValue = explode(',', $savedValue);
+/**
+ * 创建自定义HTML表单元素
+ */
+function TTDF_CreateHtmlElement($type, $name, $value, $label, $description, $options = [])
+{
+    // 获取当前主题名并构建带前缀的字段名
+    $themeName = Helper::options()->theme;
+    $prefixedName = $themeName . '_' . $name;
+
+    // 检查数据库中是否存在该记录（使用原始字段名，让DB::getTtdf统一处理前缀）
+    $row = DB::getTtdf($name);
+    $dbValue = $row;
+
+    // 如果数据库中有值且不等于Setup.php中的默认值
+    // 否则使用Setup.php中的当前默认值
+    $savedValue = $value; // 默认使用Setup.php中的值
+
+    if ($dbValue !== null) {
+        // 对于复选框，需要特殊处理比较
+        if ($type === 'Checkbox') {
+            $setupDefault = is_array($value) ? implode(',', $value) : $value;
+            $dbValueForCompare = $dbValue;
+        } else {
+            $setupDefault = $value;
+            $dbValueForCompare = $dbValue;
         }
-        $element->value($savedValue);
+
+        // 如果数据库值与Setup.php默认值不同，说明用户修改过，使用数据库值
+        if ($dbValueForCompare !== $setupDefault) {
+            $savedValue = $dbValue;
+        }
     }
 
-    return $element;
+    // 生成HTML元素
+    $html = '';
+    $escapedLabel = htmlspecialchars($label ?? '', ENT_QUOTES, 'UTF-8');
+    // 不再对 description 进行转义，允许其中的 HTML 标签正常渲染
+    $rawDescription = $description ?? '';
+
+    switch ($type) {
+        case 'Text':
+        case 'Password':
+            $inputType = strtolower($type);
+            $escapedValue = htmlspecialchars($savedValue ?? '', ENT_QUOTES, 'UTF-8');
+            $html = '<div class="form-group">';
+            $html .= '<label for="' . $prefixedName . '">' . $escapedLabel . '</label>';
+            // 直接输出 description，不进行转义以支持 HTML
+            if ($rawDescription) {
+                $html .= '<p class="description">' . $rawDescription . '</p>';
+            }
+            $html .= '<input type="' . $inputType . '" id="' . $prefixedName . '" name="' . $name . '" value="' . $escapedValue . '" class="form-control" />';
+            $html .= '</div>';
+            break;
+
+        case 'Textarea':
+            $escapedValue = htmlspecialchars($savedValue ?? '', ENT_QUOTES, 'UTF-8');
+            $html = '<div class="form-group">';
+            $html .= '<label for="' . $prefixedName . '">' . $escapedLabel . '</label>';
+            // 直接输出 description，不进行转义以支持 HTML
+            if ($rawDescription) {
+                $html .= '<p class="description">' . $rawDescription . '</p>';
+            }
+            $html .= '<textarea id="' . $prefixedName . '" name="' . $name . '" class="form-control" rows="5">' . $escapedValue . '</textarea>';
+            $html .= '</div>';
+            break;
+
+        case 'Select':
+            $html = '<div class="form-group">';
+            if ($escapedLabel) {
+                $html .= '<label for="' . $prefixedName . '">' . $escapedLabel . '</label>';
+            }
+            // 直接输出 description，不进行转义以支持 HTML
+            if ($rawDescription) {
+                $html .= '<p class="description">' . $rawDescription . '</p>';
+            }
+            $html .= '<select id="' . $prefixedName . '" name="' . $name . '" class="form-control">';
+            foreach ($options as $optionValue => $optionLabel) {
+                $selected = ($savedValue == $optionValue) ? ' selected' : '';
+                $html .= '<option value="' . htmlspecialchars($optionValue, ENT_QUOTES, 'UTF-8') . '"' . $selected . '>' . htmlspecialchars($optionLabel, ENT_QUOTES, 'UTF-8') . '</option>';
+            }
+            $html .= '</select>';
+            $html .= '</div>';
+            break;
+
+        case 'Radio':
+            $html = '<div class="form-group">';
+            if ($escapedLabel) {
+                $html .= '<label class="form-label">' . $escapedLabel . '</label>';
+            }
+            // 直接输出 description，不进行转义以支持 HTML
+            if ($rawDescription) {
+                $html .= '<p class="description">' . $rawDescription . '</p>';
+            }
+            $html .= '<div class="radio-group">';
+            foreach ($options as $optionValue => $optionLabel) {
+                $checked = ($savedValue == $optionValue) ? ' checked' : '';
+                $html .= '<label class="radio-item">';
+                $html .= '<input type="radio" id="' . $prefixedName . '_' . $optionValue . '" name="' . $name . '" value="' . htmlspecialchars($optionValue, ENT_QUOTES, 'UTF-8') . '"' . $checked . ' />';
+                $html .= '<span>' . htmlspecialchars($optionLabel, ENT_QUOTES, 'UTF-8') . '</span>';
+                $html .= '</label>';
+            }
+            $html .= '</div>';
+            $html .= '</div>';
+            break;
+
+        case 'Checkbox':
+            // 处理复选框的多值情况
+            $selectedValues = [];
+            if (is_string($savedValue)) {
+                $selectedValues = explode(',', $savedValue);
+            } elseif (is_array($savedValue)) {
+                $selectedValues = $savedValue;
+            }
+
+            $html = '<div class="form-group">';
+            if ($escapedLabel) {
+                $html .= '<label class="form-label">' . $escapedLabel . '</label>';
+            }
+            // 直接输出 description，不进行转义以支持 HTML
+            if ($rawDescription) {
+                $html .= '<p class="description">' . $rawDescription . '</p>';
+            }
+            $html .= '<div class="checkbox-group">';
+            foreach ($options as $optionValue => $optionLabel) {
+                $checked = in_array($optionValue, $selectedValues) ? ' checked' : '';
+                $html .= '<label class="checkbox-item">';
+                $html .= '<input type="checkbox" id="' . $prefixedName . '_' . $optionValue . '" name="' . $name . '[]" value="' . htmlspecialchars($optionValue, ENT_QUOTES, 'UTF-8') . '"' . $checked . ' />';
+                $html .= '<span>' . htmlspecialchars($optionLabel, ENT_QUOTES, 'UTF-8') . '</span>';
+                $html .= '</label>';
+            }
+            $html .= '</div>';
+            $html .= '</div>';
+            break;
+
+        case 'Html':
+            $html = $savedValue ?? '';
+            break;
+
+        default:
+            $html = '<div class="form-group"><p>不支持的字段类型: ' . htmlspecialchars($type, ENT_QUOTES, 'UTF-8') . '</p></div>';
+            break;
+    }
+
+    return $html;
 }
 
 if (TTDF_CONFIG['FIELDS_ENABLED']) {
@@ -80,6 +212,118 @@ class EchoHtml extends Typecho_Widget_Helper_Layout
     public function end() {}
 }
 
+// 创建自定义HTML表单元素生成函数
+function TTDF_CreateFormElement($field)
+{
+    // 获取当前主题名
+    $themeName = Helper::options()->theme;
+
+    // 构建带主题前缀的字段名（仅用于id属性）
+    $prefixedName = $themeName . '_' . $field['name'];
+
+    // 从数据库获取值
+    $dbValue = DB::getTtdf($field['name']);
+
+    // 确定最终值：优先使用数据库值，否则使用默认值
+    $value = ($dbValue !== null && $dbValue !== $field['value']) ? $dbValue : ($field['value'] ?? '');
+
+    // 处理标签和描述
+    $label = $field['label'] ?? '';
+    // 修复：不再对 description 进行转义，允许其中的 HTML 标签正常渲染
+    $description = $field['description'] ?? '';
+
+    $html = '';
+
+    switch ($field['type']) {
+        case 'Text':
+        case 'Password':
+            $type = strtolower($field['type']);
+            $html = '<div class="form-group">';
+            if ($label) {
+                $html .= '<label for="' . $prefixedName . '">' . $label . '</label>';
+            }
+            $html .= '<input type="' . $type . '" name="' . $field['name'] . '" id="' . $prefixedName . '" value="' . htmlspecialchars($value) . '" class="form-control" />';
+            // 修复：直接输出 description，不进行转义以支持 HTML
+            if ($description) {
+                $html .= '<p class="description">' . $description . '</p>';
+            }
+            $html .= '</div>';
+            break;
+
+        case 'Textarea':
+            $html = '<div class="form-group">';
+            if ($label) {
+                $html .= '<label for="' . $prefixedName . '">' . $label . '</label>';
+            }
+            $html .= '<textarea name="' . $field['name'] . '" id="' . $prefixedName . '" class="form-control" rows="5">' . htmlspecialchars($value) . '</textarea>';
+            // 修复：直接输出 description，不进行转义以支持 HTML
+            if ($description) {
+                $html .= '<p class="description">' . $description . '</p>';
+            }
+            $html .= '</div>';
+            break;
+
+        case 'Select':
+            $html = '<div class="form-group">';
+            if ($label) {
+                $html .= '<label for="' . $prefixedName . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</label>';
+            }
+            // 修复：直接输出 description，不进行转义以支持 HTML
+            if ($description) {
+                $html .= '<p class="description">' . $description . '</p>';
+            }
+            $html .= '<select name="' . $field['name'] . '" id="' . $prefixedName . '" class="form-control">';
+            if (isset($field['options'])) {
+                foreach ($field['options'] as $optValue => $optLabel) {
+                    $selected = ($value == $optValue) ? ' selected' : '';
+                    $html .= '<option value="' . htmlspecialchars($optValue, ENT_QUOTES, 'UTF-8') . '"' . $selected . '>' . htmlspecialchars($optLabel, ENT_QUOTES, 'UTF-8') . '</option>';
+                }
+            }
+            $html .= '</select>';
+            $html .= '</div>';
+            break;
+
+        case 'Radio':
+            $html = '<div class="form-group">';
+            if ($label) {
+                $html .= '<label>' . $label . '</label>';
+            }
+            if (isset($field['options'])) {
+                foreach ($field['options'] as $optValue => $optLabel) {
+                    $checked = ($value == $optValue) ? ' checked' : '';
+                    $html .= '<label class="radio-label"><input type="radio" name="' . $field['name'] . '" value="' . htmlspecialchars($optValue) . '"' . $checked . ' /> ' . $optLabel . '</label>';
+                }
+            }
+            // 修复：直接输出 description，不进行转义以支持 HTML
+            if ($description) {
+                $html .= '<p class="description">' . $description . '</p>';
+            }
+            $html .= '</div>';
+            break;
+
+        case 'Checkbox':
+            $html = '<div class="form-group">';
+            if ($label) {
+                $html .= '<label>' . $label . '</label>';
+            }
+            if (isset($field['options'])) {
+                $selectedValues = is_string($value) ? explode(',', $value) : (array)$value;
+                foreach ($field['options'] as $optValue => $optLabel) {
+                    $checked = in_array($optValue, $selectedValues) ? ' checked' : '';
+                    $html .= '<label class="checkbox-label"><input type="checkbox" name="' . $field['name'] . '[]" value="' . htmlspecialchars($optValue) . '"' . $checked . ' /> ' . $optLabel . '</label>';
+                }
+            }
+            // 修复：直接输出 description，不进行转义以支持 HTML
+            if ($description) {
+                $html .= '<p class="description">' . $description . '</p>';
+            }
+            $html .= '</div>';
+            break;
+    }
+
+    return $html;
+}
+
 function themeConfig($form)
 {
     // 处理表单提交
@@ -89,6 +333,9 @@ function themeConfig($form)
         header('Content-Type: application/json');
 
         try {
+            // 获取当前主题名
+            $themeName = Helper::options()->theme;
+
             // 获取所有设置项
             $tabs = require __DIR__ . '/../../app/Setup.php';
 
@@ -97,6 +344,7 @@ function themeConfig($form)
                 if (isset($tab['fields'])) {
                     foreach ($tab['fields'] as $field) {
                         if (isset($field['name']) && $field['type'] !== 'Html') {
+                            // 直接从$_POST中获取原始字段名的值
                             $value = $_POST[$field['name']] ?? null;
 
                             // 处理复选框的多值情况
@@ -104,7 +352,7 @@ function themeConfig($form)
                                 $value = implode(',', $value);
                             }
 
-                            // 保存到数据库
+                            // 保存到数据库（DB::setTtdf内部会自动添加主题前缀）
                             DB::setTtdf($field['name'], $value);
                         }
                     }
@@ -120,6 +368,7 @@ function themeConfig($form)
         exit;
     }
 
+    // 如果不是AJAX请求，输出HTML界面
 ?>
     <style type="text/css">
         /* Typecho CSS 重置部分 */
@@ -166,7 +415,7 @@ function themeConfig($form)
             width: unset;
         }
 
-        /* TTDF 主题样式 */
+        /* CSF 风格的现代化样式 */
         * {
             margin: 0;
             padding: 0;
@@ -175,139 +424,206 @@ function themeConfig($form)
         }
 
         .TTDF-container {
-            margin: 20px auto;
-            background: white;
-            border-radius: 3px;
-            box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
             max-width: 1200px;
+            margin: 20px auto;
+            background: #ffffff;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            border: 1px solid #ddd;
         }
 
         .TTDF-header {
+            background: #4f46e5;
+            color: white;
+            padding: 20px 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 15px;
-            border-bottom: 1px solid #dcdcde;
         }
 
         .TTDF-title {
-            font-size: 20px;
+            font-size: 24px;
             font-weight: 600;
-            color: #1d2327;
+            margin: 0;
         }
 
         .TTDF-title small {
             font-size: 16px;
-            color: #646970;
-            font-weight: normal;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 400;
+            margin-left: 8px;
         }
 
         .TTDF-actions {
             display: flex;
-            gap: 10px;
+            gap: 12px;
         }
 
         .TTDF-save {
-            background-color: #2271b1;
+            background: rgba(255, 255, 255, 0.2);
             color: white;
-            border: none;
-            border-radius: 3px;
-            padding: 8px 16px;
-            font-size: 14px;
-            font-weight: 500;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 10px 20px;
+            border-radius: 4px;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: background 0.2s;
+            font-weight: 500;
+            font-size: 14px;
         }
 
         .TTDF-save:hover {
-            background-color: #135e96;
+            background: rgba(255, 255, 255, 0.3);
         }
 
         .TTDF-body {
             display: flex;
             min-height: 520px;
+            background: #fafbfc;
         }
 
         .TTDF-nav {
-            width: 200px;
-            max-height: 520px;
-            border-right: 1px solid #dcdcde;
-            background: #f6f7f7;
+            width: 240px;
+            background: #f8f9fa;
+            border-right: 1px solid #ddd;
             overflow-y: auto;
+            max-height: 520px;
         }
 
         .TTDF-nav-item {
             display: block;
-            width: 100%;
-            padding: 12px 15px;
-            text-align: left;
-            background: transparent;
-            color: #1d2327;
-            font-size: 14px;
-            cursor: pointer;
+            padding: 12px 20px;
+            color: #555;
+            text-decoration: none;
             transition: all 0.2s;
             border-left: 3px solid transparent;
-            border: none;
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
+            background: transparent;
         }
 
         .TTDF-nav-item:hover {
-            background-color: #f0f0f1;
-            color: #2271b1;
+            color: #4f46e5;
+            background: #f0f0f0;
+            border-left-color: #4f46e5;
         }
 
         .TTDF-nav-item.active {
-            background-color: white;
-            border-left-color: #2271b1;
-            color: #2271b7;
-            font-weight: 500;
+            background: #e8f0fe;
+            color: #1a73e8;
+            font-weight: 600;
+            border-left-color: #4f46e5;
         }
 
         .TTDF-content {
             flex: 1;
-            padding: 20px;
-            max-height: 520px;
+            padding: 10px;
+            background: #ffffff;
             overflow-y: auto;
+            max-height: 520px;
         }
 
         .TTDF-tab-panel {
             display: none;
+            animation: fadeIn 0.3s ease-in-out;
         }
 
         .TTDF-tab-panel.active {
             display: block;
         }
 
-        /* 响应式设计 */
-        @media (max-width: 782px) {
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 现代化字体系统 */
+        * {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            line-height: 1.2;
+        }
+
+        /* 简化的响应式设计 */
+        @media (max-width: 768px) {
+            .TTDF-container {
+                margin: 10px;
+            }
+
             .TTDF-body {
                 flex-direction: column;
             }
 
             .TTDF-nav {
                 width: 100%;
-                max-height: 200px;
-                border-right: none;
-                border-bottom: 1px solid #dcdcde;
                 display: flex;
                 overflow-x: auto;
-                overflow-y: hidden;
+                padding: 0;
+                background: #f8f9fa;
+                border-right: none;
+                border-bottom: 1px solid #ddd;
             }
 
             .TTDF-nav-item {
-                text-align: center;
                 white-space: nowrap;
+                padding: 10px 16px;
+                min-width: 100px;
+                text-align: center;
+                font-size: 13px;
                 border-left: none;
                 border-bottom: 3px solid transparent;
             }
 
+            .TTDF-nav-item:hover,
             .TTDF-nav-item.active {
-                border-left: none;
-                border-bottom-color: #2271b1;
+                border-bottom-color: #4f46e5;
+            }
+
+            .TTDF-header {
+                padding: 16px;
+            }
+
+            .TTDF-title {
+                font-size: 20px;
             }
 
             .TTDF-content {
-                max-height: none;
-                overflow-y: visible;
+                padding: 16px;
+            }
+
+            .form-control {
+                font-size: 16px;
+                /* 防止iOS缩放 */
+            }
+
+            .radio-group,
+            .checkbox-group {
+                gap: 8px;
+            }
+
+            .radio-item,
+            .checkbox-item {
+                min-width: 80px;
+                font-size: 13px;
             }
         }
 
@@ -376,41 +692,247 @@ function themeConfig($form)
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23dc2626'%3E%3Cpath fill-rule='evenodd' d='M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z' clip-rule='evenodd'/%3E%3C/svg%3E");
         }
 
-        /* 消息提示 */
+        /* 消息提示样式 */
         .ttdf-message {
-            margin: 10px;
+            animation: slideIn 0.3s ease-out;
         }
 
-        /* 遮罩层 */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 加载遮罩 */
         .ttdf-loading {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.6);
             z-index: 9999;
             display: none;
             justify-content: center;
             align-items: center;
+            backdrop-filter: blur(8px);
         }
 
         .ttdf-loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #2271b1;
+            width: 48px;
+            height: 48px;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-top: 3px solid #4f46e5;
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            animation: modernSpin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
         }
 
-        @keyframes spin {
+        @keyframes modernSpin {
             0% {
-                transform: rotate(0deg);
+                transform: rotate(0deg) scale(1);
+            }
+
+            50% {
+                transform: rotate(180deg) scale(1.1);
             }
 
             100% {
-                transform: rotate(360deg);
+                transform: rotate(360deg) scale(1);
+            }
+        }
+
+        /* 表单样式 */
+        .form-group {
+            margin-bottom: 20px;
+            background: #ffffff;
+            border-radius: 4px;
+            padding: 16px;
+            border: 1px solid #ddd;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 12px;
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 15px;
+            letter-spacing: -0.2px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #333;
+            background-color: #ffffff;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+
+        .form-control:focus {
+            border-color: #4f46e5;
+            outline: 0;
+        }
+
+        .form-control[readonly] {
+            background-color: #f9fafb;
+            border-color: #d1d5db;
+            color: #6b7280;
+            cursor: not-allowed;
+        }
+
+        select.form-control {
+            cursor: pointer;
+            background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 5"><path fill="%23666" d="M2 0L0 2h4zm0 5L0 3h4z"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 12px;
+            padding-right: 40px;
+            height: 45px;
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 120px;
+            font-family: inherit;
+        }
+
+        .description {
+            margin-top: 8px;
+            font-size: 13px;
+            color: #6b7280;
+            line-height: 1.5;
+            font-style: italic;
+        }
+
+        /* 简化的单选框和复选框样式 */
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .radio-group,
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .radio-item,
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-size: 14px;
+            color: #374151;
+            padding: 8px 12px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            white-space: nowrap;
+            min-width: 100px;
+        }
+
+        .radio-item:hover,
+        .checkbox-item:hover {
+            background: #f0f4ff;
+            border-color: #4f46e5;
+        }
+
+        .radio-item input[type="radio"],
+        .checkbox-item input[type="checkbox"] {
+            margin-right: 6px;
+            margin-top: 0;
+            width: 16px;
+            height: 16px;
+            accent-color: #4f46e5;
+            cursor: pointer;
+        }
+
+        .radio-item input[type="radio"]:checked~span,
+        .checkbox-item input[type="checkbox"]:checked~span {
+            color: #4f46e5;
+            font-weight: 500;
+        }
+
+        .radio-item input[type="radio"]:checked,
+        .checkbox-item input[type="checkbox"]:checked {
+            background: #4f46e5;
+        }
+
+        /* 兼容旧样式 - 修改这部分以实现横排显示 */
+        .radio-label,
+        .checkbox-label {
+            display: inline-flex;
+            align-items: center;
+            margin-bottom: 0;
+            margin-right: 16px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #374151;
+            padding: 8px 12px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            white-space: nowrap;
+        }
+
+        .radio-label:hover,
+        .checkbox-label:hover {
+            background: #f0f4ff;
+            border-color: #4f46e5;
+        }
+
+        .radio-label input[type="radio"],
+        .checkbox-label input[type="checkbox"] {
+            margin-right: 6px;
+            margin-top: 0;
+            width: 16px;
+            height: 16px;
+            accent-color: #4f46e5;
+            cursor: pointer;
+        }
+
+        .radio-label input[type="radio"]:checked+span,
+        .checkbox-label input[type="checkbox"]:checked+span {
+            color: #4f46e5;
+            font-weight: 500;
+        }
+
+        /* 响应式下的单选框和复选框样式 */
+        @media (max-width: 768px) {
+
+            .radio-label,
+            .checkbox-label {
+                display: inline-flex;
+                align-items: center;
+                margin-bottom: 0;
+                margin-right: 8px;
+                cursor: pointer;
+                font-size: 13px;
+                color: #374151;
+                padding: 6px 10px;
+                border-radius: 4px;
+                transition: all 0.2s;
+                background: #f8f9fa;
+                border: 1px solid #ddd;
+                white-space: nowrap;
             }
         }
     </style>
@@ -498,16 +1020,20 @@ function themeConfig($form)
                             // 隐藏加载遮罩
                             document.body.removeChild(loading);
 
-                            // 显示消息
+                            // 显示消息到TTDF-content区域内
                             let messageDiv = document.querySelector('.ttdf-message');
                             if (!messageDiv) {
                                 messageDiv = document.createElement('div');
-                                messageDiv.className = 'message ttdf-message';
-                                document.querySelector('.TTDF-header').after(messageDiv);
+                                messageDiv.className = 'ttdf-message';
                             }
 
+                            // 设置消息样式和内容
                             messageDiv.className = 'alert success ttdf-message';
                             messageDiv.innerHTML = '<span>设置已保存!</span>';
+
+                            // 将消息插入到TTDF-content的顶部
+                            const contentArea = document.querySelector('.TTDF-content');
+                            contentArea.insertBefore(messageDiv, contentArea.firstChild);
 
                             // 3秒后自动隐藏消息
                             setTimeout(() => {
@@ -520,14 +1046,20 @@ function themeConfig($form)
                             // 隐藏加载遮罩
                             document.body.removeChild(loading);
 
-                            // 显示错误消息
+                            // 显示错误消息到TTDF-content区域内
                             let messageDiv = document.querySelector('.ttdf-message');
                             if (!messageDiv) {
                                 messageDiv = document.createElement('div');
-                                messageDiv.className = 'alert error ttdf-message';
-                                document.querySelector('.TTDF-header').after(messageDiv);
+                                messageDiv.className = 'ttdf-message';
                             }
+
+                            // 设置错误消息样式和内容
+                            messageDiv.className = 'alert error ttdf-message';
                             messageDiv.innerHTML = '<span>保存失败: ' + error.message + '</span>';
+
+                            // 将消息插入到TTDF-content的顶部
+                            const contentArea = document.querySelector('.TTDF-content');
+                            contentArea.insertBefore(messageDiv, contentArea.firstChild);
 
                             // 3秒后自动隐藏消息
                             setTimeout(() => {
@@ -542,75 +1074,59 @@ function themeConfig($form)
     </script>
 
     <form method="post">
-    <?php
-    // 初始化HTML结构
-    $form->addItem(new EchoHtml('
-    <div class="TTDF-container">
-        <div class="TTDF-header">
-            <h1 class="TTDF-title">' . GetTheme::Name(false) . '<small> · ' . GetTheme::Ver(false) . '</small></h1>
-            <div class="TTDF-actions">
-                <button class="TTDF-save" type="submit">保存设置</button>
+        <div class="TTDF-container">
+            <div class="TTDF-header">
+                <h1 class="TTDF-title"><?php echo GetTheme::Name(false); ?><small> · <?php echo GetTheme::Ver(false); ?></small></h1>
+                <div class="TTDF-actions">
+                    <button class="TTDF-save" type="submit">保存设置</button>
+                </div>
+            </div>
+
+            <div class="TTDF-body">
+                <nav class="TTDF-nav">
+                    <?php
+                    // 生成Tab导航按钮（默认激活第一个）
+                    $tabs = require __DIR__ . '/../../app/Setup.php';
+                    $first_tab = true;
+                    foreach ($tabs as $tab_id => $tab) {
+                        $active = $first_tab ? 'active' : '';
+                        echo '<div class="TTDF-nav-item ' . $active . '" data-tab="' . $tab_id . '">' . $tab['title'] . '</div>';
+                        $first_tab = false;
+                    }
+                    ?>
+                </nav>
+                <div class="TTDF-content">
+                    <?php
+                    // 生成Tab内容
+                    $first_tab = true;
+                    foreach ($tabs as $tab_id => $tab) {
+                        $show = $first_tab ? 'active' : '';
+                        echo '<div id="' . $tab_id . '" class="TTDF-tab-panel ' . $show . '">';
+
+                        if (isset($tab['html'])) {
+                            foreach ($tab['html'] as $html) {
+                                echo $html['content'];
+                            }
+                        } else {
+                            foreach ($tab['fields'] as $field) {
+                                if ($field['type'] === 'Html') {
+                                    echo $field['content'];
+                                } else {
+                                    echo TTDF_CreateFormElement($field);
+                                }
+                            }
+                        }
+
+                        echo '</div>';
+                        $first_tab = false;
+                    }
+                    ?>
+                </div>
             </div>
         </div>
-        
-        <div class="TTDF-body">
-            <nav class="TTDF-nav">'));
-
-    // 生成Tab导航按钮（默认激活第一个）
-    $tabs = require __DIR__ . '/../../app/Setup.php';
-    $first_tab = true;
-    foreach ($tabs as $tab_id => $tab) {
-        $active = $first_tab ? 'active' : '';
-        $form->addItem(new EchoHtml('
-            <div class="TTDF-nav-item ' . $active . '" data-tab="' . $tab_id . '">
-                ' . $tab['title'] . '
-            </div>'));
-        $first_tab = false;
-    }
-
-    $form->addItem(new EchoHtml('
-            </nav>
-            <div class="TTDF-content">'));
-
-    // 生成Tab内容
-    $first_tab = true;
-    foreach ($tabs as $tab_id => $tab) {
-        $show = $first_tab ? 'active' : '';
-        $form->addItem(new EchoHtml('<div id="' . $tab_id . '" class="TTDF-tab-panel ' . $show . '">'));
-
-        if (isset($tab['html'])) {
-            foreach ($tab['html'] as $html) {
-                $form->addItem(new EchoHtml($html['content']));
-            }
-        } else {
-            foreach ($tab['fields'] as $field) {
-                if ($field['type'] === 'Html') {
-                    $form->addItem(new EchoHtml($field['content']));
-                } else {
-                    $form->addInput(TTDF_FormElement(
-                        $field['type'],
-                        $field['name'],
-                        $field['value'] ?? null,
-                        $field['label'] ?? '',
-                        $field['description'] ?? '',
-                        $field['options'] ?? []
-                    ));
-                }
-            }
-        }
-
-        $form->addItem(new EchoHtml('</div>'));
-        $first_tab = false;
-    }
-
-    // 关闭所有HTML标签
-    $form->addItem(new EchoHtml('
-            </div>
+        <div style="text-align: center; margin-top: 20px;">
+            © Framework By <a href="https://github.com/YuiNijika/TTDF" target="_blank" style="padding: 0px 3px;">TTDF</a> v<?php echo TTDF::Ver(false); ?>
         </div>
-    </div>
-    <div style="text-align: center; margin-top: 20px;">
-        © Framework By <a href="https://github.com/YuiNijika/TTDF" target="_blank" style="padding: 0px 3px;">TTDF</a> v' . TTDF::Ver(false) . '
-    </div>'));
-
-    $form->addItem(new EchoHtml('</form>'));
+    </form>
+<?php
 }

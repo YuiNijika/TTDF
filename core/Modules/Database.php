@@ -45,6 +45,18 @@ class DB
         $db = Typecho_Db::get();
         $prefix = $db->getPrefix();
 
+        // 确保表存在
+        self::ensureTableExists($db, $prefix);
+        
+        // 插入当前主题的默认设置项（每次都执行）
+        self::insertThemeDefaultSettings($db);
+    }
+    
+    /**
+     * 确保ttdf表存在，如果不存在则创建
+     */
+    private static function ensureTableExists($db, $prefix)
+    {
         try {
             // 尝试查询表，如果失败则创建
             $db->fetchRow($db->select()->from('table.ttdf')->limit(1));
@@ -61,57 +73,71 @@ class DB
             $db->query($sql);
 
             // 插入默认数据
-            $siteUrl = Helper::options()->siteUrl;
-            
-            // 直接插入siteUrl，不使用主题前缀（保持兼容性）
             $db->query($db->insert('table.ttdf')->rows(array(
-                'name' => 'siteUrl',
-                'value' => $siteUrl
+                'name' => 'TTDF',
+                'value' => 'NB666'
             )));
+        }
+    }
+    
+    /**
+     * 插入当前主题的默认设置项
+     */
+    private static function insertThemeDefaultSettings($db)
+    {
+        try {
+            $setupPath = __DIR__ . '/../../app/Setup.php';
+            if (!file_exists($setupPath)) {
+                return;
+            }
+            
+            $tabs = require $setupPath;
+            if (!is_array($tabs)) {
+                return;
+            }
 
-            // 自动写入Setup.php中定义的所有默认设置项
-            try {
-                $setupPath = __DIR__ . '/../../app/Setup.php';
-                if (file_exists($setupPath)) {
-                    $tabs = require $setupPath;
+            // 遍历所有设置项
+            foreach ($tabs as $tab) {
+                // 只处理有fields字段的标签页，跳过只有html的标签页
+                if (!isset($tab['fields']) || !is_array($tab['fields'])) {
+                    continue;
+                }
+                
+                foreach ($tab['fields'] as $field) {
+                    // 跳过HTML类型的字段和没有name的字段
+                    if (!isset($field['name']) || !isset($field['value']) || $field['type'] === 'Html') {
+                        continue;
+                    }
 
-                    // 遍历所有设置项
-                    foreach ($tabs as $tab) {
-                        // 只处理有fields字段的标签页，跳过只有html的标签页
-                        if (isset($tab['fields']) && is_array($tab['fields'])) {
-                            foreach ($tab['fields'] as $field) {
-                                // 跳过HTML类型的字段和没有name的字段
-                                if (!isset($field['name']) || !isset($field['value']) || $field['type'] === 'Html') {
-                                    continue;
-                                }
+                    $name = $field['name'];
+                    $value = $field['value'];
 
-                                $name = $field['name'];
-                                $value = $field['value'];
+                    // 处理复选框的数组默认值
+                    if ($field['type'] === 'Checkbox' && is_array($value)) {
+                        $value = implode(',', $value);
+                    }
 
-                                // 处理复选框的数组默认值
-                                if ($field['type'] === 'Checkbox' && is_array($value)) {
-                                    $value = implode(',', $value);
-                                }
-
-                                // 只有当值不为null时才写入数据库
-                                if ($value !== null) {
-                                    // 获取完整字段名（主题名_字段名）
-                                    $fullName = self::getFullFieldName($name);
-                                    
-                                    // 直接插入数据库，避免递归调用
-                                    $db->query($db->insert('table.ttdf')->rows(array(
-                                        'name' => $fullName,
-                                        'value' => $value
-                                    )));
-                                }
-                            }
+                    // 只有当值不为null时才处理
+                    if ($value !== null) {
+                        // 获取完整字段名（主题名_字段名）
+                        $fullName = self::getFullFieldName($name);
+                        
+                        // 检查是否已存在，如果不存在才插入
+                        $exists = $db->fetchRow($db->select()->from('table.ttdf')->where('name = ?', $fullName));
+                        
+                        if (!$exists) {
+                            // 直接插入数据库，避免递归调用
+                            $db->query($db->insert('table.ttdf')->rows(array(
+                                'name' => $fullName,
+                                'value' => $value
+                            )));
                         }
                     }
                 }
-            } catch (Exception $setupException) {
-                // 如果Setup.php有问题，记录错误但不影响表创建
-                error_log('TTDF Database Init: Failed to load default settings from Setup.php - ' . $setupException->getMessage());
             }
+        } catch (Exception $setupException) {
+            // 如果Setup.php有问题，记录错误但不影响初始化
+            error_log('TTDF Database Init: Failed to load default settings from Setup.php - ' . $setupException->getMessage());
         }
     }
 
