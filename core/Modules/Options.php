@@ -18,9 +18,9 @@ function TTDF_FormElement($type, $name, $value, $label, $description, $options =
     $db = Typecho_Db::get();
     $row = $db->fetchRow($db->select('value')->from('table.ttdf')->where('name = ?', $prefixedName));
     
-    // 如果数据库中存在记录，使用数据库中的值（包括空值）
+    // 如果数据库中存在记录，使用数据库中的值
     // 如果数据库中不存在记录，使用默认值
-    $savedValue = $row !== false ? $row['value'] : $value;
+    $savedValue = ($row !== false && is_array($row) && array_key_exists('value', $row)) ? $row['value'] : $value;
 
     // 确保 _t() 的参数不为 null
     $label = $label ?? '';
