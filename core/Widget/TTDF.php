@@ -227,6 +227,10 @@ class TTDF_Widget
         }
     }
 
+    private static function getArchiveInstance() {
+        return \Widget\Archive::alloc();
+    }
+
     /**
      * 获取客户端真实IP
      * @return string
@@ -283,14 +287,14 @@ class TTDF_Widget
     Get::Header(true, 'description,keywords,generator,template,pingback,EditURI,wlwmanifest,alternate,twitter:domain,twitter:card,twitter:description,twitter:title,og:url,og:site_name,og:type');
 ?>
     <link rel="canonical" href="<?php Get::PageUrl(true, false, null, true); ?>" />
-    <link rel="pingback" href="<?php Get::SiteUrl(true) ?>action/xmlrpc" />
-    <link rel="EditURI" type="application/rsd+xml" title="RSD" href="<?php Get::SiteUrl(true) ?>action/xmlrpc?rsd" />
-    <link rel="wlwmanifest" type="application/wlwmanifest+xml" href="<?php Get::SiteUrl(true) ?>action/xmlrpc?wlw" />
-    <link rel="alternate" type="application/rss+xml" title="<?php Get::SiteName(true) ?> &raquo; RSS 2.0" href="<?php Get::SiteUrl(true) ?>feed/" />
-    <link rel="alternate" type="application/rdf+xml" title="<?php Get::SiteName(true) ?> &raquo; RSS 1.0" href="<?php Get::SiteUrl(true) ?>feed/rss/" />
-    <link rel="alternate" type="application/atom+xml" title="<?php Get::SiteName(true) ?> &raquo; ATOM 1.0" href="<?php Get::SiteUrl(true) ?>feed/atom/" />
+    <link rel="pingback" href="<?php Get::Options('xmlRpcUrl', true) ?>" />
+    <link rel="EditURI" type="application/rsd+xml" title="RSD" href="<?php Get::Options('xmlRpcUrl', true) ?>?rsd" />
+    <link rel="wlwmanifest" type="application/wlwmanifest+xml" href="<?php Get::Options('xmlRpcUrl', true) ?>?wlw" />
+    <link rel="alternate" type="application/rss+xml" title="<?php Get::SiteName(true) ?> &raquo; RSS 2.0" href="<?php echo \Widget\Archive::alloc()->getArchiveFeedUrl(); ?>" />
+    <link rel="alternate" type="application/rdf+xml" title="<?php Get::SiteName(true) ?> &raquo; RSS 1.0" href="<?php echo \Widget\Archive::alloc()->getArchiveFeedRssUrl(); ?>" />
+    <link rel="alternate" type="application/atom+xml" title="<?php Get::SiteName(true) ?> &raquo; ATOM 1.0" href="<?php echo \Widget\Archive::alloc()->getArchiveFeedAtomUrl(); ?>" />
 <?php
-    }
+}
 }
 
 // 初始化计时器
