@@ -46,6 +46,7 @@ return [
                 'value' => 'option1',
                 'label' => '单选框',
                 'description' => '这是一个单选框~',
+                'layout' => 'vertical', // horizontal: 横排, vertical: 竖排
                 'options' => [
                     'option1' => '选项一',
                     'option2' => '选项二',
@@ -72,11 +73,61 @@ return [
                 'value' => ['option1', 'option3'],
                 'label' => '多选框',
                 'description' => '这是一个多选框~',
+                'layout' => 'horizontal', // horizontal: 横排, vertical: 竖排
                 'options' => [
                     'option1' => '选项一',
                     'option2' => '选项二',
                     'option3' => '选项三'
                 ]
+            ],
+            [
+                // 'DialogSelect' => '对话框选择',
+                'type' => 'DialogSelect',
+                'name' => 'dialog_select_single',
+                'value' => 'theme1',
+                'label' => '主题选择',
+                'description' => '点击按钮打开对话框选择主题，支持单选模式。',
+                'title' => '选择主题',
+                'multiple' => false,
+                'options' => [
+                    'theme1' => '默认主题',
+                    'theme2' => '深色主题',
+                    'theme3' => '简约主题',
+                    'theme4' => '彩色主题'
+                ]
+            ],
+            [
+                // 'DialogSelect' => '对话框选择（多选）',
+                'type' => 'DialogSelect',
+                'name' => 'dialog_select_multiple',
+                'value' => 'feature1,feature3',
+                'label' => '功能选择（多选）',
+                'description' => '点击按钮打开对话框选择功能，支持多选模式。',
+                'title' => '选择功能模块',
+                'multiple' => true,
+                'options' => [
+                    'feature1' => '评论系统',
+                    'feature2' => '搜索功能',
+                    'feature3' => '社交分享',
+                    'feature4' => '统计分析',
+                    'feature5' => '邮件通知'
+                ]
+            ],
+            [
+                // 'ColorPicker' => '颜色选择器',
+                'type' => 'ColorPicker',
+                'name' => 'theme_color',
+                'value' => '#3498db',
+                'label' => '主题颜色',
+                'description' => '选择网站的主题颜色，支持十六进制颜色值输入。'
+            ],
+            [
+                // 'ColorPicker' => '颜色选择器（背景色）',
+                'type' => 'ColorPicker',
+                'name' => 'background_color',
+                'value' => '#ffffff',
+                'label' => '背景颜色',
+                'description' => '选择网站的背景颜色，可以通过颜色选择器或直接输入十六进制值。'
             ]
         ]
     ],
