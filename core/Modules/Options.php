@@ -699,6 +699,35 @@ function TTDF_CreateFormElement($field)
 
 function themeConfig($form)
 {
+    // 处理AJAX保存请求
+    if (isset($_POST['action']) && $_POST['action'] === 'save_settings') {
+        $response = array('success' => false, 'message' => '');
+        
+        try {
+            // 获取所有POST数据
+            $settings = $_POST;
+            unset($settings['action']); // 移除action字段
+            
+            // 保存设置到数据库
+            foreach ($settings as $key => $value) {
+                if (is_array($value)) {
+                    $value = implode(',', $value);
+                }
+                // 保存到数据库（DB::setTtdf内部会自动添加主题前缀）
+                DB::setTtdf($key, $value);
+            }
+            
+            $response['success'] = true;
+            $response['message'] = '设置保存成功！';
+        } catch (Exception $e) {
+            $response['message'] = '保存失败：' . $e->getMessage();
+        }
+        
+        header('Content-Type: application/json');
+        echo json_encode($response);
+        exit;
+    }
+    
     // 处理表单提交
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ttdf_ajax_save'])) {
         // 禁用所有可能的重定向和额外输出
@@ -741,72 +770,106 @@ function themeConfig($form)
         exit;
     }
 
+    // 获取配置数据
+    $tabs = require __DIR__ . '/../../app/Setup.php';
+    
+    // 处理配置数据，获取当前保存的值
+    $configData = [];
+    foreach ($tabs as $tab_id => $tab) {
+        $configData[$tab_id] = [
+            'title' => $tab['title'],
+            'fields' => []
+        ];
+        
+        if (isset($tab['html'])) {
+            $configData[$tab_id]['html'] = $tab['html'];
+        } elseif (isset($tab['fields'])) {
+            foreach ($tab['fields'] as $field) {
+                $fieldData = $field;
+                
+                // 获取保存的值
+                if (isset($field['name']) && $field['type'] !== 'Html') {
+                    $row = DB::getTtdf($field['name']);
+                    $dbValue = $row;
+                    
+                    if ($dbValue !== null) {
+                        // 对于复选框和DialogSelect，需要特殊处理比较
+                        if ($field['type'] === 'Checkbox' || $field['type'] === 'DialogSelect') {
+                            $setupDefault = is_array($field['value']) ? implode(',', $field['value']) : $field['value'];
+                            $dbValueForCompare = $dbValue;
+                            
+                            // 标准化比较
+                            $setupNormalized = $setupDefault;
+                            $dbNormalized = $dbValueForCompare;
+                            
+                            if (!empty($setupNormalized)) {
+                                $setupArray = explode(',', $setupNormalized);
+                                $setupArray = array_map('trim', $setupArray);
+                                sort($setupArray);
+                                $setupNormalized = implode(',', $setupArray);
+                            }
+                            
+                            if (!empty($dbNormalized)) {
+                                $dbArray = explode(',', $dbNormalized);
+                                $dbArray = array_map('trim', $dbArray);
+                                sort($dbArray);
+                                $dbNormalized = implode(',', $dbArray);
+                            }
+                            
+                            if ($dbNormalized !== $setupNormalized) {
+                                $fieldData['value'] = $dbValue;
+                            }
+                        } else {
+                            if ($dbValue !== $field['value']) {
+                                $fieldData['value'] = $dbValue;
+                            }
+                        }
+                    }
+                }
+                
+                $configData[$tab_id]['fields'][] = $fieldData;
+            }
+        }
+    }
+
+    // 获取当前保存的值
+    $savedValues = array();
+    foreach ($configData as $tabId => $tab) {
+        if (isset($tab['fields'])) {
+            foreach ($tab['fields'] as $field) {
+                if (isset($field['name'])) {
+                    $savedValues[$field['name']] = isset($field['value']) ? $field['value'] : '';
+                }
+            }
+        }
+    }
+    
+    // 合并配置数据和保存的值
+    $fullConfig = array(
+        'config' => $configData,
+        'savedValues' => $savedValues
+    );
+    
     // 如果不是AJAX请求，输出HTML界面
 ?>
     <link rel="stylesheet" href="<?php get_theme_file_url('core/Static/Options.css', true) ?>">
-    <script src="<?php get_theme_file_url('core/Static/Options.js', true) ?>"></script>
-    <form method="post">
-        <div class="TTDF-container">
-            <div class="TTDF-header">
-                <h1 class="TTDF-title"><?php echo GetTheme::Name(false); ?><small> · <?php echo GetTheme::Ver(false); ?></small></h1>
-                <div class="TTDF-actions">
-                    <button class="TTDF-save" type="submit">保存设置</button>
-                </div>
-            </div>
-
-            <div class="TTDF-body">
-                <nav class="TTDF-nav">
-                    <?php
-                    // 生成Tab导航按钮（默认激活第一个）
-                    $tabs = require __DIR__ . '/../../app/Setup.php';
-                    $first_tab = true;
-                    foreach ($tabs as $tab_id => $tab) {
-                        $active = $first_tab ? 'active' : '';
-                        echo '<div class="TTDF-nav-item ' . $active . '" data-tab="' . $tab_id . '">' . $tab['title'] . '</div>';
-                        $first_tab = false;
-                    }
-                    ?>
-                </nav>
-                <div class="TTDF-content">
-                    <div class="TTDF-content-card">
-                        <?php
-                        // 生成Tab内容
-                        $first_tab = true;
-                        foreach ($tabs as $tab_id => $tab) {
-                            $show = $first_tab ? 'active' : '';
-                            echo '<div id="' . $tab_id . '" class="TTDF-tab-panel ' . $show . '">';
-
-                            if (isset($tab['html'])) {
-                                foreach ($tab['html'] as $html) {
-                                    echo $html['content'];
-                                }
-                            } else {
-                                foreach ($tab['fields'] as $field) {
-                                    if ($field['type'] === 'Html') {
-                                        echo $field['content'];
-                                    } else {
-                                        echo TTDF_CreateFormElement($field);
-                                    }
-                                }
-                            }
-
-                            echo '</div>';
-                            $first_tab = false;
-                        }
-                        ?>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div style="text-align: center; margin-top: 20px;">
-            © Framework By <a href="https://github.com/YuiNijika/TTDF" target="_blank" style="padding: 0px 3px;">TTDF</a> v<?php echo TTDF::Ver(false); ?>
-        </div>
-    </form>
-
+    <script src="<?php get_theme_file_url('core/Static/vue.global.min.js', true) ?>"></script>
+    
+    <!-- Vue应用容器 -->
+    <div id="options-app"></div>
+    
+    <!-- 配置数据 -->
     <script>
-        window.TTDFOptions = {
-            apiUrl: '<?php echo Typecho_Common::url(__TTDF_RESTAPI_ROUTE__ . '/ttdf/options', Helper::options()->siteUrl); ?>'
+        window.TTDFConfig = {
+            themeName: '<?php GetTheme::Name(true); ?>',
+            themeVersion: '<?php GetTheme::Ver(true); ?>',
+            ttdfVersion: '<?php TTDF::Ver(true); ?>',
+            apiUrl: '<?php echo Typecho_Common::url(__TTDF_RESTAPI_ROUTE__ . '/ttdf/options', Helper::options()->siteUrl); ?>',
+            tabs: <?php echo json_encode($configData, JSON_UNESCAPED_UNICODE); ?>,
+            fullConfig: <?php echo json_encode($fullConfig, JSON_UNESCAPED_UNICODE); ?>
         };
     </script>
+    
+    <script src="<?php get_theme_file_url('core/Static/Options.js', true) ?>"></script>
 <?php
 }
