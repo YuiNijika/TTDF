@@ -42,7 +42,7 @@
   width: unset;
 }
 
-/* CSF 风格的现代化样式 */
+/* TTDF */
 * {
   margin: 0;
   padding: 0;
@@ -50,6 +50,12 @@
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Oxygen-Sans, Ubuntu, Cantarell, sans-serif;
 }
+
+.TTDF-content h1{padding: 0px 14px;border-left: 10px solid #ed515191;background-color: rgba(208, 208, 208, 0);font-size: 19px;line-height: 30px;color: cornflowerblue;font-weight: bold;margin: 16px 0;}
+.TTDF-content h2{padding:0px 14px;border-left: 10px solid #BF51ED91;background-color: rgba(208, 208, 208, 0);font-size:18px;line-height: 30px;color:cornflowerblue;font-weight:bold;margin: 16px 0;}
+.TTDF-content h3{padding:0px 14px;border-left: 10px solid #6495ed91;background-color: rgba(208, 208, 208, 0);font-size:17px;line-height: 27px;color:cornflowerblue;font-weight:bold;margin: 16px 0;}
+.TTDF-content h4{padding:0px 14px;border-left: 10px solid #e2aa2b91;background-color: rgba(208, 208, 208, 0);font-size:16px;line-height: 24px;color:cornflowerblue;font-weight:bold;margin: 16px 0;}
+.TTDF-content h5{padding:0 14px;border-left: 10px solid #64c1c191;background-color: rgba(208, 208, 208, 0);font-size:15px;line-height: 21px;color:cornflowerblue;font-weight:bold;margin: 16px 0;}
 
 .TTDF-container {
   max-width: 1200px;
