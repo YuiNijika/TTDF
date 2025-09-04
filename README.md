@@ -1,1 +1,2 @@
-# 该仓库为v2版已停更，请前往GitHub拉取最新版 https://github.com/YuiNijika/TTDF
+# 该仓库为v2版已停更
+## 请前往GitHub拉取最新版 https://github.com/YuiNijika/TTDF
