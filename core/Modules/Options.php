@@ -41,18 +41,42 @@ function TTDF_CreateHtmlElement($type, $name, $value, $label, $description, $opt
     $savedValue = $value; // 默认使用Setup.php中的值
 
     if ($dbValue !== null) {
-        // 对于复选框，需要特殊处理比较
-        if ($type === 'Checkbox') {
+        // 对于复选框和DialogSelect，需要特殊处理比较
+        if ($type === 'Checkbox' || $type === 'DialogSelect') {
+            // 将Setup.php中的数组默认值转换为逗号分隔字符串进行比较
             $setupDefault = is_array($value) ? implode(',', $value) : $value;
             $dbValueForCompare = $dbValue;
+
+            // 标准化比较：去除空格并排序
+            $setupNormalized = $setupDefault;
+            $dbNormalized = $dbValueForCompare;
+
+            if (!empty($setupNormalized)) {
+                $setupArray = explode(',', $setupNormalized);
+                $setupArray = array_map('trim', $setupArray);
+                sort($setupArray);
+                $setupNormalized = implode(',', $setupArray);
+            }
+
+            if (!empty($dbNormalized)) {
+                $dbArray = explode(',', $dbNormalized);
+                $dbArray = array_map('trim', $dbArray);
+                sort($dbArray);
+                $dbNormalized = implode(',', $dbArray);
+            }
+
+            // 如果标准化后的值不同，说明用户修改过，使用数据库值
+            if ($dbNormalized !== $setupNormalized) {
+                $savedValue = $dbValue;
+            }
         } else {
             $setupDefault = $value;
             $dbValueForCompare = $dbValue;
-        }
 
-        // 如果数据库值与Setup.php默认值不同，说明用户修改过，使用数据库值
-        if ($dbValueForCompare !== $setupDefault) {
-            $savedValue = $dbValue;
+            // 如果数据库值与Setup.php默认值不同，说明用户修改过，使用数据库值
+            if ($dbValueForCompare !== $setupDefault) {
+                $savedValue = $dbValue;
+            }
         }
     }
 
@@ -108,6 +132,12 @@ function TTDF_CreateHtmlElement($type, $name, $value, $label, $description, $opt
             break;
 
         case 'Radio':
+            // 获取layout配置，默认为vertical
+            $layout = isset($options['_layout']) ? $options['_layout'] : 'vertical';
+            if (isset($options['_layout'])) {
+                unset($options['_layout']); // 移除特殊标记
+            }
+
             $html = '<div class="form-group">';
             if ($escapedLabel) {
                 $html .= '<label class="form-label">' . $escapedLabel . '</label>';
@@ -116,7 +146,7 @@ function TTDF_CreateHtmlElement($type, $name, $value, $label, $description, $opt
             if ($rawDescription) {
                 $html .= '<p class="description">' . $rawDescription . '</p>';
             }
-            $html .= '<div class="radio-group">';
+            $html .= '<div class="radio-group ' . ($layout === 'horizontal' ? 'horizontal-layout' : 'vertical-layout') . '">';
             foreach ($options as $optionValue => $optionLabel) {
                 $checked = ($savedValue == $optionValue) ? ' checked' : '';
                 $html .= '<label class="radio-item">';
@@ -129,39 +159,45 @@ function TTDF_CreateHtmlElement($type, $name, $value, $label, $description, $opt
             break;
 
         case 'Checkbox':
-            // 处理复选框的多值情况
-            $selectedValues = [];
-            if (is_string($savedValue)) {
-                $selectedValues = explode(',', $savedValue);
-            } elseif (is_array($savedValue)) {
-                $selectedValues = $savedValue;
-            }
-
             $html = '<div class="form-group">';
-            if ($escapedLabel) {
-                $html .= '<label class="form-label">' . $escapedLabel . '</label>';
+            if ($label) {
+                $html .= '<label>' . $label . '</label>';
+            }
+            if (isset($field['options'])) {
+                // 获取layout配置，默认为vertical
+                $layout = isset($field['layout']) ? $field['layout'] : 'vertical';
+                $layoutClass = ($layout === 'horizontal') ? 'horizontal-layout' : 'vertical-layout';
+
+                $html .= '<div class="checkbox-group ' . $layoutClass . '">';
+                // 修复：正确处理从数据库获取的值
+                $selectedValues = [];
+                if (is_string($value)) {
+                    // 如果是字符串，则按逗号分割成数组
+                    $selectedValues = explode(',', $value);
+                } elseif (is_array($value)) {
+                    // 如果已经是数组，则直接使用
+                    $selectedValues = $value;
+                }
+
+                foreach ($field['options'] as $optValue => $optLabel) {
+                    // 修复：使用 in_array 检查选项是否被选中
+                    $checked = in_array((string)$optValue, array_map('strval', $selectedValues)) ? ' checked' : '';
+                    $html .= '<label class="checkbox-label"><input type="checkbox" name="' . $field['name'] . '[]" value="' . htmlspecialchars($optValue) . '"' . $checked . ' /> ' . $optLabel . '</label>';
+                }
+                $html .= '</div>';
             }
             // 直接输出 description，不进行转义以支持 HTML
-            if ($rawDescription) {
-                $html .= '<p class="description">' . $rawDescription . '</p>';
+            if ($description) {
+                $html .= '<p class="description">' . $description . '</p>';
             }
-            $html .= '<div class="checkbox-group">';
-            foreach ($options as $optionValue => $optionLabel) {
-                $checked = in_array($optionValue, $selectedValues) ? ' checked' : '';
-                $html .= '<label class="checkbox-item">';
-                $html .= '<input type="checkbox" id="' . $prefixedName . '_' . $optionValue . '" name="' . $name . '[]" value="' . htmlspecialchars($optionValue, ENT_QUOTES, 'UTF-8') . '"' . $checked . ' />';
-                $html .= '<span>' . htmlspecialchars($optionLabel, ENT_QUOTES, 'UTF-8') . '</span>';
-                $html .= '</label>';
-            }
-            $html .= '</div>';
             $html .= '</div>';
             break;
 
         case 'AddList':
             // 处理逗号分隔的值
             $listValues = [];
-            if (is_string($savedValue) && !empty($savedValue)) {
-                $listValues = array_filter(explode(',', $savedValue), function ($item) {
+            if (is_string($value) && !empty($value)) {
+                $listValues = array_filter(explode(',', $value), function ($item) {
                     return trim($item) !== '';
                 });
             }
@@ -188,6 +224,151 @@ function TTDF_CreateHtmlElement($type, $name, $value, $label, $description, $opt
             $html .= '</div>';
             $html .= '<button type="button" class="btn btn-primary addlist-add">+1</button>';
             $html .= '<input type="hidden" name="' . $name . '" class="addlist-hidden" value="' . htmlspecialchars($savedValue ?? '', ENT_QUOTES, 'UTF-8') . '" />';
+            $html .= '</div>';
+            $html .= '</div>';
+            break;
+
+        case 'DialogSelect':
+            // 处理DialogSelect的多值情况
+            $selectedValues = [];
+            $displayText = '';
+
+            if (is_string($savedValue)) {
+                $selectedValues = !empty($savedValue) ? explode(',', $savedValue) : [];
+            } elseif (is_array($savedValue)) {
+                $selectedValues = $savedValue;
+            }
+
+            // 检查是否为多选模式
+            $isMultiple = isset($options['_multiple']) && $options['_multiple'] === true;
+            if ($isMultiple) {
+                unset($options['_multiple']); // 移除特殊标记
+            }
+
+            // 获取layout配置，默认为vertical
+            $layout = isset($options['_layout']) ? $options['_layout'] : 'vertical';
+            if (isset($options['_layout'])) {
+                unset($options['_layout']); // 移除特殊标记
+            }
+
+            // 检查是否需要动态获取选项数据
+            if (isset($options['_dynamic']) && $options['_dynamic'] === true) {
+                unset($options['_dynamic']); // 移除特殊标记
+
+                // 动态获取选项数据的逻辑
+                // 这里可以根据需要从数据库或其他数据源获取选项
+                // 例如：从数据库获取主题列表、插件列表等
+                $dynamicOptions = [];
+
+                // 示例：根据字段名获取不同的动态数据
+                switch ($name) {
+                    case 'dialog_select_single':
+                        // 从数据库获取主题列表
+                        $themes = DB::getTtdf('available_themes');
+                        if ($themes) {
+                            $themeList = json_decode($themes, true);
+                            if (is_array($themeList)) {
+                                $dynamicOptions = $themeList;
+                            }
+                        }
+                        break;
+                    case 'dialog_select_multiple':
+                        // 从数据库获取功能模块列表
+                        $features = DB::getTtdf('available_features');
+                        if ($features) {
+                            $featureList = json_decode($features, true);
+                            if (is_array($featureList)) {
+                                $dynamicOptions = $featureList;
+                            }
+                        }
+                        break;
+                    default:
+                        // 通用动态选项获取逻辑
+                        $dynamicData = DB::getTtdf($name . '_options');
+                        if ($dynamicData) {
+                            $dynamicList = json_decode($dynamicData, true);
+                            if (is_array($dynamicList)) {
+                                $dynamicOptions = $dynamicList;
+                            }
+                        }
+                        break;
+                }
+
+                // 如果获取到动态选项，则使用动态选项，否则使用默认选项
+                if (!empty($dynamicOptions)) {
+                    $options = $dynamicOptions;
+                }
+            }
+
+            // 生成显示文本
+            if (!empty($selectedValues) && !empty($options)) {
+                $displayLabels = [];
+                foreach ($selectedValues as $selectedValue) {
+                    // 支持新的数组格式
+                    if (is_array($options) && !empty($options)) {
+                        // 检查是否为新的数组格式 [['value' => 'x', 'label' => 'y'], ...]
+                        if (isset($options[0]) && is_array($options[0]) && isset($options[0]['value'])) {
+                            foreach ($options as $option) {
+                                if ($option['value'] === $selectedValue) {
+                                    $displayLabels[] = $option['label'];
+                                    break;
+                                }
+                            }
+                        } else {
+                            // 兼容旧的关联数组格式
+                            if (isset($options[$selectedValue])) {
+                                $displayLabels[] = $options[$selectedValue];
+                            }
+                        }
+                    }
+                }
+                $displayText = implode(', ', $displayLabels);
+            }
+
+            $html = '<div class="form-group">';
+            if ($escapedLabel) {
+                $html .= '<label class="form-label">' . $escapedLabel . '</label>';
+            }
+            if ($rawDescription) {
+                $html .= '<p class="description">' . $rawDescription . '</p>';
+            }
+
+            $html .= '<div class="dialog-select-container ' . ($layout === 'horizontal' ? 'horizontal-layout' : 'vertical-layout') . '" data-name="' . $name . '" data-multiple="' . ($isMultiple ? 'true' : 'false') . '" data-layout="' . $layout . '">';
+            $html .= '<div class="dialog-select-input-group">';
+            $html .= '<input type="text" class="form-control dialog-select-display" value="' . htmlspecialchars($displayText, ENT_QUOTES, 'UTF-8') . '" readonly placeholder="请选择..." />';
+            $html .= '<button type="button" class="btn btn-primary dialog-select-trigger">选择</button>';
+            $html .= '</div>';
+
+            // 隐藏的输入框存储实际值
+            $hiddenValue = is_array($selectedValues) ? implode(',', $selectedValues) : $savedValue;
+            $html .= '<input type="hidden" name="' . $name . '" class="dialog-select-hidden" value="' . htmlspecialchars($hiddenValue ?? '', ENT_QUOTES, 'UTF-8') . '" />';
+
+            // 生成选项数据（用于JavaScript）
+            $optionsData = [
+                'options' => [],
+                'multiple' => $isMultiple,
+                'title' => $escapedLabel ?: '选择选项',
+                'selectedValues' => $selectedValues // 传递当前选中的值给前端
+            ];
+
+            // 转换选项格式为JavaScript期望的格式
+            if (is_array($options) && !empty($options)) {
+                // 检查是否为新的数组格式 [['value' => 'x', 'label' => 'y'], ...]
+                if (isset($options[0]) && is_array($options[0]) && isset($options[0]['value'])) {
+                    // 新的数组格式，直接使用
+                    $optionsData['options'] = $options;
+                } else {
+                    // 兼容旧的关联数组格式
+                    foreach ($options as $value => $label) {
+                        $optionsData['options'][] = [
+                            'value' => $value,
+                            'label' => $label
+                        ];
+                    }
+                }
+            }
+
+            $html .= '<script type="application/json" class="dialog-select-options" style="display: none;">' . json_encode($optionsData, JSON_UNESCAPED_UNICODE) . '</script>';
             $html .= '</div>';
             $html .= '</div>';
             break;
@@ -260,11 +441,11 @@ function TTDF_CreateFormElement($field)
     $dbValue = DB::getTtdf($field['name']);
 
     // 确定最终值：优先使用数据库值，否则使用默认值
-    $value = ($dbValue !== null && $dbValue !== $field['value']) ? $dbValue : ($field['value'] ?? '');
+    $value = ($dbValue !== null && $dbValue !== '') ? $dbValue : ($field['value'] ?? '');
 
     // 处理标签和描述
     $label = $field['label'] ?? '';
-    // 修复：不再对 description 进行转义，允许其中的 HTML 标签正常渲染
+    // 不再对 description 进行转义，允许其中的 HTML 标签正常渲染
     $description = $field['description'] ?? '';
 
     $html = '';
@@ -278,7 +459,7 @@ function TTDF_CreateFormElement($field)
                 $html .= '<label for="' . $prefixedName . '">' . $label . '</label>';
             }
             $html .= '<input type="' . $type . '" name="' . $field['name'] . '" id="' . $prefixedName . '" value="' . htmlspecialchars($value) . '" class="form-control" />';
-            // 修复：直接输出 description，不进行转义以支持 HTML
+            // 直接输出 description，不进行转义以支持 HTML
             if ($description) {
                 $html .= '<p class="description">' . $description . '</p>';
             }
@@ -291,7 +472,7 @@ function TTDF_CreateFormElement($field)
                 $html .= '<label for="' . $prefixedName . '">' . $label . '</label>';
             }
             $html .= '<textarea name="' . $field['name'] . '" id="' . $prefixedName . '" class="form-control" rows="5">' . htmlspecialchars($value) . '</textarea>';
-            // 修复：直接输出 description，不进行转义以支持 HTML
+            // 直接输出 description，不进行转义以支持 HTML
             if ($description) {
                 $html .= '<p class="description">' . $description . '</p>';
             }
@@ -303,7 +484,7 @@ function TTDF_CreateFormElement($field)
             if ($label) {
                 $html .= '<label for="' . $prefixedName . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</label>';
             }
-            // 修复：直接输出 description，不进行转义以支持 HTML
+            // 直接输出 description，不进行转义以支持 HTML
             if ($description) {
                 $html .= '<p class="description">' . $description . '</p>';
             }
@@ -324,12 +505,18 @@ function TTDF_CreateFormElement($field)
                 $html .= '<label>' . $label . '</label>';
             }
             if (isset($field['options'])) {
+                // 获取layout配置，默认为vertical
+                $layout = isset($field['layout']) ? $field['layout'] : 'vertical';
+                $layoutClass = ($layout === 'horizontal') ? 'horizontal-layout' : 'vertical-layout';
+
+                $html .= '<div class="radio-group ' . $layoutClass . '">';
                 foreach ($field['options'] as $optValue => $optLabel) {
                     $checked = ($value == $optValue) ? ' checked' : '';
                     $html .= '<label class="radio-label"><input type="radio" name="' . $field['name'] . '" value="' . htmlspecialchars($optValue) . '"' . $checked . ' /> ' . $optLabel . '</label>';
                 }
+                $html .= '</div>';
             }
-            // 修复：直接输出 description，不进行转义以支持 HTML
+            // 直接输出 description，不进行转义以支持 HTML
             if ($description) {
                 $html .= '<p class="description">' . $description . '</p>';
             }
@@ -342,11 +529,17 @@ function TTDF_CreateFormElement($field)
                 $html .= '<label>' . $label . '</label>';
             }
             if (isset($field['options'])) {
+                // 获取layout配置，默认为vertical
+                $layout = isset($field['layout']) ? $field['layout'] : 'vertical';
+                $layoutClass = ($layout === 'horizontal') ? 'horizontal-layout' : 'vertical-layout';
+
+                $html .= '<div class="checkbox-group ' . $layoutClass . '">';
                 $selectedValues = is_string($value) ? explode(',', $value) : (array)$value;
                 foreach ($field['options'] as $optValue => $optLabel) {
                     $checked = in_array($optValue, $selectedValues) ? ' checked' : '';
-                    $html .= '<label class="checkbox-label"><input type="checkbox" name="' . $field['name'] . '[]" value="' . htmlspecialchars($optValue) . '"' . $checked . ' /> ' . $optLabel . '</label>';
+                    $html .= '<label class="checkbox-label"><input type="checkbox" name="' . $field['name'] . '" value="' . htmlspecialchars($optValue) . '"' . $checked . ' /> ' . $optLabel . '</label>';
                 }
+                $html .= '</div>';
             }
             // 直接输出 description，不进行转义以支持 HTML
             if ($description) {
@@ -389,6 +582,116 @@ function TTDF_CreateFormElement($field)
             $html .= '</div>';
             $html .= '</div>';
             break;
+
+        case 'DialogSelect':
+            // 处理DialogSelect类型
+            $isMultiple = isset($field['multiple']) && $field['multiple'];
+            $selectedValue = $value;
+            
+            // 生成显示文本
+            $displayText = '';
+            if (!empty($selectedValue)) {
+                if ($isMultiple) {
+                    // 多选模式
+                    $selectedValues = is_string($selectedValue) ? explode(',', $selectedValue) : (array)$selectedValue;
+                    $displayLabels = [];
+                    
+                    if (isset($field['options']) && is_array($field['options'])) {
+                        // 检查是否为新的数组格式
+                        if (isset($field['options'][0]) && is_array($field['options'][0]) && isset($field['options'][0]['value'])) {
+                            // 新的数组格式 [['value' => 'x', 'label' => 'y'], ...]
+                            foreach ($field['options'] as $option) {
+                                if (in_array($option['value'], $selectedValues)) {
+                                    $displayLabels[] = $option['label'];
+                                }
+                            }
+                        } else {
+                            // 旧的关联数组格式 ['value' => 'label', ...]
+                            foreach ($selectedValues as $val) {
+                                if (isset($field['options'][$val])) {
+                                    $displayLabels[] = $field['options'][$val];
+                                }
+                            }
+                        }
+                    }
+                    $displayText = implode(', ', $displayLabels);
+                } else {
+                    // 单选模式
+                    if (isset($field['options']) && is_array($field['options'])) {
+                        // 检查是否为新的数组格式
+                        if (isset($field['options'][0]) && is_array($field['options'][0]) && isset($field['options'][0]['value'])) {
+                            // 新的数组格式
+                            foreach ($field['options'] as $option) {
+                                if ($option['value'] == $selectedValue) {
+                                    $displayText = $option['label'];
+                                    break;
+                                }
+                            }
+                        } else {
+                            // 旧的关联数组格式
+                            $displayText = isset($field['options'][$selectedValue]) ? $field['options'][$selectedValue] : '';
+                        }
+                    }
+                }
+            }
+            
+            // 处理选项数据
+            $optionsData = [];
+            if (isset($field['options']) && is_array($field['options'])) {
+                // 检查是否为新的数组格式
+                if (isset($field['options'][0]) && is_array($field['options'][0]) && isset($field['options'][0]['value'])) {
+                    // 新的数组格式，直接使用
+                    $optionsData = $field['options'];
+                } else {
+                    // 旧的关联数组格式，转换为新格式
+                    foreach ($field['options'] as $optValue => $optLabel) {
+                        $optionsData[] = ['value' => $optValue, 'label' => $optLabel];
+                    }
+                }
+            }
+            
+            $html = '<div class="form-group">';
+            if ($label) {
+                $html .= '<label>' . $label . '</label>';
+            }
+            if ($description) {
+                $html .= '<p class="description">' . $description . '</p>';
+            }
+            
+            $html .= '<div class="dialog-select-container">';
+            $html .= '<div class="dialog-select-input-group">';
+            $html .= '<input type="text" class="form-control dialog-select-display" value="' . htmlspecialchars($displayText, ENT_QUOTES, 'UTF-8') . '" readonly placeholder="点击选择..." />';
+            $html .= '<button type="button" class="btn btn-secondary dialog-select-btn" data-field="' . $field['name'] . '" data-multiple="' . ($isMultiple ? 'true' : 'false') . '">选择</button>';
+            $html .= '</div>';
+            $html .= '<input type="hidden" name="' . $field['name'] . '" class="dialog-select-value" value="' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '" />';
+            $html .= '</div>';
+            $html .= '</div>';
+            
+            // 输出选项数据到页面
+            $html .= '<script type="application/json" id="options-' . $field['name'] . '">' . json_encode($optionsData, JSON_UNESCAPED_UNICODE) . '</script>';
+            break;
+
+        case 'ColorPicker':
+            // 处理ColorPicker类型
+            $colorValue = !empty($value) ? $value : '#000000';
+
+            $html = '<div class="form-group">';
+            if ($label) {
+                $html .= '<label for="' . $prefixedName . '">' . $label . '</label>';
+            }
+            if ($description) {
+                $html .= '<p class="description">' . $description . '</p>';
+            }
+
+            $html .= '<div class="colorpicker-container">';
+            $html .= '<div class="colorpicker-input-group">';
+            $html .= '<input type="color" class="colorpicker-color" value="' . htmlspecialchars($colorValue) . '" />';
+            $html .= '<input type="text" name="' . $field['name'] . '" id="' . $prefixedName . '" class="form-control colorpicker-text" value="' . htmlspecialchars($colorValue) . '" placeholder="#000000" maxlength="7" />';
+            $html .= '<div class="colorpicker-preview" style="background-color: ' . htmlspecialchars($colorValue) . ';"></div>';
+            $html .= '</div>';
+            $html .= '</div>';
+            $html .= '</div>';
+            break;
     }
 
     return $html;
@@ -396,6 +699,35 @@ function TTDF_CreateFormElement($field)
 
 function themeConfig($form)
 {
+    // 处理AJAX保存请求
+    if (isset($_POST['action']) && $_POST['action'] === 'save_settings') {
+        $response = array('success' => false, 'message' => '');
+        
+        try {
+            // 获取所有POST数据
+            $settings = $_POST;
+            unset($settings['action']); // 移除action字段
+            
+            // 保存设置到数据库
+            foreach ($settings as $key => $value) {
+                if (is_array($value)) {
+                    $value = implode(',', $value);
+                }
+                // 保存到数据库（DB::setTtdf内部会自动添加主题前缀）
+                DB::setTtdf($key, $value);
+            }
+            
+            $response['success'] = true;
+            $response['message'] = '设置保存成功！';
+        } catch (Exception $e) {
+            $response['message'] = '保存失败：' . $e->getMessage();
+        }
+        
+        header('Content-Type: application/json');
+        echo json_encode($response);
+        exit;
+    }
+    
     // 处理表单提交
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ttdf_ajax_save'])) {
         // 禁用所有可能的重定向和额外输出
@@ -438,911 +770,106 @@ function themeConfig($form)
         exit;
     }
 
-    // 如果不是AJAX请求，输出HTML界面
-?>
-    <style type="text/css">
-        /* Typecho CSS 重置部分 */
-        .typecho-foot {
-            display: none;
-        }
-
-        .typecho-head-nav .operate a {
-            background-color: #202328;
-        }
-
-        .typecho-option-tabs li {
-            float: left;
-            background-color: #fffbcc;
-        }
-
-        .typecho-page-main .typecho-option textarea {
-            height: 150px;
-        }
-
-        .typecho-option-submit li {
-            display: none;
-        }
-
-        .row [class*="col-"] {
-            float: unset;
-            min-height: unset;
-            padding-right: unset;
-            padding-left: unset;
-        }
-
-        @media (min-width: 768px) {
-            .col-tb-offset-2 {
-                margin-left: unset;
-            }
-
-            .col-tb-8 {
-                flex: unset;
-                max-width: unset;
-            }
-        }
-
-        .col-mb-12 {
-            width: unset;
-        }
-
-        /* CSF 风格的现代化样式 */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, sans-serif;
-        }
-
-        .TTDF-container {
-            max-width: 1200px;
-            margin: 20px auto;
-            background: #ffffff;
-            border-radius: 6px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            border: 1px solid #ddd;
-        }
-
-        .TTDF-header {
-            background: #4f46e5;
-            color: white;
-            padding: 20px 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .TTDF-title {
-            font-size: 24px;
-            font-weight: 600;
-            margin: 0;
-        }
-
-        .TTDF-title small {
-            font-size: 16px;
-            color: rgba(255, 255, 255, 0.8);
-            font-weight: 400;
-            margin-left: 8px;
-        }
-
-        .TTDF-actions {
-            display: flex;
-            gap: 12px;
-        }
-
-        .TTDF-save {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background 0.2s;
-            font-weight: 500;
-            font-size: 14px;
-        }
-
-        .TTDF-save:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
-        .TTDF-body {
-            display: flex;
-            min-height: 520px;
-            background: #fafbfc;
-        }
-
-        .TTDF-nav {
-            width: 240px;
-            background: #f8f9fa;
-            border-right: 1px solid #ddd;
-            overflow-y: auto;
-            max-height: 520px;
-        }
-
-        .TTDF-nav-item {
-            display: block;
-            padding: 12px 20px;
-            color: #555;
-            text-decoration: none;
-            transition: all 0.2s;
-            border-left: 3px solid transparent;
-            font-weight: 500;
-            font-size: 14px;
-            cursor: pointer;
-            width: 100%;
-            text-align: left;
-            background: transparent;
-        }
-
-        .TTDF-nav-item:hover {
-            color: #4f46e5;
-            background: #f0f0f0;
-            border-left-color: #4f46e5;
-        }
-
-        .TTDF-nav-item.active {
-            background: #e8f0fe;
-            color: #1a73e8;
-            font-weight: 600;
-            border-left-color: #4f46e5;
-        }
-
-        .TTDF-content {
-            flex: 1;
-            padding: 14px;
-            overflow-y: auto;
-            max-height: 520px;
-        }
-
-        .TTDF-content-card {
-            border-radius: 4px;
-            padding: 14px;
-            border: 1px solid #ddd;
-        }
-
-        .TTDF-tab-panel {
-            display: none;
-            animation: fadeIn 0.3s ease-in-out;
-        }
-
-        .TTDF-tab-panel.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* 现代化字体系统 */
-        * {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-        }
-
-        h1,
-        h2,
-        h3,
-        h4,
-        h5,
-        h6 {
-            font-weight: 700;
-            letter-spacing: -0.5px;
-            line-height: 1.2;
-        }
-
-        /* 响应式设计 */
-        @media (max-width: 768px) {
-            .TTDF-container {
-                margin: 10px;
-            }
-
-            .TTDF-body {
-                flex-direction: column;
-            }
-
-            .TTDF-nav {
-                width: 100%;
-                display: flex;
-                overflow-x: auto;
-                padding: 0;
-                background: #f8f9fa;
-                border-right: none;
-                border-bottom: 1px solid #ddd;
-            }
-
-            .TTDF-nav-item {
-                white-space: nowrap;
-                padding: 10px 16px;
-                min-width: 100px;
-                text-align: center;
-                font-size: 13px;
-                border-left: none;
-                border-bottom: 3px solid transparent;
-            }
-
-            .TTDF-nav-item:hover,
-            .TTDF-nav-item.active {
-                border-bottom-color: #4f46e5;
-            }
-
-            .TTDF-header {
-                padding: 16px;
-            }
-
-            .TTDF-title {
-                font-size: 20px;
-            }
-
-            .TTDF-content {
-                padding: 16px;
-            }
-
-            .form-control {
-                font-size: 16px;
-                /* 防止iOS缩放 */
-            }
-
-            .radio-group,
-            .checkbox-group {
-                gap: 8px;
-            }
-
-            .radio-item,
-            .checkbox-item {
-                min-width: 80px;
-                font-size: 13px;
-            }
-        }
-
-        /** 一些组件 */
-        /** Alert */
-        .alert {
-            position: relative;
-            padding: 0.75rem 1rem 0.75rem 2.5rem;
-            border-radius: 0.375rem;
-            font-size: 0.875rem;
-            line-height: 1.5;
-            margin: 0.5rem 0;
-            border-width: 1px;
-            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-        }
-
-        .alert::before {
-            content: "";
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 1rem;
-            height: 1rem;
-            background-size: contain;
-            background-repeat: no-repeat;
-        }
-
-        .alert.info {
-            background-color: #ebf5ff;
-            border-color: #d1e7ff;
-            color: #1c64f2;
-        }
-
-        .alert.info::before {
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%231c64f2'%3E%3Cpath fill-rule='evenodd' d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z' clip-rule='evenodd'/%3E%3C/svg%3E");
-        }
-
-        .alert.success {
-            background-color: #f0fdf4;
-            border-color: #dcfce7;
-            color: #16a34a;
-        }
-
-        .alert.success::before {
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2316a34a'%3E%3Cpath fill-rule='evenodd' d='M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z' clip-rule='evenodd'/%3E%3C/svg%3E");
-        }
-
-        .alert.warning {
-            background-color: #fefce8;
-            border-color: #fef08a;
-            color: #d97706;
-        }
-
-        .alert.warning::before {
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23d97706'%3E%3Cpath fill-rule='evenodd' d='M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z' clip-rule='evenodd'/%3E%3C/svg%3E");
-        }
-
-        .alert.error {
-            background-color: #fef2f2;
-            border-color: #fee2e2;
-            color: #dc2626;
-        }
-
-        .alert.error::before {
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23dc2626'%3E%3Cpath fill-rule='evenodd' d='M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z' clip-rule='evenodd'/%3E%3C/svg%3E");
-        }
-
-        /* 消息提示样式 */
-        .ttdf-message {
-            animation: slideIn 0.3s ease-out;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* 加载遮罩 */
-        .ttdf-loading {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            z-index: 9999;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            backdrop-filter: blur(8px);
-        }
-
-        .ttdf-loading-spinner {
-            width: 48px;
-            height: 48px;
-            border: 3px solid rgba(255, 255, 255, 0.2);
-            border-top: 3px solid #4f46e5;
-            border-radius: 50%;
-            animation: modernSpin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
-        }
-
-        @keyframes modernSpin {
-            0% {
-                transform: rotate(0deg) scale(1);
-            }
-
-            50% {
-                transform: rotate(180deg) scale(1.1);
-            }
-
-            100% {
-                transform: rotate(360deg) scale(1);
-            }
-        }
-
-        /* 表单样式 */
-        .form-group {
-            margin-bottom: 10px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 12px;
-            font-weight: 600;
-            color: #1f2937;
-            font-size: 15px;
-            letter-spacing: -0.2px;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-            line-height: 1.5;
-            color: #333;
-            background-color: #ffffff;
-            transition: border-color 0.2s;
-        }
-
-        /* AddList 组件样式 */
-        .addlist-container {
-            border: 1px solid #e5e7eb;
-            border-radius: 6px;
-            padding: 16px;
-            background-color: #f9fafb;
-        }
-
-        .addlist-items {
-            margin-bottom: 12px;
-        }
-
-        .addlist-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 8px;
-            padding: 8px;
-            background-color: #ffffff;
-            border: 1px solid #e5e7eb;
-            border-radius: 4px;
-        }
-
-        .addlist-input {
-            flex: 1;
-            padding: 8px 12px;
-            border: 1px solid #d1d5db;
-            border-radius: 4px;
-            font-size: 14px;
-            transition: border-color 0.2s;
-        }
-
-        .addlist-input:focus {
-            outline: none;
-            border-color: #4f46e5;
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-        }
-
-        .addlist-remove {
-            padding: 6px 12px;
-            background-color: #ef4444;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            white-space: nowrap;
-        }
-
-        .addlist-remove:hover {
-            background-color: #dc2626;
-        }
-
-        .addlist-add {
-            padding: 8px 16px;
-            background-color: #4f46e5;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .addlist-add:hover {
-            background-color: #4338ca;
-        }
-
-        .addlist-hidden {
-            display: none;
-            box-sizing: border-box;
-        }
-
-        .form-control:focus {
-            border-color: #4f46e5;
-            outline: 0;
-        }
-
-        .form-control[readonly] {
-            background-color: #f9fafb;
-            border-color: #d1d5db;
-            color: #6b7280;
-            cursor: not-allowed;
-        }
-
-        select.form-control {
-            cursor: pointer;
-            background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 5"><path fill="%23666" d="M2 0L0 2h4zm0 5L0 3h4z"/></svg>');
-            background-repeat: no-repeat;
-            background-position: right 12px center;
-            background-size: 12px;
-            padding-right: 40px;
-            height: 45px;
-        }
-
-        textarea.form-control {
-            resize: vertical;
-            min-height: 120px;
-            font-family: inherit;
-        }
-
-        .description {
-            margin-top: 8px;
-            font-size: 13px;
-            color: #6b7280;
-            line-height: 1.5;
-            font-style: italic;
-        }
-
-        /* 简化的单选框和复选框样式 */
-        .form-label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: #333;
-            font-size: 14px;
-        }
-
-        .radio-group,
-        .checkbox-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-top: 8px;
-        }
-
-        .radio-item,
-        .checkbox-item {
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-            font-size: 14px;
-            color: #374151;
-            padding: 8px 12px;
-            border-radius: 4px;
-            transition: all 0.2s;
-            background: #f8f9fa;
-            border: 1px solid #ddd;
-            white-space: nowrap;
-            min-width: 100px;
-        }
-
-        .radio-item:hover,
-        .checkbox-item:hover {
-            background: #f0f4ff;
-            border-color: #4f46e5;
-        }
-
-        .radio-item input[type="radio"],
-        .checkbox-item input[type="checkbox"] {
-            margin-right: 6px;
-            margin-top: 0;
-            width: 16px;
-            height: 16px;
-            accent-color: #4f46e5;
-            cursor: pointer;
-        }
-
-        .radio-item input[type="radio"]:checked~span,
-        .checkbox-item input[type="checkbox"]:checked~span {
-            color: #4f46e5;
-            font-weight: 500;
-        }
-
-        .radio-item input[type="radio"]:checked,
-        .checkbox-item input[type="checkbox"]:checked {
-            background: #4f46e5;
-        }
-
-        /* 兼容旧样式 - 修改这部分以实现横排显示 */
-        .radio-label,
-        .checkbox-label {
-            display: inline-flex;
-            align-items: center;
-            margin-bottom: 0;
-            margin-right: 16px;
-            cursor: pointer;
-            font-size: 14px;
-            color: #374151;
-            padding: 8px 12px;
-            border-radius: 4px;
-            transition: all 0.2s;
-            background: #f8f9fa;
-            border: 1px solid #ddd;
-            white-space: nowrap;
-        }
-
-        .radio-label:hover,
-        .checkbox-label:hover {
-            background: #f0f4ff;
-            border-color: #4f46e5;
-        }
-
-        .radio-label input[type="radio"],
-        .checkbox-label input[type="checkbox"] {
-            margin-right: 6px;
-            margin-top: 0;
-            width: 16px;
-            height: 16px;
-            accent-color: #4f46e5;
-            cursor: pointer;
-        }
-
-        .radio-label input[type="radio"]:checked+span,
-        .checkbox-label input[type="checkbox"]:checked+span {
-            color: #4f46e5;
-            font-weight: 500;
-        }
-
-        /* 响应式下的单选框和复选框样式 */
-        @media (max-width: 768px) {
-
-            .radio-label,
-            .checkbox-label {
-                display: inline-flex;
-                align-items: center;
-                margin-bottom: 0;
-                margin-right: 8px;
-                cursor: pointer;
-                font-size: 13px;
-                color: #374151;
-                padding: 6px 10px;
-                border-radius: 4px;
-                transition: all 0.2s;
-                background: #f8f9fa;
-                border: 1px solid #ddd;
-                white-space: nowrap;
-            }
-        }
-    </style>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // 获取所有Tab导航项
-            const tabItems = document.querySelectorAll('.TTDF-nav-item');
-
-            // 为每个Tab项添加点击事件
-            tabItems.forEach(item => {
-                item.addEventListener('click', function() {
-                    const tabId = this.getAttribute('data-tab');
-
-                    // 移除所有Tab项的活动状态
-                    tabItems.forEach(tab => {
-                        tab.classList.remove('active');
-                    });
-
-                    // 为当前点击的Tab项添加活动状态
-                    this.classList.add('active');
-
-                    // 隐藏所有内容面板
-                    document.querySelectorAll('.TTDF-tab-panel').forEach(panel => {
-                        panel.classList.remove('active');
-                    });
-
-                    // 显示当前Tab对应的内容面板
-                    document.getElementById(tabId).classList.add('active');
-                });
-            });
-
-            // 无刷新保存设置
-            const saveButton = document.querySelector('.TTDF-save');
-            if (saveButton) {
-                saveButton.addEventListener('click', function(e) {
-                    e.preventDefault();
-
-                    // 显示加载遮罩
-                    const loading = document.createElement('div');
-                    loading.className = 'ttdf-loading';
-                    loading.innerHTML = '<div class="ttdf-loading-spinner"></div>';
-                    document.body.appendChild(loading);
-                    loading.style.display = 'flex';
-
-                    // 收集表单数据
-                    const form = document.querySelector('form');
-                    const formData = new FormData(form);
-
-                    // 转换为普通对象
-                    const data = {};
-                    for (let [key, value] of formData.entries()) {
-                        // 处理复选框的多值情况
-                        if (data[key]) {
-                            if (Array.isArray(data[key])) {
-                                data[key].push(value);
-                            } else {
-                                data[key] = [data[key], value];
+    // 获取配置数据
+    $tabs = require __DIR__ . '/../../app/Setup.php';
+    
+    // 处理配置数据，获取当前保存的值
+    $configData = [];
+    foreach ($tabs as $tab_id => $tab) {
+        $configData[$tab_id] = [
+            'title' => $tab['title'],
+            'fields' => []
+        ];
+        
+        if (isset($tab['html'])) {
+            $configData[$tab_id]['html'] = $tab['html'];
+        } elseif (isset($tab['fields'])) {
+            foreach ($tab['fields'] as $field) {
+                $fieldData = $field;
+                
+                // 获取保存的值
+                if (isset($field['name']) && $field['type'] !== 'Html') {
+                    $row = DB::getTtdf($field['name']);
+                    $dbValue = $row;
+                    
+                    if ($dbValue !== null) {
+                        // 对于复选框和DialogSelect，需要特殊处理比较
+                        if ($field['type'] === 'Checkbox' || $field['type'] === 'DialogSelect') {
+                            $setupDefault = is_array($field['value']) ? implode(',', $field['value']) : $field['value'];
+                            $dbValueForCompare = $dbValue;
+                            
+                            // 标准化比较
+                            $setupNormalized = $setupDefault;
+                            $dbNormalized = $dbValueForCompare;
+                            
+                            if (!empty($setupNormalized)) {
+                                $setupArray = explode(',', $setupNormalized);
+                                $setupArray = array_map('trim', $setupArray);
+                                sort($setupArray);
+                                $setupNormalized = implode(',', $setupArray);
+                            }
+                            
+                            if (!empty($dbNormalized)) {
+                                $dbArray = explode(',', $dbNormalized);
+                                $dbArray = array_map('trim', $dbArray);
+                                sort($dbArray);
+                                $dbNormalized = implode(',', $dbArray);
+                            }
+                            
+                            if ($dbNormalized !== $setupNormalized) {
+                                $fieldData['value'] = $dbValue;
                             }
                         } else {
-                            data[key] = value;
+                            if ($dbValue !== $field['value']) {
+                                $fieldData['value'] = $dbValue;
+                            }
                         }
                     }
-
-                    // 发送AJAX请求到新的API端点
-                    fetch('<?php echo Typecho_Common::url(__TTDF_RESTAPI_ROUTE__ . '/ttdf/options', Helper::options()->siteUrl); ?>', {
-                            method: 'POST',
-                            body: JSON.stringify(data),
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            // 确保不跟随重定向
-                            redirect: 'error'
-                        })
-                        .then(response => {
-                            // 检查响应是否为JSON
-                            const contentType = response.headers.get('content-type');
-                            if (contentType && contentType.indexOf('application/json') !== -1) {
-                                return response.json();
-                            } else {
-                                throw new Error('服务器返回了非JSON响应');
-                            }
-                        })
-                        .then(data => {
-                            // 隐藏加载遮罩
-                            document.body.removeChild(loading);
-
-                            // 显示消息到TTDF-content区域内
-                            let messageDiv = document.querySelector('.ttdf-message');
-                            if (!messageDiv) {
-                                messageDiv = document.createElement('div');
-                                messageDiv.className = 'ttdf-message';
-                            }
-
-                            // 设置消息样式和内容
-                            messageDiv.className = 'alert success ttdf-message';
-                            messageDiv.innerHTML = '<span>设置已保存!</span>';
-
-                            // 将消息插入到TTDF-content的顶部
-                            const contentArea = document.querySelector('.TTDF-content');
-                            contentArea.insertBefore(messageDiv, contentArea.firstChild);
-
-                            // 3秒后自动隐藏消息
-                            setTimeout(() => {
-                                if (messageDiv.parentNode) {
-                                    messageDiv.parentNode.removeChild(messageDiv);
-                                }
-                            }, 3000);
-                        })
-                        .catch(error => {
-                            // 隐藏加载遮罩
-                            document.body.removeChild(loading);
-
-                            // 显示错误消息到TTDF-content区域内
-                            let messageDiv = document.querySelector('.ttdf-message');
-                            if (!messageDiv) {
-                                messageDiv = document.createElement('div');
-                                messageDiv.className = 'ttdf-message';
-                            }
-
-                            // 设置错误消息样式和内容
-                            messageDiv.className = 'alert error ttdf-message';
-                            messageDiv.innerHTML = '<span>保存失败: ' + error.message + '</span>';
-
-                            // 将消息插入到TTDF-content的顶部
-                            const contentArea = document.querySelector('.TTDF-content');
-                            contentArea.insertBefore(messageDiv, contentArea.firstChild);
-
-                            // 3秒后自动隐藏消息
-                            setTimeout(() => {
-                                if (messageDiv.parentNode) {
-                                    messageDiv.parentNode.removeChild(messageDiv);
-                                }
-                            }, 3000);
-                        });
-                });
+                }
+                
+                $configData[$tab_id]['fields'][] = $fieldData;
             }
+        }
+    }
 
-            // AddList 功能
-            function initAddListFunctionality() {
-                // 为所有 AddList 容器添加事件监听
-                document.querySelectorAll('.addlist-container').forEach(container => {
-                    const addButton = container.querySelector('.addlist-add');
-                    const itemsContainer = container.querySelector('.addlist-items');
-                    const hiddenInput = container.querySelector('.addlist-hidden');
-
-                    // 添加新项目
-                    if (addButton) {
-                        addButton.addEventListener('click', function(e) {
-                            e.preventDefault();
-                            addNewItem(itemsContainer, hiddenInput);
-                        });
-                    }
-
-                    // 为现有的删除按钮添加事件监听
-                    container.addEventListener('click', function(e) {
-                        if (e.target.classList.contains('addlist-remove')) {
-                            e.preventDefault();
-                            removeItem(e.target.closest('.addlist-item'), hiddenInput);
-                        }
-                    });
-
-                    // 为输入框添加变化监听
-                    container.addEventListener('input', function(e) {
-                        if (e.target.classList.contains('addlist-input')) {
-                            updateHiddenValue(container, hiddenInput);
-                        }
-                    });
-                });
+    // 获取当前保存的值
+    $savedValues = array();
+    foreach ($configData as $tabId => $tab) {
+        if (isset($tab['fields'])) {
+            foreach ($tab['fields'] as $field) {
+                if (isset($field['name'])) {
+                    $savedValues[$field['name']] = isset($field['value']) ? $field['value'] : '';
+                }
             }
-
-            function addNewItem(itemsContainer, hiddenInput) {
-                const newItem = document.createElement('div');
-                newItem.className = 'addlist-item';
-                newItem.innerHTML = `
-            <input type="text" class="form-control addlist-input" placeholder="请输入内容" />
-            <button type="button" class="btn btn-danger addlist-remove">删除</button>
-        `;
-                itemsContainer.appendChild(newItem);
-
-                // 聚焦到新添加的输入框
-                newItem.querySelector('.addlist-input').focus();
-
-                updateHiddenValue(itemsContainer.closest('.addlist-container'), hiddenInput);
-            }
-
-            function removeItem(item, hiddenInput) {
-                const container = item.closest('.addlist-container');
-                item.remove();
-                updateHiddenValue(container, hiddenInput);
-            }
-
-            function updateHiddenValue(container, hiddenInput) {
-                const inputs = container.querySelectorAll('.addlist-input');
-                const values = [];
-                inputs.forEach(input => {
-                    const value = input.value.trim();
-                    if (value) {
-                        values.push(value);
-                    }
-                });
-                hiddenInput.value = values.join(',');
-            }
-
-            // 初始化 AddList 功能
-            initAddListFunctionality();
-        });
+        }
+    }
+    
+    // 合并配置数据和保存的值
+    $fullConfig = array(
+        'config' => $configData,
+        'savedValues' => $savedValues
+    );
+    
+    // 如果不是AJAX请求，输出HTML界面
+?>
+    <link rel="stylesheet" href="<?php get_theme_file_url('core/Static/Options.css', true) ?>">
+    <script src="<?php get_theme_file_url('core/Static/vue.global.min.js', true) ?>"></script>
+    
+    <!-- Vue应用容器 -->
+    <div id="options-app"></div>
+    
+    <!-- 配置数据 -->
+    <script>
+        window.TTDFConfig = {
+            themeName: '<?php GetTheme::Name(true); ?>',
+            themeVersion: '<?php GetTheme::Ver(true); ?>',
+            ttdfVersion: '<?php TTDF::Ver(true); ?>',
+            apiUrl: '<?php echo Typecho_Common::url(__TTDF_RESTAPI_ROUTE__ . '/ttdf/options', Helper::options()->siteUrl); ?>',
+            tabs: <?php echo json_encode($configData, JSON_UNESCAPED_UNICODE); ?>,
+            fullConfig: <?php echo json_encode($fullConfig, JSON_UNESCAPED_UNICODE); ?>
+        };
     </script>
-
-    <form method="post">
-        <div class="TTDF-container">
-            <div class="TTDF-header">
-                <h1 class="TTDF-title"><?php echo GetTheme::Name(false); ?><small> · <?php echo GetTheme::Ver(false); ?></small></h1>
-                <div class="TTDF-actions">
-                    <button class="TTDF-save" type="submit">保存设置</button>
-                </div>
-            </div>
-
-            <div class="TTDF-body">
-                <nav class="TTDF-nav">
-                    <?php
-                    // 生成Tab导航按钮（默认激活第一个）
-                    $tabs = require __DIR__ . '/../../app/Setup.php';
-                    $first_tab = true;
-                    foreach ($tabs as $tab_id => $tab) {
-                        $active = $first_tab ? 'active' : '';
-                        echo '<div class="TTDF-nav-item ' . $active . '" data-tab="' . $tab_id . '">' . $tab['title'] . '</div>';
-                        $first_tab = false;
-                    }
-                    ?>
-                </nav>
-                <div class="TTDF-content">
-                    <div class="TTDF-content-card">
-                        <?php
-                        // 生成Tab内容
-                        $first_tab = true;
-                        foreach ($tabs as $tab_id => $tab) {
-                            $show = $first_tab ? 'active' : '';
-                            echo '<div id="' . $tab_id . '" class="TTDF-tab-panel ' . $show . '">';
-
-                            if (isset($tab['html'])) {
-                                foreach ($tab['html'] as $html) {
-                                    echo $html['content'];
-                                }
-                            } else {
-                                foreach ($tab['fields'] as $field) {
-                                    if ($field['type'] === 'Html') {
-                                        echo $field['content'];
-                                    } else {
-                                        echo TTDF_CreateFormElement($field);
-                                    }
-                                }
-                            }
-
-                            echo '</div>';
-                            $first_tab = false;
-                        }
-                        ?>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div style="text-align: center; margin-top: 20px;">
-            © Framework By <a href="https://github.com/YuiNijika/TTDF" target="_blank" style="padding: 0px 3px;">TTDF</a> v<?php echo TTDF::Ver(false); ?>
-        </div>
-    </form>
+    
+    <script src="<?php get_theme_file_url('core/Static/Options.js', true) ?>"></script>
 <?php
 }

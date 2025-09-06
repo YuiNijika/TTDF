@@ -1,4 +1,3 @@
-<<<<<<< dev
 # 最直观的 Typecho 主题开发框架  
 
 > The Intuitive Typecho Theme Framework.  
@@ -35,7 +34,3 @@ PHP 8.1+ / Typecho 1.2+
 <a href="https://github.com/YuiNijika/TTDF/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=YuiNijika/TTDF" />
 </a>
-=======
-# 该仓库为v2版已停更
-## 请前往GitHub拉取最新版 https://github.com/YuiNijika/TTDF
->>>>>>> master

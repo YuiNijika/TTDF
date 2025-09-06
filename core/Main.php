@@ -13,7 +13,7 @@ if (!is_array($TTDF_CONFIG)) {
 }
 
 define('TTDF_CONFIG', $TTDF_CONFIG);
-define('__FRAMEWORK_VER__', '3.1.0_alpha3');
+define('__FRAMEWORK_VER__', '3.1.1_rc');
 define('__TYPECHO_GRAVATAR_PREFIX__', TTDF_CONFIG['GRAVATAR_PREFIX'] ?? 'https://cravatar.cn/avatar/');
 define('__TTDF_RESTAPI__', TTDF_CONFIG['REST_API']['ENABLED'] ?? false);
 define('__TTDF_RESTAPI_ROUTE__', TTDF_CONFIG['REST_API']['ROUTE'] ?? 'ty-json');
