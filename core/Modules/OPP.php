@@ -134,6 +134,18 @@ if (!function_exists('get_site_page_url')) {
     }
 }
 
+if (!function_exists('get_client_ip')) {
+    /**
+     * 获取客户端IP
+     * @param bool $echo 是否直接输出
+     * @return string|null
+     */
+    function get_client_ip(bool $echo = true): ?string
+    {
+        return GetSite::ClientIp($echo);
+    }
+}
+
 if (!function_exists('get_site_theme_name')) {
     /**
      * 获取站点主题名称

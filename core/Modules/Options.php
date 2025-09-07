@@ -434,18 +434,17 @@ function TTDF_CreateFormElement($field)
     // 获取当前主题名
     $themeName = Helper::options()->theme;
 
-    // 构建带主题前缀的字段名（仅用于id属性）
+    // 构建带主题前缀的字段名 仅用于id属性
     $prefixedName = $themeName . '_' . $field['name'];
 
     // 从数据库获取值
     $dbValue = DB::getTtdf($field['name']);
 
-    // 确定最终值：优先使用数据库值，否则使用默认值
+    // 优先使用数据库值，否则使用默认值
     $value = ($dbValue !== null && $dbValue !== '') ? $dbValue : ($field['value'] ?? '');
 
     // 处理标签和描述
     $label = $field['label'] ?? '';
-    // 不再对 description 进行转义，允许其中的 HTML 标签正常渲染
     $description = $field['description'] ?? '';
 
     $html = '';
@@ -472,7 +471,6 @@ function TTDF_CreateFormElement($field)
                 $html .= '<label for="' . $prefixedName . '">' . $label . '</label>';
             }
             $html .= '<textarea name="' . $field['name'] . '" id="' . $prefixedName . '" class="form-control" rows="5">' . htmlspecialchars($value) . '</textarea>';
-            // 直接输出 description，不进行转义以支持 HTML
             if ($description) {
                 $html .= '<p class="description">' . $description . '</p>';
             }
@@ -484,7 +482,6 @@ function TTDF_CreateFormElement($field)
             if ($label) {
                 $html .= '<label for="' . $prefixedName . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</label>';
             }
-            // 直接输出 description，不进行转义以支持 HTML
             if ($description) {
                 $html .= '<p class="description">' . $description . '</p>';
             }
@@ -516,7 +513,6 @@ function TTDF_CreateFormElement($field)
                 }
                 $html .= '</div>';
             }
-            // 直接输出 description，不进行转义以支持 HTML
             if ($description) {
                 $html .= '<p class="description">' . $description . '</p>';
             }
@@ -541,7 +537,6 @@ function TTDF_CreateFormElement($field)
                 }
                 $html .= '</div>';
             }
-            // 直接输出 description，不进行转义以支持 HTML
             if ($description) {
                 $html .= '<p class="description">' . $description . '</p>';
             }
@@ -850,15 +845,12 @@ function themeConfig($form)
         'savedValues' => $savedValues
     );
     
-    // 如果不是AJAX请求，输出HTML界面
 ?>
     <link rel="stylesheet" href="<?php get_theme_file_url('core/Static/Options.css', true) ?>">
-    <script src="<?php get_theme_file_url('core/Static/vue.global.min.js', true) ?>"></script>
+    <link rel="stylesheet" href="<?php get_theme_file_url('core/Static/Motyf.css', true) ?>">
     
-    <!-- Vue应用容器 -->
     <div id="options-app"></div>
     
-    <!-- 配置数据 -->
     <script>
         window.TTDFConfig = {
             themeName: '<?php GetTheme::Name(true); ?>',
@@ -869,7 +861,9 @@ function themeConfig($form)
             fullConfig: <?php echo json_encode($fullConfig, JSON_UNESCAPED_UNICODE); ?>
         };
     </script>
-    
+
+    <script src="<?php get_theme_file_url('core/Static/Vue.global.min.js', true) ?>"></script>
+    <script src="<?php get_theme_file_url('core/Static/Motyf.js', true) ?>"></script>
     <script src="<?php get_theme_file_url('core/Static/Options.js', true) ?>"></script>
 <?php
 }

@@ -1,99 +1,61 @@
 <?php
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 ?>
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-<script>
-    tailwind.config = {
-        theme: {
-            extend: {
-                colors: {
-                    primary: '#165DFF',
-                    secondary: '#00B42A',
-                    dark: '#1D2129',
-                    light: '#F2F3F5'
-                },
-                fontFamily: {
-                    inter: ['Inter', 'system-ui', 'sans-serif'],
-                },
-            },
-        }
-    }
-</script>
-<style type="text/tailwindcss">
-    @layer utilities {
-        .h-screen-no-scroll {
-            height: 100vh;
-            overflow: hidden;
-        }
-        .min-h-screen-no-scroll {
-            min-height: 100vh;
-            overflow: hidden;
-        }
-      .content-auto {
-        content-visibility: auto;
-      }
-      .text-shadow {
-        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      }
-      .bg-gradient-primary {
-        background: linear-gradient(135deg, #165DFF 0%, #0047CC 100%);
-      }
-      .bg-glass {
-        background: rgba(255, 255, 255, 0.7);
-        backdrop-filter: blur(10px);
-      }
-      .transition-navbar {
-        transition: background-color 0.3s, box-shadow 0.3s, padding 0.3s;
-      }
-    }
-</style>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <main>
-    <section class="min-h-screen-no-scroll relative overflow-hidden">
-        <div class="absolute inset-0 bg-gradient-to-br from-primary/5 to-primary/10 -z-10"></div>
-        <div class="absolute -top-20 -right-20 w-80 h-80 bg-primary/10 rounded-full blur-3xl -z-10"></div>
-        <div class="absolute -bottom-40 -left-20 w-96 h-96 bg-secondary/10 rounded-full blur-3xl -z-10"></div>
+    <section class="min-h-screen-no-scroll">
+        <div class="background-gradient"></div>
+        <div class="blob-primary"></div>
+        <div class="blob-secondary"></div>
 
-        <div class="container mx-auto pt-16 pb-16 px-4 md:px-6">
-            <div class="max-w-4xl mx-auto text-center">
-                <div class="inline-flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-primary mb-6 shadow-lg shadow-primary/20">
-                    <i class="fa fa-rocket text-white text-2xl"></i>
+        <div class="container">
+            <div class="text-center max-w-4xl mx-auto">
+                <div class="icon-container">
+                    <svg t="1755579480924" class="icon" viewBox="0 0 1024 1024" version="1.1"
+                        xmlns="http://www.w3.org/2000/svg" p-id="4927">
+                        <path
+                            d="M512 1024C132.647 1024 0 891.313 0 512S132.647 0 512 0s512 132.687 512 512-132.647 512-512 512zM236.308 354.462h551.384v-78.77H236.308v78.77z m0 196.923h393.846v-78.77H236.308v78.77z m0 196.923h472.615v-78.77H236.308v78.77z"
+                            p-id="4928" fill="#2c2c2c"></path>
+                    </svg>
                 </div>
-                <h1 class="text-[clamp(2.5rem,5vw,4rem)] font-bold leading-tight text-dark mb-6 text-shadow">
+                <h1>
                     最直观的 <span class="text-primary">Typecho</span> 开发框架
                 </h1>
-                <p class="text-[clamp(1rem,2vw,1.25rem)] text-gray-600 mb-10 max-w-3xl mx-auto">
+                <p class="max-w-3xl mx-auto">
                     这是 <span class="text-primary">Typecho</span> 的主题模板开发框架, 提供常用的方法以及函数调用
                     <br />Typecho Theme Development Framework
                 </p>
-                <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                    <a href="https://github.com/YuiNijika/TTDF/blob/master/README.md" target="_blank" class="px-8 py-4 bg-primary text-white rounded-xl hover:bg-primary/90 transition-all shadow-lg hover:shadow-primary/20 hover:shadow-xl text-lg font-medium w-full sm:w-auto">
-                        快速开始 <i class="fa fa-arrow-right ml-2"></i>
+
+                <div class="button-group">
+                    <a href="https://typecho.dev/develop/quickstart.html" target="_blank" class="button button-primary">
+                        快速开始
+                        <svg class="icon-arrow" viewBox="0 0 24 24">
+                            <path d="M5 12h14M12 5l7 7-7 7" />
+                        </svg>
                     </a>
-                    <a href="https://github.com/YuiNijika/TTDF" target="_blank" class="px-8 py-4 bg-white text-dark border border-gray-200 rounded-xl hover:bg-gray-50 transition-all shadow-md hover:shadow-lg text-lg font-medium w-full sm:w-auto">
-                        GitHub <i class="fa fa-brands fa-github ml-2"></i>
+                    <a href="https://github.com/YuiNijika/TTDF" target="_blank" class="button button-secondary">
+                        GitHub
+                        <svg class="icon-github" viewBox="0 0 24 24">
+                            <path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
+                        </svg>
                     </a>
                 </div>
 
-                <div class="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
-                    <div class="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
-                        <div class="text-3xl font-bold text-primary mb-2"><?php TTDF::Ver(true) ?></div>
-                        <div class="text-gray-500">当前版本</div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value"><?php TTDF::Ver(true); ?></div>
+                        <div class="stat-label">当前版本</div>
                     </div>
-                    <div class="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
-                        <div class="text-3xl font-bold text-primary mb-2">1.2+</div>
-                        <div class="text-gray-500">兼容版本</div>
+                    <div class="stat-card">
+                        <div class="stat-value">1.2+</div>
+                        <div class="stat-label">兼容版本</div>
                     </div>
-                    <div class="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
-                        <div class="text-3xl font-bold text-primary mb-2">低</div>
-                        <div class="text-gray-500">上手难度</div>
+                    <div class="stat-card">
+                        <div class="stat-value">低</div>
+                        <div class="stat-label">上手难度</div>
                     </div>
-                    <div class="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
-                        <div class="text-3xl font-bold text-primary mb-2">MIT</div>
-                        <div class="text-gray-500">开源许可</div>
+                    <div class="stat-card">
+                        <div class="stat-value">MIT</div>
+                        <div class="stat-label">开源许可</div>
                     </div>
                 </div>
             </div>

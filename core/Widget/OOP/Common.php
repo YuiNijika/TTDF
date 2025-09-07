@@ -596,4 +596,21 @@ class Get
             return self::handleError('获取当前页面url失败', $e);
         }
     }
+
+    /**
+     * 获取客户端ip
+     * @return string
+     */
+    public static function ClientIp( ?bool $echo = true, )
+    {
+        try {
+            $ip = TTDF_Widget::GetClientIp();
+            if ($echo) {
+                echo $ip;
+            }
+            return $ip;
+        } catch (Exception $e) {
+            return self::handleError('获取客户端ip失败', $e);
+        }
+    }
 }

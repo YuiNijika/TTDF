@@ -1,0 +1,221 @@
+@charset "UTF-8";
+
+/**
+ * MotyfJS
+ * 基于Notyf修改的轻量级消息提示组件
+ * @author 鼠子Tomoriゞ
+ * @link https://github.com/YuiNijika/MotynJS
+ */
+
+.motym {
+    position: fixed;
+    z-index: 10000000;
+    width: 320px;
+}
+
+/* 默认位置 */
+.motym:not(.top-left):not(.top-right):not(.bottom-left):not(.top-center):not(.bottom-center):not(.left-center):not(.right-center) {
+    bottom: 20px;
+    right: 20px;
+}
+
+/* 右下角 */
+.motym.bottom-right {
+    bottom: 20px;
+    right: 20px;
+}
+
+/* 左下角 */
+.motym.bottom-left {
+    bottom: 20px;
+    left: 20px;
+}
+
+/* 右上角 */
+.motym.top-right {
+    top: 20px;
+    right: 20px;
+}
+
+/* 左上角 */
+.motym.top-left {
+    top: 20px;
+    left: 20px;
+}
+
+/* 顶部居中 */
+.motym.top-center {
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+    max-width: 100%;
+}
+
+/* 底部居中 */
+.motym.bottom-center {
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+    max-width: 100%;
+}
+
+/* 左侧居中 */
+.motym.left-center {
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: auto;
+    max-width: 100%;
+}
+
+/* 右侧居中 */
+.motym.right-center {
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: auto;
+    max-width: 100%;
+}
+
+.motyf-message {
+    margin-top: 10px;
+    transition: all 0.3s ease;
+}
+
+/* 根据位置调整消息间距 */
+.motym.top-left .motyf-message,
+.motym.top-right .motyf-message,
+.motym.top-center .motyf-message {
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+/* 垂直居中位置的间距调整 */
+.motym.left-center .motyf-message,
+.motym.right-center .motyf-message {
+    margin: 10px 0;
+}
+
+/* 进入动画 */
+.motyf-message.motyf-enter .motyf {
+    animation: motyf-enter-right 0.4s cubic-bezier(0.35, 0.71, 0.46, 1.08);
+}
+
+/* 左侧位置的进入动画 */
+.motym.bottom-left .motyf-message.motyf-enter .motyf,
+.motym.top-left .motyf-message.motyf-enter .motyf,
+.motym.left-center .motyf-message.motyf-enter .motyf {
+    animation: motyf-enter-left 0.4s cubic-bezier(0.35, 0.71, 0.46, 1.08);
+}
+
+/* 顶部和底部居中位置的进入动画 */
+.motym.top-center .motyf-message.motyf-enter .motyf,
+.motym.bottom-center .motyf-message.motyf-enter .motyf {
+    animation: motyf-enter-down 0.4s cubic-bezier(0.35, 0.71, 0.46, 1.08);
+}
+
+/* 退出动画 */
+.motyf-message.motym-out .motyf {
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all 0.3s ease;
+}
+
+/* 左侧位置的退出动画 */
+.motym.bottom-left .motyf-message.motym-out .motyf,
+.motym.top-left .motyf-message.motym-out .motyf,
+.motym.left-center .motyf-message.motym-out .motyf {
+    transform: translateX(-100%);
+}
+
+/* 顶部和底部居中位置的退出动画 */
+.motym.top-center .motyf-message.motym-out .motyf,
+.motym.bottom-center .motyf-message.motym-out .motyf {
+    transform: translateY(-50%) scale(0.8);
+    opacity: 0;
+}
+
+/* 右侧居中位置的退出动画 */
+.motym.right-center .motyf-message.motym-out .motyf {
+    transform: translateY(-50%) translateX(100%);
+    opacity: 0;
+}
+
+@keyframes motyf-enter-right {
+    0% {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes motyf-enter-left {
+    0% {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes motyf-enter-down {
+    0% {
+        transform: translateY(-50%) scale(0.8);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+.motyf {
+    color: #fff;
+    min-width: 200px;
+    padding: 16px 24px 16px 54px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateX(0);
+    transition: 0.3s;
+    -webkit-backdrop-filter: saturate(5) blur(20px);
+    backdrop-filter: saturate(5) blur(20px);
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(90deg, rgba(15, 147, 249, 0.7), rgba(61, 189, 249, 0.8));
+}
+
+.motyf-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 20px;
+    width: 20px;
+}
+
+.motyf.success {
+    background: linear-gradient(90deg, rgba(15, 147, 249, 0.7), rgba(61, 189, 249, 0.8));
+}
+
+.motyf.info {
+    background: linear-gradient(90deg, rgba(58, 162, 54, 0.8), rgba(89, 247, 131, 0.8));
+}
+
+.motyf.warning {
+    background: linear-gradient(90deg, rgba(253, 170, 71, 0.7), rgba(247, 154, 13, 0.8));
+}
+
+.motyf.danger, .motyf.error {
+    background: linear-gradient(90deg, rgba(253, 69, 28, 0.7), rgba(251, 110, 75, 0.8));
+}
+
+.motyf .motyf-text {
+    display: block;
+}

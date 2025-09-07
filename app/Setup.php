@@ -120,14 +120,6 @@ return [
                 'value' => '#3498db',
                 'label' => '主题颜色',
                 'description' => '选择网站的主题颜色，支持十六进制颜色值输入。'
-            ],
-            [
-                // 'ColorPicker' => '颜色选择器（背景色）',
-                'type' => 'ColorPicker',
-                'name' => 'background_color',
-                'value' => '#ffffff',
-                'label' => '背景颜色',
-                'description' => '选择网站的背景颜色，可以通过颜色选择器或直接输入十六进制值。'
             ]
         ]
     ],

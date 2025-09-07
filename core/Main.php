@@ -13,7 +13,7 @@ if (!is_array($TTDF_CONFIG)) {
 }
 
 define('TTDF_CONFIG', $TTDF_CONFIG);
-define('__FRAMEWORK_VER__', '3.1.1_rc');
+define('__FRAMEWORK_VER__', '3.1.2_alpha');
 define('__TYPECHO_GRAVATAR_PREFIX__', TTDF_CONFIG['GRAVATAR_PREFIX'] ?? 'https://cravatar.cn/avatar/');
 define('__TTDF_RESTAPI__', TTDF_CONFIG['REST_API']['ENABLED'] ?? false);
 define('__TTDF_RESTAPI_ROUTE__', TTDF_CONFIG['REST_API']['ROUTE'] ?? 'ty-json');
@@ -108,12 +108,12 @@ class TTDF_Main
             'Tools.php',
             'TTDF.php',
             'AddRoute.php',
-            'Get/Common.php',
-            'Get/Site.php',
-            'Get/Post.php',
-            'Get/Theme.php',
-            'Get/User.php',
-            'Get/Comment.php',
+            'OOP/Common.php',
+            'OOP/Site.php',
+            'OOP/Post.php',
+            'OOP/Theme.php',
+            'OOP/User.php',
+            'OOP/Comment.php',
         ];
 
         foreach ($widgetFiles as $file) {
