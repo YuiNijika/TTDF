@@ -1,5 +1,13 @@
 @charset "UTF-8";
+/* Motyf CSS */
 @import "./_ttdf/motyf.css";
 
-/* 欢迎页CSS */
+/* 欢迎页CSS 正式环境请先移除 */
 @import "./_ttdf/welcome.css";
+
+/**
+ * 自定义css样式
+ * 当然也可以创建一个custom.css文件
+ * 然后在app.css中引入
+ * @import "./custom.css";
+ */
