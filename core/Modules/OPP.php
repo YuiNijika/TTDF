@@ -142,7 +142,19 @@ if (!function_exists('get_client_ip')) {
      */
     function get_client_ip(bool $echo = true): ?string
     {
-        return GetSite::ClientIp($echo);
+        return Get::ClientIp($echo);
+    }
+}
+
+if (!function_exists('get_client_ua')) {
+    /**
+     * 获取客户端ua
+     * @param bool $echo 是否直接输出
+     * @return string|null
+     */
+    function get_client_ua(bool $echo = true): ?string
+    {
+        return Get::ClientUA($echo);
     }
 }
 

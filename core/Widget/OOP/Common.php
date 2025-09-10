@@ -601,7 +601,7 @@ class Get
      * 获取客户端ip
      * @return string
      */
-    public static function ClientIp( ?bool $echo = true, )
+    public static function ClientIp( ?bool $echo = true)
     {
         try {
             $ip = TTDF_Widget::GetClientIp();
@@ -611,6 +611,20 @@ class Get
             return $ip;
         } catch (Exception $e) {
             return self::handleError('获取客户端ip失败', $e);
+        }
+    }
+
+    public static function ClientUA( ?bool $echo = true)
+    {
+        try {
+            $ua = $_SERVER['HTTP_USER_AGENT'];
+            if ($echo) {
+                echo $ua;
+            } else {
+                return $ua;
+            }
+        } catch (Exception $e) {
+            return self::handleError('获取客户端UA失败', $e);
         }
     }
 }
