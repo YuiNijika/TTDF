@@ -2,7 +2,11 @@
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
 // 配置文件加载
-$configPath = __DIR__ . '/../app/TTDF.Config.php';
+$configPath = __DIR__ . '/../app/app.config.php';
+if (!file_exists($configPath)) {
+    $configPath = __DIR__ . '/../app/TTDF.Config.php';
+}
+
 if (!file_exists($configPath)) {
     throw new RuntimeException('TTDF配置文件未找到! 请检查路径: ' . $configPath);
 }
@@ -13,7 +17,7 @@ if (!is_array($TTDF_CONFIG)) {
 }
 
 define('TTDF_CONFIG', $TTDF_CONFIG);
-define('__FRAMEWORK_VER__', '3.1.2_fix');
+define('__FRAMEWORK_VER__', '3.1.3_alpha');
 define('__TYPECHO_GRAVATAR_PREFIX__', TTDF_CONFIG['GRAVATAR_PREFIX'] ?? 'https://cravatar.cn/avatar/');
 define('__TTDF_RESTAPI__', TTDF_CONFIG['REST_API']['ENABLED'] ?? false);
 define('__TTDF_RESTAPI_ROUTE__', TTDF_CONFIG['REST_API']['ROUTE'] ?? 'ty-json');
