@@ -46,7 +46,6 @@ return [
                 'value' => 'option1',
                 'label' => '单选框',
                 'description' => '这是一个单选框~',
-                'layout' => 'vertical', // horizontal: 横排, vertical: 竖排
                 'options' => [
                     'option1' => '选项一',
                     'option2' => '选项二',
@@ -73,44 +72,10 @@ return [
                 'value' => ['option1', 'option3'],
                 'label' => '多选框',
                 'description' => '这是一个多选框~',
-                'layout' => 'horizontal', // horizontal: 横排, vertical: 竖排
                 'options' => [
                     'option1' => '选项一',
                     'option2' => '选项二',
                     'option3' => '选项三'
-                ]
-            ],
-            [
-                // 'DialogSelect' => '对话框选择',
-                'type' => 'DialogSelect',
-                'name' => 'dialog_select_single',
-                'value' => 'theme1',
-                'label' => '主题选择',
-                'description' => '点击按钮打开对话框选择主题，支持单选模式。',
-                'title' => '选择主题',
-                'multiple' => false,
-                'options' => [
-                    'theme1' => '默认主题',
-                    'theme2' => '深色主题',
-                    'theme3' => '简约主题',
-                    'theme4' => '彩色主题'
-                ]
-            ],
-            [
-                // 'DialogSelect' => '对话框选择（多选）',
-                'type' => 'DialogSelect',
-                'name' => 'dialog_select_multiple',
-                'value' => 'feature1,feature3',
-                'label' => '功能选择（多选）',
-                'description' => '点击按钮打开对话框选择功能，支持多选模式。',
-                'title' => '选择功能模块',
-                'multiple' => true,
-                'options' => [
-                    'feature1' => '评论系统',
-                    'feature2' => '搜索功能',
-                    'feature3' => '社交分享',
-                    'feature4' => '统计分析',
-                    'feature5' => '邮件通知'
                 ]
             ],
             [
@@ -120,6 +85,162 @@ return [
                 'value' => '#3498db',
                 'label' => '主题颜色',
                 'description' => '选择网站的主题颜色，支持十六进制颜色值输入。'
+            ],
+            [
+                // 'DatePicker' => '日期选择器',
+                'type' => 'DatePicker',
+                'name' => 'demo_date',
+                'value' => '',
+                'label' => '日期选择',
+                'description' => '选择一个日期，格式为 YYYY-MM-DD',
+                'format' => 'YYYY-MM-DD',
+                'placeholder' => '请选择日期'
+            ],
+            [
+                // 'TimePicker' => '时间选择器',
+                'type' => 'TimePicker',
+                'name' => 'demo_time',
+                'value' => '',
+                'label' => '时间选择',
+                'description' => '选择一个时间，格式为 HH:mm:ss',
+                'format' => 'HH:mm:ss',
+                'placeholder' => '请选择时间'
+            ]
+        ]
+    ],
+    'advanced-components' => [
+        'title' => '高级组件',
+        'fields' => [
+            [
+                'type' => 'Html',
+                'content' => '<div class="alert info">高级组件演示，展示更多实用的字段类型</div>'
+            ],
+            [
+                // 'Number' => '数字输入框',
+                'type' => 'Number',
+                'name' => 'demo_number',
+                'value' => 100,
+                'label' => '数字输入',
+                'description' => '数字输入框，支持设置最小值、最大值和步长',
+                'min' => 0,
+                'max' => 1000,
+                'step' => 10,
+                'placeholder' => '请输入数字'
+            ],
+            [
+                // 'Switch' => '开关切换',
+                'type' => 'Switch',
+                'name' => 'demo_switch',
+                'value' => true,
+                'label' => '开关切换',
+                'description' => '开关组件，用于切换布尔值状态',
+                'active_text' => '开启',
+                'inactive_text' => '关闭'
+            ],
+            [
+                // 'Slider' => '滑块',
+                'type' => 'Slider',
+                'name' => 'demo_slider',
+                'value' => 50,
+                'label' => '滑块控制',
+                'description' => '滑块组件，用于在指定范围内选择数值',
+                'min' => 0,
+                'max' => 100,
+                'step' => 5,
+                'show_stops' => true
+            ],
+            [
+                // 'Code' => '代码编辑器',
+                'type' => 'Code',
+                'name' => 'demo_code',
+                'value' => '// JavaScript代码示例\nfunction hello() {\n    console.log("Hello World!");\n}',
+                'label' => '代码编辑',
+                'description' => '代码编辑器，支持语法高亮和代码格式化',
+                'language' => 'javascript',
+                'theme' => 'vs-dark'
+            ],
+            [
+                // 'Tags' => '标签输入',
+                'type' => 'Tags',
+                'name' => 'demo_tags',
+                'value' => 'Vue,JavaScript,CSS',
+                'label' => '标签输入',
+                'description' => '标签输入组件，支持动态添加和删除标签',
+                'placeholder' => '输入标签后按回车',
+                'max_tags' => 10
+            ],
+            [
+                // 'Cascader' => '级联选择器',
+                'type' => 'Cascader',
+                'name' => 'demo_cascader',
+                'value' => 'frontend,vue,vue3',
+                'label' => '级联选择',
+                'description' => '级联选择器，支持多级分类选择',
+                'placeholder' => '请选择分类',
+                'options' => [
+                    [
+                        'value' => 'frontend',
+                        'label' => '前端开发',
+                        'children' => [
+                            [
+                                'value' => 'vue',
+                                'label' => 'Vue.js',
+                                'children' => [
+                                    ['value' => 'vue2', 'label' => 'Vue 2.x'],
+                                    ['value' => 'vue3', 'label' => 'Vue 3.x']
+                                ]
+                            ],
+                            [
+                                'value' => 'react',
+                                'label' => 'React',
+                                'children' => [
+                                    ['value' => 'react16', 'label' => 'React 16'],
+                                    ['value' => 'react17', 'label' => 'React 17'],
+                                    ['value' => 'react18', 'label' => 'React 18']
+                                ]
+                            ]
+                        ]
+                    ],
+                    [
+                        'value' => 'backend',
+                        'label' => '后端开发',
+                        'children' => [
+                            [
+                                'value' => 'nodejs',
+                                'label' => 'Node.js',
+                                'children' => [
+                                    ['value' => 'express', 'label' => 'Express'],
+                                    ['value' => 'koa', 'label' => 'Koa']
+                                ]
+                            ],
+                            [
+                                'value' => 'php',
+                                'label' => 'PHP',
+                                'children' => [
+                                    ['value' => 'laravel', 'label' => 'Laravel'],
+                                    ['value' => 'symfony', 'label' => 'Symfony']
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ],
+            [
+                // 'Transfer' => '穿梭框',
+                'type' => 'Transfer',
+                'name' => 'demo_transfer',
+                'value' => 'item1,item3',
+                'label' => '穿梭框',
+                'description' => '穿梭框组件，用于在两个列表之间移动选项',
+                'titles' => ['可选项', '已选项'],
+                'button_texts' => ['移除', '添加'],
+                'data' => [
+                    ['key' => 'item1', 'label' => '选项 1', 'disabled' => false],
+                    ['key' => 'item2', 'label' => '选项 2', 'disabled' => false],
+                    ['key' => 'item3', 'label' => '选项 3', 'disabled' => false],
+                    ['key' => 'item4', 'label' => '选项 4', 'disabled' => false],
+                    ['key' => 'item5', 'label' => '选项 5', 'disabled' => false]
+                ]
             ]
         ]
     ],
