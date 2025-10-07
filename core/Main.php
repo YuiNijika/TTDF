@@ -1,9 +1,9 @@
 <?php
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
-// if (version_compare(PHP_VERSION, '7.4', '<')) {
-//     exit('PHP版本需要7.4及以上, 请先升级!');
-// }
+if (version_compare(PHP_VERSION, '7.4', '<')) {
+    exit('PHP版本需要7.4及以上, 请先升级!');
+}
 
 // 配置文件加载
 $configPath = __DIR__ . '/../app/app.config.php';
@@ -63,6 +63,12 @@ class TTDF_ConfigManager
     /** @var array 配置键映射（小写 => 原始键） */
     private static $keyMap = [];
     
+    /** @var array 配置值缓存 */
+    private static $cache = [];
+    
+    /** @var bool 是否已初始化 */
+    private static $initialized = false;
+    
     /** @var array 老配置键到新配置路径的映射 */
     private static $legacyKeyMap = [
         'DEBUG' => 'app.debug',
@@ -77,11 +83,17 @@ class TTDF_ConfigManager
      * 初始化配置管理器
      * 
      * @param array $config 配置数组
+     * @throws RuntimeException 如果重复初始化
      */
-    public static function init(array $config)
+    public static function init(array $config): void
     {
+        if (self::$initialized) {
+            throw new RuntimeException('配置管理器已经初始化，不能重复初始化');
+        }
+        
         self::$config = $config;
         self::buildKeyMap($config);
+        self::$initialized = true;
     }
     
     /**
@@ -112,16 +124,30 @@ class TTDF_ConfigManager
      */
     public static function get(string $key, $default = null)
     {
+        // 生成缓存键
+        $cacheKey = $key . '::' . serialize($default);
+        
+        // 检查缓存
+        if (isset(self::$cache[$cacheKey])) {
+            return self::$cache[$cacheKey];
+        }
+        
         $lowerKey = strtolower($key);
+        $result = null;
         
         // 检查是否有映射的键
         if (isset(self::$keyMap[$lowerKey])) {
             $actualKey = self::$keyMap[$lowerKey];
-            return self::getNestedValue(self::$config, $actualKey, $default);
+            $result = self::getNestedValue(self::$config, $actualKey, $default);
+        } else {
+            // 直接尝试获取（兼容原有方式）
+            $result = self::getNestedValue(self::$config, $key, $default);
         }
         
-        // 直接尝试获取（兼容原有方式）
-        return self::getNestedValue(self::$config, $key, $default);
+        // 缓存结果
+        self::$cache[$cacheKey] = $result;
+        
+        return $result;
     }
     
     /**
@@ -213,6 +239,30 @@ class TTDF_ConfigManager
     {
         return self::$config;
     }
+    
+    /**
+     * 清除配置缓存
+     * 
+     * @return void
+     */
+    public static function clearCache(): void
+    {
+        self::$cache = [];
+    }
+    
+    /**
+     * 获取缓存统计信息
+     * 
+     * @return array
+     */
+    public static function getCacheStats(): array
+    {
+        return [
+            'cache_size' => count(self::$cache),
+            'initialized' => self::$initialized,
+            'config_keys' => count(self::$keyMap)
+        ];
+    }
 }
 
 /**
@@ -285,6 +335,7 @@ class TTDF_Main
     {
         require_once __DIR__ . '/Modules/ErrorHandler.php';
         require_once __DIR__ . '/Modules/Database.php';
+        require_once __DIR__ . '/Modules/CacheManager.php';
         if (config('app.debug', false)) {
             require_once __DIR__ . '/Modules/Debug.php';
         }
@@ -342,7 +393,7 @@ class TTDF_Main
         self::run();
 
         // HTML压缩
-        if (config('build.compress.html', false)) {
+        if (config('app.compress_html', false)) {
             ob_start(function ($buffer) {
                 return TTDF::compressHtml($buffer);
             });
