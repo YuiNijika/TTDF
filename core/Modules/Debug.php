@@ -1,25 +1,48 @@
 <?php
-
-/**
- * Debug Functions
- */
-
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
-// 定义路由异常类
-if (!class_exists('RouteException', false)) {
-    class RouteException extends Exception {}
+// 确保错误处理系统已加载
+if (!class_exists('TTDF_ErrorHandler')) {
+    require_once __DIR__ . '/ErrorHandler.php';
 }
 
+/**
+ * 路由异常类
+ */
+class RouteException extends Exception
+{
+    public function __construct($message = "", $code = 0, Throwable $previous = null)
+    {
+        parent::__construct($message, $code, $previous);
+    }
+}
+
+/**
+ * TTDF 调试类
+ * 现在基于统一的错误处理系统
+ */
 class TTDF_Debug
 {
-
+    /** @var string 日志文件路径 */
     private static $logFile;
+    
+    /** @var bool 是否已启用 */
     private static $enabled = false;
+    
+    /** @var bool 是否已初始化 */
     private static $initialized = false;
+    
+    /** @var array 路由错误记录 */
     private static $routeErrors = [];
+    
+    /** @var float 开始时间 */
     private static $startTime;
+    
+    /** @var int 内存峰值 */
     private static $memoryPeak = 0;
+    
+    /** @var TTDF_ErrorHandler 错误处理器实例 */
+    private static $errorHandler;
 
     /**
      * 初始化调试功能
@@ -36,7 +59,8 @@ class TTDF_Debug
 
         if (defined('TTDF_CONFIG') && TTDF_CONFIG['DEBUG']) {
             self::$enabled = true;
-            self::$logFile = dirname(__DIR__, 2) . '/debug.log';
+            self::$logFile = dirname(__DIR__, 2) . '/logs/debug.log';
+            self::$errorHandler = TTDF_ErrorHandler::getInstance();
 
             try {
                 $logDir = dirname(self::$logFile);
@@ -64,14 +88,21 @@ class TTDF_Debug
                     LOCK_EX
                 );
 
-                error_reporting(E_ALL);
-                ini_set('display_errors', '0');
-                ini_set('log_errors', '1');
-                ini_set('error_log', self::$logFile);
+                // 使用统一的错误处理系统
+                if (self::$errorHandler) {
+                    self::$errorHandler->setLogFile(self::$logFile);
+                    self::$errorHandler->register();
+                } else {
+                    // 回退到原有的错误处理方式
+                    error_reporting(E_ALL);
+                    ini_set('display_errors', '0');
+                    ini_set('log_errors', '1');
+                    ini_set('error_log', self::$logFile);
 
-                set_error_handler([__CLASS__, 'handleError']);
-                set_exception_handler([__CLASS__, 'handleException']);
-                register_shutdown_function([__CLASS__, 'shutdownHandler']);
+                    set_error_handler([__CLASS__, 'handleError']);
+                    set_exception_handler([__CLASS__, 'handleException']);
+                    register_shutdown_function([__CLASS__, 'shutdownHandler']);
+                }
 
                 self::registerRouteHooks();
                 self::logSystemInfo();
@@ -213,62 +244,76 @@ class TTDF_Debug
     }
 
     /**
-     * 处理异常
+     * 处理异常 (向后兼容)
+     * 现在委托给统一的错误处理系统
      */
     public static function handleException(Throwable $exception)
     {
         if (!self::$enabled) return;
 
-        $isRouteException = $exception instanceof RouteException;
-        if ($isRouteException) {
-            self::logRouteError("Route Exception: " . $exception->getMessage());
-        }
+        if (self::$errorHandler) {
+            self::$errorHandler->handleException($exception);
+        } else {
+            // 回退到原有处理方式
+            $isRouteException = $exception instanceof RouteException;
+            if ($isRouteException) {
+                self::logRouteError("Route Exception: " . $exception->getMessage());
+            }
 
-        $logMessage = sprintf(
-            "[%s] %sEXCEPTION: %s (Code: %d)\nFile: %s:%d\n%s\n",
-            date('Y-m-d H:i:s'),
-            $isRouteException ? 'ROUTE_' : '',
-            $exception->getMessage(),
-            $exception->getCode(),
-            $exception->getFile(),
-            $exception->getLine(),
-            $exception->getTraceAsString()
-        );
+            $logMessage = sprintf(
+                "[%s] %sEXCEPTION: %s (Code: %d)\nFile: %s:%d\n%s\n",
+                date('Y-m-d H:i:s'),
+                $isRouteException ? 'ROUTE_' : '',
+                $exception->getMessage(),
+                $exception->getCode(),
+                $exception->getFile(),
+                $exception->getLine(),
+                $exception->getTraceAsString()
+            );
 
-        self::writeLog($logMessage);
-        self::logRequest();
+            self::writeLog($logMessage);
+            self::logRequest();
 
-        if ($isRouteException) {
-            http_response_code(500);
-            exit(1);
+            if ($isRouteException) {
+                http_response_code(500);
+                exit(1);
+            }
         }
     }
 
     /**
-     * 错误处理
+     * 错误处理 (向后兼容)
+     * 现在委托给统一的错误处理系统
      */
     public static function handleError($level, $message, $file = '', $line = 0, $context = [])
     {
-        if (self::$enabled && error_reporting() & $level) {
-            $errorType = self::getErrorType($level);
-            $logMessage = sprintf(
-                "[%s] %s: %s in %s on line %d\n",
-                date('Y-m-d H:i:s'),
-                $errorType,
-                $message,
-                $file,
-                $line
-            );
+        if (!self::$enabled) return false;
 
-            if (in_array($level, [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
-                $logMessage .= "Backtrace:\n" . self::sanitizeOutput(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)) . "\n";
-            }
+        if (self::$errorHandler) {
+            return self::$errorHandler->handleError($level, $message, $file, $line, $context);
+        } else {
+            // 回退到原有处理方式
+            if (error_reporting() & $level) {
+                $errorType = self::getErrorType($level);
+                $logMessage = sprintf(
+                    "[%s] %s: %s in %s on line %d\n",
+                    date('Y-m-d H:i:s'),
+                    $errorType,
+                    $message,
+                    $file,
+                    $line
+                );
 
-            self::writeLog($logMessage);
+                if (in_array($level, [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+                    $logMessage .= "Backtrace:\n" . self::sanitizeOutput(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)) . "\n";
+                }
 
-            if (in_array($level, [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
-                self::logRequest();
-                exit(1);
+                self::writeLog($logMessage);
+
+                if (in_array($level, [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+                    self::logRequest();
+                    exit(1);
+                }
             }
         }
 
@@ -276,19 +321,25 @@ class TTDF_Debug
     }
 
     /**
-     * 关闭处理函数
+     * 关闭处理函数 (向后兼容)
+     * 现在委托给统一的错误处理系统
      */
     public static function shutdownHandler()
     {
         if (self::$enabled) {
-            $error = error_get_last();
-            if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
-                self::handleError(
-                    $error['type'],
-                    $error['message'],
-                    $error['file'],
-                    $error['line']
-                );
+            if (self::$errorHandler) {
+                self::$errorHandler->handleShutdown();
+            } else {
+                // 回退到原有处理方式
+                $error = error_get_last();
+                if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+                    self::handleError(
+                        $error['type'],
+                        $error['message'],
+                        $error['file'],
+                        $error['line']
+                    );
+                }
             }
 
             // 确保所有日志已写入
@@ -396,19 +447,33 @@ class TTDF_Debug
 
     /**
      * 记录调试信息
+     * 现在使用统一的错误处理系统
      */
     public static function log($message, $level = E_USER_NOTICE)
     {
         if (self::$enabled) {
-            $errorType = self::getErrorType($level);
-            $logMessage = sprintf(
-                "[%s] %s: %s",
-                date('Y-m-d H:i:s'),
-                $errorType,
-                is_string($message) ? $message : self::sanitizeOutput($message)
-            );
+            if (self::$errorHandler) {
+                // 使用统一的错误处理系统
+                $context = ['level' => $level];
+                if ($level >= E_USER_ERROR) {
+                    self::$errorHandler->error($message, $context);
+                } elseif ($level >= E_USER_WARNING) {
+                    self::$errorHandler->warning($message, $context);
+                } else {
+                    self::$errorHandler->info($message, $context);
+                }
+            } else {
+                // 回退到原有处理方式
+                $errorType = self::getErrorType($level);
+                $logMessage = sprintf(
+                    "[%s] %s: %s",
+                    date('Y-m-d H:i:s'),
+                    $errorType,
+                    is_string($message) ? $message : self::sanitizeOutput($message)
+                );
 
-            self::writeLog($logMessage);
+                self::writeLog($logMessage);
+            }
         }
     }
 
@@ -422,45 +487,71 @@ class TTDF_Debug
 
     /**
      * 记录API相关调试信息
+     * 现在使用统一的错误处理系统
      */
     public static function logApiInfo($message, $data = null)
     {
         if (!self::$enabled) return;
 
-        $logMessage = "API_DEBUG: " . $message;
-        if ($data !== null) {
-            $logMessage .= " | Data: " . self::sanitizeOutput($data);
+        if (self::$errorHandler) {
+            $context = $data !== null ? ['data' => $data] : [];
+            self::$errorHandler->info("API_DEBUG: " . $message, $context);
+        } else {
+            // 回退到原有处理方式
+            $logMessage = "API_DEBUG: " . $message;
+            if ($data !== null) {
+                $logMessage .= " | Data: " . self::sanitizeOutput($data);
+            }
+            self::log($logMessage, E_USER_NOTICE);
         }
-
-        self::log($logMessage, E_USER_NOTICE);
     }
 
     /**
      * 记录API错误
+     * 现在使用统一的错误处理系统
      */
     public static function logApiError($message, $exception = null)
     {
         if (!self::$enabled) return;
 
-        $logMessage = "API_ERROR: " . $message;
-        if ($exception instanceof Throwable) {
-            $logMessage .= " | Exception: " . $exception->getMessage() .
-                " in " . $exception->getFile() .
-                " on line " . $exception->getLine();
+        if (self::$errorHandler) {
+            $context = [];
+            if ($exception instanceof Throwable) {
+                $context['exception'] = [
+                    'message' => $exception->getMessage(),
+                    'file' => $exception->getFile(),
+                    'line' => $exception->getLine()
+                ];
+            }
+            self::$errorHandler->error("API_ERROR: " . $message, $context);
+        } else {
+            // 回退到原有处理方式
+            $logMessage = "API_ERROR: " . $message;
+            if ($exception instanceof Throwable) {
+                $logMessage .= " | Exception: " . $exception->getMessage() .
+                    " in " . $exception->getFile() .
+                    " on line " . $exception->getLine();
+            }
+            self::log($logMessage, E_USER_WARNING);
         }
-
-        self::log($logMessage, E_USER_WARNING);
     }
 
     /**
      * 记录API请求处理过程
+     * 现在使用统一的错误处理系统
      */
     public static function logApiProcess($stage, $details = [])
     {
         if (!self::$enabled) return;
 
-        $logMessage = "API_PROCESS[" . $stage . "]: " . json_encode($details, JSON_UNESCAPED_UNICODE);
-        self::log($logMessage, E_USER_NOTICE);
+        if (self::$errorHandler) {
+            $context = array_merge(['stage' => $stage], $details);
+            self::$errorHandler->info("API_PROCESS", $context);
+        } else {
+            // 回退到原有处理方式
+            $logMessage = "API_PROCESS[" . $stage . "]: " . json_encode($details, JSON_UNESCAPED_UNICODE);
+            self::log($logMessage, E_USER_NOTICE);
+        }
     }
 }
 

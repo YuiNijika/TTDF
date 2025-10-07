@@ -1,11 +1,28 @@
 <?php
-
-/**
- * Tools Class
- */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
-class Tools {
+// 确保错误处理系统已加载
+if (!class_exists('TTDF_ErrorHandler')) {
+    require_once dirname(__DIR__) . '/Modules/ErrorHandler.php';
+}
+
+class TTDF_Tools extends Typecho_Widget
+{
+    /** @var TTDF_ErrorHandler 错误处理器实例 */
+    protected static $errorHandler;
+    
+    /**
+     * 构造函数
+     */
+    public function __construct($request, $response, $params = null)
+    {
+        parent::__construct($request, $response, $params);
+        
+        // 初始化错误处理器
+        if (!self::$errorHandler) {
+            self::$errorHandler = TTDF_ErrorHandler::getInstance();
+        }
+    }
     /**
      * 获取类的详细反射信息并格式化输出
      * 通过反射机制获取指定函数的全面详细属性和元数据
@@ -242,6 +259,14 @@ class Tools {
             
         } catch (\ReflectionException $e) {
             echo "错误：无法获取类信息 - " . $e->getMessage() . "\n";
+            if (self::$errorHandler) {
+                self::$errorHandler->warning('Reflection error in ClassDetails', ['class' => is_object($class) ? get_class($class) : $class], $e);
+            }
+        } catch (\Throwable $e) {
+            echo "错误：无法获取类信息 - " . $e->getMessage() . "\n";
+            if (self::$errorHandler) {
+                self::$errorHandler->error('Unexpected error in ClassDetails', ['class' => is_object($class) ? get_class($class) : $class], $e);
+            }
         }
     }    
 }

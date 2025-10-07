@@ -1,10 +1,18 @@
 <?php
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
+// 确保错误处理已加载
+if (!class_exists('TTDF_ErrorHandler')) {
+    require_once __DIR__ . '/ErrorHandler.php';
+}
+
 class DB
 {
     private static ?self $instance = null;
     private Typecho_Db $db;
+    
+    /** @var TTDF_ErrorHandler 错误处理器实例 */
+    private static $errorHandler;
 
     private function __construct()
     {
@@ -42,14 +50,28 @@ class DB
 
     public static function init()
     {
-        $db = Typecho_Db::get();
-        $prefix = $db->getPrefix();
+        try {
+            self::$errorHandler = TTDF_ErrorHandler::getInstance();
+            $db = Typecho_Db::get();
+            $prefix = $db->getPrefix();
 
-        // 确保表存在
-        self::ensureTableExists($db, $prefix);
-        
-        // 插入当前主题的默认设置项（每次都执行）
-        self::insertThemeDefaultSettings($db);
+            // 确保表存在
+            self::ensureTableExists($db, $prefix);
+            
+            // 插入当前主题的默认设置项（每次都执行）
+            self::insertThemeDefaultSettings($db);
+            
+            if (self::$errorHandler) {
+                self::$errorHandler->info('Database initialization completed successfully');
+            }
+        } catch (Exception $e) {
+            if (self::$errorHandler) {
+                self::$errorHandler->fatal('Database initialization failed', [], $e);
+            } else {
+                error_log('TTDF Database init failed: ' . $e->getMessage());
+            }
+            throw $e;
+        }
     }
     
     /**
@@ -62,21 +84,34 @@ class DB
             $db->fetchRow($db->select()->from('table.ttdf')->limit(1));
         } catch (Exception $e) {
             // 表不存在，创建表
-            $sql = "CREATE TABLE `{$prefix}ttdf` (
-            `tid` int(10) unsigned NOT NULL AUTO_INCREMENT,
-            `name` varchar(200) NOT NULL,
-            `value` text,
-            PRIMARY KEY (`tid`),
-            UNIQUE KEY `name` (`name`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
+            try {
+                $sql = "CREATE TABLE `{$prefix}ttdf` (
+                `tid` int(10) unsigned NOT NULL AUTO_INCREMENT,
+                `name` varchar(200) NOT NULL,
+                `value` text,
+                PRIMARY KEY (`tid`),
+                UNIQUE KEY `name` (`name`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
 
-            $db->query($sql);
+                $db->query($sql);
 
-            // 插入默认数据
-            $db->query($db->insert('table.ttdf')->rows(array(
-                'name' => 'TTDF',
-                'value' => 'NB666'
-            )));
+                // 插入默认数据
+                $db->query($db->insert('table.ttdf')->rows(array(
+                    'name' => 'TTDF',
+                    'value' => 'NB666'
+                )));
+                
+                if (self::$errorHandler) {
+                    self::$errorHandler->info('TTDF table created successfully');
+                }
+            } catch (Exception $createException) {
+                if (self::$errorHandler) {
+                    self::$errorHandler->error('Failed to create TTDF table', [], $createException);
+                } else {
+                    error_log('Failed to create TTDF table: ' . $createException->getMessage());
+                }
+                throw $createException;
+            }
         }
     }
     
@@ -137,7 +172,11 @@ class DB
             }
         } catch (Exception $setupException) {
             // 如果Setup.php有问题，记录错误但不影响初始化
-            error_log('TTDF Database Init: Failed to load default settings from Setup.php - ' . $setupException->getMessage());
+            if (self::$errorHandler) {
+                self::$errorHandler->warning('Failed to load default settings from Setup.php', [], $setupException);
+            } else {
+                error_log('TTDF Database Init: Failed to load default settings from Setup.php - ' . $setupException->getMessage());
+            }
         }
     }
 

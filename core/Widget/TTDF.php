@@ -123,7 +123,7 @@ class TTDF
             if ($echo) echo $PHPVer;
             return $PHPVer;
         } catch (Exception $e) {
-            return self::handleError('获取PHP版本失败', $e);
+            return self::handleError('获取PHP版本失败', $e, 'Unknown');
         }
     }
 
@@ -140,7 +140,7 @@ class TTDF
             if ($echo) echo $FrameworkVer;
             return $FrameworkVer;
         } catch (Exception $e) {
-            return self::handleError('获取框架版本失败', $e);
+            return self::handleError('获取框架版本失败', $e, 'Unknown');
         }
     }
 
@@ -157,7 +157,7 @@ class TTDF
             if ($echo) echo $TypechoVer;
             return $TypechoVer;
         } catch (Exception $e) {
-            return self::handleError('获取Typecho版本失败', $e);
+            return self::handleError('获取Typecho版本失败', $e, 'Unknown');
         }
     }
 
@@ -209,8 +209,16 @@ class TTDF_Hook
 class TTDF_Widget
 {
     use ErrorHandler;
+    
+    /** @var TTDF_ErrorHandler 错误处理器实例 */
+    protected static $errorHandler;
 
-    private function __construct() {}
+    private function __construct() {
+        // 初始化错误处理器
+        if (!self::$errorHandler) {
+            self::$errorHandler = TTDF_ErrorHandler::getInstance();
+        }
+    }
     private function __clone() {}
     public function __wakeup() {}
 
@@ -223,7 +231,7 @@ class TTDF_Widget
             $content = ob_get_clean();
             return $content;
         } catch (Exception $e) {
-            return self::handleError('获取加载时间失败', $e);
+            return self::handleError('获取加载时间失败', $e, 'Unknown');
         }
     }
 
