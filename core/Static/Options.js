@@ -1,5 +1,5 @@
 /**
- * TTDF主题设置项 - Element Plus版本
+ * TTDF主题设置项
  * @author 鼠子Tomoriゞ
  */
 
