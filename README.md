@@ -3,21 +3,26 @@
 > The Intuitive Typecho Theme Framework.  
 
 ✨ **核心特性**  
+
 - 🧩 组件化
 - 🛣️ 自动路由
 - 🔧 配置管理
 - 🔌 内置API支持
 
 **运行环境**  
+
 PHP 8.1+ / Typecho 1.2+
 
-🚧 **注意**  
+🚧 **注意** 
+
 当前为开发版本，生产环境请使用[稳定版](https://github.com/YuiNijika/TTDF/releases)
 
 ## 快速入门
+
 [开发指南](https://typecho.dev/) | [集成Vite&Vue](https://github.com/YuiNijika/TTDF-Vite)
 
 ### 功能亮点
+
 - 轻量核心
 - Ajax支持
 - REST API
