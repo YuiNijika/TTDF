@@ -40,6 +40,16 @@ return [
         'title' => '选择设置',
         'fields' => [
             [
+                // 'Switch' => '开关切换',
+                'type' => 'Switch',
+                'name' => 'demo_switch',
+                'value' => true,
+                'label' => '开关切换',
+                'description' => '开关组件，用于切换布尔值状态',
+                'active_text' => '开启',
+                'inactive_text' => '关闭'
+            ],
+            [
                 // 'Radio' => '单选框',
                 'type' => 'Radio',
                 'name' => 'this_radio',
@@ -126,16 +136,6 @@ return [
                 'max' => 1000,
                 'step' => 10,
                 'placeholder' => '请输入数字'
-            ],
-            [
-                // 'Switch' => '开关切换',
-                'type' => 'Switch',
-                'name' => 'demo_switch',
-                'value' => true,
-                'label' => '开关切换',
-                'description' => '开关组件，用于切换布尔值状态',
-                'active_text' => '开启',
-                'inactive_text' => '关闭'
             ],
             [
                 // 'Slider' => '滑块',

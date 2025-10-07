@@ -279,6 +279,14 @@ function themeConfig($form)
             }
             echo json_encode($fieldsConfig, JSON_UNESCAPED_UNICODE); 
         ?>;
+        
+        // 主题信息配置
+        window.ttdfThemeInfo = {
+            themeName: '<?php echo Helper::options()->theme; ?>',
+            themeVersion: '<?php echo defined("__FRAMEWORK_VER__") ? __FRAMEWORK_VER__ : "4.0.0"; ?>',
+            ttdfVersion: '<?php echo defined("__FRAMEWORK_VER__") ? __FRAMEWORK_VER__ : "4.0.0"; ?>',
+            apiUrl: '<?php echo Helper::options()->siteUrl; ?>'
+        };
     </script>
 
     <script src="<?php get_theme_file_url('core/Static/Vue.global.min.js', true) ?>"></script>

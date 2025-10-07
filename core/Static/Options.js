@@ -604,15 +604,23 @@ const OptionsApp = {
                 const configSource = window.TTDFConfig || window.TTDF_CONFIG;
                 if (configSource) {
                     const fullConfig = configSource.fullConfig || configSource;
-                    config.themeName = configSource.themeName || 'TTDF主题';
-                    config.themeVersion = configSource.themeVersion || '1.0.0';
-                    config.ttdfVersion = configSource.ttdfVersion || '1.0.0';
+                    config.themeName = configSource.themeName || 'TTDF';
+                    config.themeVersion = configSource.themeVersion || 'undefined';
+                    config.ttdfVersion = configSource.ttdfVersion || 'undefined';
                     config.apiUrl = configSource.apiUrl || '';
                     config.tabs = fullConfig.config || configSource.tabs || {};
 
                     // 初始化表单数据
                     initFormData(fullConfig.savedValues || {});
                 }
+            }
+
+            // 从新的主题信息配置中获取主题信息
+            if (window.ttdfThemeInfo) {
+                config.themeName = window.ttdfThemeInfo.themeName || 'TTDF';
+                config.themeVersion = window.ttdfThemeInfo.themeVersion || '4.0.0';
+                config.ttdfVersion = window.ttdfThemeInfo.ttdfVersion || '4.0.0';
+                config.apiUrl = window.ttdfThemeInfo.apiUrl || '';
             }
 
             // 使用新版本的表单数据初始化
@@ -664,7 +672,7 @@ const OptionsApp = {
             <!-- 顶部标题栏 -->
             <div class="TTDF-header">
                 <h1 class="TTDF-title">
-                    {{ config.themeName || 'TTDF主题' }}
+                    {{ config.themeName || 'undefined' }}
                     <small v-if="config.themeVersion"> · {{ config.themeVersion }}</small>
                 </h1>
                 <div class="TTDF-actions">
