@@ -49,7 +49,7 @@
 
 /* TTDF 基础样式 */
 
-/* DialogSelect 对话框样式优化 - 简化版本 */
+/* DialogSelect 对话框 */
 .ttdf-dialog {
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);

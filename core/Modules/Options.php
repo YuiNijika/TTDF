@@ -285,7 +285,7 @@ function themeConfig($form)
             themeName: '<?php echo Helper::options()->theme; ?>',
             themeVersion: '<?php echo defined("__FRAMEWORK_VER__") ? __FRAMEWORK_VER__ : "4.0.0"; ?>',
             ttdfVersion: '<?php echo defined("__FRAMEWORK_VER__") ? __FRAMEWORK_VER__ : "4.0.0"; ?>',
-            apiUrl: '<?php echo Helper::options()->siteUrl; ?>'
+            apiUrl: '<?php echo Typecho_Common::url(__TTDF_RESTAPI_ROUTE__ . '/ttdf/options', Helper::options()->siteUrl); ?>',
         };
     </script>
 

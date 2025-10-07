@@ -541,8 +541,7 @@ const OptionsApp = {
                     }
                 });
 
-                // 使用当前页面URL作为API地址
-                const apiUrl = window.location.href;
+                const apiUrl = config.apiUrl;
 
                 const response = await fetch(apiUrl, {
                     method: 'POST',
