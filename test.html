@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TTDF Options 测试页面</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus/dist/index.full.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f5f5;
+        }
+        #options-app {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .TTDF-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .TTDF-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            background: #fff;
+            border-bottom: 1px solid #e4e7ed;
+        }
+        .TTDF-title {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+            color: #303133;
+        }
+        .TTDF-body {
+            display: flex;
+            min-height: 600px;
+        }
+        .TTDF-nav {
+            width: 200px;
+            background: #f8f9fa;
+            border-right: 1px solid #e4e7ed;
+        }
+        .TTDF-nav-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            border-bottom: 1px solid #e4e7ed;
+            transition: all 0.3s;
+        }
+        .TTDF-nav-item:hover {
+            background: #e6f7ff;
+        }
+        .TTDF-nav-item.active {
+            background: #1890ff;
+            color: white;
+        }
+        .TTDF-content {
+            flex: 1;
+            padding: 24px;
+        }
+        .TTDF-content-card {
+            background: white;
+            border-radius: 6px;
+            padding: 20px;
+        }
+        .description {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #909399;
+            line-height: 1.4;
+        }
+        .alert {
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            border-radius: 4px;
+            border: 1px solid;
+        }
+        .alert.info {
+            background: #e6f7ff;
+            border-color: #91d5ff;
+            color: #0050b3;
+        }
+        .alert.success {
+            background: #f6ffed;
+            border-color: #b7eb8f;
+            color: #389e0d;
+        }
+        .alert.warning {
+            background: #fffbe6;
+            border-color: #ffe58f;
+            color: #d48806;
+        }
+        .alert.error {
+            background: #fff2f0;
+            border-color: #ffccc7;
+            color: #cf1322;
+        }
+    </style>
+</head>
+<body>
+    <div id="options-app"></div>
+
+    <script>
+        // 模拟配置数据
+        window.ttdfTabsConfig = {
+            '基础设置': {
+                'title': '基础设置',
+                'fields': [
+                    {
+                        'type': 'Html',
+                        'content': '<div class="alert success">感谢使用<a href="https://github.com/YuiNijika/TTDF">TTDF</a>进行开发</div>'
+                    },
+                    {
+                        'type': 'Text',
+                        'name': 'SubTitle',
+                        'value': '',
+                        'label': '副标题',
+                        'description': '这是一个文本框，用于设置网站副标题，如果为空则不显示。'
+                    },
+                    {
+                        'type': 'Textarea',
+                        'name': 'this_textarea',
+                        'value': '',
+                        'label': '文本域',
+                        'description': '这是一个文本域~'
+                    },
+                    {
+                        'type': 'AddList',
+                        'name': 'this_addlist',
+                        'value': '项目1,项目2,项目3',
+                        'label': '动态列表测试',
+                        'description': '这是一个AddList组件，点击+1按钮可以添加新的输入框，数据以逗号分隔存储。'
+                    }
+                ]
+            },
+            'select-elements': {
+                'title': '选择设置',
+                'fields': [
+                    {
+                        'type': 'Radio',
+                        'name': 'this_radio',
+                        'value': 'option1',
+                        'label': '单选框',
+                        'description': '这是一个单选框~',
+                        'options': {
+                            'option1': '选项一',
+                            'option2': '选项二',
+                            'option3': '选项三'
+                        }
+                    },
+                    {
+                        'type': 'Select',
+                        'name': 'this_select',
+                        'value': 'option2',
+                        'label': '下拉框',
+                        'description': '这是一个下拉框~',
+                        'options': {
+                            'option1': '选项一',
+                            'option2': '选项二',
+                            'option3': '选项三'
+                        }
+                    },
+                    {
+                        'type': 'Checkbox',
+                        'name': 'this_checkbox',
+                        'value': ['option1', 'option3'],
+                        'label': '多选框',
+                        'description': '这是一个多选框~',
+                        'options': {
+                            'option1': '选项一',
+                            'option2': '选项二',
+                            'option3': '选项三'
+                        }
+                    },
+                    {
+                        'type': 'ColorPicker',
+                        'name': 'theme_color',
+                        'value': '#3498db',
+                        'label': '主题颜色',
+                        'description': '选择网站的主题颜色，支持十六进制

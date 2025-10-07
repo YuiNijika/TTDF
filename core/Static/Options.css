@@ -1,5 +1,5 @@
 /**
- * TTDF主题设置项
+ * TTDF主题设置项 - Element Plus版本
  * @author 鼠子Tomoriゞ
  */
 
@@ -47,7 +47,208 @@
   width: unset;
 }
 
-/* TTDF */
+/* TTDF 基础样式 */
+
+/* DialogSelect 对话框样式优化 - 简化版本 */
+.ttdf-dialog {
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  border: none;
+}
+
+.ttdf-dialog .el-dialog__header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-bottom: none;
+  border-radius: 12px 12px 0 0;
+  padding: 20px 24px;
+}
+
+.ttdf-dialog .el-dialog__title {
+  font-size: 18px;
+  font-weight: 600;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.ttdf-dialog .el-dialog__headerbtn .el-dialog__close {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 20px;
+  transition: all 0.3s ease;
+}
+
+.ttdf-dialog .el-dialog__headerbtn .el-dialog__close:hover {
+  color: white;
+  transform: rotate(90deg);
+}
+
+.ttdf-dialog .el-dialog__body {
+  padding: 24px;
+  background: white;
+  max-height: 65vh;
+  overflow-y: auto;
+}
+
+.dialog-content {
+  min-height: 200px;
+}
+
+.option-container {
+  width: 100%;
+}
+
+.dialog-search {
+  margin-bottom: 20px;
+}
+
+.dialog-search .el-input__wrapper {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.option-group {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.option-item {
+  background: #fafbfc;
+  border: 2px solid #e1e5e9;
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.option-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.option-item:hover {
+  border-color: #667eea;
+  background: #f0f4ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.15);
+}
+
+.option-item:hover::before {
+  transform: scaleX(1);
+}
+
+.option-checkbox,
+.option-radio {
+  width: 100%;
+  margin: 0;
+}
+
+.option-checkbox .el-checkbox__label,
+.option-radio .el-radio__label {
+  width: 100%;
+  padding-left: 12px;
+  font-size: 14px;
+  color: #2c3e50;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.ttdf-dialog .el-dialog__footer {
+  background: #f8f9fa;
+  border-top: 1px solid #e9ecef;
+  border-radius: 0 0 12px 12px;
+  padding: 16px 24px;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.cancel-btn {
+  background: #6c757d;
+  border-color: #6c757d;
+  color: white;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.cancel-btn:hover {
+  background: #5a6268;
+  border-color: #5a6268;
+  transform: translateY(-1px);
+}
+
+.confirm-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.confirm-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* 选中状态样式 */
+.option-item:has(.el-checkbox__input.is-checked),
+.option-item:has(.el-radio__input.is-checked) {
+  border-color: #667eea;
+  background: linear-gradient(135deg, #f0f4ff 0%, #e8f2ff 100%);
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.2);
+}
+
+.option-item:has(.el-checkbox__input.is-checked)::before,
+.option-item:has(.el-radio__input.is-checked)::before {
+  transform: scaleX(1);
+}
+
+.no-results {
+  text-align: center;
+  color: #6c757d;
+  padding: 40px 20px;
+  font-size: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+/* Tags 输入框样式 */
+.tags-input-container {
+  width: 100%;
+}
+
+.tags-display {
+  margin-bottom: 12px;
+  min-height: 32px;
+  padding: 8px;
+  border: 1px solid #dcdfe6;
+  border-radius: 6px;
+  background: #fafbfc;
+}
+
+.tags-display:empty::before {
+  content: '暂无标签';
+  color: #c0c4cc;
+  font-size: 14px;
+}
 * {
   margin: 0;
   padding: 0;
@@ -56,12 +257,63 @@
     Oxygen-Sans, Ubuntu, Cantarell, sans-serif;
 }
 
-.TTDF-content h1{padding: 0px 6px;border-left: 10px solid #ed515191;background-color: rgba(208, 208, 208, 0);font-size: 19px;line-height: 30px;color: cornflowerblue;font-weight: bold;margin: 16px 0;}
-.TTDF-content h2{padding:0px 6px;border-left: 10px solid #BF51ED91;background-color: rgba(208, 208, 208, 0);font-size:18px;line-height: 30px;color:cornflowerblue;font-weight:bold;margin: 16px 0;}
-.TTDF-content h3{padding:0px 6px;border-left: 10px solid #6495ed91;background-color: rgba(208, 208, 208, 0);font-size:17px;line-height: 27px;color:cornflowerblue;font-weight:bold;margin: 16px 0;}
-.TTDF-content h4{padding:0px 6px;border-left: 10px solid #e2aa2b91;background-color: rgba(208, 208, 208, 0);font-size:16px;line-height: 24px;color:cornflowerblue;font-weight:bold;margin: 16px 0;}
-.TTDF-content h5{padding:0 6px;border-left: 10px solid #64c1c191;background-color: rgba(208, 208, 208, 0);font-size:15px;line-height: 21px;color:cornflowerblue;font-weight:bold;margin: 16px 0;}
+/* 内容标题样式 */
+.TTDF-content h1 {
+  padding: 0px 6px;
+  border-left: 10px solid #ed515191;
+  background-color: rgba(208, 208, 208, 0);
+  font-size: 19px;
+  line-height: 30px;
+  color: cornflowerblue;
+  font-weight: bold;
+  margin: 16px 0;
+}
 
+.TTDF-content h2 {
+  padding: 0px 6px;
+  border-left: 10px solid #BF51ED91;
+  background-color: rgba(208, 208, 208, 0);
+  font-size: 18px;
+  line-height: 30px;
+  color: cornflowerblue;
+  font-weight: bold;
+  margin: 16px 0;
+}
+
+.TTDF-content h3 {
+  padding: 0px 6px;
+  border-left: 10px solid #6495ed91;
+  background-color: rgba(208, 208, 208, 0);
+  font-size: 17px;
+  line-height: 27px;
+  color: cornflowerblue;
+  font-weight: bold;
+  margin: 16px 0;
+}
+
+.TTDF-content h4 {
+  padding: 0px 6px;
+  border-left: 10px solid #e2aa2b91;
+  background-color: rgba(208, 208, 208, 0);
+  font-size: 16px;
+  line-height: 24px;
+  color: cornflowerblue;
+  font-weight: bold;
+  margin: 16px 0;
+}
+
+.TTDF-content h5 {
+  padding: 0 6px;
+  border-left: 10px solid #64c1c191;
+  background-color: rgba(208, 208, 208, 0);
+  font-size: 15px;
+  line-height: 21px;
+  color: cornflowerblue;
+  font-weight: bold;
+  margin: 16px 0;
+}
+
+/* 主容器 */
 .TTDF-container {
   max-width: 1200px;
   margin: 20px auto;
@@ -72,6 +324,7 @@
   border: 1px solid #ddd;
 }
 
+/* 顶部标题栏 */
 .TTDF-header {
   background: #2271b1;
   color: white;
@@ -115,12 +368,14 @@
   background: rgba(255, 255, 255, 0.3);
 }
 
+/* 主体内容 */
 .TTDF-body {
   display: flex;
   min-height: 520px;
   background: #fafbfc;
 }
 
+/* 左侧导航 */
 .TTDF-nav {
   width: 200px;
   background: #f8f9fa;
@@ -142,6 +397,7 @@
   width: 100%;
   text-align: left;
   background: transparent;
+  border: none;
 }
 
 .TTDF-nav-item:hover {
@@ -157,6 +413,7 @@
   border-left-color: #4f46e5;
 }
 
+/* 右侧内容区域 */
 .TTDF-content {
   flex: 1;
   padding: 14px;
@@ -168,6 +425,7 @@
   border-radius: 4px;
   padding: 14px;
   border: 1px solid #ddd;
+  background: #ffffff;
 }
 
 .TTDF-tab-panel {
@@ -191,89 +449,79 @@
   }
 }
 
-/* 现代化字体系统 */
-* {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-    Ubuntu, Cantarell, sans-serif;
+/* Element Plus 表单组件适配 */
+.form-group {
+  margin-bottom: 20px;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-weight: 700;
-  letter-spacing: -0.5px;
-  line-height: 1.2;
+.form-group .el-form-item__label {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 15px;
+  letter-spacing: -0.2px;
 }
 
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .TTDF-container {
-    margin: 10px;
-  }
-
-  .TTDF-body {
-    flex-direction: column;
-  }
-
-  .TTDF-nav {
-    width: 100%;
-    display: flex;
-    overflow-x: auto;
-    padding: 0;
-    background: #f8f9fa;
-    border-right: none;
-    border-bottom: 1px solid #ddd;
-  }
-
-  .TTDF-nav-item {
-    white-space: nowrap;
-    padding: 10px 16px;
-    min-width: 100px;
-    text-align: center;
-    font-size: 13px;
-    border-left: none;
-    border-bottom: 3px solid transparent;
-  }
-
-  .TTDF-nav-item:hover,
-  .TTDF-nav-item.active {
-    border-bottom-color: #4f46e5;
-  }
-
-  .TTDF-header {
-    padding: 16px;
-  }
-
-  .TTDF-title {
-    font-size: 20px;
-  }
-
-  .TTDF-content {
-    padding: 16px;
-  }
-
-  .form-control {
-    font-size: 16px;
-    /* 防止iOS缩放 */
-  }
-
-  .radio-group,
-  .checkbox-group {
-    gap: 8px;
-  }
-
-  .radio-item,
-  .checkbox-item {
-    min-width: 80px;
-    font-size: 13px;
-  }
+.description {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.4;
 }
 
-/** 一些组件 */
-/** Alert */
+/* AddList 组件样式 */
+.addlist-container {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 16px;
+  background-color: #f9fafb;
+}
+
+.addlist-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 8px;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+}
+
+/* 布局样式 */
+.horizontal-layout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.vertical-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* DialogSelect 对话框样式 */
+.checkbox-list,
+.radio-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.dialog-checkbox,
+.dialog-radio {
+  display: block;
+  margin-bottom: 8px;
+  padding: 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.dialog-checkbox:hover,
+.dialog-radio:hover {
+  background-color: #f3f4f6;
+}
+
+/* Alert 组件样式 */
 .alert {
   position: relative;
   padding: 0.75rem 1rem 0.75rem 2.5rem;
@@ -337,24 +585,80 @@ h6 {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23dc2626'%3E%3Cpath fill-rule='evenodd' d='M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z' clip-rule='evenodd'/%3E%3C/svg%3E");
 }
 
-/* 消息提示样式 */
-.ttdf-message {
-  animation: slideIn 0.3s ease-out;
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .TTDF-container {
+    margin: 10px;
   }
 
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  .TTDF-body {
+    flex-direction: column;
+    min-height: auto;
+  }
+
+  .TTDF-nav {
+    width: 100%;
+    display: flex;
+    overflow-x: auto;
+    padding: 0;
+    background: #f8f9fa;
+    border-right: none;
+    border-bottom: 1px solid #ddd;
+    max-height: none;
+  }
+
+  .TTDF-nav-item {
+    white-space: nowrap;
+    padding: 10px 16px;
+    min-width: 100px;
+    text-align: center;
+    font-size: 13px;
+    border-left: none;
+    border-bottom: 3px solid transparent;
+  }
+
+  .TTDF-nav-item:hover,
+  .TTDF-nav-item.active {
+    border-left-color: transparent;
+    border-bottom-color: #4f46e5;
+  }
+
+  .TTDF-header {
+    padding: 16px;
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+
+  .TTDF-title {
+    font-size: 20px;
+  }
+
+  .TTDF-content {
+    padding: 16px;
+    max-height: none;
+  }
+
+  .horizontal-layout {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .addlist-item {
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
   }
 }
 
-/* 加载遮罩 */
+/* 现代化字体系统 */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+}
+
+/* 加载状态 */
 .ttdf-loading {
   position: fixed;
   top: 0;
@@ -383,585 +687,59 @@ h6 {
   0% {
     transform: rotate(0deg) scale(1);
   }
-
   50% {
     transform: rotate(180deg) scale(1.1);
   }
-
   100% {
     transform: rotate(360deg) scale(1);
   }
 }
 
-/* 表单样式 */
-.form-group {
-  margin-bottom: 10px;
+/* Element Plus 组件覆盖样式 */
+.el-form-item {
+  margin-bottom: 20px;
 }
 
-.form-group label {
-  display: block;
-  margin-bottom: 12px;
-  font-weight: 600;
-  color: #1f2937;
-  font-size: 15px;
-  letter-spacing: -0.2px;
+.el-form-item__label {
+  font-weight: 600 !important;
+  color: #1f2937 !important;
+  font-size: 15px !important;
 }
 
-.form-control {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  line-height: 1.5;
-  color: #333;
-  background-color: #ffffff;
-  transition: border-color 0.2s;
-}
-
-/* AddList 组件样式 */
-.addlist-container {
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  padding: 16px;
-  background-color: #f9fafb;
-}
-
-.addlist-items {
-  margin-bottom: 12px;
-}
-
-.addlist-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  padding: 8px;
-  background-color: #ffffff;
-  border: 1px solid #e5e7eb;
+.el-input__wrapper {
   border-radius: 4px;
 }
 
-.addlist-input {
-  flex: 1;
-  padding: 8px 12px;
-  border: 1px solid #d1d5db;
+.el-button {
   border-radius: 4px;
-  font-size: 14px;
-  transition: border-color 0.2s;
 }
 
-.addlist-input:focus {
-  outline: none;
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-}
-
-.addlist-remove {
-  padding: 6px 12px;
-  background-color: #ef4444;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 12px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  white-space: nowrap;
-}
-
-.addlist-remove:hover {
-  background-color: #dc2626;
-}
-
-.addlist-add {
-  padding: 8px 16px;
-  background-color: #4f46e5;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.addlist-add:hover {
-  background-color: #4338ca;
-}
-
-.addlist-hidden {
-  display: none;
-  box-sizing: border-box;
-}
-
-/* DialogSelect 组件样式 */
-.dialog-select-container {
-  position: relative;
-}
-
-.dialog-select-input-group {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.dialog-select-display {
-  flex: 1;
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  background-color: #f9fafb;
-  cursor: pointer;
-  transition: border-color 0.2s;
-}
-
-.dialog-select-display:focus {
-  outline: none;
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-}
-
-.dialog-select-trigger {
-  padding: 10px 16px;
-  background-color: #4f46e5;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  white-space: nowrap;
-}
-
-.dialog-select-trigger:hover {
-  background-color: #4338ca;
-}
-
-/* 对话框遮罩层 */
-.dialog-select-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 10000;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  backdrop-filter: blur(4px);
-  animation: fadeIn 0.2s ease-out;
-}
-
-/* 对话框主体 */
-.dialog-select-modal {
-  background: white;
+.el-dialog {
   border-radius: 8px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-  max-width: 500px;
-  width: 90%;
-  max-height: 80vh;
-  overflow: hidden;
-  animation: slideIn 0.3s ease-out;
 }
 
-.dialog-select-header {
-  padding: 20px 24px;
-  border-bottom: 1px solid #e5e7eb;
+.el-dialog__header {
   background: #f8f9fa;
+  border-bottom: 1px solid #e5e7eb;
 }
 
-.dialog-select-title {
-  font-size: 18px;
+.el-dialog__title {
   font-weight: 600;
   color: #1f2937;
-  margin: 0;
 }
 
-.dialog-select-body {
-  padding: 20px 24px;
-  max-height: 400px;
-  overflow-y: auto;
-}
-
-.dialog-select-options {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.dialog-select-option {
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  transition: all 0.2s;
-  background: #ffffff;
-}
-
-.dialog-select-option:hover {
-  background: #f0f4ff;
-  border-color: #4f46e5;
-}
-
-.dialog-select-option.selected {
-  background: #e8f0fe;
-  border-color: #4f46e5;
-  color: #1a73e8;
-  font-weight: 500;
-}
-
-.dialog-select-label {
-  display: flex;
-  align-items: center;
-  padding: 12px 16px;
-  cursor: pointer;
-  width: 100%;
-  margin: 0;
-}
-
-.dialog-select-label input[type="radio"],
-.dialog-select-label input[type="checkbox"] {
-  margin-right: 12px;
-  width: 16px;
-  height: 16px;
-  accent-color: #4f46e5;
-  cursor: pointer;
-}
-
-.dialog-select-label span {
-  cursor: pointer;
-  user-select: none;
-}
-
-.dialog-select-footer {
-  padding: 16px 24px;
-  border-top: 1px solid #e5e7eb;
-  background: #f8f9fa;
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-}
-
-.dialog-select-btn {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.dialog-select-btn-primary {
-  background-color: #4f46e5;
-  color: white;
-}
-
-.dialog-select-btn-primary:hover {
-  background-color: #4338ca;
-}
-
-.dialog-select-btn-secondary {
-  background-color: #6b7280;
-  color: white;
-}
-
-.dialog-select-btn-secondary:hover {
-  background-color: #4b5563;
-}
-
-/* ColorPicker 组件样式 */
-.colorpicker-container {
-  position: relative;
-}
-
-.colorpicker-input-group {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.colorpicker-color {
-  width: 50px;
-  height: 40px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  cursor: pointer;
-  padding: 0;
-  background: none;
-  transition: border-color 0.2s;
-}
-
-.colorpicker-color:hover {
-  border-color: #4f46e5;
-}
-
-.colorpicker-text {
-  flex: 1;
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  font-family: "Courier New", monospace;
-  text-transform: uppercase;
-  transition: border-color 0.2s;
-}
-
-.colorpicker-text:focus {
-  outline: none;
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-}
-
-.colorpicker-preview {
-  width: 40px;
-  height: 40px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.1);
-}
-
-.colorpicker-preview:hover {
-  border-color: #4f46e5;
-  transform: scale(1.05);
-  transition: all 0.2s;
-}
-
-.dialog-select-btn-cancel {
-  background: #f3f4f6;
-  color: #374151;
-}
-
-.dialog-select-btn-cancel:hover {
-  background: #e5e7eb;
-}
-
-.dialog-select-btn-confirm {
-  background: #4f46e5;
-  color: white;
-}
-
-.dialog-select-btn-confirm:hover {
-  background: #4338ca;
+/* 消息提示动画 */
+.ttdf-message {
+  animation: slideIn 0.3s ease-out;
 }
 
 @keyframes slideIn {
   from {
     opacity: 0;
-    transform: translateY(-20px) scale(0.95);
+    transform: translateY(-10px);
   }
-
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .dialog-select-modal {
-    width: 95%;
-    max-height: 90vh;
-  }
-
-  .dialog-select-header,
-  .dialog-select-body,
-  .dialog-select-footer {
-    padding: 16px 20px;
-  }
-
-  .dialog-select-title {
-    font-size: 16px;
-  }
-
-  .dialog-select-input-group {
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .dialog-select-trigger {
-    width: 100%;
-    padding: 12px 16px;
-  }
-}
-
-.form-control:focus {
-  border-color: #4f46e5;
-  outline: 0;
-}
-
-.form-control[readonly] {
-  background-color: #f9fafb;
-  border-color: #d1d5db;
-  color: #6b7280;
-  cursor: not-allowed;
-}
-
-select.form-control {
-  cursor: pointer;
-  background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 5"><path fill="%23666" d="M2 0L0 2h4zm0 5L0 3h4z"/></svg>');
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 12px;
-  padding-right: 40px;
-  height: 45px;
-}
-
-textarea.form-control {
-  resize: vertical;
-  min-height: 120px;
-  font-family: inherit;
-}
-
-.description {
-  margin-top: 8px;
-  font-size: 13px;
-  color: #6b7280;
-  line-height: 1.5;
-  font-style: italic;
-}
-
-/* 简化的单选框和复选框样式 */
-.form-label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 500;
-  color: #333;
-  font-size: 14px;
-}
-
-.radio-group,
-.checkbox-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 8px;
-}
-
-/* 横排布局样式 */
-.radio-group.horizontal-layout,
-.checkbox-group.horizontal-layout {
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-/* 竖排布局样式 */
-.radio-group.vertical-layout,
-.checkbox-group.vertical-layout {
-  flex-direction: column;
-  align-items: flex-start;
-}
-
-.radio-group.vertical-layout .radio-label,
-.checkbox-group.vertical-layout .checkbox-label {
-  margin-bottom: 8px;
-  margin-right: 0;
-  width: 100%;
-  max-width: 300px;
-}
-
-.radio-item,
-.checkbox-item {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  font-size: 14px;
-  color: #374151;
-  padding: 8px 12px;
-  border-radius: 4px;
-  transition: all 0.2s;
-  background: #f8f9fa;
-  border: 1px solid #ddd;
-  white-space: nowrap;
-  min-width: 100px;
-}
-
-.radio-item:hover,
-.checkbox-item:hover {
-  background: #f0f4ff;
-  border-color: #4f46e5;
-}
-
-.radio-item input[type="radio"],
-.checkbox-item input[type="checkbox"] {
-  margin-right: 6px;
-  margin-top: 0;
-  width: 16px;
-  height: 16px;
-  accent-color: #4f46e5;
-  cursor: pointer;
-}
-
-.radio-item input[type="radio"]:checked ~ span,
-.checkbox-item input[type="checkbox"]:checked ~ span {
-  color: #4f46e5;
-  font-weight: 500;
-}
-
-.radio-item input[type="radio"]:checked,
-.checkbox-item input[type="checkbox"]:checked {
-  background: #4f46e5;
-}
-
-/* 兼容旧样式 - 修改这部分以实现横排显示 */
-.radio-label,
-.checkbox-label {
-  display: inline-flex;
-  align-items: center;
-  margin-bottom: 0;
-  margin-right: 16px;
-  cursor: pointer;
-  font-size: 14px;
-  color: #374151;
-  padding: 8px 12px;
-  border-radius: 4px;
-  transition: all 0.2s;
-  background: #f8f9fa;
-  border: 1px solid #ddd;
-  white-space: nowrap;
-}
-
-.radio-label:hover,
-.checkbox-label:hover {
-  background: #f0f4ff;
-  border-color: #4f46e5;
-}
-
-.radio-label input[type="radio"],
-.checkbox-label input[type="checkbox"] {
-  margin-right: 6px;
-  margin-top: 0;
-  width: 16px;
-  height: 16px;
-  accent-color: #4f46e5;
-  cursor: pointer;
-}
-
-.radio-label input[type="radio"]:checked + span,
-.checkbox-label input[type="checkbox"]:checked + span {
-  color: #4f46e5;
-  font-weight: 500;
-}
-
-/* 响应式下的单选框和复选框样式 */
-@media (max-width: 768px) {
-  .radio-label,
-  .checkbox-label {
-    display: inline-flex;
-    align-items: center;
-    margin-bottom: 0;
-    margin-right: 8px;
-    cursor: pointer;
-    font-size: 13px;
-    color: #374151;
-    padding: 6px 10px;
-    border-radius: 4px;
-    transition: all 0.2s;
-    background: #f8f9fa;
-    border: 1px solid #ddd;
-    white-space: nowrap;
+    transform: translateY(0);
   }
 }
