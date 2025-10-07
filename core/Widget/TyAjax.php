@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Typecho Ajax 处理核心类
  * 
@@ -18,13 +19,14 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  * 实现 WordPress 风格的过滤器(Filters)机制
  */
 if (!class_exists('TyAjax_Hook')) {
-    class TyAjax_Hook {
+    class TyAjax_Hook
+    {
         /**
          * 存储所有回调函数
          * @var array 格式：[优先级 => [回调数组]]
          */
         public $callbacks = array();
-        
+
         /**
          * 添加过滤器回调
          * 
@@ -34,14 +36,15 @@ if (!class_exists('TyAjax_Hook')) {
          * @param int $accepted_args 接收的参数数量
          * @return bool 总是返回 true
          */
-        public function add_filter($tag, $function_to_add, $priority, $accepted_args) {
+        public function add_filter($tag, $function_to_add, $priority, $accepted_args)
+        {
             $this->callbacks[$priority][] = array(
                 'function' => $function_to_add,    // 回调函数
                 'accepted_args' => $accepted_args  // 接收参数数量
             );
             return true;
         }
-        
+
         /**
          * 执行过滤器链
          * 
@@ -49,10 +52,11 @@ if (!class_exists('TyAjax_Hook')) {
          * @param array $args 参数数组
          * @return mixed 经过所有回调处理后的最终值
          */
-        public function apply_filters($value, $args) {
+        public function apply_filters($value, $args)
+        {
             // 按优先级排序(从小到大)
             ksort($this->callbacks);
-            
+
             // 遍历所有优先级
             foreach ($this->callbacks as $priority => $callbacks) {
                 // 遍历当前优先级的所有回调
@@ -63,7 +67,7 @@ if (!class_exists('TyAjax_Hook')) {
                     $value = call_user_func_array($callback['function'], $args);
                 }
             }
-            
+
             return $value;
         }
     }
@@ -74,18 +78,40 @@ if (!class_exists('TyAjax_Hook')) {
  * 
  * 提供静态方法处理 AJAX 请求和资源管理
  */
-class TyAjax_Core {
+class TyAjax_Core
+{
     /**
      * 存储所有过滤器
      * @var array [钩子名 => TyAjax_Hook 实例]
      */
     public static $filters = array();
-    
+
     /**
      * 存储已注册的动作(Actions)
      * @var array [钩子名 => true]
      */
     public static $actions = array();
+
+    /** @var TTDF_ErrorHandler 错误处理器实例 */
+    private static $errorHandler;
+
+
+
+    /**
+     * 初始化错误处理器和缓存管理器
+     */
+    private static function initErrorHandler(): void
+    {
+        if (!self::$errorHandler) {
+            self::$errorHandler = TTDF_ErrorHandler::getInstance();
+            self::$errorHandler->init();
+        }
+
+        // 初始化缓存管理器
+        if (class_exists('TTDF_CacheManager')) {
+            TTDF_CacheManager::init();
+        }
+    }
 
     /**
      * 初始化 AJAX 系统
@@ -93,10 +119,13 @@ class TyAjax_Core {
      * - 检测 AJAX 请求并处理
      * - 注册资源加载钩子
      */
-    public static function init() {
+    public static function init()
+    {
         // 检测 AJAX 请求(XMLHttpRequest)
-        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && 
-            strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+        if (
+            !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+            strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest'
+        ) {
             self::handle_request();
             exit;
         }
@@ -109,33 +138,43 @@ class TyAjax_Core {
      * - 路由到对应处理函数
      * - 格式化响应
      */
-    private static function handle_request() {
+    private static function handle_request()
+    {
         try {
+            self::initErrorHandler();
+
             // 设置响应头
-            header('Content-Type: application/json');
-            
-            // 获取请求数据
-            $data = $_POST;
-            
+            header('Content-Type: application/json; charset=utf-8');
+            header('Cache-Control: no-cache, must-revalidate');
+
+            // 获取请求数据（支持GET和POST）
+            $data = array_merge($_GET, $_POST);
+
             // 验证 action 参数
             if (empty($data['action'])) {
                 self::send_error('缺少action参数', 'danger', 400);
             }
 
+            // 过滤和验证action参数
+            $action = preg_replace('/[^a-zA-Z0-9_]/', '', $data['action']);
+            if (empty($action)) {
+                self::send_error('无效的action参数', 'danger', 400);
+            }
+
             // 确定钩子名称(区分登录/未登录状态)
-            $action = $data['action'];
             $user = Typecho_Widget::widget('Widget_User');
             $is_logged_in = method_exists($user, 'hasLogin') ? $user->hasLogin() : false;
             $hook = $is_logged_in ? "ty_ajax_{$action}" : "ty_ajax_nopriv_{$action}";
 
             // 检查是否有对应的处理函数
             if (!self::has_action($hook)) {
+                self::$errorHandler->warning('未找到AJAX处理方法', ['action' => $action, 'hook' => $hook]);
                 self::send_error("未找到{$action}的处理方法", 'danger', 404);
             }
 
             // 执行过滤器链获取响应
             $response = self::apply_filters($hook, null, $data);
-            
+
             // 标准化响应格式
             if (!isset($response['error'])) {
                 $response = [
@@ -145,14 +184,14 @@ class TyAjax_Core {
                     'data' => $response['data'] ?? null // 数据
                 ];
             }
-            
-            // 输出 JSON 响应
-            echo json_encode($response);
-            exit;
 
+            // 输出 JSON 响应
+            echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PARTIAL_OUTPUT_ON_ERROR);
+            exit;
         } catch (Exception $e) {
+            self::$errorHandler->error('AJAX请求处理失败', ['action' => $data['action'] ?? 'unknown'], $e);
             // 捕获异常并返回错误
-            self::send_error($e->getMessage(), 'danger', $e->getCode());
+            self::send_error($e->getMessage(), 'danger', $e->getCode() ?: 500);
         }
     }
 
@@ -165,20 +204,21 @@ class TyAjax_Core {
      * @param int $accepted_args 接收参数数量
      * @return bool 总是返回 true
      */
-    public static function add_filter($hook, $callback, $priority = 10, $accepted_args = 1) {
+    public static function add_filter($hook, $callback, $priority = 10, $accepted_args = 1)
+    {
         // 初始化钩子对象(如果不存在)
         if (!isset(self::$filters[$hook])) {
             self::$filters[$hook] = new TyAjax_Hook();
         }
-        
+
         // 添加回调
         self::$filters[$hook]->add_filter($hook, $callback, $priority, $accepted_args);
-        
+
         // 如果是动作(Action)则记录下来
         if (strpos($hook, 'ty_ajax_') === 0) {
             self::$actions[$hook] = true;
         }
-        
+
         return true;
     }
 
@@ -190,7 +230,8 @@ class TyAjax_Core {
      * @param mixed ...$args 可变参数
      * @return mixed 处理后的值
      */
-    public static function apply_filters($hook, $value = null, ...$args) {
+    public static function apply_filters($hook, $value = null, ...$args)
+    {
         // 如果钩子不存在则直接返回值
         if (!isset(self::$filters[$hook])) {
             return $value;
@@ -204,7 +245,8 @@ class TyAjax_Core {
      * @param string $hook 钩子名称
      * @return bool 是否存在
      */
-    public static function has_action($hook) {
+    public static function has_action($hook)
+    {
         return isset(self::$actions[$hook]);
     }
 
@@ -215,13 +257,25 @@ class TyAjax_Core {
      * @param mixed $data 返回数据
      * @param string $ys 消息样式
      */
-    public static function send_success($msg = '操作成功', $data = null, $ys = '') {
-        echo json_encode([
-            'error' => 0,
-            'msg' => $msg,
-            'ys' => $ys,
-            'data' => $data
-        ]);
+    public static function send_success(string $msg = '操作成功', $data = null, string $ys = ''): void
+    {
+        self::initErrorHandler();
+
+        try {
+            $response = [
+                'error' => 0,
+                'msg' => $msg,
+                'ys' => $ys,
+                'data' => $data,
+                'timestamp' => time()
+            ];
+
+            echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PARTIAL_OUTPUT_ON_ERROR);
+        } catch (Exception $e) {
+            self::$errorHandler->error('发送成功响应失败', ['msg' => $msg, 'data' => $data], $e);
+            echo json_encode(['error' => 1, 'msg' => '响应发送失败'], JSON_UNESCAPED_UNICODE);
+        }
+
         exit;
     }
 
@@ -232,13 +286,35 @@ class TyAjax_Core {
      * @param string $ys 消息样式
      * @param int $status HTTP 状态码
      */
-    public static function send_error($msg = '操作失败', $ys = 'danger', $status = 400) {
-        http_response_code($status);
-        echo json_encode([
-            'error' => 1,
-            'msg' => $msg,
-            'ys' => $ys
-        ]);
+    public static function send_error(string $msg = '操作失败', string $ys = 'danger', int $status = 400): void
+    {
+        self::initErrorHandler();
+
+        try {
+            http_response_code($status);
+
+            $response = [
+                'error' => 1,
+                'msg' => $msg,
+                'ys' => $ys,
+                'timestamp' => time(),
+                'status' => $status
+            ];
+
+            echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PARTIAL_OUTPUT_ON_ERROR);
+
+            // 记录错误日志
+            self::$errorHandler->warning('AJAX错误响应', [
+                'msg' => $msg,
+                'status' => $status,
+                'ys' => $ys
+            ]);
+        } catch (Exception $e) {
+            self::$errorHandler->error('发送错误响应失败', ['msg' => $msg, 'status' => $status], $e);
+            http_response_code(500);
+            echo json_encode(['error' => 1, 'msg' => '服务器内部错误'], JSON_UNESCAPED_UNICODE);
+        }
+
         exit;
     }
 }
@@ -249,7 +325,8 @@ class TyAjax_Core {
  * @see TyAjax_Core::add_filter()
  */
 if (!function_exists('TyAjax_filter')) {
-    function TyAjax_filter($hook, $callback, $priority = 10, $accepted_args = 1) {
+    function TyAjax_filter($hook, $callback, $priority = 10, $accepted_args = 1)
+    {
         return TyAjax_Core::add_filter($hook, $callback, $priority, $accepted_args);
     }
 }
@@ -260,7 +337,8 @@ if (!function_exists('TyAjax_filter')) {
  * @see TyAjax_Core::add_filter()
  */
 if (!function_exists('TyAjax_action')) {
-    function TyAjax_action($hook, $callback, $priority = 10, $accepted_args = 1) {
+    function TyAjax_action($hook, $callback, $priority = 10, $accepted_args = 1)
+    {
         return TyAjax_Core::add_filter($hook, $callback, $priority, $accepted_args);
     }
 }
@@ -271,7 +349,8 @@ if (!function_exists('TyAjax_action')) {
  * @see TyAjax_Core::apply_filters()
  */
 if (!function_exists('TyAjax_apply_filters')) {
-    function TyAjax_apply_filters($hook, $value = null, ...$args) {
+    function TyAjax_apply_filters($hook, $value = null, ...$args)
+    {
         return TyAjax_Core::apply_filters($hook, $value, ...$args);
     }
 }
@@ -282,7 +361,8 @@ if (!function_exists('TyAjax_apply_filters')) {
  * @see TyAjax_Core::has_action()
  */
 if (!function_exists('TyAjax_has_action')) {
-    function TyAjax_has_action($hook) {
+    function TyAjax_has_action($hook)
+    {
         return TyAjax_Core::has_action($hook);
     }
 }
@@ -293,7 +373,8 @@ if (!function_exists('TyAjax_has_action')) {
  * @see TyAjax_Core::send_success()
  */
 if (!function_exists('TyAjax_send_success')) {
-    function TyAjax_send_success($msg = '操作成功', $data = null, $ys = '') {
+    function TyAjax_send_success($msg = '操作成功', $data = null, $ys = '')
+    {
         TyAjax_Core::send_success($msg, $data, $ys);
     }
 }
@@ -304,7 +385,8 @@ if (!function_exists('TyAjax_send_success')) {
  * @see TyAjax_Core::send_error()
  */
 if (!function_exists('TyAjax_send_error')) {
-    function TyAjax_send_error($msg = '操作失败', $ys = 'danger', $status = 400) {
+    function TyAjax_send_error($msg = '操作失败', $ys = 'danger', $status = 400)
+    {
         TyAjax_Core::send_error($msg, $ys, $status);
     }
 }

@@ -6,13 +6,36 @@
 
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
+/**
+ * Get 方法类
+ * 提供页面头部、尾部等通用功能
+ */
 class Get
 {
     use ErrorHandler, SingletonWidget;
 
+    /** @var TTDF_ErrorHandler 错误处理器实例 */
+    private static $errorHandler;
+
     private function __construct() {}
     private function __clone() {}
     public function __wakeup() {}
+
+    /**
+     * 初始化错误处理器和缓存管理器
+     */
+    private static function initErrorHandler(): void
+    {
+        if (!self::$errorHandler) {
+            self::$errorHandler = TTDF_ErrorHandler::getInstance();
+            self::$errorHandler->init();
+        }
+
+        // 初始化缓存管理器
+        if (class_exists('TTDF_CacheManager')) {
+            TTDF_CacheManager::init();
+        }
+    }
 
     /**
      * 输出header头部元数据和link标签
@@ -33,39 +56,47 @@ class Get
      * - 'atom'
      * 对于link标签，可以指定rel属性值来排除
      * 
-     * @param bool|null $echo 当设置为 true 时，会直接输出；当设置为 false 时，则返回结果值。
+     * @param bool $echo 当设置为 true 时，会直接输出；当设置为 false 时，则返回结果值。
      * @param string|null $exclude 要排除的meta或link标签，多个用逗号分隔
-     * @param string|null $excludeLinkTypes 要排除的link标签的rel属性值，多个用逗号分隔
      * @return string 头部信息输出
-     * @throws self::handleError()
      */
-    public static function Header(?bool $echo = true, ?string $exclude = null)
+    public static function Header(bool $echo = true, ?string $exclude = null): string
     {
         try {
-            ob_start();
-            self::getArchive()->header(); // 获取原始 header HTML
-            $content = ob_get_clean();
+            self::initErrorHandler();
 
-            // 移除指定的 meta 或 link 标签
-            if ($exclude) {
-                $excluded = explode(',', $exclude);
-                foreach ($excluded as $item) {
-                    $item = trim($item);
-                    // 匹配 meta
-                    $content = preg_replace(
-                        '/\s*<(meta\s+(name|property)=["\']' . preg_quote($item, '/') . '["\']|link\s+rel=["\']' . preg_quote($item, '/') . '["\'])[^>]*>\s*/i',
-                        '',
-                        $content
-                    );
+            // 生成缓存键
+            $cacheKey = TTDF_CacheManager::generateKey('header', ['exclude' => $exclude]);
+
+            // 检查缓存
+            $content = TTDF_CacheManager::get($cacheKey);
+            if ($content === null) {
+                ob_start();
+                self::getArchive()->header(); // 获取原始 header HTML
+                $content = ob_get_clean();
+
+                // 移除指定的 meta 或 link 标签
+                if ($exclude) {
+                    $excluded = array_map('trim', explode(',', $exclude));
+                    foreach ($excluded as $item) {
+                        if (empty($item)) continue;
+
+                        // 匹配 meta 和 link 标签
+                        $pattern = '/\s*<(meta\s+(name|property)=["\']' . preg_quote($item, '/') . '["\']|link\s+rel=["\']' . preg_quote($item, '/') . '["\'])[^>]*>\s*/i';
+                        $content = preg_replace($pattern, '', $content);
+                    }
                 }
+
+                // 在所有 meta 和 link 标签前添加四个空格
+                $content = preg_replace('/(<(meta|link)[^>]*>)/', '    $1', $content);
+
+                // 格式化 HTML：清理多余空行，保留合理缩进
+                $content = preg_replace('/\n\s*\n/', "\n", $content); // 合并连续空行
+                $content = preg_replace('/^\s+/m', '', $content);      // 移除行首多余空格
+
+                // 缓存结果
+                TTDF_CacheManager::set($cacheKey, $content);
             }
-
-            // 在所有 meta 和 link 标签前添加四个空格
-            $content = preg_replace('/(<(meta|link)[^>]*>)/', '    $1', $content);
-
-            // 格式化 HTML：清理多余空行，保留合理缩进
-            $content = preg_replace('/\n\s*\n/', "\n", $content); // 合并连续空行
-            $content = preg_replace('/^\s+/m', '', $content);      // 移除行首多余空格（可选）
 
             if ($echo) {
                 echo $content;
@@ -73,7 +104,8 @@ class Get
 
             return $content;
         } catch (Exception $e) {
-            return self::handleError('获取Header失败', $e);
+            self::$errorHandler->error('获取Header失败', ['exclude' => $exclude], $e);
+            return '';
         }
     }
 
@@ -87,18 +119,28 @@ class Get
     public static function Footer(bool $echo = true): ?string
     {
         try {
-            // 获取 Archive 实例
-            $archive = self::getArchive();
+            self::initErrorHandler();
 
-            // 先触发 footer 钩子，让插件可以修改内容
-            if (method_exists($archive, 'pluginHandle')) {
-                $archive->pluginHandle()->call('footer', $archive);
+            // 检查缓存
+            $cacheKey = 'footer';
+            $content = TTDF_CacheManager::get($cacheKey);
+            if ($content === null) {
+                // 获取 Archive 实例
+                $archive = self::getArchive();
+
+                // 先触发 footer 钩子，让插件可以修改内容
+                if (method_exists($archive, 'pluginHandle')) {
+                    $archive->pluginHandle()->call('footer', $archive);
+                }
+
+                // 捕获输出
+                ob_start();
+                $archive->footer();
+                $content = ob_get_clean();
+
+                // 缓存结果
+                TTDF_CacheManager::set($cacheKey, $content);
             }
-
-            // 捕获输出
-            ob_start();
-            $archive->footer();
-            $content = ob_get_clean();
 
             // 如果 $echo=true，直接输出；否则返回内容
             if ($echo) {
@@ -108,65 +150,100 @@ class Get
 
             return $content;
         } catch (Exception $e) {
-            return self::handleError('获取Footer失败', $e);
+            self::$errorHandler->error('获取Footer失败', [], $e);
+            return null;
         }
     }
 
     /**
      * 获取站点URL
      * 
-     * @param bool|null $echo 当设置为 true 时，会直接输出；
-     *                        当设置为 false 时，则返回结果值。
+     * @param bool $echo 当设置为 true 时，会直接输出；当设置为 false 时，则返回结果值。
      * @return string
      */
-    public static function SiteUrl(?bool $echo = true)
+    public static function SiteUrl(bool $echo = true): string
     {
         try {
-            $SiteUrl = \Helper::options()->siteUrl;
+            self::initErrorHandler();
 
-            if ($echo) echo $SiteUrl;
+            // 检查缓存
+            $cacheKey = 'site_url';
+            $siteUrl = TTDF_CacheManager::get($cacheKey);
 
-            return $SiteUrl;
+            if ($siteUrl === null) {
+                $siteUrl = \Helper::options()->siteUrl ?? '';
+                TTDF_CacheManager::set($cacheKey, $siteUrl, 3600); // 缓存1小时
+            }
+
+            if ($echo) {
+                echo $siteUrl;
+            }
+
+            return $siteUrl;
         } catch (Exception $e) {
-            return self::handleError('获取站点URL失败', $e);
+            self::$errorHandler->error('获取站点URL失败', [], $e);
+            return '';
         }
     }
     /**
      * 获取站点域名
      * 
-     * @param bool|null $echo 当设置为 true 时，会直接输出；
-     *                        当设置为 false 时，则返回结果值。
+     * @param bool $echo 当设置为 true 时，会直接输出；当设置为 false 时，则返回结果值。
      * @return string
      */
-    public static function SiteDomain(?bool $echo = true)
+    public static function SiteDomain(bool $echo = true): string
     {
         try {
-            $SiteDomain = \Helper::options()->siteDomain;
+            self::initErrorHandler();
 
-            if ($echo) echo $SiteDomain;
+            // 检查缓存
+            $cacheKey = 'site_domain';
+            $siteDomain = TTDF_CacheManager::get($cacheKey);
 
-            return $SiteDomain;
+            if ($siteDomain === null) {
+                $siteUrl = \Helper::options()->siteUrl ?? '';
+                $siteDomain = parse_url($siteUrl, PHP_URL_HOST) ?? '';
+                TTDF_CacheManager::set($cacheKey, $siteDomain, 3600); // 缓存1小时
+            }
+
+            if ($echo) {
+                echo $siteDomain;
+            }
+
+            return $siteDomain;
         } catch (Exception $e) {
-            return self::handleError('获取站点域名失败', $e);
+            self::$errorHandler->error('获取站点域名失败', [], $e);
+            return '';
         }
     }
     /**
      * 获取站点名称
      * 
-     * @param bool|null $echo 当设置为 true 时，会直接输出；
-     *                        当设置为false 时，则返回结果值。
+     * @param bool $echo 当设置为 true 时，会直接输出；当设置为 false 时，则返回结果值。
      * @return string
      */
-    public static function SiteName(?bool $echo = true)
+    public static function SiteName(bool $echo = true): string
     {
         try {
-            $SiteName = \Helper::options()->title;
+            self::initErrorHandler();
 
-            if ($echo) echo $SiteName;
+            // 检查缓存
+            $cacheKey = 'site_name';
+            $siteName = TTDF_CacheManager::get($cacheKey);
 
-            return $SiteName;
+            if ($siteName === null) {
+                $siteName = \Helper::options()->title ?? '';
+                TTDF_CacheManager::set($cacheKey, $siteName, 3600); // 缓存1小时
+            }
+
+            if ($echo) {
+                echo $siteName;
+            }
+
+            return $siteName;
         } catch (Exception $e) {
-            return self::handleError('获取站点名称失败', $e);
+            self::$errorHandler->error('获取站点名称失败', [], $e);
+            return '';
         }
     }
     /**
@@ -276,7 +353,7 @@ class Get
     {
         try {
             $themeName = Helper::options()->theme;
-            
+
             // 如果忽略主题名，需要动态处理主题名前缀
             if ($ignoreTheme) {
                 // 检查字段名是否以当前主题名开头
@@ -601,7 +678,7 @@ class Get
      * 获取客户端ip
      * @return string
      */
-    public static function ClientIp( ?bool $echo = true)
+    public static function ClientIp(?bool $echo = true)
     {
         try {
             $ip = TTDF_Widget::GetClientIp();
@@ -614,7 +691,7 @@ class Get
         }
     }
 
-    public static function ClientUA( ?bool $echo = true)
+    public static function ClientUA(?bool $echo = true)
     {
         try {
             $ua = $_SERVER['HTTP_USER_AGENT'];

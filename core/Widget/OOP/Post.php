@@ -6,6 +6,10 @@
 
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
+/**
+ * GetPost 方法类
+ * 提供文章相关的各种功能
+ */
 class GetPost extends Typecho_Widget
 {
     use ErrorHandler, SingletonWidget;
@@ -15,6 +19,9 @@ class GetPost extends Typecho_Widget
      * @var Typecho_Widget|null
      */
     private static $_currentArchive;
+
+    /** @var TTDF_ErrorHandler 错误处理器实例 */
+    private static $errorHandler;
 
     /**
      * 私有构造函数，防止外部实例化
@@ -30,6 +37,22 @@ class GetPost extends Typecho_Widget
      * 禁用反序列化
      */
     public function __wakeup() {}
+
+    /**
+     * 初始化错误处理器和缓存管理器
+     */
+    private static function initErrorHandler(): void
+    {
+        if (!self::$errorHandler) {
+            self::$errorHandler = TTDF_ErrorHandler::getInstance();
+            self::$errorHandler->init();
+        }
+
+        // 初始化缓存管理器
+        if (class_exists('TTDF_CacheManager')) {
+            TTDF_CacheManager::init();
+        }
+    }
 
     /**
      * 获取当前文章实例
@@ -70,7 +93,18 @@ class GetPost extends Typecho_Widget
     public static function List($params = null)
     {
         try {
+            self::initErrorHandler();
+
             if ($params) {
+                // 生成缓存键
+                $cacheKey = 'list_' . md5(serialize($params));
+
+                // 检查缓存
+                $cachedWidget = TTDF_CacheManager::get($cacheKey);
+                if ($cachedWidget !== null) {
+                    return $cachedWidget;
+                }
+
                 $alias = 'custom_' . md5(serialize($params));
                 $widget = \Widget\Archive::allocWithAlias(
                     $alias,
@@ -78,6 +112,9 @@ class GetPost extends Typecho_Widget
                 );
                 $widget->execute();
                 self::$_currentArchive = $widget;
+
+                // 缓存结果
+                TTDF_CacheManager::set($cacheKey, $widget, 300); // 缓存5分钟
                 return $widget;
             }
 
@@ -86,7 +123,7 @@ class GetPost extends Typecho_Widget
             }
             throw new Exception('List 方法不存在');
         } catch (Exception $e) {
-            self::handleError('List 调用失败', $e);
+            self::$errorHandler->error('List 调用失败', ['params' => $params], $e);
             return new \Typecho_Widget_Helper_Empty();
         }
     }
@@ -97,13 +134,23 @@ class GetPost extends Typecho_Widget
      * @param int $pageSize 随机文章数量
      * @return array 返回随机文章列表
      */
-    public static function RandomPosts($pageSize = 3)
+    public static function RandomPosts(int $pageSize = 3): array
     {
         try {
-            $posts = DB::getInstance()->getRandomPosts($pageSize);
+            self::initErrorHandler();
+
+            // 检查缓存
+            $cacheKey = "random_posts_{$pageSize}";
+            $posts = TTDF_CacheManager::get($cacheKey);
+
+            if ($posts === null) {
+                $posts = DB::getInstance()->getRandomPosts($pageSize);
+                TTDF_CacheManager::set($cacheKey, $posts, 600); // 缓存10分钟
+            }
+
             return $posts;
         } catch (Exception $e) {
-            self::handleError('获取随机文章失败', $e);
+            self::$errorHandler->error('获取随机文章失败', ['pageSize' => $pageSize], $e);
             return [];
         }
     }
@@ -113,22 +160,26 @@ class GetPost extends Typecho_Widget
      * 
      * @param int $pageSize 随机文章数量
      * @param bool $echo 是否直接输出，默认为 true
-     * @return void
+     * @return array
      */
-    public static function RenderRandomPosts($pageSize = 3, $echo = true)
+    public static function RenderRandomPosts(int $pageSize = 3, bool $echo = true): array
     {
         try {
+            self::initErrorHandler();
             $posts = self::RandomPosts($pageSize);
 
-            if ($echo) {
+            if ($echo && !empty($posts)) {
                 foreach ($posts as $post) {
-                    echo '<a href="' . $post['permalink'] . '">' . $post['title'] . '</a><br>';
+                    $title = htmlspecialchars($post['title'] ?? '', ENT_QUOTES, 'UTF-8');
+                    $permalink = htmlspecialchars($post['permalink'] ?? '', ENT_QUOTES, 'UTF-8');
+                    echo '<a href="' . $permalink . '">' . $title . '</a><br>';
                 }
             }
 
             return $posts;
         } catch (Exception $e) {
-            self::handleOutputError('渲染随机文章失败', $e, $echo);
+            self::$errorHandler->error('渲染随机文章失败', ['pageSize' => $pageSize, 'echo' => $echo], $e);
+            return [];
         }
     }
 
@@ -138,15 +189,23 @@ class GetPost extends Typecho_Widget
      * 获取文章CID
      * 
      * @param bool $echo 是否直接输出，默认为 true
-     * @return int|null 返回文章CID或直接输出
+     * @return int 返回文章CID
      */
-    public static function Cid($echo = true)
+    public static function Cid(bool $echo = true): int
     {
         try {
-            $cid = self::getCurrentArchive()->cid;
-            return self::outputValue($cid, $echo);
+            self::initErrorHandler();
+            $archive = self::getCurrentArchive();
+            $cid = $archive->cid ?? 0;
+
+            if ($echo) {
+                echo $cid;
+            }
+
+            return $cid;
         } catch (Exception $e) {
-            return self::handleOutputError('获取Cid失败', $e, $echo);
+            self::$errorHandler->error('获取Cid失败', ['echo' => $echo], $e);
+            return 0;
         }
     }
 
@@ -154,15 +213,23 @@ class GetPost extends Typecho_Widget
      * 获取文章标题
      * 
      * @param bool $echo 是否直接输出，默认为 true
-     * @return string|null 返回标题字符串或直接输出
+     * @return string 返回标题字符串
      */
-    public static function Title($echo = true)
+    public static function Title(bool $echo = true): string
     {
         try {
-            $title = self::getCurrentArchive()->title;
-            return self::outputValue($title, $echo);
+            self::initErrorHandler();
+            $archive = self::getCurrentArchive();
+            $title = $archive->title ?? '';
+
+            if ($echo) {
+                echo htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
+            }
+
+            return $title;
         } catch (Exception $e) {
-            return self::handleOutputError('获取标题失败', $e, $echo);
+            self::$errorHandler->error('获取标题失败', ['echo' => $echo], $e);
+            return '';
         }
     }
 

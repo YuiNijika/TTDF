@@ -6,6 +6,10 @@ if (!class_exists('TTDF_ErrorHandler')) {
     require_once __DIR__ . '/ErrorHandler.php';
 }
 
+/**
+ * 数据库操作类
+ * 提供安全的数据库操作接口，包含输入验证、缓存机制和错误处理
+ */
 class DB
 {
     private static ?self $instance = null;
@@ -13,6 +17,15 @@ class DB
     
     /** @var TTDF_ErrorHandler 错误处理器实例 */
     private static $errorHandler;
+    
+    /** @var array 缓存数组 */
+    private static array $cache = [];
+    
+    /** @var int 缓存过期时间（秒） */
+    private const CACHE_TTL = 300; // 5分钟
+    
+    /** @var int 最大缓存条目数 */
+    private const MAX_CACHE_SIZE = 100;
 
     private function __construct()
     {
@@ -25,24 +38,111 @@ class DB
     }
 
     /**
+     * 验证字段名是否安全
+     * @param string $name 字段名
+     * @return bool
+     */
+    private static function validateFieldName(string $name): bool
+    {
+        // 只允许字母、数字、下划线，长度限制在1-100字符
+        return preg_match('/^[a-zA-Z0-9_]{1,100}$/', $name) === 1;
+    }
+
+    /**
+     * 清理缓存（当缓存过大时）
+     */
+    private static function cleanCache(): void
+    {
+        if (count(self::$cache) > self::MAX_CACHE_SIZE) {
+            // 清理过期的缓存项
+            $now = time();
+            foreach (self::$cache as $key => $item) {
+                if ($now - $item['timestamp'] > self::CACHE_TTL) {
+                    unset(self::$cache[$key]);
+                }
+            }
+            
+            // 如果还是太多，清理最老的一半
+            if (count(self::$cache) > self::MAX_CACHE_SIZE) {
+                $keys = array_keys(self::$cache);
+                $toRemove = array_slice($keys, 0, count($keys) / 2);
+                foreach ($toRemove as $key) {
+                    unset(self::$cache[$key]);
+                }
+            }
+        }
+    }
+
+    /**
+     * 获取缓存
+     * @param string $key 缓存键
+     * @return mixed|null
+     */
+    private static function getCache(string $key)
+    {
+        if (!isset(self::$cache[$key])) {
+            return null;
+        }
+        
+        $item = self::$cache[$key];
+        if (time() - $item['timestamp'] > self::CACHE_TTL) {
+            unset(self::$cache[$key]);
+            return null;
+        }
+        
+        return $item['value'];
+    }
+
+    /**
+     * 设置缓存
+     * @param string $key 缓存键
+     * @param mixed $value 缓存值
+     */
+    private static function setCache(string $key, $value): void
+    {
+        self::cleanCache();
+        self::$cache[$key] = [
+            'value' => $value,
+            'timestamp' => time()
+        ];
+    }
+
+    /**
+     * 清除指定缓存
+     * @param string $key 缓存键
+     */
+    private static function clearCache(string $key): void
+    {
+        unset(self::$cache[$key]);
+    }
+
+    /**
      * 获取完整的字段名（主题名_字段名）
      * @param string $name 原字段名
      * @return string 完整字段名
+     * @throws InvalidArgumentException
      */
-    private static function getFullFieldName($name)
+    private static function getFullFieldName(string $name): string
     {
+        if (!self::validateFieldName($name)) {
+            throw new InvalidArgumentException("Invalid field name: $name");
+        }
+        
         try {
             // 获取主题名
             $themeName = Helper::options()->theme;
             
             // 如果主题名存在且不为空，则拼接
-            if (!empty($themeName)) {
+            if (!empty($themeName) && self::validateFieldName($themeName)) {
                 return $themeName . '_' . $name;
             }
             
             // 如果没有主题名，直接返回原字段名
             return $name;
         } catch (Exception $e) {
+            if (self::$errorHandler) {
+                self::$errorHandler->warning('Failed to get theme name, using original field name', ['name' => $name], $e);
+            }
             // 如果获取主题名失败，直接返回原字段名
             return $name;
         }
@@ -180,46 +280,101 @@ class DB
         }
     }
 
-    // 添加或更新数据
-    public static function setTtdf($name, $value)
+    /**
+     * 添加或更新数据
+     * @param string $name 字段名
+     * @param mixed $value 字段值
+     * @throws InvalidArgumentException
+     */
+    public static function setTtdf(string $name, $value): void
     {
-        $db = Typecho_Db::get();
+        if (!self::validateFieldName($name)) {
+            throw new InvalidArgumentException("Invalid field name: $name");
+        }
         
-        // 获取主题名并拼接字段名
-        $fullName = self::getFullFieldName($name);
+        try {
+            $db = Typecho_Db::get();
+            
+            // 获取主题名并拼接字段名
+            $fullName = self::getFullFieldName($name);
+            
+            // 清除相关缓存
+            self::clearCache("ttdf_$fullName");
+            self::clearCache("ttdf_$name");
 
-        // 检查是否已存在
-        $exists = $db->fetchRow($db->select()->from('table.ttdf')->where('name = ?', $fullName));
+            // 检查是否已存在
+            $exists = $db->fetchRow($db->select()->from('table.ttdf')->where('name = ?', $fullName));
 
-        if ($exists) {
-            // 更新
-            $db->query($db->update('table.ttdf')->rows(array('value' => $value))->where('name = ?', $fullName));
-        } else {
-            // 新增
-            $db->query($db->insert('table.ttdf')->rows(array(
-                'name' => $fullName,
-                'value' => $value
-            )));
+            if ($exists) {
+                // 更新
+                $db->query($db->update('table.ttdf')
+                    ->rows(['value' => (string)$value])
+                    ->where('name = ?', $fullName));
+            } else {
+                // 新增
+                $db->query($db->insert('table.ttdf')->rows([
+                    'name' => $fullName,
+                    'value' => (string)$value
+                ]));
+            }
+            
+            if (self::$errorHandler) {
+                self::$errorHandler->debug('TTDF data updated', ['name' => $fullName, 'value' => $value]);
+            }
+        } catch (Exception $e) {
+            if (self::$errorHandler) {
+                self::$errorHandler->error('Failed to set TTDF data', ['name' => $name, 'value' => $value], $e);
+            }
+            throw $e;
         }
     }
 
-    // 获取数据
-    public static function getTtdf($name, $default = null)
+    /**
+     * 获取数据（带缓存）
+     * @param string $name 字段名
+     * @param mixed $default 默认值
+     * @return mixed
+     * @throws InvalidArgumentException
+     */
+    public static function getTtdf(string $name, $default = null)
     {
-        $db = Typecho_Db::get();
-        
-        // 获取主题名并拼接字段名
-        $fullName = self::getFullFieldName($name);
-        
-        // 首先尝试获取带主题名前缀的配置项
-        $row = $db->fetchRow($db->select('value')->from('table.ttdf')->where('name = ?', $fullName));
-        
-        // 如果没有找到，则回退到原来的名称（向后兼容）
-        if (!$row) {
-            $row = $db->fetchRow($db->select('value')->from('table.ttdf')->where('name = ?', $name));
+        if (!self::validateFieldName($name)) {
+            throw new InvalidArgumentException("Invalid field name: $name");
         }
         
-        return $row ? $row['value'] : $default;
+        try {
+            // 获取主题名并拼接字段名
+            $fullName = self::getFullFieldName($name);
+            
+            // 检查缓存
+            $cacheKey = "ttdf_$fullName";
+            $cached = self::getCache($cacheKey);
+            if ($cached !== null) {
+                return $cached;
+            }
+            
+            $db = Typecho_Db::get();
+            
+            // 首先尝试获取带主题名前缀的配置项
+            $row = $db->fetchRow($db->select('value')->from('table.ttdf')->where('name = ?', $fullName));
+            
+            // 如果没有找到，则回退到原来的名称（向后兼容）
+            if (!$row) {
+                $row = $db->fetchRow($db->select('value')->from('table.ttdf')->where('name = ?', $name));
+            }
+            
+            $result = $row ? $row['value'] : $default;
+            
+            // 缓存结果
+            self::setCache($cacheKey, $result);
+            
+            return $result;
+        } catch (Exception $e) {
+            if (self::$errorHandler) {
+                self::$errorHandler->error('Failed to get TTDF data', ['name' => $name], $e);
+            }
+            return $default;
+        }
     }
 
     // 删除数据
@@ -276,26 +431,78 @@ class DB
 
     /**
      * 获取文章内容/字数
+     * @param int $cid 文章ID
+     * @return string
+     * @throws InvalidArgumentException
      */
     public function getArticleContent(int $cid): string
     {
-        $rs = $this->db->fetchRow($this->db->select('text')
-            ->from('table.contents')
-            ->where('cid = ?', $cid)
-            ->limit(1));
-        return $rs['text'] ?? '';
+        if ($cid <= 0) {
+            throw new InvalidArgumentException("Invalid article ID: $cid");
+        }
+        
+        try {
+            $cacheKey = "article_content_$cid";
+            $cached = self::getCache($cacheKey);
+            if ($cached !== null) {
+                return $cached;
+            }
+            
+            $rs = $this->db->fetchRow($this->db->select('text')
+                ->from('table.contents')
+                ->where('cid = ?', $cid)
+                ->limit(1));
+            
+            $result = $rs['text'] ?? '';
+            
+            // 缓存结果
+            self::setCache($cacheKey, $result);
+            
+            return $result;
+        } catch (Exception $e) {
+            if (self::$errorHandler) {
+                self::$errorHandler->error('Failed to get article content', ['cid' => $cid], $e);
+            }
+            return '';
+        }
     }
 
     /**
      * 获取文章标题
+     * @param int $cid 文章ID
+     * @return string
+     * @throws InvalidArgumentException
      */
     public function getArticleTitle(int $cid): string
     {
-        $rs = $this->db->fetchRow($this->db->select('title')
-            ->from('table.contents')
-            ->where('cid = ?', $cid)
-            ->limit(1));
-        return $rs['title'] ?? '';
+        if ($cid <= 0) {
+            throw new InvalidArgumentException("Invalid article ID: $cid");
+        }
+        
+        try {
+            $cacheKey = "article_title_$cid";
+            $cached = self::getCache($cacheKey);
+            if ($cached !== null) {
+                return $cached;
+            }
+            
+            $rs = $this->db->fetchRow($this->db->select('title')
+                ->from('table.contents')
+                ->where('cid = ?', $cid)
+                ->limit(1));
+            
+            $result = $rs['title'] ?? '';
+            
+            // 缓存结果
+            self::setCache($cacheKey, $result);
+            
+            return $result;
+        } catch (Exception $e) {
+            if (self::$errorHandler) {
+                self::$errorHandler->error('Failed to get article title', ['cid' => $cid], $e);
+            }
+            return '';
+        }
     }
 
     /**

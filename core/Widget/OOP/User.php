@@ -6,26 +6,61 @@
 
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
+/**
+ * GetUser 方法类
+ * 提供用户相关的各种功能
+ */
 class GetUser
 {
     use ErrorHandler, SingletonWidget;
+
+    /** @var TTDF_ErrorHandler 错误处理器实例 */
+    private static $errorHandler;
+
+    /** @var array 缓存数组 */
+    private static $cache = [];
 
     private function __construct() {}
     private function __clone() {}
     public function __wakeup() {}
 
-    // 获取uid
-    public static function Uid($echo = true)
+    /**
+     * 初始化错误处理器
+     */
+    private static function initErrorHandler(): void
+    {
+        if (!self::$errorHandler) {
+            self::$errorHandler = TTDF_ErrorHandler::getInstance();
+            self::$errorHandler->init();
+        }
+    }
+
+    /**
+     * 获取用户ID
+     * @param bool $echo 是否直接输出
+     * @return int|void
+     */
+    public static function Uid(bool $echo = true)
     {
         try {
-            $uid = self::getArchive()->author->uid;
+            self::initErrorHandler();
+
+            // 检查缓存
+            $cacheKey = 'uid';
+            if (isset(self::$cache[$cacheKey])) {
+                $uid = self::$cache[$cacheKey];
+            } else {
+                $uid = self::getArchive()->author->uid ?? 0;
+                self::$cache[$cacheKey] = $uid;
+            }
+
             if ($echo) {
                 echo $uid;
             } else {
                 return $uid;
             }
         } catch (Exception $e) {
-            self::handleError('获取作者UID失败', $e);
+            self::$errorHandler->error('获取作者UID失败', [], $e);
             if ($echo) {
                 echo '0';
             } else {
@@ -34,12 +69,25 @@ class GetUser
         }
     }
 
-    // 判断登录状态
-    public static function Login($echo = true)
+    /**
+     * 判断登录状态
+     * @param bool $echo 是否直接输出
+     * @return bool|void
+     */
+    public static function Login(bool $echo = true)
     {
         try {
-            $user = Typecho_Widget::widget('Widget_User');
-            $isLoggedIn = $user->hasLogin();
+            self::initErrorHandler();
+
+            // 检查缓存
+            $cacheKey = 'login_status';
+            if (isset(self::$cache[$cacheKey])) {
+                $isLoggedIn = self::$cache[$cacheKey];
+            } else {
+                $user = Typecho_Widget::widget('Widget_User');
+                $isLoggedIn = $user->hasLogin();
+                self::$cache[$cacheKey] = $isLoggedIn;
+            }
 
             if ($echo) {
                 echo $isLoggedIn ? 'true' : 'false';
@@ -47,7 +95,7 @@ class GetUser
                 return $isLoggedIn;
             }
         } catch (Exception $e) {
-            self::handleError('获取用户登录状态失败', $e);
+            self::$errorHandler->error('获取用户登录状态失败', [], $e);
             if ($echo) {
                 echo 'false';
             } else {

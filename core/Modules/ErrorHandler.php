@@ -170,7 +170,7 @@ class TTDF_ErrorHandler
     }
 
     /**
-     * 记录错误信息
+     * 记录日志
      * 
      * @param string $level 错误级别
      * @param string $message 错误消息
@@ -181,16 +181,19 @@ class TTDF_ErrorHandler
     public function log(string $level, string $message, array $context = [], Exception $exception = null): bool
     {
         if (!$this->initialized) {
-            $this->init();
+            return false;
         }
 
         // 验证错误级别
-        if (!array_key_exists($level, self::LEVEL_MAP)) {
+        if (!array_key_exists($level, $this->errorStats)) {
             $level = self::LEVEL_ERROR;
         }
 
         // 更新统计
         $this->errorStats[$level]++;
+
+        // 合并全局上下文
+        $context = array_merge($this->context, $context);
 
         // 格式化错误消息
         $formattedMessage = $this->formatMessage($level, $message, $context, $exception);
@@ -207,7 +210,81 @@ class TTDF_ErrorHandler
     }
 
     /**
-     * 格式化错误消息
+     * 过滤敏感数据
+     * 
+     * @param array $data 原始数据
+     * @return array 过滤后的数据
+     */
+    private function filterSensitiveData(array $data): array
+    {
+        $sensitiveKeys = ['password', 'passwd', 'pwd', 'secret', 'key', 'token', 'auth', 'session', 'cookie'];
+        
+        $filtered = [];
+        foreach ($data as $key => $value) {
+            $lowerKey = strtolower($key);
+            $isSensitive = false;
+            
+            foreach ($sensitiveKeys as $sensitiveKey) {
+                if (strpos($lowerKey, $sensitiveKey) !== false) {
+                    $isSensitive = true;
+                    break;
+                }
+            }
+            
+            if ($isSensitive) {
+                $filtered[$key] = '[FILTERED]';
+            } elseif (is_array($value)) {
+                $filtered[$key] = $this->filterSensitiveData($value);
+            } else {
+                $filtered[$key] = $value;
+            }
+        }
+        
+        return $filtered;
+    }
+
+    /**
+     * 日志轮转
+     */
+    private function rotateLogIfNeeded(): void
+    {
+        if (!file_exists($this->logFile)) {
+            return;
+        }
+        
+        $maxSize = 10 * 1024 * 1024; // 10MB
+        if (filesize($this->logFile) < $maxSize) {
+            return;
+        }
+
+        $maxFiles = 5;
+        
+        // 删除最老的日志文件
+        $oldestFile = $this->logFile . '.' . $maxFiles;
+        if (file_exists($oldestFile)) {
+            @unlink($oldestFile);
+        }
+        
+        // 轮转现有日志文件
+        for ($i = $maxFiles - 1; $i >= 1; $i--) {
+            $oldFile = $this->logFile . '.' . $i;
+            $newFile = $this->logFile . '.' . ($i + 1);
+            
+            if (file_exists($oldFile)) {
+                @rename($oldFile, $newFile);
+            }
+        }
+
+        // 重命名当前日志文件
+        @rename($this->logFile, $this->logFile . '.1');
+        
+        // 创建新的日志文件
+        @touch($this->logFile);
+        @chmod($this->logFile, 0666);
+    }
+
+    /**
+     * 增强的格式化错误消息
      * 
      * @param string $level 错误级别
      * @param string $message 错误消息
@@ -226,7 +303,9 @@ class TTDF_ErrorHandler
 
         // 添加上下文信息
         if (!empty($context)) {
-            $formatted .= " | Context: " . json_encode($context, JSON_UNESCAPED_UNICODE);
+            // 过滤敏感信息
+            $safeContext = $this->filterSensitiveData($context);
+            $formatted .= " | Context: " . json_encode($safeContext, JSON_UNESCAPED_UNICODE | JSON_PARTIAL_OUTPUT_ON_ERROR);
         }
 
         // 添加异常信息
@@ -242,21 +321,38 @@ class TTDF_ErrorHandler
             $formatted .= " | URI: {$_SERVER['REQUEST_URI']}";
         }
 
+        // 添加用户代理信息（仅调试模式）
+        if ($this->debugEnabled && isset($_SERVER['HTTP_USER_AGENT'])) {
+            $formatted .= " | UA: " . substr($_SERVER['HTTP_USER_AGENT'], 0, 100);
+        }
+
         return $formatted;
     }
 
     /**
-     * 写入日志文件
+     * 增强的写入日志文件方法
      * 
      * @param string $message 消息内容
      */
     private function writeLog(string $message): void
     {
-        @file_put_contents(
-            $this->logFile,
-            $message . "\n",
-            FILE_APPEND | LOCK_EX
-        );
+        try {
+            // 检查日志文件大小，必要时轮转
+            $this->rotateLogIfNeeded();
+            
+            $result = @file_put_contents(
+                $this->logFile,
+                $message . "\n",
+                FILE_APPEND | LOCK_EX
+            );
+            
+            if ($result === false) {
+                // 如果写入失败，尝试使用系统日志
+                error_log("TTDF ErrorHandler: Failed to write to log file, using system log: " . $message);
+            }
+        } catch (Exception $e) {
+            error_log("TTDF ErrorHandler: Exception in writeLog: " . $e->getMessage());
+        }
     }
 
     /**
