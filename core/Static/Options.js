@@ -410,7 +410,7 @@ const FormField = {
                                 size="small"
                                 @click="addNewItem"
                             >
-                                添加项目
+                                添加
                             </el-button>
                         </div>
                     </div>
