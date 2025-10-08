@@ -291,7 +291,6 @@ function themeConfig($form)
 
     <script src="<?php get_theme_file_url('core/Static/Vue.global.min.js', true) ?>"></script>
     <script src="<?php get_theme_file_url('core/Static/Element.full.min.js', true) ?>"></script>
-    <script src="<?php get_theme_file_url('core/Static/Element.iife.min.js', true) ?>"></script>
     <script src="<?php get_theme_file_url('core/Static/Options.js', true) ?>"></script>
 <?php
 }
