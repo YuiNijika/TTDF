@@ -282,10 +282,10 @@ function themeConfig($form)
         
         // 主题信息配置
         window.ttdfThemeInfo = {
-            themeName: '<?php echo Helper::options()->theme; ?>',
-            themeVersion: '<?php echo defined("__FRAMEWORK_VER__") ? __FRAMEWORK_VER__ : "4.0.0"; ?>',
-            ttdfVersion: '<?php echo defined("__FRAMEWORK_VER__") ? __FRAMEWORK_VER__ : "4.0.0"; ?>',
-            apiUrl: '<?php echo Typecho_Common::url(__TTDF_RESTAPI_ROUTE__ . '/ttdf/options', Helper::options()->siteUrl); ?>',
+            themeName: '<?php get_theme_name(); ?>',
+            themeVersion: '<?php get_theme_version(); ?>',
+            ttdfVersion: '<?php get_framework_version(); ?>',
+            apiUrl: '<?php echo get_site_url(false) . __TTDF_RESTAPI_ROUTE__ . '/ttdf/options'; ?>',
         };
     </script>
 
