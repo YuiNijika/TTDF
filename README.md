@@ -2,7 +2,7 @@
 
 > The Intuitive Typecho Theme Framework.
 
-## 该分支为v4开发版, 正式环境请使用[最新发布版](https://github.com/YuiNijika/TTDF/releases/tag/v3.1.2_fix)
+## 该分支为v4开发版, 正式环境请使用[最新发布版](https://github.com/YuiNijika/TTDF/releases)
 
 ✨ **核心特性**  
 
