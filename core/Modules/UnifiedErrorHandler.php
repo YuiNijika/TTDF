@@ -2,7 +2,7 @@
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
 /**
- * 统一错误处理系统 - 增强版
+ * 统一错误处理系统
  * 提供全局错误处理、异常捕获、日志记录和错误恢复机制
  */
 class TTDF_UnifiedErrorHandler

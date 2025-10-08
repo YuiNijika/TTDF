@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
-// 使用 Enum 定义常量，增强类型安全
+// 使用 Enum 定义常量
 enum HttpCode: int
 {
     case OK = 200;

@@ -455,11 +455,12 @@ class TTDF_Debug
             if (self::$errorHandler) {
                 // 使用统一的错误处理系统
                 $context = ['level' => $level];
-                if ($level >= E_USER_ERROR) {
+                if ($level === E_USER_ERROR) {
                     self::$errorHandler->error($message, $context);
-                } elseif ($level >= E_USER_WARNING) {
+                } elseif ($level === E_USER_WARNING) {
                     self::$errorHandler->warning($message, $context);
                 } else {
+                    // E_USER_NOTICE 和其他级别都作为 info 处理
                     self::$errorHandler->info($message, $context);
                 }
             } else {

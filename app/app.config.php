@@ -7,8 +7,8 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 return [
     // 应用配置
     'app' => [
-        'debug' => false, // 调试模式
-        'compress_html' => false, // HTML压缩
+        'debug' => true, // 调试模式
+        'compress_html' => true, // HTML压缩
     ],
 
     // 插件配置

@@ -46,6 +46,9 @@ $TTDF_CONFIG_ARRAY = [
         'LIMIT' => TTDF_ConfigManager::get('modules.restapi.limit', []),
         'HEADERS' => TTDF_ConfigManager::get('modules.restapi.headers', []),
     ],
+    
+    // REST API 调试开关 - 控制是否对 REST API 模块全局启用调试（包含 Typecho 错误处理）
+    'REST_API_DEBUG' => false,
 ];
 
 // 定义 TTDF_CONFIG 常量

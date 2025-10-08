@@ -35,12 +35,21 @@ class TTDF_AddRoute
     public static function registerRoutes()
     {
         foreach (self::$routeConfig as $name => $config) {
-            Utils\Helper::addRoute(
-                $name,
-                $config['url'],
-                $config['widget'],
-                $config['action']
-            );
+            try {
+                Helper::addRoute(
+                    $name,
+                    $config['url'],
+                    $config['widget'],
+                    $config['action']
+                );
+                
+                // 调试信息
+                if (defined('TTDF_DEBUG') && TTDF_DEBUG) {
+                    error_log("TTDF Route registered: {$name} -> {$config['url']}");
+                }
+            } catch (Exception $e) {
+                error_log("TTDF Route registration failed for {$name}: " . $e->getMessage());
+            }
         }
     }
     
@@ -50,7 +59,7 @@ class TTDF_AddRoute
     public static function unregisterRoutes()
     {
         foreach (self::$routeConfig as $name => $config) {
-            Utils\Helper::removeRoute($name);
+            Helper::removeRoute($name);
         }
     }
     
