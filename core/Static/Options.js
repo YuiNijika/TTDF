@@ -555,9 +555,9 @@ const OptionsApp = {
                 const result = await response.json();
 
                 if (result.success || result.code === 200) {
-                    ElMessage.success(result.message || result.data?.message || '设置保存成功！');
+                    ElMessage.success(result.data?.message || result.message || '设置保存成功！');
                 } else {
-                    ElMessage.error(result.message || result.data?.message || '保存失败');
+                    ElMessage.error(result.data?.message || result.message || '保存失败');
                 }
             } catch (error) {
                 console.error('保存设置时出错:', error);
@@ -595,26 +595,12 @@ const OptionsApp = {
 
         // 初始化配置数据
         const initConfig = () => {
-            // 优先使用window.ttdfTabsConfig和window.ttdfFormData
+            // 从全局变量中获取标签页配置
             if (window.ttdfTabsConfig) {
                 config.tabs = window.ttdfTabsConfig;
-            } else {
-                // 兼容旧版本配置
-                const configSource = window.TTDFConfig || window.TTDF_CONFIG;
-                if (configSource) {
-                    const fullConfig = configSource.fullConfig || configSource;
-                    config.themeName = configSource.themeName || 'TTDF';
-                    config.themeVersion = configSource.themeVersion || 'undefined';
-                    config.ttdfVersion = configSource.ttdfVersion || 'undefined';
-                    config.apiUrl = configSource.apiUrl || '';
-                    config.tabs = fullConfig.config || configSource.tabs || {};
-
-                    // 初始化表单数据
-                    initFormData(fullConfig.savedValues || {});
-                }
             }
 
-            // 从新的主题信息配置中获取主题信息
+            // 从全局变量中获取主题信息
             if (window.ttdfThemeInfo) {
                 config.themeName = window.ttdfThemeInfo.themeName || 'TTDF';
                 config.themeVersion = window.ttdfThemeInfo.themeVersion || '4.0.0';
@@ -622,7 +608,7 @@ const OptionsApp = {
                 config.apiUrl = window.ttdfThemeInfo.apiUrl || '';
             }
 
-            // 使用新版本的表单数据初始化
+            // 从全局变量中获取表单数据
             if (window.ttdfFormData) {
                 Object.assign(formData, window.ttdfFormData);
             }
