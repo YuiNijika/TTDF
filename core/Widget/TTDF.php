@@ -274,11 +274,8 @@ class TTDF
                 $attributes = $matches[1];
                 $content = $matches[2];
 
-                // 基础JavaScript压缩
-                $content = preg_replace('/\/\*.*?\*\//s', '', $content); // 移除多行注释
-                $content = preg_replace('/\/\/.*$/m', '', $content); // 移除单行注释
-                $content = preg_replace('/\s+/', ' ', $content); // 合并空白
-                $content = trim($content);
+                // JavaScript压缩
+                $content = self::safeCompressJavaScript($content);
 
                 return "<script{$attributes}>{$content}</script>";
             }
@@ -286,6 +283,82 @@ class TTDF
         } catch (Exception $e) {
             self::$errorHandler->warning('Script标签压缩失败', [], $e);
             return $chunk;
+        }
+    }
+
+    /**
+     * 安全压缩JavaScript代码
+     * @param string $content JavaScript内容
+     * @return string
+     */
+    private static function safeCompressJavaScript(string $content): string
+    {
+        try {
+            // 保护字符串字面量和正则表达式
+            $protectedStrings = [];
+            $stringIndex = 0;
+
+            // 保护双引号字符串
+            $content = preg_replace_callback('/"(?:[^"\\\\]|\\\\.)*"/', function($matches) use (&$protectedStrings, &$stringIndex) {
+                $placeholder = "___PROTECTED_STRING_{$stringIndex}___";
+                $protectedStrings[$placeholder] = $matches[0];
+                $stringIndex++;
+                return $placeholder;
+            }, $content);
+
+            // 保护单引号字符串
+            $content = preg_replace_callback("/'(?:[^'\\\\]|\\\\.)*'/", function($matches) use (&$protectedStrings, &$stringIndex) {
+                $placeholder = "___PROTECTED_STRING_{$stringIndex}___";
+                $protectedStrings[$placeholder] = $matches[0];
+                $stringIndex++;
+                return $placeholder;
+            }, $content);
+
+            // 保护模板字符串
+            $content = preg_replace_callback('/`(?:[^`\\\\]|\\\\.)*`/', function($matches) use (&$protectedStrings, &$stringIndex) {
+                $placeholder = "___PROTECTED_STRING_{$stringIndex}___";
+                $protectedStrings[$placeholder] = $matches[0];
+                $stringIndex++;
+                return $placeholder;
+            }, $content);
+
+            // 保护正则表达式
+            $content = preg_replace_callback('/\/(?:[^\/\n\\\\]|\\\\.)+\/[gimuy]*/', function($matches) use (&$protectedStrings, &$stringIndex) {
+                $placeholder = "___PROTECTED_STRING_{$stringIndex}___";
+                $protectedStrings[$placeholder] = $matches[0];
+                $stringIndex++;
+                return $placeholder;
+            }, $content);
+
+            // 安全移除注释
+            // 移除多行注释，但避免在字符串中的情况
+            $content = preg_replace('/\/\*(?:[^*]|\*(?!\/))*\*\//', '', $content);
+            
+            // 移除单行注释，但保护URL中的//
+            $content = preg_replace('/(?<!:)\/\/(?![\/\*]).*$/m', '', $content);
+
+            // 智能压缩空白字符
+            // 保护JSON结构中的空白
+            $content = preg_replace('/\s*([{}[\]:,;])\s*/', '$1', $content);
+            
+            // 压缩其他多余空白，但保留必要的空格
+            $content = preg_replace('/\s+/', ' ', $content);
+            
+            // 移除行首行尾空白
+            $content = preg_replace('/^\s+|\s+$/m', '', $content);
+            
+            // 移除空行
+            $content = preg_replace('/\n\s*\n/', "\n", $content);
+
+            // 恢复被保护的字符串
+            foreach ($protectedStrings as $placeholder => $original) {
+                $content = str_replace($placeholder, $original, $content);
+            }
+
+            return trim($content);
+        } catch (Exception $e) {
+            self::$errorHandler->warning('JavaScript安全压缩失败', [], $e);
+            return $content;
         }
     }
 
