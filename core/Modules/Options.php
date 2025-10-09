@@ -219,7 +219,11 @@ function themeConfig($form)
     }
 
     // 获取配置数据
-    $tabs = require __DIR__ . '/../../app/Setup.php';
+    $tabs = __DIR__ . '/../../app/setup.php';
+    if (!file_exists($tabs)) {
+        $tabs = __DIR__ . '/../app/Setup.php';
+    }
+    $tabs = require $tabs;
 
     // 处理配置数据，获取当前保存的值
     $formData = [];
