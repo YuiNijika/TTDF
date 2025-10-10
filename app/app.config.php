@@ -9,13 +9,12 @@ return [
     'app' => [
         'debug' => false, // 调试模式
         'compress_html' => true, // HTML压缩
-    ],
-
-    // 插件配置
-    'plugins' => [
         'fields' => [
             'enabled' => false, // 自定义字段插件
         ],
+    ],
+
+    'plugins' => [
         'tyajax' => [
             'enabled' => false, // TyAjax模块
         ],

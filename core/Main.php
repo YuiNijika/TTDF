@@ -32,7 +32,7 @@ define('__TTDF_RESTAPI_ROUTE__', TTDF_ConfigManager::get('modules.restapi.route'
 // 预先映射所有老配置键到新配置的值
 $TTDF_CONFIG_ARRAY = [
     'DEBUG' => TTDF_ConfigManager::get('app.debug', false),
-    'FIELDS_ENABLED' => TTDF_ConfigManager::get('plugins.fields.enabled', false),
+    'FIELDS_ENABLED' => TTDF_ConfigManager::get('app.fields.enabled', false),
     'TYAJAX_ENABLED' => TTDF_ConfigManager::get('plugins.tyajax.enabled', false),
     'COMPRESS_HTML' => TTDF_ConfigManager::get('app.compress_html', false),
     'GRAVATAR_PREFIX' => TTDF_ConfigManager::get('modules.gravatar.prefix', 'https://cravatar.cn/avatar/'),
@@ -75,7 +75,7 @@ class TTDF_ConfigManager
     /** @var array 老配置键到新配置路径的映射 */
     private static $legacyKeyMap = [
         'DEBUG' => 'app.debug',
-        'FIELDS_ENABLED' => 'plugins.fields.enabled',
+        'FIELDS_ENABLED' => 'app.fields.enabled',
         'TYAJAX_ENABLED' => 'plugins.tyajax.enabled',
         'COMPRESS_HTML' => 'app.compress_html',
         'GRAVATAR_PREFIX' => 'modules.gravatar.prefix',
