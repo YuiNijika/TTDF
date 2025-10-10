@@ -7,7 +7,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 return [
     // 应用配置
     'app' => [
-        'debug' => true, // 调试模式
+        'debug' => false, // 调试模式
         'compress_html' => true, // HTML压缩
     ],
 
