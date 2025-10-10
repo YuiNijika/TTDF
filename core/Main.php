@@ -24,7 +24,7 @@ if (!is_array($configData)) {
 TTDF_ConfigManager::init($configData);
 
 // 定义框架常量
-define('__FRAMEWORK_VER__', '4.0.0_alpha');
+define('__FRAMEWORK_VER__', '4.0.0');
 define('__TYPECHO_GRAVATAR_PREFIX__', TTDF_ConfigManager::get('modules.gravatar.prefix', 'https://cravatar.cn/avatar/'));
 define('__TTDF_RESTAPI__', TTDF_ConfigManager::get('modules.restapi.enabled', false));
 define('__TTDF_RESTAPI_ROUTE__', TTDF_ConfigManager::get('modules.restapi.route', 'ty-json'));
