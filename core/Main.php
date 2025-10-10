@@ -1,8 +1,8 @@
 <?php
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
-if (version_compare(PHP_VERSION, '7.4', '<')) {
-    exit('PHP版本需要7.4及以上, 请先升级!');
+if (version_compare(PHP_VERSION, '8.1', '<')) {
+    exit('PHP版本需要8.1及以上, 请先升级!');
 }
 
 // 配置文件加载
