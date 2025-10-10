@@ -31,7 +31,7 @@ if (TTDF_CONFIG['FIELDS_ENABLED']) {
     {
         $fieldFile = __DIR__ . '/../../app/fields.php';
         if (!file_exists($fieldFile)) {
-            $fieldFile = __DIR__ . '/../app/Fields.php';
+            $fieldFile = __DIR__ . '/../../app/Fields.php';
         }
 
         $fieldElements = require $fieldFile;
