@@ -6,71 +6,55 @@
 
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
-class TTDF_AddRoute
+class TTDF_Route
 {
     /**
-     * 路由配置
-     */
-    private static $routeConfig = [
-        'TTDF_AUTH_ROUTE' => [
-            'url' => '/%path alphaslash 0%',
-            'widget' => 'Widget_Archive',
-            'action' => 'render'
-        ],
-        'TTDF_API_HOME' => [
-            'url' => '/' . __TTDF_RESTAPI_ROUTE__,
-            'widget' => 'Widget_Archive',
-            'action' => 'render'
-        ],
-        'TTDF_API_PAGE' => [
-            'url' => '/' . __TTDF_RESTAPI_ROUTE__ . '/%path alphaslash 0%',
-            'widget' => 'Widget_Archive',
-            'action' => 'render'
-        ]
-    ];
-    
-    /**
-     * 注册所有路由
+     * 注册TTDF API路由
      */
     public static function registerRoutes()
     {
-        foreach (self::$routeConfig as $name => $config) {
-            try {
-                Helper::addRoute(
-                    $name,
-                    $config['url'],
-                    $config['widget'],
-                    $config['action']
-                );
-                
-                // 调试信息
-                if (defined('TTDF_DEBUG') && TTDF_DEBUG) {
-                    error_log("TTDF Route registered: {$name} -> {$config['url']}");
-                }
-            } catch (Exception $e) {
-                error_log("TTDF Route registration failed for {$name}: " . $e->getMessage());
-            }
-        }
+        self::registerHomeRoute();
+        self::registerApiRoute();
     }
-    
+
     /**
-     * 注销所有路由
+     * 注册API首页路由
+     */
+    private static function registerHomeRoute()
+    {
+        Utils\Helper::addRoute(
+            'TTDF_API_HOME', // 路由名称
+            '/' . __TTDF_RESTAPI_ROUTE__, // 路由路径
+            'Widget_Archive', // 组件名称
+            'render' // 组件动作方法
+        );
+    }
+
+    /**
+     * 注册API子路由
+     */
+    private static function registerApiRoute()
+    {
+        Utils\Helper::addRoute(
+            'TTDF_API', // 路由名称
+            '/' . __TTDF_RESTAPI_ROUTE__ . '/%path alphaslash 0%', // 路由路径
+            'Widget_Archive', // 组件名称
+            'render' // 组件动作方法
+        );
+    }
+
+    /**
+     * 注销路由
      */
     public static function unregisterRoutes()
     {
-        foreach (self::$routeConfig as $name => $config) {
-            Helper::removeRoute($name);
-        }
-    }
-    
-    /**
-     * 获取路由配置
-     */
-    public static function getRouteConfig()
-    {
-        return self::$routeConfig;
+        Utils\Helper::removeRoute('TTDF_API_HOME');
+        Utils\Helper::removeRoute('TTDF_API');
     }
 }
 
-// 执行路由注册
-TTDF_AddRoute::registerRoutes();
+// 注册路由
+TTDF_Route::registerRoutes();
+
+// 注销路由
+// TTDF_Route::unregisterRoutes();
