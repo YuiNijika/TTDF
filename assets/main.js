@@ -160,4 +160,5 @@ function initTTDF() {
     ttdfManager.init();
 }
 
-// 等待DOM
+// 等待DOM加载完成后初始化
+document.addEventListener('DOMContentLoaded', initTTDF);
