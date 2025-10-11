@@ -589,124 +589,6 @@ class TTDF
     }
 }
 
-/**
- * 钩子类
- */
-class TTDF_Hook
-{
-    private static $actions = [];
-    private static $buffered_hooks = []; // 缓冲的钩子内容
-    private static $executed_hooks = []; // 已执行的钩子记录
-
-    /**
-     * 注册钩子（简化版本）
-     * @param string $hook_name 钩子名称
-     * @param callable $callback 回调函数
-     * @param int $priority 优先级（数字越小优先级越高）
-     */
-    public static function add_action($hook_name, $callback, $priority = 10)
-    {
-        if (!isset(self::$actions[$hook_name])) {
-            self::$actions[$hook_name] = [];
-        }
-        
-        if (!isset(self::$actions[$hook_name][$priority])) {
-            self::$actions[$hook_name][$priority] = [];
-        }
-        
-        self::$actions[$hook_name][$priority][] = $callback;
-        
-        // 如果钩子已经执行过，立即执行新注册的回调并缓冲输出
-        if (isset(self::$executed_hooks[$hook_name])) {
-            ob_start();
-            call_user_func($callback, self::$executed_hooks[$hook_name]);
-            $content = ob_get_clean();
-            
-            // 将内容添加到已缓冲的内容中
-            if (!isset(self::$buffered_hooks[$hook_name])) {
-                self::$buffered_hooks[$hook_name] = '';
-            }
-            self::$buffered_hooks[$hook_name] .= $content;
-        }
-    }
-
-    /**
-     * 执行钩子
-     * @param string $hook_name 钩子名称
-     * @param mixed $args 传递给回调函数的参数
-     * @param bool $return_content 是否返回内容而不是直接输出
-     */
-    public static function do_action($hook_name, $args = null, $return_content = false)
-    {
-        // 记录执行参数
-        self::$executed_hooks[$hook_name] = $args;
-        
-        // 开始缓冲输出
-        ob_start();
-        
-        if (isset(self::$actions[$hook_name])) {
-            // 按优先级排序执行
-            ksort(self::$actions[$hook_name]);
-            foreach (self::$actions[$hook_name] as $priority => $callbacks) {
-                foreach ($callbacks as $callback) {
-                    call_user_func($callback, $args);
-                }
-            }
-        }
-        
-        $content = ob_get_clean();
-        
-        // 合并之前缓冲的内容
-        if (isset(self::$buffered_hooks[$hook_name])) {
-            $content = self::$buffered_hooks[$hook_name] . $content;
-            unset(self::$buffered_hooks[$hook_name]);
-        }
-        
-        if ($return_content) {
-            return $content;
-        } else {
-            echo $content;
-        }
-    }
-    
-    /**
-     * 获取钩子内容（不执行，只返回）
-     * @param string $hook_name 钩子名称
-     * @param mixed $args 传递给回调函数的参数
-     * @return string
-     */
-    public static function get_hook_content($hook_name, $args = null)
-    {
-        return self::do_action($hook_name, $args, true);
-    }
-    
-    /**
-     * 检查钩子是否已执行
-     * @param string $hook_name 钩子名称
-     * @return bool
-     */
-    public static function has_executed($hook_name)
-    {
-        return isset(self::$executed_hooks[$hook_name]);
-    }
-    
-    /**
-     * 移除钩子
-     * @param string $hook_name 钩子名称
-     * @param callable $callback 回调函数
-     * @param int $priority 优先级
-     */
-    public static function remove_action($hook_name, $callback, $priority = 10)
-    {
-        if (isset(self::$actions[$hook_name][$priority])) {
-            $key = array_search($callback, self::$actions[$hook_name][$priority], true);
-            if ($key !== false) {
-                unset(self::$actions[$hook_name][$priority][$key]);
-            }
-        }
-    }
-}
-
 class TTDF_Widget
 {
     use ErrorHandler;
@@ -822,10 +704,22 @@ TTDF_Hook::add_action('load_head', function ($skipHead = false) {
 });
 TTDF_Hook::add_action('load_foot', function () {
     Get::Footer(true);
-    ?>
-    <script type="text/javascript">
-        console.log("\n %c %s \n", "color: #fff; background: #34495e; padding:5px 0;", "TTDF v<?php TTDF::Ver() ?>");
-        console.log('页面加载耗时 <?php TTDF_Widget::TimerStop(); ?>');
+?>
+<script type="text/javascript">
+        window.frameWorkConfig = {
+            TyAjax: <?php echo json_encode(TTDF_ConfigManager::get('plugins.tyajax.enabled', false)) ?>,
+            RESTAPI: {
+                enabled: <?php echo json_encode(TTDF_ConfigManager::get('modules.restapi.enabled', false)) ?>,
+                route: '<?php echo TTDF_ConfigManager::get('modules.restapi.route', 'ty-json') ?>',
+            },
+            version: {
+                typecho: '<?php TTDF::TypechoVer(true) ?>',
+                framework: '<?php TTDF::Ver(true) ?>',
+            },
+            loadtime: '<?php echo htmlspecialchars(TTDF_Widget::TimerStop(false)); ?>',
+        }
+        console.log("\n %c %s \n", "color: #fff; background: #34495e; padding:5px 0;", "TTDF v" + window.frameWorkConfig.version.framework);
+        console.log('页面加载耗时 ' + window.frameWorkConfig.loadtime);
     </script>
 <?php
 });

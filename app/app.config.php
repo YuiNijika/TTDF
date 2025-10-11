@@ -8,7 +8,7 @@ return [
     // 应用配置
     'app' => [
         'debug' => false, // 调试模式
-        'compress_html' => true, // HTML压缩
+        'compress_html' => false, // HTML压缩
         'fields' => [
             'enabled' => false, // 自定义字段插件
         ],

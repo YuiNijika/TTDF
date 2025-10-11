@@ -351,6 +351,7 @@ class TTDF_Main
     {
         $widgetFiles = [
             'Tools.php',
+            'Hook.php',
             'TTDF.php',
             'AddRoute.php',
             'OOP/Common.php',
