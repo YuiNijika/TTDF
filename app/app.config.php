@@ -12,6 +12,13 @@ return [
         'fields' => [
             'enabled' => false, // 自定义字段插件
         ],
+        'assets' => [
+            'dir' => 'assets/', // 本地资源目录
+            'cdn' => [
+                'enabled' => false, // 是否启用CDN
+                'url' => Helper::options()->themeUrl . '/assets/', // CDN URL
+            ]
+        ],
     ],
 
     'plugins' => [

@@ -675,6 +675,49 @@ class Get
     }
 
     /**
+     * 获取assets url
+     * @param string $file 资源文件路径
+     * @param bool $echo 是否输出
+     * @param bool $appendVersion 是否自动拼接主题版本号，默认为true
+     * @return string
+     */
+    public static function Assets($file = '', ?bool $echo = true, bool $appendVersion = true)
+    {
+        try {
+            $url = '';
+
+            // 检查是否启用CDN
+            if (config('app.assets.cdn.enabled', false)) {
+                $baseUrl = config('app.assets.cdn.url', Helper::options()->themeUrl . '/assets/');
+                $url = rtrim((string)$baseUrl, '/') . '/' . ltrim((string)$file, '/');
+            } else {
+                $assetsDir = config('app.assets.dir', 'assets/');
+                $themeUrl = GetTheme::Url(false, $assetsDir . $file);
+                $url = $themeUrl ?? '';
+            }
+
+            // 默认追加版本号
+            if ($appendVersion) {
+                $themeVersion = GetTheme::Ver(false);
+                $themeVersion = $themeVersion ?? '';
+                if ($themeVersion !== '') {
+                    $url .= (strpos($url, '?') !== false ? '&' : '?') . 'ver=' . urlencode((string)$themeVersion);
+                }
+            }
+
+            if ($echo) {
+                echo $url;
+            } else {
+                return $url;
+            }
+        } catch (Exception $e) {
+            return self::handleError('获取资源URL失败', $e);
+        }
+
+        return '';
+    }
+
+    /**
      * 获取客户端ip
      * @return string
      */

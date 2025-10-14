@@ -2,6 +2,7 @@
 
 /**
  * 面向过程写法封装
+ * 提供统一的过程式函数接口，优化性能和错误处理
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 
@@ -10,13 +11,18 @@ if (!function_exists('get_header')) {
     /**
      * 输出或返回头部元数据
      * 
-     * @param bool|null $echo 是否直接输出
+     * @param bool $echo 是否直接输出
      * @param string|null $exclude 要排除的meta或link标签
-     * @return string
+     * @return string|null
      */
-    function get_header(?bool $echo = true, ?string $exclude = null): string
+    function get_header(bool $echo = true, ?string $exclude = null): ?string
     {
-        return Get::Header($echo, $exclude);
+        try {
+            return Get::Header($echo, $exclude);
+        } catch (Exception $e) {
+            error_log("get_header error: " . $e->getMessage());
+            return $echo ? null : '';
+        }
     }
 }
 
@@ -29,7 +35,12 @@ if (!function_exists('get_footer')) {
      */
     function get_footer(bool $echo = true): ?string
     {
-        return Get::Footer($echo);
+        try {
+            return Get::Footer($echo);
+        } catch (Exception $e) {
+            error_log("get_footer error: " . $e->getMessage());
+            return $echo ? null : '';
+        }
     }
 }
 
@@ -37,12 +48,17 @@ if (!function_exists('get_site_url')) {
     /**
      * 获取站点URL
      * 
-     * @param bool|null $echo 是否直接输出
-     * @return string
+     * @param bool $echo 是否直接输出
+     * @return string|null
      */
-    function get_site_url(?bool $echo = true): string
+    function get_site_url(bool $echo = true): ?string
     {
-        return Get::SiteUrl($echo);
+        try {
+            return Get::SiteUrl($echo);
+        } catch (Exception $e) {
+            error_log("get_site_url error: " . $e->getMessage());
+            return $echo ? null : '';
+        }
     }
 }
 
@@ -828,6 +844,19 @@ if (!function_exists('get_theme_file_path')) {
     }
 }
 
+if (!function_exists('get_assets')) {
+    /**
+     * 获取资源文件URL，支持CDN配置
+     * @param string $file 资源文件路径
+     * @param bool $echo 是否直接输出
+     * @param bool $appendVersion 是否自动拼接主题版本号
+     * @return string|null
+     */
+    function get_assets(string $file = '', bool $echo = true, bool $appendVersion = true): ?string
+    {
+        return Get::Assets($file, $echo, $appendVersion);
+    }
+}
 
 
 // ==================== 用户基本信息 ====================
@@ -1155,29 +1184,5 @@ if (!function_exists('get_need')) {
     function get_need(string $file)
     {
         return Get::Need($file);
-    }
-}
-
-if (!function_exists('get_site_language')) {
-    /**
-     * 获取站点语言
-     * @param bool $echo 是否直接输出
-     * @return string|null
-     */
-    function get_site_language(bool $echo = true)
-    {
-        return Get::Options('lang', $echo);
-    }
-}
-
-if (!function_exists('get_site_charset')) {
-    /**
-     * 获取站点字符集
-     * @param bool $echo 是否直接输出
-     * @return string|null
-     */
-    function get_site_charset(bool $echo = true)
-    {
-        return Get::Options('charset', $echo);
     }
 }

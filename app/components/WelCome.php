@@ -1,64 +1,24 @@
 <?php
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 ?>
-<main>
-    <section class="min-h-screen-no-scroll">
-        <div class="background-gradient"></div>
-        <div class="blob-primary"></div>
-        <div class="blob-secondary"></div>
-
-        <div class="container">
-            <div class="text-center max-w-4xl mx-auto">
-                <div class="icon-container">
-                    <svg t="1755579480924" class="icon" viewBox="0 0 1024 1024" version="1.1"
-                        xmlns="http://www.w3.org/2000/svg" p-id="4927">
-                        <path
-                            d="M512 1024C132.647 1024 0 891.313 0 512S132.647 0 512 0s512 132.687 512 512-132.647 512-512 512zM236.308 354.462h551.384v-78.77H236.308v78.77z m0 196.923h393.846v-78.77H236.308v78.77z m0 196.923h472.615v-78.77H236.308v78.77z"
-                            p-id="4928" fill="#2c2c2c"></path>
-                    </svg>
-                </div>
-                <h1>
-                    最直观的 <span class="text-primary">Typecho</span> 开发框架
-                </h1>
-                <p class="max-w-3xl mx-auto">
-                    这是 <span class="text-primary">Typecho</span> 的主题模板开发框架, 提供常用的方法以及函数调用
-                    <br />Typecho Theme Development Framework
-                </p>
-
-                <div class="button-group">
-                    <a href="https://typecho.dev/develop/quickstart.html" target="_blank" class="button button-primary">
-                        快速开始
-                        <svg class="icon-arrow" viewBox="0 0 24 24">
-                            <path d="M5 12h14M12 5l7 7-7 7" />
-                        </svg>
-                    </a>
-                    <a href="https://github.com/YuiNijika/TTDF" target="_blank" class="button button-secondary">
-                        GitHub
-                        <svg class="icon-github" viewBox="0 0 24 24">
-                            <path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
-                        </svg>
-                    </a>
-                </div>
-
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-value"><?php TTDF::Ver(true); ?></div>
-                        <div class="stat-label">当前版本</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">1.2+</div>
-                        <div class="stat-label">兼容版本</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">低</div>
-                        <div class="stat-label">上手难度</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">MIT</div>
-                        <div class="stat-label">开源许可</div>
-                    </div>
-                </div>
+<main class="antialiased bg-white dark:bg-[#020420] dark:text-white flex flex-col font-sans items-center justify-center min-h-screen overflow-hidden relative text-[#020420] text-center">
+    <a href="https://github.com/YuiNijika/TTDF" target="_blank" rel="noopener" class="flex flex-col items-center justify-center gap-4 group ttdf-logo" id="ttdfImg">
+        <div class="relative flex justify-center">
+            <svg t="1760471219873" width="80" class="triangle-loading" viewBox="0 0 1109 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4538">
+                <path
+                    d="M438.044444 85.333333C317.866667 104.533333 244.622222 143.644444 199.111111 213.333333c-49.777778 78.222222-64 142.933333-64.711111 295.111111-0.711111 263.822222 71.822222 379.022222 264.533333 420.977778 71.111111 14.933333 260.266667 14.933333 332.088889 0 150.755556-32.711111 227.555556-113.777778 254.577778-268.8 14.933333-85.333333 10.666667-278.755556-7.822222-344.177778-34.133333-120.888889-99.555556-185.6-220.444445-216.888888-65.422222-17.066667-248.177778-24.888889-319.288889-14.222223zM796.444444 344.888889V376.888889H334.222222v-64h462.222222v32zM665.6 506.311111c1.422222 14.222222-0.711111 28.444444-3.555556 30.577778-3.555556 2.133333-78.222222 4.266667-165.688888 4.266667l-158.577778 1.422222-2.133334-33.422222-2.133333-32.711112 164.977778 1.422223 164.977778 2.133333 2.133333 26.311111z m66.844444 172.8v32H334.222222v-64h398.222222v32z"
+                    p-id="4539" />
+            </svg>
+        </div>
+        <div class="flex flex-col items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="214" height="53" fill="none" class="dark:group-hover:text-white dark:text-gray-200 group-hover:text-[#020420] text-[#020420]/80 mb-2" viewBox="0 0 1890 1417">
+                <text id="TTDF" class="cls-1" transform="matrix(5.228, 0, 0, 5.228, 0, 952.004)">TTDF</text>
+            </svg>
+            <div class="flex gap-2" style="margin-top: 10px;">
+                <span class="bg-[#00DC42]/10 border border-[#00DC42]/50 font-mono font-semibold group-hover:bg-[#00DC42]/15 group-hover:border-[#00DC42] inline-block leading-none px-2.5 py-1.5 rounded text-[#00DC82] text-[16px]">TTDF</span>
+                <span class="bg-[#00DC42]/10 border border-[#00DC42]/50 font-mono font-semibold group-hover:bg-[#00DC42]/15 group-hover:border-[#00DC42] inline-block leading-none px-2.5 py-1.5 rounded text-[#00DC82] text-[16px]"><?php TTDF::Ver(true) ?></span>
             </div>
         </div>
-    </section>
+    </a>
+    <div class="ttdf-loader-bar"></div>
 </main>
