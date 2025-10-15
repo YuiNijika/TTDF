@@ -713,6 +713,7 @@ TTDF_Hook::add_action('load_foot', function () {
                 route: '<?php echo TTDF_ConfigManager::get('modules.restapi.route', 'ty-json') ?>',
             },
             version: {
+                theme: '<?php GetTheme::Ver(true) ?>',
                 typecho: '<?php TTDF::TypechoVer(true) ?>',
                 framework: '<?php TTDF::Ver(true) ?>',
             },

@@ -12,6 +12,7 @@ class TTDF_JSManager {
     constructor() {
         this.config = this.loadConfig();
         this.modules = [];
+        this.version = this.config.version?.theme || Date.now();
     }
 
     /**
@@ -22,13 +23,16 @@ class TTDF_JSManager {
         if (typeof window.frameWorkConfig !== 'undefined') {
             return window.frameWorkConfig;
         }
-        
+
         console.warn('TTDF configuration not found, using default settings');
         return {
             TyAjax: false,
             RESTAPI: {
                 enabled: false,
                 route: 'ty-json'
+            },
+            version: {
+                theme: '1.0.0'
             }
         };
     }
@@ -51,14 +55,14 @@ class TTDF_JSManager {
      */
     async loadModules() {
         const modulePromises = [];
-        
+
         // 根据配置加载相应模块
         if (this.config.TyAjax) {
             modulePromises.push(this.loadModule('./_ttdf/ajax.js'));
             modulePromises.push(this.loadModule('./_ttdf/motyf.js'));
             this.loadCSS('./_ttdf/motyf.css');
         }
-        
+
         // 加载自定义模块
         for (const customModule of CUSTOM_JS_MODULES) {
             try {
@@ -74,7 +78,7 @@ class TTDF_JSManager {
                 console.error(`Failed to process custom module: ${customModule.path}`, error);
             }
         }
-        
+
         if (modulePromises.length > 0) {
             this.modules = await Promise.all(modulePromises);
         }
@@ -87,7 +91,9 @@ class TTDF_JSManager {
      */
     async loadModule(modulePath) {
         try {
-            const module = await import(modulePath);
+            // 为模块路径添加版本号参数
+            const versionedPath = this.addVersionToPath(modulePath);
+            const module = await import(versionedPath);
             console.log(`Module loaded: ${modulePath}`);
             return module;
         } catch (error) {
@@ -101,8 +107,13 @@ class TTDF_JSManager {
      * @param {string} cssPath CSS文件路径
      */
     loadCSS(cssPath) {
+        // 为CSS路径添加版本号参数
+        const versionedPath = this.addVersionToPath(cssPath);
+
         // 检查是否已经加载过该CSS文件
-        const existingLink = document.querySelector(`link[href="${cssPath}"]`);
+        const existingLink = document.querySelector(`link[href="${cssPath}"]`) ||
+            document.querySelector(`link[href="${versionedPath}"]`);
+
         if (existingLink) {
             console.log(`CSS already loaded: ${cssPath}`);
             return;
@@ -112,19 +123,30 @@ class TTDF_JSManager {
             const link = document.createElement('link');
             link.rel = 'stylesheet';
             link.type = 'text/css';
-            link.href = cssPath;
+            link.href = versionedPath;
             link.onload = () => {
                 console.log(`CSS loaded successfully: ${cssPath}`);
             };
             link.onerror = (error) => {
                 console.error(`Failed to load CSS: ${cssPath}`, error);
             };
-            
+
             document.head.appendChild(link);
             console.log(`Loading CSS: ${cssPath}`);
         } catch (error) {
             console.error(`Failed to create CSS link: ${cssPath}`, error);
         }
+    }
+
+    /**
+     * 为路径添加版本号参数
+     * @param {string} path 原始路径
+     * @returns {string} 添加版本号后的路径
+     */
+    addVersionToPath(path) {
+        // 检查路径是否已经有查询参数
+        const separator = path.includes('?') ? '&' : '?';
+        return `${path}${separator}v=${this.version}`;
     }
 
     /**
