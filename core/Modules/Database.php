@@ -175,6 +175,65 @@ class DB
     }
     
     /**
+     * 获取数据库类型
+     * @param Typecho_Db $db 数据库实例
+     * @return string 数据库类型 (mysql, sqlite, pgsql)
+     */
+    private static function getDatabaseType($db): string
+    {
+        $adapter = $db->getAdapter();
+        $adapterName = get_class($adapter);
+        
+        if (strpos($adapterName, 'Mysql') !== false || strpos($adapterName, 'MySQL') !== false) {
+            return 'mysql';
+        } elseif (strpos($adapterName, 'SQLite') !== false || strpos($adapterName, 'Sqlite') !== false) {
+            return 'sqlite';
+        } elseif (strpos($adapterName, 'Pgsql') !== false || strpos($adapterName, 'PostgreSQL') !== false) {
+            return 'pgsql';
+        }
+        
+        // 默认返回mysql以保持向后兼容性
+        return 'mysql';
+    }
+    
+    /**
+     * 根据数据库类型生成CREATE TABLE语句
+     * @param string $dbType 数据库类型
+     * @param string $prefix 表前缀
+     * @return string SQL语句
+     */
+    private static function generateCreateTableSql(string $dbType, string $prefix): string
+    {
+        $tableName = $prefix . 'ttdf';
+        
+        switch ($dbType) {
+            case 'sqlite':
+                return "CREATE TABLE `{$tableName}` (
+                    `tid` INTEGER PRIMARY KEY AUTOINCREMENT,
+                    `name` VARCHAR(200) NOT NULL UNIQUE,
+                    `value` TEXT
+                )";
+                
+            case 'pgsql':
+                return "CREATE TABLE \"{$tableName}\" (
+                    \"tid\" SERIAL PRIMARY KEY,
+                    \"name\" VARCHAR(200) NOT NULL UNIQUE,
+                    \"value\" TEXT
+                )";
+                
+            case 'mysql':
+            default:
+                return "CREATE TABLE `{$tableName}` (
+                    `tid` int(10) unsigned NOT NULL AUTO_INCREMENT,
+                    `name` varchar(200) NOT NULL,
+                    `value` text,
+                    PRIMARY KEY (`tid`),
+                    UNIQUE KEY `name` (`name`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
+        }
+    }
+    
+    /**
      * 确保ttdf表存在，如果不存在则创建
      */
     private static function ensureTableExists($db, $prefix)
@@ -185,13 +244,11 @@ class DB
         } catch (Exception $e) {
             // 表不存在，创建表
             try {
-                $sql = "CREATE TABLE `{$prefix}ttdf` (
-                `tid` int(10) unsigned NOT NULL AUTO_INCREMENT,
-                `name` varchar(200) NOT NULL,
-                `value` text,
-                PRIMARY KEY (`tid`),
-                UNIQUE KEY `name` (`name`)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
+                // 检测数据库类型
+                $dbType = self::getDatabaseType($db);
+                
+                // 生成相应的CREATE TABLE语句
+                $sql = self::generateCreateTableSql($dbType, $prefix);
 
                 $db->query($sql);
 
@@ -202,11 +259,14 @@ class DB
                 )));
                 
                 if (self::$errorHandler) {
-                    self::$errorHandler->info('TTDF table created successfully');
+                    self::$errorHandler->info("TTDF table created successfully for database type: {$dbType}");
                 }
             } catch (Exception $createException) {
                 if (self::$errorHandler) {
-                    self::$errorHandler->error('Failed to create TTDF table', [], $createException);
+                    self::$errorHandler->error('Failed to create TTDF table', [
+                        'database_type' => self::getDatabaseType($db),
+                        'prefix' => $prefix
+                    ], $createException);
                 } else {
                     error_log('Failed to create TTDF table: ' . $createException->getMessage());
                 }
@@ -221,7 +281,10 @@ class DB
     private static function insertThemeDefaultSettings($db)
     {
         try {
-            $setupPath = __DIR__ . '/../../app/Setup.php';
+            $setupPath = __DIR__ . '/../../app/setup.php';
+            if (!file_exists($setupPath)) {
+                $setupPath = __DIR__ . '/../../app/Setup.php';
+            }
             if (!file_exists($setupPath)) {
                 return;
             }
