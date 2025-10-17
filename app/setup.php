@@ -1,6 +1,10 @@
 <?php
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
-// 定义所有设置项
+/**
+ * 主题设置
+ * Html可以使用element组件
+ * https://element-plus.org/zh-CN/component/overview
+ */
 return [
     '基础设置' => [
         'title' => '基础设置',
