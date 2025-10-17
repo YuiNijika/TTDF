@@ -24,7 +24,7 @@ if (!is_array($configData)) {
 TTDF_ConfigManager::init($configData);
 
 // 定义框架常量
-define('__FRAMEWORK_VER__', '4.1.1');
+define('__FRAMEWORK_VER__', '4.2.0');
 define('__TYPECHO_GRAVATAR_PREFIX__', TTDF_ConfigManager::get('modules.gravatar.prefix', 'https://cravatar.cn/avatar/'));
 define('__TTDF_RESTAPI__', TTDF_ConfigManager::get('modules.restapi.enabled', false));
 define('__TTDF_RESTAPI_ROUTE__', TTDF_ConfigManager::get('modules.restapi.route', 'ty-json'));
@@ -36,7 +36,7 @@ $TTDF_CONFIG_ARRAY = [
     'TYAJAX_ENABLED' => TTDF_ConfigManager::get('plugins.tyajax.enabled', false),
     'COMPRESS_HTML' => TTDF_ConfigManager::get('app.compress_html', false),
     'GRAVATAR_PREFIX' => TTDF_ConfigManager::get('modules.gravatar.prefix', 'https://cravatar.cn/avatar/'),
-    
+
     // REST_API 相关配置
     'REST_API' => [
         'ENABLED' => TTDF_ConfigManager::get('modules.restapi.enabled', false),
@@ -46,9 +46,6 @@ $TTDF_CONFIG_ARRAY = [
         'LIMIT' => TTDF_ConfigManager::get('modules.restapi.limit', []),
         'HEADERS' => TTDF_ConfigManager::get('modules.restapi.headers', []),
     ],
-    
-    // REST API 调试开关 - 控制是否对 REST API 模块全局启用调试（包含 Typecho 错误处理）
-    'REST_API_DEBUG' => false,
 ];
 
 // 定义 TTDF_CONFIG 常量
@@ -62,16 +59,16 @@ class TTDF_ConfigManager
 {
     /** @var array 配置数据 */
     private static $config = [];
-    
+
     /** @var array 配置键映射（小写 => 原始键） */
     private static $keyMap = [];
-    
+
     /** @var array 配置值缓存 */
     private static $cache = [];
-    
+
     /** @var bool 是否已初始化 */
     private static $initialized = false;
-    
+
     /** @var array 老配置键到新配置路径的映射 */
     private static $legacyKeyMap = [
         'DEBUG' => 'app.debug',
@@ -81,7 +78,7 @@ class TTDF_ConfigManager
         'GRAVATAR_PREFIX' => 'modules.gravatar.prefix',
         'REST_API' => 'modules.restapi',
     ];
-    
+
     /**
      * 初始化配置管理器
      * 
@@ -93,12 +90,12 @@ class TTDF_ConfigManager
         if (self::$initialized) {
             throw new RuntimeException('配置管理器已经初始化，不能重复初始化');
         }
-        
+
         self::$config = $config;
         self::buildKeyMap($config);
         self::$initialized = true;
     }
-    
+
     /**
      * 构建键映射
      * 
@@ -111,13 +108,13 @@ class TTDF_ConfigManager
             $fullKey = $prefix ? $prefix . '.' . $key : $key;
             $lowerKey = strtolower($fullKey);
             self::$keyMap[$lowerKey] = $fullKey;
-            
+
             if (is_array($value)) {
                 self::buildKeyMap($value, $fullKey);
             }
         }
     }
-    
+
     /**
      * 获取配置值
      * 
@@ -129,15 +126,15 @@ class TTDF_ConfigManager
     {
         // 生成缓存键
         $cacheKey = $key . '::' . serialize($default);
-        
+
         // 检查缓存
         if (isset(self::$cache[$cacheKey])) {
             return self::$cache[$cacheKey];
         }
-        
+
         $lowerKey = strtolower($key);
         $result = null;
-        
+
         // 检查是否有映射的键
         if (isset(self::$keyMap[$lowerKey])) {
             $actualKey = self::$keyMap[$lowerKey];
@@ -146,13 +143,13 @@ class TTDF_ConfigManager
             // 直接尝试获取（兼容原有方式）
             $result = self::getNestedValue(self::$config, $key, $default);
         }
-        
+
         // 缓存结果
         self::$cache[$cacheKey] = $result;
-        
+
         return $result;
     }
-    
+
     /**
      * 获取老配置键对应的值（向后兼容）
      * 
@@ -166,7 +163,7 @@ class TTDF_ConfigManager
             $newKey = self::$legacyKeyMap[$legacyKey];
             return self::get($newKey);
         }
-        
+
         // 特殊处理 REST_API 子键
         if (strpos($legacyKey, 'REST_API.') === 0) {
             $subKey = substr($legacyKey, 9); // 移除 'REST_API.' 前缀
@@ -178,15 +175,15 @@ class TTDF_ConfigManager
                 'LIMIT' => 'modules.restapi.limit',
                 'HEADERS' => 'modules.restapi.headers',
             ];
-            
+
             if (isset($keyMap[$subKey])) {
                 return self::get($keyMap[$subKey]);
             }
         }
-        
+
         return null;
     }
-    
+
     /**
      * 检查老配置键是否存在
      * 
@@ -197,7 +194,7 @@ class TTDF_ConfigManager
     {
         return self::getLegacyKey($legacyKey) !== null;
     }
-    
+
     /**
      * 获取嵌套配置值
      * 
@@ -210,17 +207,17 @@ class TTDF_ConfigManager
     {
         $keys = explode('.', $key);
         $value = $config;
-        
+
         foreach ($keys as $k) {
             if (!is_array($value) || !isset($value[$k])) {
                 return $default;
             }
             $value = $value[$k];
         }
-        
+
         return $value;
     }
-    
+
     /**
      * 检查配置是否存在
      * 
@@ -232,7 +229,7 @@ class TTDF_ConfigManager
         $lowerKey = strtolower($key);
         return isset(self::$keyMap[$lowerKey]) || self::getNestedValue(self::$config, $key) !== null;
     }
-    
+
     /**
      * 获取所有配置
      * 
@@ -242,7 +239,7 @@ class TTDF_ConfigManager
     {
         return self::$config;
     }
-    
+
     /**
      * 清除配置缓存
      * 
@@ -252,7 +249,7 @@ class TTDF_ConfigManager
     {
         self::$cache = [];
     }
-    
+
     /**
      * 获取缓存统计信息
      * 
@@ -328,7 +325,7 @@ class TTDF_Main
         }
 
         // 初始化数据库
-        DB::init();
+        TTDF_Db::init();
     }
 
     /**
@@ -410,7 +407,7 @@ if (defined('__TYPECHO_ROOT_DIR__') && !defined('TTDF_TEST_MODE')) {
     // 初始化框架
     try {
         TTDF_Main::init();
-        
+
         // 初始化错误处理系统
         $errorHandler = TTDF_ErrorHandler::getInstance();
         $errorHandler->init([
@@ -421,7 +418,7 @@ if (defined('__TYPECHO_ROOT_DIR__') && !defined('TTDF_TEST_MODE')) {
         // 框架初始化失败
         $errorHandler = TTDF_ErrorHandler::getInstance();
         $errorHandler->fatal('Framework initialization failed', [], $e);
-        
+
         if (config('app.debug', false)) {
             throw $e;
         }

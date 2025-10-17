@@ -623,13 +623,6 @@
     border-bottom-color: #4f46e5;
   }
 
-  .TTDF-header {
-    padding: 16px;
-    flex-direction: column;
-    gap: 12px;
-    text-align: center;
-  }
-
   .TTDF-title {
     font-size: 20px;
   }

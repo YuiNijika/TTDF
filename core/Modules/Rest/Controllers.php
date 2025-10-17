@@ -12,13 +12,13 @@ abstract class BaseController
 {
     protected ApiRequest $request;
     protected ApiResponse $response;
-    protected DB_API $db;
+    protected TTDF_Db_API $db;
     protected ApiFormatter $formatter;
 
     public function __construct(
         ApiRequest $request,
         ApiResponse $response,
-        DB_API $db,
+        TTDF_Db_API $db,
         ApiFormatter $formatter
     ) {
         $this->request = $request;
@@ -516,6 +516,10 @@ class TTDFController extends BaseController
         switch ($subPath) {
             case 'options':
                 return $this->handleOptions();
+            case 'export':
+                return $this->handleExport();
+            case 'import':
+                return $this->handleImport();
             default:
                 $this->response->error('Endpoint not found', HttpCode::NOT_FOUND);
         }
@@ -609,7 +613,7 @@ class TTDFController extends BaseController
         }
 
         // 获取所有 ttdf 选项
-        $options = DB::getAllTtdf();
+        $options = TTDF_Db::getAllTtdf();
 
         if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
             TTDF_Debug::logApiProcess('get_options', [
@@ -693,7 +697,7 @@ class TTDFController extends BaseController
                 }
 
                 // 保存到数据库
-                DB::setTtdf($name, $value);
+                TTDF_Db::setTtdf($name, $value);
                 $savedCount++;
             }
 
@@ -719,6 +723,147 @@ class TTDFController extends BaseController
                 ]);
             }
             $this->response->error('Failed to save options: ' . $e->getMessage(), HttpCode::INTERNAL_ERROR);
+        }
+    }
+
+    private function handleExport(): array
+    {
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+            TTDF_Debug::logApiProcess('handle_export', ['stage' => 'start']);
+        }
+
+        if (!$this->checkAdminPermission()) {
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+                TTDF_Debug::logApiProcess('handle_export', [
+                    'stage' => 'error',
+                    'reason' => 'unauthorized'
+                ]);
+            }
+            $this->response->error('Unauthorized', HttpCode::UNAUTHORIZED);
+        }
+
+        try {
+            // 获取当前主题的所有设置
+            $settings = TTDF_Db::getAllTtdf(true); // true表示只获取当前主题的设置
+
+            // 获取主题信息
+            $themeName = Helper::options()->theme ?? 'TTDF';
+            $themeVersion = GetTheme::Ver(false) ?? '1.0.0';
+
+            // 构建导出数据
+            $exportData = [
+                'version' => $themeVersion,
+                'theme' => $themeName,
+                'exportTime' => date('c'), // ISO 8601格式
+                'settings' => $settings
+            ];
+
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+                TTDF_Debug::logApiProcess('handle_export', [
+                    'stage' => 'completed',
+                    'settings_count' => count($settings)
+                ]);
+            }
+
+            return [
+                'data' => $exportData,
+                'meta' => ['timestamp' => time()]
+            ];
+        } catch (Exception $e) {
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+                TTDF_Debug::logApiProcess('handle_export', [
+                    'stage' => 'error',
+                    'reason' => 'exception',
+                    'message' => $e->getMessage()
+                ]);
+            }
+            $this->response->error('Failed to export settings: ' . $e->getMessage(), HttpCode::INTERNAL_ERROR);
+        }
+    }
+
+    private function handleImport(): array
+    {
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+            TTDF_Debug::logApiProcess('handle_import', ['stage' => 'start']);
+        }
+
+        if (!$this->checkAdminPermission()) {
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+                TTDF_Debug::logApiProcess('handle_import', [
+                    'stage' => 'error',
+                    'reason' => 'unauthorized'
+                ]);
+            }
+            $this->response->error('Unauthorized', HttpCode::UNAUTHORIZED);
+        }
+
+        // 获取POST数据
+        $input = file_get_contents('php://input');
+        $postData = json_decode($input, true);
+
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+            TTDF_Debug::logApiProcess('handle_import', [
+                'stage' => 'data_received',
+                'data_type' => gettype($postData),
+                'raw_input_length' => strlen($input)
+            ]);
+        }
+
+        // 如果JSON解析失败，尝试使用表单数据
+        if (!is_array($postData) && !empty($_POST)) {
+            $postData = $_POST;
+        }
+
+        if (!is_array($postData)) {
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+                TTDF_Debug::logApiProcess('handle_import', [
+                    'stage' => 'error',
+                    'reason' => 'invalid_data'
+                ]);
+            }
+            $this->response->error('Invalid import data', HttpCode::BAD_REQUEST);
+        }
+
+        try {
+            // 验证导入数据格式
+            if (!isset($postData['settings']) || !is_array($postData['settings'])) {
+                throw new Exception('Invalid import data format: missing settings');
+            }
+
+            $settings = $postData['settings'];
+            $importedCount = 0;
+
+            // 批量导入设置
+            foreach ($settings as $key => $value) {
+                if (is_string($key) && !empty($key)) {
+                    TTDF_Db::setTtdf($key, $value);
+                    $importedCount++;
+                }
+            }
+
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+                TTDF_Debug::logApiProcess('handle_import', [
+                    'stage' => 'completed',
+                    'imported_count' => $importedCount
+                ]);
+            }
+
+            return [
+                'data' => ['message' => '导入成功'],
+                'meta' => [
+                    'timestamp' => time(),
+                    'imported_count' => $importedCount
+                ]
+            ];
+        } catch (Exception $e) {
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+                TTDF_Debug::logApiProcess('handle_import', [
+                    'stage' => 'error',
+                    'reason' => 'exception',
+                    'message' => $e->getMessage()
+                ]);
+            }
+            $this->response->error('Failed to import settings: ' . $e->getMessage(), HttpCode::INTERNAL_ERROR);
         }
     }
 }

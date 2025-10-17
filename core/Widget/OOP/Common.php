@@ -361,21 +361,21 @@ class Get
                 if (strpos($name, $themePrefix) === 0) {
                     // 移除当前主题名前缀
                     $nameWithoutPrefix = substr($name, strlen($themePrefix));
-                    return DB::getTtdf($nameWithoutPrefix, $default);
+                    return TTDF_Db::getTtdf($nameWithoutPrefix, $default);
                 } else {
                     // 直接使用原字段名查询
-                    return DB::getTtdf($name, $default);
+                    return TTDF_Db::getTtdf($name, $default);
                 }
             }
 
             $fullName = $themeName . '_' . $name;
 
             // 首先尝试获取带主题名前缀的配置项
-            $value = DB::getTtdf($fullName, null);
+            $value = TTDF_Db::getTtdf($fullName, null);
 
             // 如果没有找到，则回退到原来的名称
             if ($value === null) {
-                $value = DB::getTtdf($name, $default);
+                $value = TTDF_Db::getTtdf($name, $default);
             }
 
             return $value;

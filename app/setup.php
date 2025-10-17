@@ -6,8 +6,41 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  * https://element-plus.org/zh-CN/component/overview
  */
 return [
-    '基础设置' => [
-        'title' => '基础设置',
+    'WelCome' => [
+        'title' => '欢迎使用',
+        'html' => [
+            [
+                // 'Content' => '自定义输出HTML内容',
+                'content' => '
+                    <el-result
+                        icon="success"
+                        title="最直观 的 Typecho 主题模板开发框架"
+                        sub-title="The Intuitive Typecho Theme Develop Framework."
+                    >
+                        <template #extra>
+                        <el-button type="primary" :icon="Check">确认</el-button>
+                            <el-button :icon="Close">取消</el-button>
+                        </template>
+                    </el-result>
+                    <el-row justify="center">
+                        <el-space wrap justify="center">
+                            <a href="https://github.com/YuiNijika/TTDF" target="_blank">
+                                <el-button :icon="Link" type="primary">GitHub</el-button>
+                            </a>
+                            <a href="https://space.bilibili.com/435502585" target="_blank">
+                                <el-button :icon="Link" type="danger">BiliBili</el-button>
+                            </a>
+                            <a href="https://github.com/YuiNijika/TTDF/releases" target="_blank">
+                                <el-button :icon="Download" type="warning">Releases</el-button>
+                            </a>
+                        </el-space>
+                    </el-row>
+                '
+            ],
+        ]
+    ],
+    'Demo' => [
+        'title' => '组件演示',
         'fields' => [
             [
                 // 'Html' => '自定义HTML标签',
@@ -37,12 +70,7 @@ return [
                 'value' => '项目1,项目2,项目3',
                 'label' => '动态列表测试',
                 'description' => '这是一个AddList组件，点击+1按钮可以添加新的输入框，数据以逗号分隔存储。'
-            ]
-        ]
-    ],
-    'select-elements' => [
-        'title' => '选择设置',
-        'fields' => [
+            ],
             [
                 // 'Switch' => '开关切换',
                 'type' => 'Switch',
@@ -119,15 +147,6 @@ return [
                 'description' => '选择一个时间，格式为 HH:mm:ss',
                 'format' => 'HH:mm:ss',
                 'placeholder' => '请选择时间'
-            ]
-        ]
-    ],
-    'advanced-components' => [
-        'title' => '高级组件',
-        'fields' => [
-            [
-                'type' => 'Html',
-                'content' => '<div class="alert info">高级组件演示，展示更多实用的字段类型</div>'
             ],
             [
                 // 'Number' => '数字输入框',
@@ -265,21 +284,6 @@ return [
                     'true' => '开启',
                     'false' => '关闭'
                 ]
-            ],
-        ]
-    ],
-    'HTML-Demo' => [
-        'title' => 'HTML示例',
-        // 定义HTML TAB栏
-        'html' => [
-            [
-                // 'Content' => '自定义输出HTML内容',
-                'content' => '
-                    <div class="alert info">信息提示</div>
-                    <div class="alert success">成功提示</div>
-                    <div class="alert warning">警告提示</div>
-                    <div class="alert error">错误提示</div>
-                '
             ],
         ]
     ],

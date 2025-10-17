@@ -4,10 +4,165 @@
  */
 
 const { createApp, ref, reactive, computed, onMounted } = Vue;
-const { ElMessage } = ElementPlus;
+const { ElMessage, ElMessageBox } = ElementPlus;
+const IconLibrary = window.ElementPlusIcons || window.ElementPlusIconsVue || {};
+
+// 处理HTML内容中的Element组件
+const DynamicHtmlRenderer = {
+    props: {
+        htmlContent: {
+            type: String,
+            required: true
+        }
+    },
+    setup(props) {
+        const { h, resolveComponent } = Vue;
+        
+        // 解析HTML字符串并转换为Vue组件
+        const parseHtmlToVNode = (htmlString) => {
+            // 创建一个临时DOM元素来解析HTML
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = htmlString.trim();
+            
+            // 递归转换DOM节点为VNode
+            const convertNodeToVNode = (node) => {
+                if (node.nodeType === Node.TEXT_NODE) {
+                    return node.textContent;
+                }
+                
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    const tagName = node.tagName.toLowerCase();
+                    
+                    // 处理Element Plus组件
+                    if (tagName.startsWith('el-')) {
+                        try {
+                            const componentName = tagName.split('-').map((part, index) => 
+                                index === 0 ? part : part.charAt(0).toUpperCase() + part.slice(1)
+                            ).join('');
+                            
+                            const component = resolveComponent(componentName);
+                            
+                            // 获取属性
+                            const props = {};
+                            
+                            // 将 kebab-case 转换为 camelCase
+                            const kebabToCamel = (str) => {
+                                return str.replace(/-([a-z])/g, (match, letter) => letter.toUpperCase());
+                            };
+                            
+                            for (let attr of node.attributes) {
+                                let attrName = attr.name;
+                                let attrValue = attr.value;
+                                
+                                // 处理Vue指令和属性
+                                if (attrName.startsWith(':')) {
+                                    // 动态属性
+                                    attrName = attrName.slice(1);
+                                    // 转换为 camelCase
+                                    attrName = kebabToCamel(attrName);
+                                    
+                                    // 处理图标引用
+                                    if (attrName === 'icon') {
+                                        if (IconLibrary && IconLibrary[attrValue]) {
+                                            props[attrName] = IconLibrary[attrValue];
+                                        } else {
+                                            console.warn('未找到图标:', attrValue, '可用图标:', IconLibrary ? Object.keys(IconLibrary) : 'IconLibrary未定义');
+                                            props[attrName] = attrValue; // 回退到字符串值
+                                        }
+                                    } else if (attrValue === 'true') {
+                                        props[attrName] = true;
+                                    } else if (attrValue === 'false') {
+                                        props[attrName] = false;
+                                    } else if (!isNaN(attrValue)) {
+                                        props[attrName] = Number(attrValue);
+                                    } else {
+                                        props[attrName] = attrValue;
+                                    }
+                                } else {
+                                    // 静态属性
+                                    // 转换为 camelCase
+                                    const camelAttrName = kebabToCamel(attrName);
+                                    
+                                    // 处理布尔属性（没有值或值为空字符串的属性）
+                                    if (attrValue === '' || attrValue === null || attrValue === undefined) {
+                                        props[camelAttrName] = true;
+                                    } else if (attrValue === 'true') {
+                                        props[camelAttrName] = true;
+                                    } else if (attrValue === 'false') {
+                                        props[camelAttrName] = false;
+                                    } else if (!isNaN(attrValue) && attrValue !== '') {
+                                        props[camelAttrName] = Number(attrValue);
+                                    } else {
+                                        props[camelAttrName] = attrValue;
+                                    }
+                                }
+                            }
+                            
+                            // 处理子节点
+                            const children = [];
+                            for (let child of node.childNodes) {
+                                const childVNode = convertNodeToVNode(child);
+                                if (childVNode) {
+                                    children.push(childVNode);
+                                }
+                            }
+                            
+                            return h(component, props, children.length > 0 ? children : undefined);
+                        } catch (error) {
+                            console.warn(`无法解析Element Plus组件: ${tagName}`, error);
+                            // 如果组件解析失败，回退到普通HTML元素
+                        }
+                    }
+                    
+                    // 处理普通HTML元素
+                    const props = {};
+                    for (let attr of node.attributes) {
+                        props[attr.name] = attr.value;
+                    }
+                    
+                    const children = [];
+                    for (let child of node.childNodes) {
+                        const childVNode = convertNodeToVNode(child);
+                        if (childVNode) {
+                            children.push(childVNode);
+                        }
+                    }
+                    
+                    return h(tagName, props, children.length > 0 ? children : undefined);
+                }
+                
+                return null;
+            };
+            
+            // 转换所有子节点
+            const vnodes = [];
+            for (let child of tempDiv.childNodes) {
+                const vnode = convertNodeToVNode(child);
+                if (vnode) {
+                    vnodes.push(vnode);
+                }
+            }
+            
+            return vnodes;
+        };
+        
+        return () => {
+            try {
+                const vnodes = parseHtmlToVNode(props.htmlContent);
+                return vnodes.length === 1 ? vnodes[0] : h('div', {}, vnodes);
+            } catch (error) {
+                console.error('解析HTML内容时出错:', error);
+                return h('div', { innerHTML: props.htmlContent });
+            }
+        };
+    }
+};
 
 // 创建FormField组件
 const FormField = {
+    components: {
+        DynamicHtmlRenderer
+    },
     props: {
         field: {
             type: Object,
@@ -133,7 +288,7 @@ const FormField = {
     template: `
         <template v-if="field.type === 'Html'">
             <el-col :span="24">
-                <div v-html="field.content"></div>
+                <DynamicHtmlRenderer :html-content="field.content" />
             </el-col>
         </template>
         
@@ -425,7 +580,8 @@ const FormField = {
 // 创建Vue应用
 const OptionsApp = {
     components: {
-        FormField
+        FormField,
+        DynamicHtmlRenderer
     },
     setup() {
         // 响应式数据
@@ -505,10 +661,14 @@ const OptionsApp = {
         // Tab切换
         const switchTab = (tabId) => {
             activeTab.value = tabId;
+            // 更新URL参数
+            updateUrlParameter('tab', tabId);
         };
 
         // 保存设置
         const saveSettings = async () => {
+            if (isLoading.value) return;
+            
             isLoading.value = true;
 
             try {
@@ -541,7 +701,7 @@ const OptionsApp = {
                     }
                 });
 
-                const apiUrl = config.apiUrl;
+                const apiUrl = `${config.apiUrl}/options`;
 
                 const response = await fetch(apiUrl, {
                     method: 'POST',
@@ -565,6 +725,149 @@ const OptionsApp = {
             } finally {
                 isLoading.value = false;
             }
+        };
+
+        // 导出设置
+        const exportSettings = async () => {
+            try {
+                // 调用后端导出API
+                const response = await fetch(`${config.apiUrl}/export`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.data) {
+                    // 创建下载链接
+                    const dataStr = JSON.stringify(result.data, null, 2);
+                    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                    const url = URL.createObjectURL(dataBlob);
+                    
+                    // 创建下载链接并触发下载
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `TTDF(${config.themeName || 'Unknown'})_${new Date().toISOString().replace(/[-:]/g, '').replace('T', '').split('.')[0]}.json`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    // 清理URL对象
+                    URL.revokeObjectURL(url);
+                    
+                    ElMessage.success('设置导出成功！');
+                } else {
+                    throw new Error('导出数据格式错误');
+                }
+            } catch (error) {
+                console.error('导出设置时出错:', error);
+                ElMessage.error('导出失败：' + error.message);
+            }
+        };
+
+        // 导入设置
+        const importSettings = () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = async (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                try {
+                    const text = await file.text();
+                    const importData = JSON.parse(text);
+
+                    // 验证导入数据格式
+                    if (!importData.settings || typeof importData.settings !== 'object') {
+                        throw new Error('无效的设置文件格式');
+                    }
+
+                    // 确认导入
+                    try {
+                        await ElMessageBox.confirm(
+                            '导入设置将覆盖当前所有设置，是否继续？',
+                            '确认导入',
+                            {
+                                confirmButtonText: '确定',
+                                cancelButtonText: '取消',
+                                type: 'warning'
+                            }
+                        );
+
+                        // 用户确认后，调用后端导入API
+                        const response = await fetch(`${config.apiUrl}/import`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(importData)
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        
+                        const result = await response.json();
+                        
+                        if (result.data && result.data.message) {
+                            // 更新前端表单数据
+                            Object.keys(importData.settings).forEach(key => {
+                                if (formData.hasOwnProperty(key)) {
+                                    formData[key] = importData.settings[key];
+                                }
+                            });
+                            ElMessage.success(result.data.message);
+                        } else {
+                            throw new Error('导入响应格式错误');
+                        }
+                    } catch (confirmError) {
+                        // 用户取消导入，不显示错误信息
+                        if (confirmError === 'cancel' || confirmError.message === 'cancel') {
+                            return;
+                        }
+                        // 其他错误继续抛出
+                        throw confirmError;
+                    }
+                } catch (error) {
+                    console.error('导入设置时出错:', error);
+                    ElMessage.error('导入失败：' + error.message);
+                }
+            };
+            input.click();
+        };
+
+        // 处理下拉菜单命令
+        const handleCommand = (command) => {
+            switch (command) {
+                case 'export':
+                    exportSettings();
+                    break;
+                case 'import':
+                    importSettings();
+                    break;
+                default:
+                    break;
+            }
+        };
+
+        // 处理HTML内容中的图标引用
+        const processHtmlContent = (content) => {
+            // 将图标名称转换为实际的图标组件引用
+            return content
+                .replace(/:icon="(\w+)"/g, (match, iconName) => {
+                    // 检查图标是否存在
+                    if (ElementPlusIconsVue && ElementPlusIconsVue[iconName]) {
+                        return `:icon="${iconName}"`;
+                    }
+                    return match;
+                });
         };
 
         // AddList功能 - 简化版本
@@ -593,6 +896,23 @@ const OptionsApp = {
             return null;
         };
 
+        // 获取URL参数
+        const getUrlParameter = (name) => {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        };
+
+        // 更新URL参数
+        const updateUrlParameter = (name, value) => {
+            const url = new URL(window.location);
+            if (value) {
+                url.searchParams.set(name, value);
+            } else {
+                url.searchParams.delete(name);
+            }
+            window.history.replaceState({}, '', url);
+        };
+
         // 初始化配置数据
         const initConfig = () => {
             // 从全局变量中获取标签页配置
@@ -613,10 +933,19 @@ const OptionsApp = {
                 Object.assign(formData, window.ttdfFormData);
             }
 
-            // 设置默认激活的Tab
+            // 设置默认激活的Tab，优先从URL参数读取
             const tabKeys = Object.keys(config.tabs || {});
-            if (tabKeys.length > 0 && !activeTab.value) {
-                activeTab.value = tabKeys[0];
+            if (tabKeys.length > 0) {
+                const urlTab = getUrlParameter('tab');
+                // 如果URL中有tab参数且该tab存在，则使用URL中的tab
+                if (urlTab && tabKeys.includes(urlTab)) {
+                    activeTab.value = urlTab;
+                } else if (!activeTab.value) {
+                    // 否则使用第一个tab作为默认值
+                    activeTab.value = tabKeys[0];
+                    // 更新URL参数为默认tab
+                    updateUrlParameter('tab', tabKeys[0]);
+                }
             }
         };
 
@@ -647,8 +976,22 @@ const OptionsApp = {
             currentTab,
             switchTab,
             saveSettings,
+            exportSettings,
+            importSettings,
+            handleCommand,
+            processHtmlContent,
             addListItem,
-            removeListItem
+            removeListItem,
+            // 导出图标组件供模板使用
+            Check: IconLibrary?.Check,
+            Close: IconLibrary?.Close,
+            Edit: IconLibrary?.Edit,
+            Delete: IconLibrary?.Delete,
+            Search: IconLibrary?.Search,
+            Plus: IconLibrary?.Plus,
+            Download: IconLibrary?.Download,
+            Upload: IconLibrary?.Upload,
+            ArrowDown: IconLibrary?.ArrowDown
         };
     },
 
@@ -661,14 +1004,21 @@ const OptionsApp = {
                     <small v-if="config.themeVersion"> · {{ config.themeVersion }}</small>
                 </h1>
                 <div class="TTDF-actions">
-                    <el-button 
-                        type="primary" 
-                        @click="saveSettings" 
-                        :loading="isLoading"
-                        class="TTDF-save"
-                    >
+                    <el-dropdown split-button type="primary" @click="saveSettings" :loading="isLoading">
                         {{ isLoading ? '保存中...' : '保存设置' }}
-                    </el-button>
+                        <template #dropdown>
+                            <el-dropdown-menu>
+                                <el-dropdown-item @click="exportSettings">
+                                    <el-icon><Download /></el-icon>
+                                    导出设置
+                                </el-dropdown-item>
+                                <el-dropdown-item @click="importSettings">
+                                    <el-icon><Upload /></el-icon>
+                                    导入设置
+                                </el-dropdown-item>
+                            </el-dropdown-menu>
+                        </template>
+                    </el-dropdown>
                 </div>
             </div>
 
@@ -692,7 +1042,9 @@ const OptionsApp = {
                     <div class="TTDF-content-card">
                         <div v-if="currentTab" class="TTDF-tab-panel active">
                             <!-- HTML内容 -->
-                            <div v-if="currentTab.html" v-for="html in currentTab.html" :key="html.content" v-html="html.content"></div>
+                            <div v-if="currentTab.html" v-for="html in currentTab.html" :key="html.content">
+                                <DynamicHtmlRenderer :html-content="html.content" />
+                            </div>
                             
                             <!-- 表单字段 -->
                             <div v-else-if="currentTab.fields">
@@ -714,4 +1066,16 @@ const OptionsApp = {
 };
 
 // 挂载应用
-createApp(OptionsApp).use(ElementPlus).mount('#options-app');
+const app = createApp(OptionsApp);
+app.use(ElementPlus);
+
+// 注册所有Element Plus图标
+if (IconLibrary && Object.keys(IconLibrary).length > 0) {
+    for (const [iconName, iconComponent] of Object.entries(IconLibrary)) {
+        app.component(iconName, iconComponent);
+    }
+} else {
+    console.warn('图标库未加载或为空，跳过图标注册');
+}
+
+app.mount('#options-app');

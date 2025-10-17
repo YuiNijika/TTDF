@@ -12,13 +12,13 @@ final class TTDF_API
 {
     private ApiRequest $request;
     private ApiResponse $response;
-    private DB_API $db;
+    private TTDF_Db_API $db;
     private ApiFormatter $formatter;
 
     public function __construct(
         ApiRequest $request,
         ApiResponse $response,
-        DB_API $db,
+        TTDF_Db_API $db,
         ApiFormatter $formatter
     ) {
         $this->request = $request;

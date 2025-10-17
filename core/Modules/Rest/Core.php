@@ -26,11 +26,11 @@ class ApiRequest
             TTDF_DebugLogger::init();
             TTDF_DebugLogger::logApiProcess('APIREQUEST_CONSTRUCT_START');
         }
-        
+
         $requestUri = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '';
-        
+
         $basePath = '/' . ltrim(__TTDF_RESTAPI_ROUTE__ ?? '', '/');
-        
+
         $this->path = str_starts_with($requestUri, $basePath)
             ? (substr($requestUri, strlen($basePath)) ?: '/')
             : '/';
@@ -42,7 +42,7 @@ class ApiRequest
         $this->pageSize = max(1, min((int)$this->getQuery('pageSize', 10), 100));
         $this->currentPage = max(1, (int)$this->getQuery('page', 1));
         $this->excerptLength = max(0, (int)$this->getQuery('excerptLength', 200));
-        
+
         if (defined('__DEBUG__') && __DEBUG__) {
             TTDF_DebugLogger::logApiProcess('APIREQUEST_CONSTRUCT_END', [
                 'path' => $this->path,
@@ -64,7 +64,7 @@ class ApiRequest
  */
 final class ApiResponse
 {
-    public function __construct(private ContentFormat $contentFormat) 
+    public function __construct(private ContentFormat $contentFormat)
     {
         if (defined('__DEBUG__') && __DEBUG__) {
             TTDF_DebugLogger::logApiProcess('APIRESPONSE_CONSTRUCT', ['format' => $contentFormat->value]);
@@ -79,7 +79,7 @@ final class ApiResponse
                 'has_data' => !empty($data)
             ]);
         }
-        
+
         try {
             if (!headers_sent()) {
                 \Typecho\Response::getInstance()->setStatus($code->value);
@@ -108,9 +108,9 @@ final class ApiResponse
                     'response_size' => strlen(json_encode($response, $options))
                 ]);
             }
-            
+
             echo json_encode($response, $options);
-            
+
             if (defined('__DEBUG__') && __DEBUG__) {
                 TTDF_DebugLogger::logApiProcess('RESPONSE_SENT');
             }
@@ -132,7 +132,7 @@ final class ApiResponse
                 'has_exception' => $e !== null
             ]);
         }
-        
+
         $response = ['message' => $message];
         if ($e !== null && (defined('__DEBUG__') && __DEBUG__)) {
             $response['error_details'] = [
@@ -148,22 +148,22 @@ final class ApiResponse
         if (defined('__DEBUG__') && __DEBUG__) {
             TTDF_DebugLogger::logApiProcess('SETTING_SECURITY_HEADERS');
         }
-        
+
         try {
             $headers = $GLOBALS['TTDF_CONFIG']['REST_API']['HEADERS'] ?? [];
-            
+
             // 动态设置允许的来源
             $requestOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
             $allowedOrigins = [$requestOrigin, $_SERVER['HTTP_HOST'] ?? ''];
-            $headers['Access-Control-Allow-Origin'] = in_array($requestOrigin, $allowedOrigins, true) 
-                ? $requestOrigin 
+            $headers['Access-Control-Allow-Origin'] = in_array($requestOrigin, $allowedOrigins, true)
+                ? $requestOrigin
                 : ($allowedOrigins[1] ?? '*');
-                
+
             // 添加必要的CORS头
             $headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With';
             $headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS';
             $headers['Access-Control-Allow-Credentials'] = 'true';
-            
+
             // 防止缓存
             $headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
             $headers['Pragma'] = 'no-cache';
@@ -174,7 +174,7 @@ final class ApiResponse
                     header("$name: $value");
                 }
             }
-            
+
             if (defined('__DEBUG__') && __DEBUG__) {
                 TTDF_DebugLogger::logApiProcess('SECURITY_HEADERS_SET');
             }
@@ -192,7 +192,7 @@ final class ApiResponse
 final class ApiFormatter
 {
     public function __construct(
-        private readonly DB_API $dbApi,
+        private readonly TTDF_Db_API $dbApi,
         private readonly ContentFormat $contentFormat,
         private readonly int $excerptLength
     ) {}
@@ -290,14 +290,14 @@ final class ApiFormatter
         // 移除HTML和Markdown
         $text = strip_tags($content);
         $text = preg_replace([
-            '/```.*?```/s', 
-            '/~~~.*?~~~/s', 
+            '/```.*?```/s',
+            '/~~~.*?~~~/s',
             '/\[[^\]]*\]\([^\)]*\)/', // 修复链接正则表达式
             '/!\[[^\]]*\]\([^\)]*\)/', // 修复图片正则表达式
             '/\[([^\]]*)\]\([^\)]*\)/', // 修复链接文本正则表达式
-            '/^#{1,6}\s*/m', 
-            '/[\*\_]{1,3}/', 
-            '/^\s*>\s*/m', 
+            '/^#{1,6}\s*/m',
+            '/[\*\_]{1,3}/',
+            '/^\s*>\s*/m',
             '/\s+/'
         ], ' ', $text);
         $text = trim($text ?? ''); // 修复可能为null的问题

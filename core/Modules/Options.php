@@ -81,9 +81,9 @@ function TTDF_GetFieldValue($field)
     if (!isset($field['name']) || empty($field['name'])) {
         return $field['value'] ?? '';
     }
-    
-    $dbValue = DB::getTtdf($field['name']);
-    
+
+    $dbValue = TTDF_Db::getTtdf($field['name']);
+
     if ($dbValue !== null) {
         // 对于复选框、Tags、AddList和DialogSelect，需要特殊处理比较
         if (in_array($field['type'], ['Checkbox', 'Tags', 'AddList', 'DialogSelect'])) {
@@ -111,14 +111,14 @@ function TTDF_GetFieldValue($field)
             if ($dbNormalized !== $setupNormalized) {
                 return $dbValue;
             }
-        } 
+        }
         // 对于Switch类型，需要特殊处理布尔值比较
         else if ($field['type'] === 'Switch') {
             $setupDefault = $field['value'] ?? false;
             // 将数据库中的字符串值转换为布尔值进行比较
             $dbBoolValue = ($dbValue === 'true' || $dbValue === '1' || $dbValue === true);
             $setupBoolValue = ($setupDefault === true || $setupDefault === 'true' || $setupDefault === '1');
-            
+
             if ($dbBoolValue !== $setupBoolValue) {
                 return $dbValue;
             }
@@ -129,18 +129,17 @@ function TTDF_GetFieldValue($field)
             // 将数据库中的字符串值转换为数字进行比较
             $dbNumValue = is_numeric($dbValue) ? (float)$dbValue : 0;
             $setupNumValue = is_numeric($setupDefault) ? (float)$setupDefault : 0;
-            
+
             if ($dbNumValue !== $setupNumValue) {
                 return $dbValue;
             }
-        }
-        else {
+        } else {
             if ($dbValue !== $field['value']) {
                 return $dbValue;
             }
         }
     }
-    
+
     return $field['value'] ?? '';
 }
 
@@ -161,7 +160,7 @@ function themeConfig($form)
                     $value = implode(',', $value);
                 }
                 // 保存到数据库
-                DB::setTtdf($key, $value);
+                TTDF_Db::setTtdf($key, $value);
             }
 
             $response['success'] = true;
@@ -202,8 +201,8 @@ function themeConfig($form)
                                 $value = implode(',', $value);
                             }
 
-                            // 保存到数据库（DB::setTtdf内部会自动添加主题前缀）
-                            DB::setTtdf($field['name'], $value);
+                            // 保存到数据库（TTDF_Db::setTtdf内部会自动添加主题前缀）
+                            TTDF_Db::setTtdf($field['name'], $value);
                         }
                     }
                 }
@@ -233,7 +232,7 @@ function themeConfig($form)
             foreach ($tab['fields'] as $field) {
                 if (isset($field['name']) && $field['type'] !== 'Html') {
                     $value = TTDF_GetFieldValue($field);
-                    
+
                     // 处理特殊字段类型的值格式
                     if (in_array($field['type'], ['Checkbox', 'AddList', 'Tags'])) {
                         // 数组类型字段：Checkbox、AddList、Tags
@@ -266,36 +265,38 @@ function themeConfig($form)
     <script>
         // 初始化表单数据
         window.ttdfFormData = <?php echo json_encode($formData, JSON_UNESCAPED_UNICODE); ?>;
-        
+
         // 标签页配置数据
         window.ttdfTabsConfig = <?php echo json_encode($tabs, JSON_UNESCAPED_UNICODE); ?>;
-        
+
         // 字段配置数据
-        window.ttdfFieldsConfig = <?php 
-            $fieldsConfig = [];
-            foreach ($tabs as $tab) {
-                if (isset($tab['fields'])) {
-                    foreach ($tab['fields'] as $field) {
-                        if (isset($field['name'])) {
-                            $fieldsConfig[$field['name']] = $field;
+        window.ttdfFieldsConfig = 
+            <?php
+                $fieldsConfig = [];
+                    foreach ($tabs as $tab) {
+                        if (isset($tab['fields'])) {
+                            foreach ($tab['fields'] as $field) {
+                                if (isset($field['name'])) {
+                                    $fieldsConfig[$field['name']] = $field;
+                                }
+                            }
                         }
                     }
-                }
-            }
-            echo json_encode($fieldsConfig, JSON_UNESCAPED_UNICODE); 
-        ?>;
-        
+                echo json_encode($fieldsConfig, JSON_UNESCAPED_UNICODE);
+            ?>;
+
         // 主题信息配置
         window.ttdfThemeInfo = {
             themeName: '<?php get_theme_name(); ?>',
             themeVersion: '<?php get_theme_version(); ?>',
             ttdfVersion: '<?php get_framework_version(); ?>',
-            apiUrl: '<?php echo get_site_url(false) . __TTDF_RESTAPI_ROUTE__ . '/ttdf/options'; ?>',
+            apiUrl: '<?php echo get_site_url(false) . __TTDF_RESTAPI_ROUTE__ . '/ttdf'; ?>',
         };
     </script>
 
     <script src="<?php get_theme_file_url('core/Static/Vue.global.prod.js', true) ?>"></script>
     <script src="<?php get_theme_file_url('core/Static/Element.full.min.js', true) ?>"></script>
+    <script src="<?php get_theme_file_url('core/Static/Element.iife.min.js', true) ?>"></script>
     <script src="<?php get_theme_file_url('core/Static/Options.js', true) ?>"></script>
 <?php
 }

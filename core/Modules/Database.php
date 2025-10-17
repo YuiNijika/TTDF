@@ -10,20 +10,20 @@ if (!class_exists('TTDF_ErrorHandler')) {
  * 数据库操作类
  * 提供安全的数据库操作接口，包含输入验证、缓存机制和错误处理
  */
-class DB
+class TTDF_Db
 {
     private static ?self $instance = null;
     private Typecho_Db $db;
-    
+
     /** @var TTDF_ErrorHandler 错误处理器实例 */
     private static $errorHandler;
-    
+
     /** @var array 缓存数组 */
     private static array $cache = [];
-    
+
     /** @var int 缓存过期时间（秒） */
     private const CACHE_TTL = 300; // 5分钟
-    
+
     /** @var int 最大缓存条目数 */
     private const MAX_CACHE_SIZE = 100;
 
@@ -61,7 +61,7 @@ class DB
                     unset(self::$cache[$key]);
                 }
             }
-            
+
             // 如果还是太多，清理最老的一半
             if (count(self::$cache) > self::MAX_CACHE_SIZE) {
                 $keys = array_keys(self::$cache);
@@ -83,13 +83,13 @@ class DB
         if (!isset(self::$cache[$key])) {
             return null;
         }
-        
+
         $item = self::$cache[$key];
         if (time() - $item['timestamp'] > self::CACHE_TTL) {
             unset(self::$cache[$key]);
             return null;
         }
-        
+
         return $item['value'];
     }
 
@@ -127,16 +127,16 @@ class DB
         if (!self::validateFieldName($name)) {
             throw new InvalidArgumentException("Invalid field name: $name");
         }
-        
+
         try {
             // 获取主题名
             $themeName = Helper::options()->theme;
-            
+
             // 如果主题名存在且不为空，则拼接
             if (!empty($themeName) && self::validateFieldName($themeName)) {
                 return $themeName . '_' . $name;
             }
-            
+
             // 如果没有主题名，直接返回原字段名
             return $name;
         } catch (Exception $e) {
@@ -157,10 +157,10 @@ class DB
 
             // 确保表存在
             self::ensureTableExists($db, $prefix);
-            
+
             // 插入当前主题的默认设置项（每次都执行）
             self::insertThemeDefaultSettings($db);
-            
+
             if (self::$errorHandler) {
                 self::$errorHandler->info('Database initialization completed successfully');
             }
@@ -173,7 +173,7 @@ class DB
             throw $e;
         }
     }
-    
+
     /**
      * 获取数据库类型
      * @param Typecho_Db $db 数据库实例
@@ -183,7 +183,7 @@ class DB
     {
         $adapter = $db->getAdapter();
         $adapterName = get_class($adapter);
-        
+
         if (strpos($adapterName, 'Mysql') !== false || strpos($adapterName, 'MySQL') !== false) {
             return 'mysql';
         } elseif (strpos($adapterName, 'SQLite') !== false || strpos($adapterName, 'Sqlite') !== false) {
@@ -191,11 +191,11 @@ class DB
         } elseif (strpos($adapterName, 'Pgsql') !== false || strpos($adapterName, 'PostgreSQL') !== false) {
             return 'pgsql';
         }
-        
+
         // 默认返回mysql以保持向后兼容性
         return 'mysql';
     }
-    
+
     /**
      * 根据数据库类型生成CREATE TABLE语句
      * @param string $dbType 数据库类型
@@ -205,7 +205,7 @@ class DB
     private static function generateCreateTableSql(string $dbType, string $prefix): string
     {
         $tableName = $prefix . 'ttdf';
-        
+
         switch ($dbType) {
             case 'sqlite':
                 return "CREATE TABLE `{$tableName}` (
@@ -213,14 +213,14 @@ class DB
                     `name` VARCHAR(200) NOT NULL UNIQUE,
                     `value` TEXT
                 )";
-                
+
             case 'pgsql':
                 return "CREATE TABLE \"{$tableName}\" (
                     \"tid\" SERIAL PRIMARY KEY,
                     \"name\" VARCHAR(200) NOT NULL UNIQUE,
                     \"value\" TEXT
                 )";
-                
+
             case 'mysql':
             default:
                 return "CREATE TABLE `{$tableName}` (
@@ -232,7 +232,7 @@ class DB
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8";
         }
     }
-    
+
     /**
      * 确保ttdf表存在，如果不存在则创建
      */
@@ -246,7 +246,7 @@ class DB
             try {
                 // 检测数据库类型
                 $dbType = self::getDatabaseType($db);
-                
+
                 // 生成相应的CREATE TABLE语句
                 $sql = self::generateCreateTableSql($dbType, $prefix);
 
@@ -257,7 +257,7 @@ class DB
                     'name' => 'TTDF',
                     'value' => 'NB666'
                 )));
-                
+
                 if (self::$errorHandler) {
                     self::$errorHandler->info("TTDF table created successfully for database type: {$dbType}");
                 }
@@ -274,7 +274,7 @@ class DB
             }
         }
     }
-    
+
     /**
      * 插入当前主题的默认设置项
      */
@@ -288,7 +288,7 @@ class DB
             if (!file_exists($setupPath)) {
                 return;
             }
-            
+
             $tabs = require $setupPath;
             if (!is_array($tabs)) {
                 return;
@@ -300,7 +300,7 @@ class DB
                 if (!isset($tab['fields']) || !is_array($tab['fields'])) {
                     continue;
                 }
-                
+
                 foreach ($tab['fields'] as $field) {
                     // 跳过HTML类型的字段和没有name的字段
                     if (!isset($field['name']) || !isset($field['value']) || $field['type'] === 'Html') {
@@ -319,10 +319,10 @@ class DB
                     if ($value !== null) {
                         // 获取完整字段名（主题名_字段名）
                         $fullName = self::getFullFieldName($name);
-                        
+
                         // 检查是否已存在，如果不存在才插入
                         $exists = $db->fetchRow($db->select()->from('table.ttdf')->where('name = ?', $fullName));
-                        
+
                         if (!$exists) {
                             // 直接插入数据库，避免递归调用
                             $db->query($db->insert('table.ttdf')->rows(array(
@@ -354,13 +354,13 @@ class DB
         if (!self::validateFieldName($name)) {
             throw new InvalidArgumentException("Invalid field name: $name");
         }
-        
+
         try {
             $db = Typecho_Db::get();
-            
+
             // 获取主题名并拼接字段名
             $fullName = self::getFullFieldName($name);
-            
+
             // 清除相关缓存
             self::clearCache("ttdf_$fullName");
             self::clearCache("ttdf_$name");
@@ -380,7 +380,7 @@ class DB
                     'value' => (string)$value
                 ]));
             }
-            
+
             if (self::$errorHandler) {
                 self::$errorHandler->debug('TTDF data updated', ['name' => $fullName, 'value' => $value]);
             }
@@ -404,33 +404,33 @@ class DB
         if (!self::validateFieldName($name)) {
             throw new InvalidArgumentException("Invalid field name: $name");
         }
-        
+
         try {
             // 获取主题名并拼接字段名
             $fullName = self::getFullFieldName($name);
-            
+
             // 检查缓存
             $cacheKey = "ttdf_$fullName";
             $cached = self::getCache($cacheKey);
             if ($cached !== null) {
                 return $cached;
             }
-            
+
             $db = Typecho_Db::get();
-            
+
             // 首先尝试获取带主题名前缀的配置项
             $row = $db->fetchRow($db->select('value')->from('table.ttdf')->where('name = ?', $fullName));
-            
+
             // 如果没有找到，则回退到原来的名称（向后兼容）
             if (!$row) {
                 $row = $db->fetchRow($db->select('value')->from('table.ttdf')->where('name = ?', $name));
             }
-            
+
             $result = $row ? $row['value'] : $default;
-            
+
             // 缓存结果
             self::setCache($cacheKey, $result);
-            
+
             return $result;
         } catch (Exception $e) {
             if (self::$errorHandler) {
@@ -444,13 +444,13 @@ class DB
     public static function deleteTtdf($name)
     {
         $db = Typecho_Db::get();
-        
+
         // 获取主题名并拼接字段名
         $fullName = self::getFullFieldName($name);
-        
+
         // 删除带主题名前缀的配置项
         $db->query($db->delete('table.ttdf')->where('name = ?', $fullName));
-        
+
         // 同时删除原来的名称（向后兼容清理）
         $db->query($db->delete('table.ttdf')->where('name = ?', $name));
     }
@@ -461,13 +461,13 @@ class DB
         $db = Typecho_Db::get();
         $rows = $db->fetchAll($db->select()->from('table.ttdf'));
         $result = array();
-        
+
         if ($currentThemeOnly) {
             // 只获取当前主题的设置项
             try {
                 $themeName = Helper::options()->theme;
                 $prefix = $themeName . '_';
-                
+
                 foreach ($rows as $row) {
                     $name = $row['name'];
                     // 如果是当前主题的设置项，去掉前缀
@@ -488,7 +488,7 @@ class DB
                 $result[$row['name']] = $row['value'];
             }
         }
-        
+
         return $result;
     }
 
@@ -503,24 +503,24 @@ class DB
         if ($cid <= 0) {
             throw new InvalidArgumentException("Invalid article ID: $cid");
         }
-        
+
         try {
             $cacheKey = "article_content_$cid";
             $cached = self::getCache($cacheKey);
             if ($cached !== null) {
                 return $cached;
             }
-            
+
             $rs = $this->db->fetchRow($this->db->select('text')
                 ->from('table.contents')
                 ->where('cid = ?', $cid)
                 ->limit(1));
-            
+
             $result = $rs['text'] ?? '';
-            
+
             // 缓存结果
             self::setCache($cacheKey, $result);
-            
+
             return $result;
         } catch (Exception $e) {
             if (self::$errorHandler) {
@@ -541,24 +541,24 @@ class DB
         if ($cid <= 0) {
             throw new InvalidArgumentException("Invalid article ID: $cid");
         }
-        
+
         try {
             $cacheKey = "article_title_$cid";
             $cached = self::getCache($cacheKey);
             if ($cached !== null) {
                 return $cached;
             }
-            
+
             $rs = $this->db->fetchRow($this->db->select('title')
                 ->from('table.contents')
                 ->where('cid = ?', $cid)
                 ->limit(1));
-            
+
             $result = $rs['title'] ?? '';
-            
+
             // 缓存结果
             self::setCache($cacheKey, $result);
-            
+
             return $result;
         } catch (Exception $e) {
             if (self::$errorHandler) {
@@ -626,7 +626,7 @@ class DB
     }
 }
 
-class DB_API
+class TTDF_Db_API
 {
     private Typecho_Db $db;
 
