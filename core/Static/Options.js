@@ -3,6 +3,22 @@
  * @author 鼠子Tomoriゞ
  */
 
+// 检查必要的依赖是否已加载
+if (typeof Vue === 'undefined') {
+    console.error('Vue.js 未加载，无法初始化TTDF设置页面');
+    throw new Error('Vue.js is required');
+}
+
+if (typeof ElementPlus === 'undefined') {
+    console.error('Element Plus 未加载，无法初始化TTDF设置页面');
+    throw new Error('Element Plus is required');
+}
+
+// 检查配置对象是否存在
+if (typeof window.ttdfOptionsInfo === 'undefined') {
+    console.error('ttdfOptionsInfo配置对象未找到，请检查Options.php是否正确加载');
+}
+
 const { createApp, ref, reactive, computed, onMounted } = Vue;
 const { ElMessage, ElMessageBox } = ElementPlus;
 const IconLibrary = window.ElementPlusIcons || window.ElementPlusIconsVue || {};
@@ -17,50 +33,50 @@ const DynamicHtmlRenderer = {
     },
     setup(props) {
         const { h, resolveComponent } = Vue;
-        
+
         // 解析HTML字符串并转换为Vue组件
         const parseHtmlToVNode = (htmlString) => {
             // 创建一个临时DOM元素来解析HTML
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = htmlString.trim();
-            
+
             // 递归转换DOM节点为VNode
             const convertNodeToVNode = (node) => {
                 if (node.nodeType === Node.TEXT_NODE) {
                     return node.textContent;
                 }
-                
+
                 if (node.nodeType === Node.ELEMENT_NODE) {
                     const tagName = node.tagName.toLowerCase();
-                    
+
                     // 处理Element Plus组件
                     if (tagName.startsWith('el-')) {
                         try {
-                            const componentName = tagName.split('-').map((part, index) => 
+                            const componentName = tagName.split('-').map((part, index) =>
                                 index === 0 ? part : part.charAt(0).toUpperCase() + part.slice(1)
                             ).join('');
-                            
+
                             const component = resolveComponent(componentName);
-                            
+
                             // 获取属性
                             const props = {};
-                            
+
                             // 将 kebab-case 转换为 camelCase
                             const kebabToCamel = (str) => {
                                 return str.replace(/-([a-z])/g, (match, letter) => letter.toUpperCase());
                             };
-                            
+
                             for (let attr of node.attributes) {
                                 let attrName = attr.name;
                                 let attrValue = attr.value;
-                                
+
                                 // 处理Vue指令和属性
                                 if (attrName.startsWith(':')) {
                                     // 动态属性
                                     attrName = attrName.slice(1);
                                     // 转换为 camelCase
                                     attrName = kebabToCamel(attrName);
-                                    
+
                                     // 处理图标引用
                                     if (attrName === 'icon') {
                                         if (IconLibrary && IconLibrary[attrValue]) {
@@ -82,7 +98,7 @@ const DynamicHtmlRenderer = {
                                     // 静态属性
                                     // 转换为 camelCase
                                     const camelAttrName = kebabToCamel(attrName);
-                                    
+
                                     // 处理布尔属性（没有值或值为空字符串的属性）
                                     if (attrValue === '' || attrValue === null || attrValue === undefined) {
                                         props[camelAttrName] = true;
@@ -97,7 +113,7 @@ const DynamicHtmlRenderer = {
                                     }
                                 }
                             }
-                            
+
                             // 处理子节点
                             const children = [];
                             for (let child of node.childNodes) {
@@ -106,20 +122,20 @@ const DynamicHtmlRenderer = {
                                     children.push(childVNode);
                                 }
                             }
-                            
+
                             return h(component, props, children.length > 0 ? children : undefined);
                         } catch (error) {
                             console.warn(`无法解析Element Plus组件: ${tagName}`, error);
                             // 如果组件解析失败，回退到普通HTML元素
                         }
                     }
-                    
+
                     // 处理普通HTML元素
                     const props = {};
                     for (let attr of node.attributes) {
                         props[attr.name] = attr.value;
                     }
-                    
+
                     const children = [];
                     for (let child of node.childNodes) {
                         const childVNode = convertNodeToVNode(child);
@@ -127,13 +143,13 @@ const DynamicHtmlRenderer = {
                             children.push(childVNode);
                         }
                     }
-                    
+
                     return h(tagName, props, children.length > 0 ? children : undefined);
                 }
-                
+
                 return null;
             };
-            
+
             // 转换所有子节点
             const vnodes = [];
             for (let child of tempDiv.childNodes) {
@@ -142,10 +158,10 @@ const DynamicHtmlRenderer = {
                     vnodes.push(vnode);
                 }
             }
-            
+
             return vnodes;
         };
-        
+
         return () => {
             try {
                 const vnodes = parseHtmlToVNode(props.htmlContent);
@@ -226,14 +242,14 @@ const FormField = {
         // Transfer 相关方法
         const getAvailableData = () => {
             if (props.field.type !== 'Transfer' || !props.field.data) return [];
-            const selectedKeys = typeof props.modelValue === 'string' ?
+            const selectedKeys = typeof props.modelValue === 'string' && props.modelValue ?
                 props.modelValue.split(',').filter(k => k) : [];
             return props.field.data.filter(item => !selectedKeys.includes(item.key));
         };
 
         const getSelectedData = () => {
             if (props.field.type !== 'Transfer' || !props.field.data) return [];
-            const selectedKeys = typeof props.modelValue === 'string' ?
+            const selectedKeys = typeof props.modelValue === 'string' && props.modelValue ?
                 props.modelValue.split(',').filter(k => k) : [];
             return props.field.data.filter(item => selectedKeys.includes(item.key));
         };
@@ -248,7 +264,7 @@ const FormField = {
 
         const moveToSelected = () => {
             if (availableItems.value.length > 0) {
-                const currentSelected = typeof props.modelValue === 'string' ?
+                const currentSelected = typeof props.modelValue === 'string' && props.modelValue ?
                     props.modelValue.split(',').filter(k => k) : [];
                 const newSelected = [...currentSelected, ...availableItems.value];
                 updateValue(newSelected.join(','));
@@ -258,7 +274,7 @@ const FormField = {
 
         const moveToAvailable = () => {
             if (selectedItems.value.length > 0) {
-                const currentSelected = typeof props.modelValue === 'string' ?
+                const currentSelected = typeof props.modelValue === 'string' && props.modelValue ?
                     props.modelValue.split(',').filter(k => k) : [];
                 const newSelected = currentSelected.filter(key => !selectedItems.value.includes(key));
                 updateValue(newSelected.join(','));
@@ -482,7 +498,7 @@ const FormField = {
                     <!-- Cascader字段 -->
                     <el-cascader
                         v-else-if="field.type === 'Cascader'"
-                        :model-value="modelValue ? modelValue.split(',') : []"
+                        :model-value="(typeof modelValue === 'string' && modelValue) ? modelValue.split(',') : []"
                         @update:model-value="(val) => updateValue(val ? val.join(',') : '')"
                         :options="field.options || []"
                         :placeholder="field.placeholder || '请选择'"
@@ -584,17 +600,25 @@ const OptionsApp = {
         DynamicHtmlRenderer
     },
     setup() {
+        const optionsInfo = window.ttdfOptionsInfo || {};
         // 响应式数据
         const activeTab = ref('');
         const config = reactive({
             themeName: '',
             themeVersion: '',
             ttdfVersion: '',
-            apiUrl: '',
+            apiUrl: optionsInfo.apiUrl || '',
             tabs: {}
         });
         const formData = reactive({});
         const isLoading = ref(false);
+        const isConfigLoading = ref(true); // 添加配置加载状态
+
+        const resetFormData = () => {
+            Object.keys(formData).forEach(key => {
+                delete formData[key];
+            });
+        };
 
         // 初始化表单数据
         const initFormData = (savedValues = {}) => {
@@ -603,7 +627,10 @@ const OptionsApp = {
                 if (tab.fields) {
                     tab.fields.forEach(field => {
                         if (field.name && field.type !== 'Html') {
-                            let value = savedValues[field.name] || field.value || field.default || '';
+                            // 优先使用 savedValues 中的数据，只有当该字段不存在时才使用默认值
+                            let value = savedValues.hasOwnProperty(field.name) ?
+                                savedValues[field.name] :
+                                (field.value !== undefined ? field.value : (field.default !== undefined ? field.default : ''));
 
                             // 对于Checkbox类型，确保值是数组格式
                             if (field.type === 'Checkbox') {
@@ -668,44 +695,48 @@ const OptionsApp = {
         // 保存设置
         const saveSettings = async () => {
             if (isLoading.value) return;
-            
+
             isLoading.value = true;
 
             try {
-                const formDataToSend = new FormData();
-                formDataToSend.append('ttdf_ajax_save', '1');
+                if (!config.apiUrl) {
+                    throw new Error('未配置API地址，无法保存');
+                }
+
+                const payload = {};
 
                 Object.keys(formData).forEach(key => {
-                    const value = formData[key];
+                    let value = formData[key];
 
                     // 根据字段类型进行特殊处理
                     const field = findFieldByName(key);
 
                     if (Array.isArray(value)) {
-                        // Tags、Checkbox、AddList等数组类型转换为逗号分隔的字符串
-                        formDataToSend.append(key, value.join(','));
+                        value = value.join(',');
                     } else if (typeof value === 'boolean') {
-                        // Switch等布尔值转换为字符串
-                        formDataToSend.append(key, value ? 'true' : 'false');
+                        value = value ? 'true' : 'false';
                     } else if (typeof value === 'number') {
-                        // Number、Slider等数字类型转换为字符串
-                        formDataToSend.append(key, value.toString());
-                    } else if (field && field.type === 'Cascader') {
-                        // Cascader类型：确保以逗号分隔的路径格式存储
-                        formDataToSend.append(key, value || '');
-                    } else if (field && field.type === 'Transfer') {
-                        // Transfer类型：确保以逗号分隔的key列表格式存储
-                        formDataToSend.append(key, value || '');
-                    } else {
-                        formDataToSend.append(key, value || '');
+                        value = value.toString();
+                    } else if (field && (field.type === 'Cascader' || field.type === 'Transfer')) {
+                        if (Array.isArray(value)) {
+                            value = value.join(',');
+                        } else {
+                            value = value || '';
+                        }
+                    } else if (value === null || value === undefined) {
+                        value = '';
                     }
+
+                    payload[key] = value;
                 });
 
-                const apiUrl = `${config.apiUrl}/options`;
-
-                const response = await fetch(apiUrl, {
+                const response = await fetch(`${config.apiUrl}/options`, {
                     method: 'POST',
-                    body: formDataToSend
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify(payload)
                 });
 
                 if (!response.ok) {
@@ -727,44 +758,47 @@ const OptionsApp = {
             }
         };
 
-        // 导出设置
-        const exportSettings = async () => {
-            try {
-                // 调用后端导出API
-                const response = await fetch(`${config.apiUrl}/export`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const result = await response.json();
-                
-                if (result.data) {
-                    // 创建下载链接
-                    const dataStr = JSON.stringify(result.data, null, 2);
-                    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-                    const url = URL.createObjectURL(dataBlob);
-                    
-                    // 创建下载链接并触发下载
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = `TTDF(${config.themeName || 'Unknown'})_${new Date().toISOString().replace(/[-:]/g, '').replace('T', '').split('.')[0]}.json`;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    
-                    // 清理URL对象
-                    URL.revokeObjectURL(url);
-                    
-                    ElMessage.success('设置导出成功！');
+        const getSerializableFormData = () => {
+            const plainObject = {};
+            Object.keys(formData).forEach(key => {
+                const value = formData[key];
+                if (Array.isArray(value)) {
+                    plainObject[key] = [...value];
+                } else if (typeof value === 'object' && value !== null) {
+                    plainObject[key] = JSON.parse(JSON.stringify(value));
                 } else {
-                    throw new Error('导出数据格式错误');
+                    plainObject[key] = value;
                 }
+            });
+            return plainObject;
+        };
+
+        // 导出设置
+        const exportSettings = () => {
+            try {
+                const payload = {
+                    meta: {
+                        theme: config.themeName || 'TTDF',
+                        themeVersion: config.themeVersion || '',
+                        frameworkVersion: config.ttdfVersion || '',
+                        exportedAt: new Date().toISOString()
+                    },
+                    settings: getSerializableFormData()
+                };
+
+                const dataStr = JSON.stringify(payload, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(dataBlob);
+
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `TTDF(${config.themeName || 'Unknown'})_${new Date().toISOString().replace(/[-:]/g, '').replace('T', '').split('.')[0]}.json`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                URL.revokeObjectURL(url);
+                ElMessage.success('设置导出成功！');
             } catch (error) {
                 console.error('导出设置时出错:', error);
                 ElMessage.error('导出失败：' + error.message);
@@ -789,7 +823,6 @@ const OptionsApp = {
                         throw new Error('无效的设置文件格式');
                     }
 
-                    // 确认导入
                     try {
                         await ElMessageBox.confirm(
                             '导入设置将覆盖当前所有设置，是否继续？',
@@ -801,38 +834,12 @@ const OptionsApp = {
                             }
                         );
 
-                        // 用户确认后，调用后端导入API
-                        const response = await fetch(`${config.apiUrl}/import`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify(importData)
-                        });
-                        
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        
-                        const result = await response.json();
-                        
-                        if (result.data && result.data.message) {
-                            // 更新前端表单数据
-                            Object.keys(importData.settings).forEach(key => {
-                                if (formData.hasOwnProperty(key)) {
-                                    formData[key] = importData.settings[key];
-                                }
-                            });
-                            ElMessage.success(result.data.message);
-                        } else {
-                            throw new Error('导入响应格式错误');
-                        }
+                        initFormData(importData.settings);
+                        ElMessage.success('设置已导入，请点击保存应用。');
                     } catch (confirmError) {
-                        // 用户取消导入，不显示错误信息
                         if (confirmError === 'cancel' || confirmError.message === 'cancel') {
                             return;
                         }
-                        // 其他错误继续抛出
                         throw confirmError;
                     }
                 } catch (error) {
@@ -841,33 +848,6 @@ const OptionsApp = {
                 }
             };
             input.click();
-        };
-
-        // 处理下拉菜单命令
-        const handleCommand = (command) => {
-            switch (command) {
-                case 'export':
-                    exportSettings();
-                    break;
-                case 'import':
-                    importSettings();
-                    break;
-                default:
-                    break;
-            }
-        };
-
-        // 处理HTML内容中的图标引用
-        const processHtmlContent = (content) => {
-            // 将图标名称转换为实际的图标组件引用
-            return content
-                .replace(/:icon="(\w+)"/g, (match, iconName) => {
-                    // 检查图标是否存在
-                    if (ElementPlusIconsVue && ElementPlusIconsVue[iconName]) {
-                        return `:icon="${iconName}"`;
-                    }
-                    return match;
-                });
         };
 
         // AddList功能 - 简化版本
@@ -914,44 +894,79 @@ const OptionsApp = {
         };
 
         // 初始化配置数据
-        const initConfig = () => {
-            // 从全局变量中获取标签页配置
-            if (window.ttdfTabsConfig) {
-                config.tabs = window.ttdfTabsConfig;
+        const loadThemeInfo = async () => {
+            if (!config.apiUrl) {
+                return;
             }
 
-            // 从全局变量中获取主题信息
-            if (window.ttdfThemeInfo) {
-                config.themeName = window.ttdfThemeInfo.themeName || 'TTDF';
-                config.themeVersion = window.ttdfThemeInfo.themeVersion || '4.0.0';
-                config.ttdfVersion = window.ttdfThemeInfo.ttdfVersion || '4.0.0';
-                config.apiUrl = window.ttdfThemeInfo.apiUrl || '';
-            }
+            try {
+                const response = await fetch(`${config.apiUrl}/theme-info`, {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
 
-            // 从全局变量中获取表单数据
-            if (window.ttdfFormData) {
-                Object.assign(formData, window.ttdfFormData);
-            }
-
-            // 设置默认激活的Tab，优先从URL参数读取
-            const tabKeys = Object.keys(config.tabs || {});
-            if (tabKeys.length > 0) {
-                const urlTab = getUrlParameter('tab');
-                // 如果URL中有tab参数且该tab存在，则使用URL中的tab
-                if (urlTab && tabKeys.includes(urlTab)) {
-                    activeTab.value = urlTab;
-                } else if (!activeTab.value) {
-                    // 否则使用第一个tab作为默认值
-                    activeTab.value = tabKeys[0];
-                    // 更新URL参数为默认tab
-                    updateUrlParameter('tab', tabKeys[0]);
+                if (!response.ok) {
+                    throw new Error(`HTTP错误: ${response.status}`);
                 }
+
+                const result = await response.json();
+                const data = result.data || {};
+
+                config.themeName = data.themeName || config.themeName || 'TTDF';
+                config.themeVersion = data.themeVersion || config.themeVersion || '';
+                config.ttdfVersion = data.ttdfVersion || config.ttdfVersion || '';
+            } catch (error) {
+                console.error('获取主题信息失败:', error);
+            }
+        };
+
+        const initConfig = async () => {
+            try {
+                if (!config.apiUrl) {
+                    throw new Error('未配置API地址');
+                }
+
+                isConfigLoading.value = true;
+
+                const [configResponse, formDataResponse] = await Promise.all([
+                    fetch(`${config.apiUrl}/config`, { credentials: 'same-origin' }),
+                    fetch(`${config.apiUrl}/form-data`, { credentials: 'same-origin' })
+                ]);
+
+                if (!configResponse.ok || !formDataResponse.ok) {
+                    throw new Error('API请求失败');
+                }
+
+                const configData = await configResponse.json();
+                const formResult = await formDataResponse.json();
+
+                config.tabs = configData.data?.tabs || {};
+
+                resetFormData();
+                initFormData(formResult.data || {});
+
+                const tabKeys = Object.keys(config.tabs || {});
+                if (tabKeys.length > 0) {
+                    const urlTab = getUrlParameter('tab');
+                    if (urlTab && tabKeys.includes(urlTab)) {
+                        activeTab.value = urlTab;
+                    } else {
+                        activeTab.value = tabKeys[0];
+                        updateUrlParameter('tab', tabKeys[0]);
+                    }
+                }
+            } catch (error) {
+                console.error('加载配置失败:', error);
+                ElMessage.error('加载配置失败：' + error.message);
+            } finally {
+                isConfigLoading.value = false;
             }
         };
 
         // 初始化
-        onMounted(() => {
-            initConfig();
+        onMounted(async () => {
+            await initConfig();
+            loadThemeInfo();
         });
 
         // 计算属性
@@ -978,10 +993,9 @@ const OptionsApp = {
             saveSettings,
             exportSettings,
             importSettings,
-            handleCommand,
-            processHtmlContent,
             addListItem,
             removeListItem,
+            isConfigLoading,
             // 导出图标组件供模板使用
             Check: IconLibrary?.Check,
             Close: IconLibrary?.Close,
@@ -991,7 +1005,8 @@ const OptionsApp = {
             Plus: IconLibrary?.Plus,
             Download: IconLibrary?.Download,
             Upload: IconLibrary?.Upload,
-            ArrowDown: IconLibrary?.ArrowDown
+            ArrowDown: IconLibrary?.ArrowDown,
+            Loading: IconLibrary?.Loading
         };
     },
 
@@ -1000,7 +1015,7 @@ const OptionsApp = {
             <!-- 顶部标题栏 -->
             <div class="TTDF-header">
                 <h1 class="TTDF-title">
-                    {{ config.themeName || 'undefined' }}
+                    {{ config.themeName || '主题设置' }}
                     <small v-if="config.themeVersion"> · {{ config.themeVersion }}</small>
                 </h1>
                 <div class="TTDF-actions">
@@ -1026,26 +1041,73 @@ const OptionsApp = {
             <div class="TTDF-body">
                 <!-- 左侧导航 -->
                 <nav class="TTDF-nav">
-                    <div 
-                        v-for="tab in tabList" 
-                        :key="tab.id"
-                        class="TTDF-nav-item"
-                        :class="{ active: activeTab === tab.id }"
-                        @click="switchTab(tab.id)"
-                    >
-                        {{ tab.title }}
-                    </div>
+                    <!-- 加载状态 -->
+                    <template v-if="isConfigLoading">
+                        <div class="nav-loading" style="padding: 16px; text-align: center;">
+                            <el-icon class="is-loading" style="font-size: 20px; color: #409eff; margin-bottom: 8px;">
+                                <Loading />
+                            </el-icon>
+                            <div style="color: #909399; font-size: 12px;">加载中...</div>
+                        </div>
+                        <div class="nav-skeleton">
+                            <div 
+                                v-for="i in 3" 
+                                :key="i"
+                                class="skeleton-item"
+                                style="height: 40px; margin: 8px 16px; background: #f0f2f5; border-radius: 4px; animation: skeleton-loading 1.5s ease-in-out infinite;"
+                            ></div>
+                        </div>
+                    </template>
+
+                    <!-- 空状态 -->
+                    <template v-else-if="!tabList || tabList.length === 0">
+                        <div class="nav-empty" style="padding: 20px; text-align: center; color: #909399; font-size: 14px;">
+                            暂无选项卡
+                        </div>
+                    </template>
+
+                    <!-- 正常状态 -->
+                    <template v-else>
+                        <div 
+                            v-for="tab in tabList" 
+                            :key="tab.id"
+                            class="TTDF-nav-item"
+                            :class="{ active: activeTab === tab.id }"
+                            @click="switchTab(tab.id)"
+                        >
+                            {{ tab.title }}
+                        </div>
+                    </template>
                 </nav>
-                
+
                 <!-- 右侧内容区域 -->
                 <div class="TTDF-content">
                     <div class="TTDF-content-card">
-                        <div v-if="currentTab" class="TTDF-tab-panel active">
+                        <!-- Loading 状态 -->
+                        <div v-if="isConfigLoading" class="loading-container" style="display: flex; justify-content: center; align-items: center; min-height: 300px; flex-direction: column;">
+                            <el-icon class="is-loading" style="font-size: 32px; color: #409eff; margin-bottom: 16px;">
+                                <Loading />
+                            </el-icon>
+                            <div style="color: #606266; font-size: 14px;">正在加载配置数据...</div>
+                        </div>
+
+                        <!-- 空状态 - 没有tabs -->
+                        <div v-else-if="!tabList || tabList.length === 0" class="empty-container" style="display: flex; justify-content: center; align-items: center; min-height: 300px;">
+                            <el-empty description="暂无可用的配置选项" />
+                        </div>
+
+                        <!-- 空状态 - 当前tab为空 -->
+                        <div v-else-if="!currentTab || (!currentTab.html && !currentTab.fields)" class="empty-container" style="display: flex; justify-content: center; align-items: center; min-height: 300px;">
+                            <el-empty description="当前选项卡暂无内容" />
+                        </div>
+
+                        <!-- 正常内容 -->
+                        <div v-else class="TTDF-tab-panel active">
                             <!-- HTML内容 -->
                             <div v-if="currentTab.html" v-for="html in currentTab.html" :key="html.content">
                                 <DynamicHtmlRenderer :html-content="html.content" />
                             </div>
-                            
+
                             <!-- 表单字段 -->
                             <div v-else-if="currentTab.fields">
                                 <el-row :gutter="20" v-for="field in currentTab.fields" :key="field.name || field.content">

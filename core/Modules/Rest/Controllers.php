@@ -516,6 +516,12 @@ class TTDFController extends BaseController
         switch ($subPath) {
             case 'options':
                 return $this->handleOptions();
+            case 'config':
+                return $this->handleConfig();
+            case 'form-data':
+                return $this->handleFormData();
+            case 'theme-info':
+                return $this->handleThemeInfo();
             case 'export':
                 return $this->handleExport();
             case 'import':
@@ -865,5 +871,272 @@ class TTDFController extends BaseController
             }
             $this->response->error('Failed to import settings: ' . $e->getMessage(), HttpCode::INTERNAL_ERROR);
         }
+    }
+
+    private function handleConfig(): array
+    {
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+            TTDF_Debug::logApiProcess('handle_config', ['stage' => 'start']);
+        }
+
+        if (!$this->checkAdminPermission()) {
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+                TTDF_Debug::logApiProcess('handle_config', [
+                    'stage' => 'error',
+                    'reason' => 'unauthorized'
+                ]);
+            }
+            $this->response->error('Unauthorized', HttpCode::UNAUTHORIZED);
+        }
+
+        try {
+            // 获取配置数据
+            $setupFile = __DIR__ . '/../../../app/setup.php';
+            if (!file_exists($setupFile)) {
+                $setupFile = __DIR__ . '/../../../app/Setup.php';
+            }
+
+            if (!file_exists($setupFile)) {
+                throw new Exception('Setup file not found');
+            }
+
+            $tabs = require $setupFile;
+
+            // 构建字段配置数据
+            $fieldsConfig = [];
+            foreach ($tabs as $tab) {
+                if (isset($tab['fields'])) {
+                    foreach ($tab['fields'] as $field) {
+                        if (isset($field['name'])) {
+                            $fieldsConfig[$field['name']] = $field;
+                        }
+                    }
+                }
+            }
+
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+                TTDF_Debug::logApiProcess('handle_config', [
+                    'stage' => 'completed',
+                    'tabs_count' => count($tabs),
+                    'fields_count' => count($fieldsConfig)
+                ]);
+            }
+
+            return [
+                'data' => [
+                    'tabs' => $tabs,
+                    'fields' => $fieldsConfig
+                ]
+            ];
+        } catch (Exception $e) {
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+                TTDF_Debug::logApiProcess('handle_config', [
+                    'stage' => 'error',
+                    'reason' => 'exception',
+                    'message' => $e->getMessage()
+                ]);
+            }
+            $this->response->error('Failed to get config: ' . $e->getMessage(), HttpCode::INTERNAL_ERROR);
+        }
+    }
+
+    private function handleFormData(): array
+    {
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+            TTDF_Debug::logApiProcess('handle_form_data', ['stage' => 'start']);
+        }
+
+        if (!$this->checkAdminPermission()) {
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+                TTDF_Debug::logApiProcess('handle_form_data', [
+                    'stage' => 'error',
+                    'reason' => 'unauthorized'
+                ]);
+            }
+            $this->response->error('Unauthorized', HttpCode::UNAUTHORIZED);
+        }
+
+        try {
+            // 获取配置数据
+            $setupFile = __DIR__ . '/../../../app/setup.php';
+            if (!file_exists($setupFile)) {
+                $setupFile = __DIR__ . '/../../../app/Setup.php';
+            }
+
+            if (!file_exists($setupFile)) {
+                throw new Exception('Setup file not found');
+            }
+
+            $tabs = require $setupFile;
+
+            // 处理配置数据，获取当前保存的值
+            $formData = [];
+            foreach ($tabs as $tab_id => $tab) {
+                if (isset($tab['fields'])) {
+                    foreach ($tab['fields'] as $field) {
+                        if (isset($field['name']) && $field['type'] !== 'Html') {
+                            $value = $this->getFieldValue($field);
+
+                            // 处理特殊字段类型的值格式
+                            if (in_array($field['type'], ['Checkbox', 'AddList', 'Tags'])) {
+                                // 数组类型字段：Checkbox、AddList、Tags
+                                if (is_string($value) && !empty($value)) {
+                                    $formData[$field['name']] = explode(',', $value);
+                                } else {
+                                    $formData[$field['name']] = [];
+                                }
+                            } else if ($field['type'] === 'Switch') {
+                                // Switch类型：转换为布尔值
+                                $formData[$field['name']] = ($value === 'true' || $value === '1' || $value === true);
+                            } else if (in_array($field['type'], ['Number', 'Slider'])) {
+                                // 数字类型字段：Number、Slider
+                                $formData[$field['name']] = is_numeric($value) ? (float)$value : ($field['value'] ?? 0);
+                            } else {
+                                // 其他类型字段保持原样
+                                $formData[$field['name']] = $value;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+                TTDF_Debug::logApiProcess('handle_form_data', [
+                    'stage' => 'completed',
+                    'form_data_count' => count($formData)
+                ]);
+            }
+
+            return [
+                'data' => $formData
+            ];
+        } catch (Exception $e) {
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+                TTDF_Debug::logApiProcess('handle_form_data', [
+                    'stage' => 'error',
+                    'reason' => 'exception',
+                    'message' => $e->getMessage()
+                ]);
+            }
+            $this->response->error('Failed to get form data: ' . $e->getMessage(), HttpCode::INTERNAL_ERROR);
+        }
+    }
+
+    private function handleThemeInfo(): array
+    {
+        if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+            TTDF_Debug::logApiProcess('handle_theme_info', ['stage' => 'start']);
+        }
+
+        if (!$this->checkAdminPermission()) {
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+                TTDF_Debug::logApiProcess('handle_theme_info', [
+                    'stage' => 'error',
+                    'reason' => 'unauthorized'
+                ]);
+            }
+            $this->response->error('Unauthorized', HttpCode::UNAUTHORIZED);
+        }
+
+        try {
+            // 获取主题信息
+            $themeInfo = [
+                'themeName' => get_theme_name(false),
+                'themeVersion' => get_theme_version(false),
+                'ttdfVersion' => get_framework_version(false),
+                'apiUrl' => get_site_url(false) . __TTDF_RESTAPI_ROUTE__ . '/ttdf',
+            ];
+
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+                TTDF_Debug::logApiProcess('handle_theme_info', [
+                    'stage' => 'completed',
+                    'theme_name' => $themeInfo['themeName']
+                ]);
+            }
+
+            return [
+                'data' => $themeInfo
+            ];
+        } catch (Exception $e) {
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+                TTDF_Debug::logApiProcess('handle_theme_info', [
+                    'stage' => 'error',
+                    'reason' => 'exception',
+                    'message' => $e->getMessage()
+                ]);
+            }
+            $this->response->error('Failed to get theme info: ' . $e->getMessage(), HttpCode::INTERNAL_ERROR);
+        }
+    }
+
+    /**
+     * 获取字段的当前值
+     */
+    private function getFieldValue($field)
+    {
+        // 检查字段是否有name属性
+        if (!isset($field['name']) || empty($field['name'])) {
+            return $field['value'] ?? '';
+        }
+
+        $dbValue = TTDF_Db::getTtdf($field['name']);
+
+        if ($dbValue !== null) {
+            // 对于复选框、Tags、AddList和DialogSelect，需要特殊处理比较
+            if (in_array($field['type'], ['Checkbox', 'Tags', 'AddList', 'DialogSelect'])) {
+                $setupDefault = is_array($field['value']) ? implode(',', $field['value']) : $field['value'];
+                $dbValueForCompare = $dbValue;
+
+                // 标准化比较去除空格并排序
+                $setupNormalized = $setupDefault;
+                $dbNormalized = $dbValueForCompare;
+
+                if (!empty($setupNormalized)) {
+                    $setupArray = explode(',', $setupNormalized);
+                    $setupArray = array_map('trim', $setupArray);
+                    sort($setupArray);
+                    $setupNormalized = implode(',', $setupArray);
+                }
+
+                if (!empty($dbNormalized)) {
+                    $dbArray = explode(',', $dbNormalized);
+                    $dbArray = array_map('trim', $dbArray);
+                    sort($dbArray);
+                    $dbNormalized = implode(',', $dbArray);
+                }
+
+                if ($dbNormalized !== $setupNormalized) {
+                    return $dbValue;
+                }
+            }
+            // 对于Switch类型，需要特殊处理布尔值比较
+            else if ($field['type'] === 'Switch') {
+                $setupDefault = $field['value'] ?? false;
+                // 将数据库中的字符串值转换为布尔值进行比较
+                $dbBoolValue = ($dbValue === 'true' || $dbValue === '1' || $dbValue === true);
+                $setupBoolValue = ($setupDefault === true || $setupDefault === 'true' || $setupDefault === '1');
+
+                if ($dbBoolValue !== $setupBoolValue) {
+                    return $dbValue;
+                }
+            }
+            // 对于Number和Slider类型，需要特殊处理数字比较
+            else if (in_array($field['type'], ['Number', 'Slider'])) {
+                $setupDefault = $field['value'] ?? 0;
+                // 将数据库中的字符串值转换为数字进行比较
+                $dbNumValue = is_numeric($dbValue) ? (float)$dbValue : 0;
+                $setupNumValue = is_numeric($setupDefault) ? (float)$setupDefault : 0;
+
+                if ($dbNumValue !== $setupNumValue) {
+                    return $dbValue;
+                }
+            } else {
+                if ($dbValue !== $field['value']) {
+                    return $dbValue;
+                }
+            }
+        }
+
+        return $field['value'] ?? '';
     }
 }

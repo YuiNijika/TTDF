@@ -201,7 +201,7 @@ function themeConfig($form)
                                 $value = implode(',', $value);
                             }
 
-                            // 保存到数据库（TTDF_Db::setTtdf内部会自动添加主题前缀）
+                            // 保存到数据库
                             TTDF_Db::setTtdf($field['name'], $value);
                         }
                     }
@@ -213,90 +213,53 @@ function themeConfig($form)
             echo json_encode(['success' => false, 'message' => '保存失败: ' . $e->getMessage()]);
         }
 
-        // 确保脚本终止，不执行后续代码
         exit;
     }
 
-    // 获取配置数据
-    $tab = require __DIR__ . '/../../app/setup.php';
-    if (!is_array($tab)) {
-        $tab = require __DIR__ . '/../app/Setup.php';
+    $versionParam = '';
+    if (defined('__FRAMEWORK_VER__')) {
+        $versionParam = '?Ver=' . __FRAMEWORK_VER__;
     }
 
-    $tabs = $tab;
+    // CSS文件数组
+    $cssFiles = [
+        'core/Static/Element.css',
+        'core/Static/Options.css'
+    ];
 
-    // 处理配置数据，获取当前保存的值
-    $formData = [];
-    foreach ($tabs as $tab_id => $tab) {
-        if (isset($tab['fields'])) {
-            foreach ($tab['fields'] as $field) {
-                if (isset($field['name']) && $field['type'] !== 'Html') {
-                    $value = TTDF_GetFieldValue($field);
-
-                    // 处理特殊字段类型的值格式
-                    if (in_array($field['type'], ['Checkbox', 'AddList', 'Tags'])) {
-                        // 数组类型字段：Checkbox、AddList、Tags
-                        if (is_string($value) && !empty($value)) {
-                            $formData[$field['name']] = explode(',', $value);
-                        } else {
-                            $formData[$field['name']] = [];
-                        }
-                    } else if ($field['type'] === 'Switch') {
-                        // Switch类型：转换为布尔值
-                        $formData[$field['name']] = ($value === 'true' || $value === '1' || $value === true);
-                    } else if (in_array($field['type'], ['Number', 'Slider'])) {
-                        // 数字类型字段：Number、Slider
-                        $formData[$field['name']] = is_numeric($value) ? (float)$value : ($field['value'] ?? 0);
-                    } else {
-                        // 其他类型字段保持原样
-                        $formData[$field['name']] = $value;
-                    }
-                }
-            }
-        }
+    // 输出CSS文件
+    foreach ($cssFiles as $cssFile) {
+        echo '<link rel="stylesheet" href="';
+        get_theme_file_url($cssFile, true);
+        echo $versionParam . '">' . "\n";
     }
-
 ?>
-    <link rel="stylesheet" href="<?php get_theme_file_url('core/Static/Element.css', true) ?>">
-    <link rel="stylesheet" href="<?php get_theme_file_url('core/Static/Options.css', true) ?>">
 
     <div id="options-app"></div>
 
+<?php
+    $optionsPayload = [
+        'apiUrl' => get_site_url(false) . __TTDF_RESTAPI_ROUTE__ . '/ttdf',
+    ];
+?>
+
     <script>
-        // 初始化表单数据
-        window.ttdfFormData = <?php echo json_encode($formData, JSON_UNESCAPED_UNICODE); ?>;
-
-        // 标签页配置数据
-        window.ttdfTabsConfig = <?php echo json_encode($tabs, JSON_UNESCAPED_UNICODE); ?>;
-
-        // 字段配置数据
-        window.ttdfFieldsConfig = 
-            <?php
-                $fieldsConfig = [];
-                    foreach ($tabs as $tab) {
-                        if (isset($tab['fields'])) {
-                            foreach ($tab['fields'] as $field) {
-                                if (isset($field['name'])) {
-                                    $fieldsConfig[$field['name']] = $field;
-                                }
-                            }
-                        }
-                    }
-                echo json_encode($fieldsConfig, JSON_UNESCAPED_UNICODE);
-            ?>;
-
-        // 主题信息配置
-        window.ttdfThemeInfo = {
-            themeName: '<?php get_theme_name(); ?>',
-            themeVersion: '<?php get_theme_version(); ?>',
-            ttdfVersion: '<?php get_framework_version(); ?>',
-            apiUrl: '<?php echo get_site_url(false) . __TTDF_RESTAPI_ROUTE__ . '/ttdf'; ?>',
-        };
+        window.ttdfOptionsInfo = <?php echo json_encode($optionsPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
     </script>
 
-    <script src="<?php get_theme_file_url('core/Static/Vue.global.prod.js', true) ?>"></script>
-    <script src="<?php get_theme_file_url('core/Static/Element.full.min.js', true) ?>"></script>
-    <script src="<?php get_theme_file_url('core/Static/Element.iife.min.js', true) ?>"></script>
-    <script src="<?php get_theme_file_url('core/Static/Options.js', true) ?>"></script>
 <?php
+    // JS文件数组
+    $jsFiles = [
+        'core/Static/Vue.global.prod.js',
+        'core/Static/Element.full.min.js',
+        'core/Static/Element.iife.min.js',
+        'core/Static/Options.js'
+    ];
+
+    // 输出JS文件
+    foreach ($jsFiles as $jsFile) {
+        echo '<script src="';
+        get_theme_file_url($jsFile, true);
+        echo $versionParam . '"></script>' . "\n";
+    }
 }
