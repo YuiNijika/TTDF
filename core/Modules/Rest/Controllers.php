@@ -509,6 +509,7 @@ class AttachmentController extends BaseController
 // TTDF控制器
 class TTDFController extends BaseController
 {
+    private ?array $typechoThemeOptions = null;
     public function handle(): array
     {
         $subPath = $this->request->pathParts[1] ?? null;
@@ -691,6 +692,7 @@ class TTDFController extends BaseController
 
             // 保存每个选项
             $savedCount = 0;
+            $normalizedData = [];
             foreach ($postData as $name => $value) {
                 // 跳过系统字段
                 if (in_array($name, ['action', '_'])) {
@@ -704,7 +706,12 @@ class TTDFController extends BaseController
 
                 // 保存到数据库
                 TTDF_Db::setTtdf($name, $value);
+                $normalizedData[$name] = $value;
                 $savedCount++;
+            }
+
+            if (!empty($normalizedData)) {
+                $this->persistTypechoThemeOptions($normalizedData);
             }
 
             if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
@@ -838,13 +845,22 @@ class TTDFController extends BaseController
 
             $settings = $postData['settings'];
             $importedCount = 0;
+            $normalizedSettings = [];
 
             // 批量导入设置
             foreach ($settings as $key => $value) {
                 if (is_string($key) && !empty($key)) {
+                    if (is_array($value)) {
+                        $value = implode(',', $value);
+                    }
                     TTDF_Db::setTtdf($key, $value);
+                    $normalizedSettings[$key] = $value;
                     $importedCount++;
                 }
+            }
+
+            if (!empty($normalizedSettings)) {
+                $this->persistTypechoThemeOptions($normalizedSettings);
             }
 
             if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
@@ -1070,6 +1086,88 @@ class TTDFController extends BaseController
     }
 
     /**
+     * 获取 Typecho 主题设置项
+     */
+    private function loadTypechoThemeOptions(): array
+    {
+        if ($this->typechoThemeOptions !== null) {
+            return $this->typechoThemeOptions;
+        }
+
+        try {
+            $themeName = Helper::options()->theme ?? '';
+            if (empty($themeName)) {
+                $this->typechoThemeOptions = [];
+                return $this->typechoThemeOptions;
+            }
+
+            $optionName = 'theme:' . $themeName;
+            $db = Typecho_Db::get();
+            $row = $db->fetchRow($db->select('value')->from('table.options')->where('name = ?', $optionName));
+
+            if ($row && isset($row['value'])) {
+                $value = @unserialize($row['value']);
+                if (is_array($value)) {
+                    $this->typechoThemeOptions = $value;
+                    return $this->typechoThemeOptions;
+                }
+            }
+        } catch (Exception $e) {
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+                TTDF_Debug::logApiProcess('load_typecho_theme_options', [
+                    'stage' => 'error',
+                    'message' => $e->getMessage()
+                ]);
+            }
+        }
+
+        $this->typechoThemeOptions = [];
+        return $this->typechoThemeOptions;
+    }
+
+    private function getTypechoThemeOption(string $key)
+    {
+        $options = $this->loadTypechoThemeOptions();
+        return $options[$key] ?? null;
+    }
+
+    private function persistTypechoThemeOptions(array $data): void
+    {
+        try {
+            $themeName = Helper::options()->theme ?? '';
+            if (empty($themeName)) {
+                return;
+            }
+
+            $optionName = 'theme:' . $themeName;
+            $db = Typecho_Db::get();
+            $options = $this->loadTypechoThemeOptions();
+
+            foreach ($data as $key => $value) {
+                $options[$key] = $value;
+            }
+
+            $serialized = serialize($options);
+            $exists = $db->fetchRow($db->select('value')->from('table.options')->where('name = ?', $optionName));
+
+            if ($exists) {
+                $db->query($db->update('table.options')->rows(['value' => $serialized])->where('name = ?', $optionName));
+            } else {
+                $db->query($db->insert('table.options')->rows(['name' => $optionName, 'value' => $serialized]));
+            }
+
+            $this->typechoThemeOptions = $options;
+        } catch (Exception $e) {
+            if ((TTDF_CONFIG['DEBUG'] ?? false) && class_exists('TTDF_Debug')) {
+                TTDF_Debug::logApiProcess('persist_typecho_theme_options', [
+                    'stage' => 'error',
+                    'message' => $e->getMessage()
+                ]);
+            }
+        }
+    }
+
+    /**
      * 获取字段的当前值
      */
     private function getFieldValue($field)
@@ -1080,6 +1178,13 @@ class TTDFController extends BaseController
         }
 
         $dbValue = TTDF_Db::getTtdf($field['name']);
+
+        if ($dbValue === null) {
+            $themeOptionValue = $this->getTypechoThemeOption($field['name']);
+            if ($themeOptionValue !== null) {
+                $dbValue = $themeOptionValue;
+            }
+        }
 
         if ($dbValue !== null) {
             // 对于复选框、Tags、AddList和DialogSelect，需要特殊处理比较
