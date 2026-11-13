@@ -1,26 +1,47 @@
 <?php
 
-/**
- * 主题核心文件
- * Theme core file
- * @link https://github.com/YuiNijika/TTDF
- */
-if (!defined('__TYPECHO_ROOT_DIR__')) exit;
+declare(strict_types=1);
 
-// 加载框架核心文件
-$ttdfFrameworkPath = __DIR__ . '/core/Main.php';
-if (file_exists($ttdfFrameworkPath)) {
-    require $ttdfFrameworkPath;
-} else {
-    throw new Exception('TTDF核心文件加载失败, 请检查框架是否安装完整: ' . $ttdfFrameworkPath);
+/**
+ * TTDF Next theme entry point.
+ *
+ * Typecho loads this file in the global scope, so only the framework bootstrap
+ * and Typecho-required callbacks live here.
+ */
+if (!defined('__TYPECHO_ROOT_DIR__')) {
+    exit;
 }
 
-/**
- * 主题自定义代码
- * theme custom code
- */
-// 输出 WelCome
-function WelCome()
-{
-    Get::Components('WelCome');
+if (PHP_VERSION_ID < 80200) {
+    throw new RuntimeException('TTDF Next requires PHP 8.2 or newer.');
+}
+
+(static function (): void {
+    $autoloader = __DIR__ . '/vendor/yuinijika/ttdf/core/Autoloader.php';
+    if (!is_file($autoloader)) {
+        throw new RuntimeException('TTDF core is missing. Restore vendor/yuinijika/ttdf/ from the release package.');
+    }
+
+    require_once $autoloader;
+})();
+
+\TTDF\Autoloader::register(__DIR__);
+\TTDF\Framework::boot(__DIR__);
+
+if (!function_exists('themeConfig')) {
+    function themeConfig($form): void
+    {
+        if (is_object($form)) {
+            \TTDF\Theme\Settings::config($form);
+        }
+    }
+}
+
+if (!function_exists('themeFields')) {
+    function themeFields($layout): void
+    {
+        if (is_object($layout)) {
+            \TTDF\Theme\Settings::fields($layout);
+        }
+    }
 }

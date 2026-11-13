@@ -1,0 +1,32 @@
+{
+    "name": "yuinijika/ttdf",
+    "description": "TTDF Next - a modern Typecho theme framework",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": ">=8.2"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5",
+        "phpstan/phpstan": "^2.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "TTDF\\": "vendor/yuinijika/ttdf/core/",
+            "TTDF\\App\\": "app/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "TTDF\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "analyse": "phpstan analyse --no-progress",
+        "lint": "php tools/lint.php"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

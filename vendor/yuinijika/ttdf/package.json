@@ -1,0 +1,23 @@
+{
+  "name": "@yuinijika/ttdf-static",
+  "version": "5.0.0-next",
+  "private": true,
+  "type": "module",
+  "description": "Build tooling that syncs Vue and Element Plus distributions into the TTDF framework static directory.",
+  "scripts": {
+    "sync:static": "node scripts/sync-static.mjs",
+    "check:static": "node --check static/options/options.js"
+  },
+  "keywords": [
+    "ttdf",
+    "typecho",
+    "vue",
+    "element-plus"
+  ],
+  "author": "YuiNijika",
+  "license": "MIT",
+  "dependencies": {
+    "element-plus": "^2.14.8",
+    "vue": "^3.5.45"
+  }
+}

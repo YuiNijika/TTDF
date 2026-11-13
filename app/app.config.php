@@ -1,53 +1,35 @@
 <?php
-/**
- * TTDF 配置文件
- */
-if (!defined('__TYPECHO_ROOT_DIR__')) exit;
+
+declare(strict_types=1);
+
+if (!defined('__TYPECHO_ROOT_DIR__')) {
+    exit;
+}
 
 return [
-    // 应用配置
-    'app' => [
-        'debug' => false, // 调试模式
-        'compress_html' => false, // HTML压缩
-        'fields' => [
-            'enabled' => false, // 自定义字段插件
+    'version' => '5.0.0-next',
+    'debug' => false,
+
+    'rest' => [
+        'enabled' => false,
+        'prefix' => 'ttdf/v1',
+        'cors' => [
+            'allowed_origins' => [],
         ],
-        'assets' => [
-            'dir' => 'assets/', // 本地资源目录
-            'cdn' => [
-                'enabled' => false, // 是否启用CDN
-                'url' => Helper::options()->themeUrl . '/assets/', // CDN URL
-            ]
-        ],
+        'token_env' => 'TTDF_REST_TOKEN',
     ],
 
-    'plugins' => [
-        'tyajax' => [
-            'enabled' => false, // TyAjax模块
-        ],
+    'router' => [
+        'enabled' => true,
+        'pages_dir' => 'app/pages',
     ],
 
-    // 模块配置
-    'modules' => [
-        'gravatar' => [
-            'prefix' => 'https://cravatar.cn/avatar/', // Gravatar前缀
-        ],
-        'restapi' => [
-            'enabled' => false, // 是否启用REST API
-            'route' => 'ty-json', // REST API路由
-            'override_setting' => 'RESTAPI_Switch', // 主题设置项名称
-            'token' => [
-                'enabled' => false, // 是否启用Token
-                'value' => '1778273540', // Token值
-            ],
-            'limit' => [
-                'get' => 'attachments', // 禁止GET请求类
-                'post' => 'comments', // 禁止POST请求类
-            ],
-            'headers' => [
-                'access_control_allow_origin' => '*', // 跨域配置
-                'access_control_allow_methods' => 'GET,POST', // 允许的请求方法
-            ],
-        ],
+    'assets' => [
+        'cdn' => '',
+    ],
+
+    'settings' => [
+        'table' => 'ttdf',
+        'schema_version' => 2,
     ],
 ];

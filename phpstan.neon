@@ -1,0 +1,10 @@
+parameters:
+    level: 8
+    paths:
+        - vendor/yuinijika/ttdf/core
+        - app
+    excludePaths:
+        - app/components/*
+        - app/pages/*
+    scanFiles:
+        - tests/Stubs/Typecho.php

@@ -1,6 +1,15 @@
 # Logs
-logs
+logs/*
+!logs/.htaccess
+!logs/index.php
 *.log
+.tmp/
+vendor/*
+!vendor/yuinijika/
+!vendor/yuinijika/ttdf/
+!vendor/yuinijika/ttdf/**
+vendor/yuinijika/ttdf/node_modules/
+.phpunit.cache/
 .idea/
 .trae/
 .repomap/

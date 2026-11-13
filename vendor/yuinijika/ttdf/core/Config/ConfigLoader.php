@@ -1,0 +1,112 @@
+<?php
+
+declare(strict_types=1);
+
+namespace TTDF\Config;
+
+use RuntimeException;
+
+final class ConfigLoader
+{
+    /** @var array<string, mixed> */
+    private const DEFAULTS = [
+        'version' => '5.0.0-next',
+        'debug' => false,
+        'rest' => [
+            'enabled' => false,
+            'prefix' => 'ttdf/v1',
+            'cors' => [
+                'allowed_origins' => [],
+            ],
+            'token_env' => 'TTDF_REST_TOKEN',
+        ],
+        'router' => [
+            'enabled' => true,
+            'pages_dir' => 'app/pages',
+        ],
+        'assets' => [
+            'cdn' => '',
+        ],
+        'settings' => [
+            'table' => 'ttdf',
+            'schema_version' => 2,
+        ],
+    ];
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function load(string $root): array
+    {
+        $file = $root . '/app/app.config.php';
+        if (!is_file($file)) {
+            throw new RuntimeException('TTDF configuration file not found: ' . $file);
+        }
+
+        $config = require $file;
+        if (!is_array($config)) {
+            throw new RuntimeException('TTDF configuration must return an array');
+        }
+
+        $config = array_replace_recursive(self::DEFAULTS, $config);
+        self::applyEnvironment($config);
+        self::validate($config);
+
+        return $config;
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    private static function applyEnvironment(array &$config): void
+    {
+        $debug = getenv('TTDF_DEBUG');
+        if ($debug !== false) {
+            $config['debug'] = self::toBool($debug);
+        }
+
+        $restEnabled = getenv('TTDF_REST_ENABLED');
+        if ($restEnabled !== false) {
+            $config['rest']['enabled'] = self::toBool($restEnabled);
+        }
+
+        $origins = getenv('TTDF_REST_CORS_ORIGINS');
+        if ($origins !== false) {
+            $config['rest']['cors']['allowed_origins'] = array_values(array_filter(array_map(
+                static fn (string $origin): string => trim($origin),
+                explode(',', $origins)
+            )));
+        }
+
+        $table = getenv('TTDF_SETTINGS_TABLE');
+        if ($table !== false && preg_match('/^[A-Za-z0-9_]+$/', $table) === 1) {
+            $config['settings']['table'] = $table;
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    private static function validate(array $config): void
+    {
+        $prefix = (string) ($config['rest']['prefix'] ?? '');
+        if ($prefix === '' || preg_match('/^[A-Za-z0-9_\-\/]+$/', $prefix) !== 1) {
+            throw new RuntimeException('Invalid REST prefix');
+        }
+
+        $table = (string) ($config['settings']['table'] ?? '');
+        if (preg_match('/^[A-Za-z0-9_]+$/', $table) !== 1) {
+            throw new RuntimeException('Invalid settings table name');
+        }
+
+        $origins = $config['rest']['cors']['allowed_origins'] ?? [];
+        if (!is_array($origins)) {
+            throw new RuntimeException('CORS allowed_origins must be an array');
+        }
+    }
+
+    private static function toBool(string $value): bool
+    {
+        return in_array(strtolower(trim($value)), ['1', 'true', 'yes', 'on'], true);
+    }
+}
