@@ -16,7 +16,7 @@ final class SchemaTest extends TestCase
         Schema::reset();
         $this->root = sys_get_temp_dir() . '/ttdf-schema-' . uniqid('', true);
         mkdir($this->root . '/app/config', 0777, true);
-        file_put_contents($this->root . '/app/config/setup.php', <<<'PHP'
+        file_put_contents($this->root . '/app/config/theme.php', <<<'PHP'
 <?php
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ PHP);
     protected function tearDown(): void
     {
         Schema::reset();
-        @unlink($this->root . '/app/config/setup.php');
+        @unlink($this->root . '/app/config/theme.php');
         @rmdir($this->root . '/app/config');
         @rmdir($this->root . '/app');
         @rmdir($this->root);

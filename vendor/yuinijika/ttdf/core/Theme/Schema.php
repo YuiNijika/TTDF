@@ -21,7 +21,7 @@ final class Schema
             return self::$tabs;
         }
 
-        $file = Paths::setup($root);
+        $file = Paths::settings($root);
         if (!is_file($file)) {
             return self::$tabs = [];
         }

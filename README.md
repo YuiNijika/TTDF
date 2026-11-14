@@ -35,7 +35,7 @@ TTDF v5 是面向 Typecho 1.2.1+ / 1.3.x 的现代主题开发框架，要求 PH
 
 1. 备份主题的 `app/`、模板与 `assets/`。
 2. 用新版本整体替换 `vendor/yuinijika/ttdf/`。
-3. 保留并检查 `app/config/setup.php` 的字段 schema，按需执行设置迁移。
+3. 保留并检查 `app/config/theme.php` 的字段 schema，按需执行设置迁移。
 
 ## 目录结构
 
@@ -46,8 +46,8 @@ vendor/yuinijika/ttdf/static/         框架静态资源，只读依赖区
 app/                                  主题代码区
   config/                             主题配置
     app.php                           运行配置：版本、debug、REST、CORS、CDN、settings
-    setup.php                         后台设置字段与分组
-    theme.php                         文章/页面自定义字段
+    theme.php                         后台主题设置字段与分组
+    fields.php                        文章/页面自定义字段
   router/                             自动路由页面，router.pages_dir 默认指向这里
   components/                         可复用组件与模板映射目标
 assets/                              主题自有静态资源
@@ -89,11 +89,11 @@ return [
   “运行配置”中覆盖；配置值作为默认值，主题设置作为站点级覆盖。
 - `settings.table` 是自定义设置表名（不含 Typecho 表前缀），
   `settings.schema_version` 是设置数据的 schema 版本，迁移器会升级到这个版本。
-  它不定义设置项本身；设置项在 `app/config/setup.php` 中定义。
+  它不定义设置项本身；设置项在 `app/config/theme.php` 中定义。
 
 ## 页面模板映射
 
-`app/config/setup.php` 的 `Templates` 字段把 Typecho 模板入口映射到
+`app/config/theme.php` 的 `Templates` 字段把 Typecho 模板入口映射到
 `app/components/` 组件。默认映射与回退组件包括 `Post`、`Page`、`Archive`
 与 `NotFound`；入口模板通过 `TTDF\Theme\Templates::render()` 渲染配置组件，
 组件缺失时继续执行模板内置内容。

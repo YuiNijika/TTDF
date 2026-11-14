@@ -16,11 +16,12 @@ final class ThemePathsTest extends TestCase
 
         self::assertFileExists($root . '/functions.php');
         self::assertFileExists(Paths::appConfig($root));
-        self::assertFileExists(Paths::setup($root));
+        self::assertFileExists(Paths::settings($root));
         self::assertFileExists(Paths::themeFields($root));
         self::assertDirectoryExists(Paths::router($root));
         self::assertFileDoesNotExist($root . '/app/app.config.php');
-        self::assertFileDoesNotExist($root . '/app/fields.php');
+        self::assertFileDoesNotExist($root . '/app/config/setup.php');
+        self::assertFileExists($root . '/app/config/fields.php');
         self::assertFileDoesNotExist($root . '/app/setup.php');
         self::assertDirectoryDoesNotExist($root . '/app/pages');
     }

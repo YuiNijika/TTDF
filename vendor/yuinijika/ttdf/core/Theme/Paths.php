@@ -16,9 +16,9 @@ final class Paths
 
     public const APP_CONFIG = 'app/config/app.php';
 
-    public const SETUP = 'app/config/setup.php';
+    public const SETTINGS = 'app/config/theme.php';
 
-    public const THEME_FIELDS = 'app/config/theme.php';
+    public const THEME_FIELDS = 'app/config/fields.php';
 
     public static function app(string $root): string
     {
@@ -30,9 +30,9 @@ final class Paths
         return Path::join($root, self::APP_CONFIG);
     }
 
-    public static function setup(string $root): string
+    public static function settings(string $root): string
     {
-        return Path::join($root, self::SETUP);
+        return Path::join($root, self::SETTINGS);
     }
 
     public static function themeFields(string $root): string

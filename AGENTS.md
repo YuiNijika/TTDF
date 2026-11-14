@@ -24,7 +24,7 @@
 - 运行时要求 PHP 8.2+、Typecho 1.2.1+ / 1.3.x；所有 PHP 文件使用 `declare(strict_types=1)`。
 - 框架代码使用 `TTDF\` 命名空间，PSR-4 映射为 `TTDF\` → `vendor/yuinijika/ttdf/core/`、`TTDF\App\` → `app/`。
 - 框架核心托管在 `vendor/yuinijika/ttdf/core/`，属于只读依赖区。主题开发者只修改 `app/`、模板与 `assets/`；升级框架时整体替换 `vendor/yuinijika/ttdf/`，不要手工改核心文件。
-- 主题目录固定为：`functions.php` 唯一 PHP 入口、`app/config/app.php` 运行配置、`app/config/setup.php` 设置字段、`app/config/theme.php` 内容字段、`app/router/` 自动路由页面、`app/components/` 组件。不要恢复 `app/app.config.php`、`app/setup.php`、`app/fields.php` 或 `app/pages/`。
+- 主题目录固定为：`functions.php` 唯一 PHP 入口、`app/config/app.php` 运行配置、`app/config/theme.php` 后台设置字段、`app/config/fields.php` 文章/页面字段、`app/router/` 自动路由页面、`app/components/` 组件。不要恢复 `app/app.config.php`、`app/config/setup.php`、`app/setup.php`、`app/fields.php` 或 `app/pages/`。
 - `functions.php` 只负责 PHP 版本检查、注册自动加载器与调用 `Framework::boot()`；`themeConfig()` / `themeFields()` 由框架核心 `TypechoFunctions.php` 统一注册，主题不要重复定义。
 - `router.pages_dir` 是相对 `app/` 的路径，默认 `router`；不要写 `app/router`，也不要把路由页面放到主题根目录。
 - 框架静态资源托管在 `vendor/yuinijika/ttdf/static/`，属于只读依赖区；不得再向 `core/` 放置 Vue、Element Plus、设置页脚本或样式。
@@ -34,7 +34,7 @@
 - 生产安装必须支持直接解压主题包运行，不要求站点安装 Composer；Composer 只用于开发、测试和静态分析。
 - 除 Typecho 必需的 `themeConfig()`、`themeFields()` 外，不新增全局函数或全局类。
 - 不新增 v4 兼容层；`Get`、`GetPost`、`GetUser`、`GetComment`、`GetSite`、`GetTheme`、`TTDF_*`、OPP 函数、全局 `config()` 已移除。
-- 主题设置保留自定义 `ttdf` 表，但只能通过 `TTDF\Theme\Options` 读写；值使用 JSON，字段必须来自 `app/config/setup.php` 白名单。
+- 主题设置保留自定义 `ttdf` 表，但只能通过 `TTDF\Theme\Options` 读写；值使用 JSON，字段必须来自 `app/config/theme.php` 白名单。
 - `app/config/app.php` 的 `settings.table` / `settings.schema_version` 只描述存储表与 schema 版本，不定义设置项；`debug`、REST、CORS、Token 环境变量、资源 CDN 通过 `TTDF\Theme\ThemeConfig` 合并配置默认值与站点设置。
 - 页面模板入口固定使用 Typecho 官方模板名（`post.php`、`page.php`、`archive.php`、`404.php`）；页面主体映射使用 `TemplateMap` 字段与 `TTDF\Theme\Templates`，槽位只能是 `post`、`page`、`index`、`archive`、`category`、`tag`、`search`、`author`、`date`、`404`。
 - `TemplateMap` 的组件值只允许 `[A-Za-z0-9_/-]`，不得包含 `..`；`Templates::render()` 必须通过 `Components::exists()` 校验后再 include，组件缺失时返回 `false` 并保留入口模板回退。
@@ -84,7 +84,7 @@
 
 ## 修改主题设置
 
-1. 在 `app/config/setup.php` 增加字段，声明类型、默认值与说明
+1. 在 `app/config/theme.php` 增加字段，声明类型、默认值与说明
 2. 在 `TTDF\Theme\Settings::validate()` 补类型转换与白名单校验
 3. 如需迁移旧值，更新 `TTDF\Upgrade\Migrator`
 4. 设置页 JS 只通过 `/ttdf/v1/admin/*` 读写，并携带 `X-Typecho-Token`

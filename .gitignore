@@ -5,6 +5,7 @@ logs/*
 *.log
 .tmp/
 .agents/
+$null
 vendor/*
 !vendor/yuinijika/
 !vendor/yuinijika/ttdf/
