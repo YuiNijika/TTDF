@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace TTDF\Theme;
 
 use TTDF\Compat\Typecho;
-use TTDF\Config\Config;
 use TTDF\Framework;
 use TTDF\Support\Escaper;
 use TTDF\Support\Path;
@@ -15,7 +14,7 @@ final class Assets
     public static function url(string $path): string
     {
         $path = ltrim(str_replace('\\', '/', $path), '/');
-        $cdn = trim((string) Config::get('assets.cdn', ''));
+        $cdn = ThemeConfig::assetsCdn();
         $base = $cdn !== '' && preg_match('#^https?://#i', $cdn) === 1
             ? rtrim($cdn, '/')
             : rtrim(Typecho::themeUrl(), '/');

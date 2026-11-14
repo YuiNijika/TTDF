@@ -43,7 +43,7 @@ final class AdminController
 
         Response::success([
             'saved' => count($validated),
-            'message' => 'Settings saved',
+            'message' => '设置已更新',
         ]);
     }
 

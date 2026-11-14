@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace TTDF\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 use TTDF\Theme\Options;
 
 final class OptionsTest extends TestCase
@@ -65,5 +66,44 @@ final class OptionsTest extends TestCase
             'SubTitle' => 'Hello',
             'RESTAPI_Switch' => true,
         ], $options->all());
+    }
+
+    public function testSetRequiresResolvedTheme(): void
+    {
+        $this->expectException(RuntimeException::class);
+
+        (new Options(new InMemoryOptionsStore(), ''))->set('SubTitle', 'Hello');
+    }
+
+    public function testThemeNameWithHyphenKeepsPrefix(): void
+    {
+        $store = new InMemoryOptionsStore();
+        $options = new Options($store, 'classic-22');
+
+        $options->set('SubTitle', 'Hello');
+
+        self::assertSame('"Hello"', $store->get('classic-22_SubTitle'));
+        self::assertSame(['SubTitle' => 'Hello'], $options->all());
+    }
+
+    public function testInstanceRefreshesThemeResolvedAfterBoot(): void
+    {
+        $helper = new \stdClass();
+        $helper->theme = '';
+        \Helper::$optionsOverride = $helper;
+        Options::reset();
+
+        try {
+            $early = Options::instance();
+            self::assertSame('', $early->themeName());
+
+            $helper->theme = 'Theme';
+            $late = Options::instance();
+            self::assertSame('Theme', $late->themeName());
+            self::assertNotSame($early, $late);
+        } finally {
+            \Helper::$optionsOverride = null;
+            Options::reset();
+        }
     }
 }

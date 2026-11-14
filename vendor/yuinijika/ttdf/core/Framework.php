@@ -12,6 +12,7 @@ use TTDF\Hooks\Hooks;
 use TTDF\Hooks\TypechoBridge;
 use TTDF\Http\Rest\Router as RestRouter;
 use TTDF\Routing\AutoRouter;
+use TTDF\Theme\ThemeConfig;
 
 final class Framework
 {
@@ -33,9 +34,10 @@ final class Framework
 
         self::$root = $root;
         Config::load(ConfigLoader::load($root));
+        require_once __DIR__ . '/TypechoFunctions.php';
 
         ErrorHandler::register(
-            (bool) Config::get('debug', false),
+            ThemeConfig::debug(),
             $root . '/logs/error.log'
         );
 

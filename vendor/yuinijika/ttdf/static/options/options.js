@@ -14,6 +14,16 @@
         return;
     }
 
+    const adminColumn = mount.closest('.col-mb-12, .col-tb-8');
+    if (adminColumn) {
+        adminColumn.classList.add('ttdf-options-column');
+    }
+
+    const optionsForm = mount.closest('form');
+    if (optionsForm) {
+        optionsForm.classList.add('ttdf-options-form');
+    }
+
     if (typeof Vue === 'undefined' || typeof ElementPlus === 'undefined') {
         mount.innerHTML = '<div class="TTDF-fatal">TTDF 设置页依赖未加载，请检查 static/vue 与 static/element-plus。</div>';
         console.error('TTDF options: Vue or Element Plus is missing');
@@ -213,6 +223,17 @@
                 }
                 return Object.entries(props.field.options || {}).map(([key, label]) => ({ key, label }));
             });
+            const availableComponents = computed(() => (
+                Array.isArray(props.components) ? props.components : []
+            ));
+            const componentOptions = (slot) => {
+                const current = String(templateMap.value[slot] || '').trim();
+                const components = availableComponents.value.slice();
+                if (current !== '' && !components.includes(current)) {
+                    components.unshift(current);
+                }
+                return components;
+            };
 
             const addTag = () => {
                 const value = newTag.value.trim();
@@ -269,8 +290,8 @@
             return {
                 addItem,
                 addTag,
+                componentOptions,
                 cascaderValue,
-                availableComponents: computed(() => (Array.isArray(props.components) ? props.components : [])),
                 isArrayValue,
                 listItems,
                 newItem,
@@ -471,7 +492,7 @@
                                 @update:model-value="(value) => setTemplate(slot.key, value)"
                             >
                                 <el-option
-                                    v-for="component in availableComponents"
+                                    v-for="component in componentOptions(slot.key)"
                                     :key="component"
                                     :label="component"
                                     :value="component"
@@ -629,7 +650,7 @@
                         body: JSON.stringify(serializableFormData())
                     });
                     dirty.value = false;
-                    ElMessage.success((result.data && result.data.message) || '设置保存成功');
+                    ElMessage.success('保存成功：' + ((result.data && result.data.message) || '设置已更新'));
                 } catch (saveError) {
                     error.value = saveError.message;
                     ElMessage.error('保存失败：' + saveError.message);
@@ -727,6 +748,20 @@
                 }
             };
 
+            const handleAction = (command) => {
+                if (command === 'export') {
+                    exportSettings();
+                    return;
+                }
+                if (command === 'import') {
+                    importSettings();
+                    return;
+                }
+                if (command === 'migrate') {
+                    void runMigration();
+                }
+            };
+
             const initConfig = async () => {
                 loading.value = true;
                 error.value = '';
@@ -797,6 +832,7 @@
                 error,
                 exportSettings,
                 formData,
+                handleAction,
                 hasTabFields,
                 hasTabHtml,
                 importSettings,
@@ -823,12 +859,30 @@
                         </p>
                     </div>
                     <div class="TTDF-actions">
-                        <el-button type="primary" :loading="saving" @click="saveSettings">
-                            {{ saving ? '保存中…' : '保存设置' }}
-                        </el-button>
-                        <el-button @click="exportSettings">导出</el-button>
-                        <el-button @click="importSettings">导入</el-button>
-                        <el-button @click="runMigration">迁移</el-button>
+                        <el-button-group class="TTDF-button-group" role="group" aria-label="设置操作">
+                            <el-button
+                                type="primary"
+                                class="TTDF-save-button"
+                                :loading="saving"
+                                @click="saveSettings"
+                            >
+                                {{ saving ? '保存中…' : '保存设置' }}
+                            </el-button>
+                            <el-dropdown trigger="click" placement="bottom-end" @command="handleAction">
+                                <el-button type="primary" class="TTDF-more-button" aria-label="更多操作" title="更多操作">
+                                    <svg class="TTDF-chevron" viewBox="0 0 16 16" aria-hidden="true">
+                                        <path d="M3.5 6 8 10.5 12.5 6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </el-button>
+                                <template #dropdown>
+                                    <el-dropdown-menu>
+                                        <el-dropdown-item command="export">导出设置</el-dropdown-item>
+                                        <el-dropdown-item command="import">导入设置</el-dropdown-item>
+                                        <el-dropdown-item command="migrate" divided>执行迁移</el-dropdown-item>
+                                    </el-dropdown-menu>
+                                </template>
+                            </el-dropdown>
+                        </el-button-group>
                     </div>
                 </header>
 
@@ -861,7 +915,7 @@
                                 <span>正在加载配置…</span>
                             </div>
                             <el-empty v-else-if="!currentTab" description="暂无可用的配置选项" />
-                            <div v-else class="TTDF-tab-panel">
+                            <div v-else class="TTDF-tab-panel active">
                                 <template v-if="hasTabHtml">
                                     <DynamicHtmlRenderer
                                         v-for="(block, index) in currentTab.html"

@@ -49,9 +49,16 @@ return [
             ],
         ],
     ],
-    'Rest' => [
-        'title' => 'REST API',
+    'Runtime' => [
+        'title' => '运行配置',
         'fields' => [
+            [
+                'type' => 'Switch',
+                'name' => 'Debug_Switch',
+                'value' => false,
+                'label' => '调试模式',
+                'description' => '开启后记录详细错误堆栈并显示错误详情；生产环境请关闭。',
+            ],
             [
                 'type' => 'Switch',
                 'name' => 'RESTAPI_Switch',
@@ -72,6 +79,13 @@ return [
                 'value' => 'TTDF_REST_TOKEN',
                 'label' => 'Token 环境变量名',
                 'description' => '留空表示不启用 Token；Token 至少 32 字符。',
+            ],
+            [
+                'type' => 'Text',
+                'name' => 'Assets_CDN',
+                'value' => '',
+                'label' => '静态资源 CDN',
+                'description' => '留空使用主题本地资源；仅支持 http(s) 地址，非法地址会自动回退。',
             ],
         ],
     ],

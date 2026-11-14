@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace TTDF\Config;
 
 use RuntimeException;
+use TTDF\Theme\Paths;
 
 final class ConfigLoader
 {
@@ -22,7 +23,7 @@ final class ConfigLoader
         ],
         'router' => [
             'enabled' => true,
-            'pages_dir' => 'app/pages',
+            'pages_dir' => 'router',
         ],
         'assets' => [
             'cdn' => '',
@@ -38,9 +39,9 @@ final class ConfigLoader
      */
     public static function load(string $root): array
     {
-        $file = $root . '/app/app.config.php';
+        $file = Paths::appConfig($root);
         if (!is_file($file)) {
-            throw new RuntimeException('TTDF configuration file not found: ' . $file);
+            throw new RuntimeException('TTDF theme configuration file not found: ' . $file);
         }
 
         $config = require $file;
@@ -97,6 +98,18 @@ final class ConfigLoader
         $table = (string) ($config['settings']['table'] ?? '');
         if (preg_match('/^[A-Za-z0-9_]+$/', $table) !== 1) {
             throw new RuntimeException('Invalid settings table name');
+        }
+
+        $pagesDir = (string) ($config['router']['pages_dir'] ?? '');
+        if (
+            $pagesDir === ''
+            || str_starts_with($pagesDir, '/')
+            || str_contains($pagesDir, '..')
+            || $pagesDir === 'app'
+            || str_starts_with($pagesDir, 'app/')
+            || preg_match('/^[A-Za-z0-9_-]+(?:\/[A-Za-z0-9_-]+)*$/', $pagesDir) !== 1
+        ) {
+            throw new RuntimeException('Invalid router pages_dir; expected a path relative to app/');
         }
 
         $origins = $config['rest']['cors']['allowed_origins'] ?? [];

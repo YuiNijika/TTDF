@@ -79,6 +79,7 @@ final class AdminControllerTest extends TestCase
         $payload = $this->capture(fn () => (new AdminController($this->root))->optionsPost())->payload();
 
         self::assertSame(1, $payload['data']['saved']);
+        self::assertSame('设置已更新', $payload['data']['message']);
         self::assertSame('New', Options::instance()->get('SubTitle'));
         self::assertNull(Options::instance()->get('Unknown'));
     }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace TTDF\Upgrade;
 
 use TTDF\Compat\Typecho;
+use TTDF\Config\Config;
 use TTDF\Support\Json;
 use TTDF\Theme\Options;
 use TTDF\Theme\Schema;
@@ -24,7 +25,8 @@ final class Migrator
     {
         $this->options->ensureInstalled();
         $current = $this->options->schemaVersion() ?? 0;
-        if ($current >= 2) {
+        $target = max(1, (int) Config::get('settings.schema_version', 2));
+        if ($current >= $target) {
             return [
                 'status' => 'already-current',
                 'migrated' => 0,
@@ -61,13 +63,13 @@ final class Migrator
             $migrated++;
         }
 
-        $this->options->store()->set('__schema_version', '2');
+        $this->options->store()->set('__schema_version', (string) $target);
         Options::reset();
 
         return [
             'status' => 'migrated',
             'migrated' => $migrated,
-            'schemaVersion' => 2,
+            'schemaVersion' => $target,
             'backup' => $backup,
         ];
     }

@@ -39,5 +39,69 @@ final class ConfigTest extends TestCase
         self::assertTrue($config['debug']);
         self::assertTrue($config['rest']['enabled']);
         self::assertSame(['https://a.test', 'https://b.test'], $config['rest']['cors']['allowed_origins']);
+        self::assertSame('router', $config['router']['pages_dir']);
+    }
+
+    public function testLegacyAppConfigPathIsNoLongerAccepted(): void
+    {
+        $root = sys_get_temp_dir() . '/ttdf-config-' . uniqid('', true);
+        mkdir($root . '/app', 0777, true);
+        file_put_contents($root . '/app/app.config.php', '<?php return [];');
+
+        try {
+            $this->expectException(\RuntimeException::class);
+            ConfigLoader::load($root);
+        } finally {
+            @unlink($root . '/app/app.config.php');
+            @rmdir($root . '/app');
+            @rmdir($root);
+        }
+    }
+
+    public function testRouterPagesDirectoryMustStayRelativeToApp(): void
+    {
+        $root = sys_get_temp_dir() . '/ttdf-config-' . uniqid('', true);
+        mkdir($root . '/app/config', 0777, true);
+        file_put_contents($root . '/app/config/app.php', <<<'PHP'
+<?php
+
+return [
+    'router' => ['pages_dir' => '../outside'],
+];
+PHP);
+
+        try {
+            $this->expectException(\RuntimeException::class);
+            ConfigLoader::load($root);
+        } finally {
+            @unlink($root . '/app/config/app.php');
+            @rmdir($root . '/app/config');
+            @rmdir($root . '/app');
+            @rmdir($root);
+        }
+    }
+
+    public function testRouterPagesDirectoryRejectsAppPrefix(): void
+    {
+        foreach (['app', 'app/pages'] as $pagesDir) {
+            $root = sys_get_temp_dir() . '/ttdf-config-' . uniqid('', true);
+            mkdir($root . '/app/config', 0777, true);
+            file_put_contents(
+                $root . '/app/config/app.php',
+                "<?php\n\nreturn ['router' => ['pages_dir' => '" . $pagesDir . "']];\n"
+            );
+
+            try {
+                ConfigLoader::load($root);
+                self::fail('Expected pages_dir to be rejected: ' . $pagesDir);
+            } catch (\RuntimeException $exception) {
+                self::assertStringContainsString('pages_dir', $exception->getMessage());
+            } finally {
+                @unlink($root . '/app/config/app.php');
+                @rmdir($root . '/app/config');
+                @rmdir($root . '/app');
+                @rmdir($root);
+            }
+        }
     }
 }

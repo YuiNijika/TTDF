@@ -5,8 +5,8 @@ declare(strict_types=1);
 /**
  * TTDF Next theme entry point.
  *
- * Typecho loads this file in the global scope, so only the framework bootstrap
- * and Typecho-required callbacks live here.
+ * Typecho loads this file in the global scope. This file only bootstraps the
+ * framework; app/config owns theme configuration and app/router owns routes.
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
@@ -27,21 +27,3 @@ if (PHP_VERSION_ID < 80200) {
 
 \TTDF\Autoloader::register(__DIR__);
 \TTDF\Framework::boot(__DIR__);
-
-if (!function_exists('themeConfig')) {
-    function themeConfig($form): void
-    {
-        if (is_object($form)) {
-            \TTDF\Theme\Settings::config($form);
-        }
-    }
-}
-
-if (!function_exists('themeFields')) {
-    function themeFields($layout): void
-    {
-        if (is_object($layout)) {
-            \TTDF\Theme\Settings::fields($layout);
-        }
-    }
-}

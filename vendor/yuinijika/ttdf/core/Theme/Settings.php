@@ -22,7 +22,9 @@ final class Settings
         $options = Options::instance();
         try {
             $options->ensureInstalled();
-            if (($options->schemaVersion() ?? 0) < 2) {
+            self::migrateLegacyValues($options);
+            $targetVersion = max(1, (int) Config::get('settings.schema_version', 2));
+            if (($options->schemaVersion() ?? 0) < $targetVersion) {
                 (new Migrator($options, self::root()))->run();
             }
         } catch (\Throwable $exception) {
@@ -57,8 +59,7 @@ final class Settings
      */
     public static function fields(object $layout): void
     {
-        $root = self::root();
-        $file = $root . '/app/fields.php';
+        $file = Paths::themeFields(self::root());
         if (!is_file($file)) {
             return;
         }
@@ -208,5 +209,26 @@ final class Settings
         $root = Framework::root();
 
         return $root !== '' ? $root : dirname(__DIR__, 5);
+    }
+
+    private static function migrateLegacyValues(Options $options): void
+    {
+        $typecho = Typecho::options();
+        if ($typecho === null) {
+            return;
+        }
+
+        foreach (Schema::fields(self::root()) as $name => $field) {
+            if ($options->get($name, null) !== null) {
+                continue;
+            }
+
+            $legacy = property_exists($typecho, $name) || method_exists($typecho, '__get')
+                ? $typecho->{$name}
+                : null;
+            if (is_array($legacy) || is_scalar($legacy)) {
+                $options->set($name, $legacy);
+            }
+        }
     }
 }

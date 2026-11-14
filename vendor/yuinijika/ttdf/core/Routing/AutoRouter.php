@@ -7,6 +7,7 @@ namespace TTDF\Routing;
 use TTDF\Compat\Typecho;
 use TTDF\Config\Config;
 use TTDF\Support\Path;
+use TTDF\Theme\Paths;
 
 final class AutoRouter
 {
@@ -16,13 +17,14 @@ final class AutoRouter
             return;
         }
 
-        $pagesDir = Path::join($root, (string) Config::get('router.pages_dir', 'app/pages'));
+        $appDir = Paths::app($root);
+        $pagesDir = Paths::router($root, (string) Config::get('router.pages_dir', 'router'));
         if (!is_dir($pagesDir)) {
             return;
         }
 
         $pagesDir = realpath($pagesDir);
-        if ($pagesDir === false || !Path::contains($root, $pagesDir)) {
+        if ($pagesDir === false || !Path::contains($appDir, $pagesDir)) {
             return;
         }
 
@@ -74,6 +76,14 @@ final class AutoRouter
     private static function requestPath(): string
     {
         $uri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
+        $base = parse_url(Typecho::siteUrl(), PHP_URL_PATH);
+        $base = is_string($base) ? trim(rawurldecode($base), '/') : '';
+
+        return self::normalizePath($uri, $base);
+    }
+
+    public static function normalizePath(string $uri, string $basePath = ''): string
+    {
         $path = parse_url($uri, PHP_URL_PATH);
         if (!is_string($path)) {
             return '';
@@ -84,14 +94,19 @@ final class AutoRouter
             return '';
         }
 
-        $base = parse_url(Typecho::siteUrl(), PHP_URL_PATH);
-        $base = is_string($base) ? trim(rawurldecode($base), '/') : '';
+        $basePath = trim(rawurldecode($basePath), '/');
         $trimmed = trim($path, '/');
-        if ($base !== '' && ($trimmed === $base || str_starts_with($trimmed, $base . '/'))) {
-            $trimmed = ltrim(substr($trimmed, strlen($base)), '/');
+        if ($basePath !== '' && ($trimmed === $basePath || str_starts_with($trimmed, $basePath . '/'))) {
+            $trimmed = ltrim(substr($trimmed, strlen($basePath)), '/');
         }
 
-        return $trimmed;
+        if ($trimmed === 'index.php') {
+            return '';
+        }
+
+        return str_starts_with($trimmed, 'index.php/')
+            ? ltrim(substr($trimmed, strlen('index.php')), '/')
+            : $trimmed;
     }
 
     private static function shouldSkip(string $path): bool

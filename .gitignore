@@ -4,6 +4,7 @@ logs/*
 !logs/index.php
 *.log
 .tmp/
+.agents/
 vendor/*
 !vendor/yuinijika/
 !vendor/yuinijika/ttdf/

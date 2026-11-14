@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace TTDF\Theme;
 
 use InvalidArgumentException;
+use RuntimeException;
 use TTDF\Compat\Typecho;
 use TTDF\Config\Config;
 use TTDF\Support\Json;
@@ -24,10 +25,15 @@ final class Options
 
     public static function instance(): self
     {
-        return self::$instance ??= new self(
-            new TypechoOptionsStore((string) Config::get('settings.table', 'ttdf')),
-            Typecho::themeName()
-        );
+        $themeName = Typecho::themeName();
+        if (self::$instance === null || (self::$instance->themeName === '' && $themeName !== '')) {
+            self::$instance = new self(
+                new TypechoOptionsStore((string) Config::get('settings.table', 'ttdf')),
+                $themeName
+            );
+        }
+
+        return self::$instance;
     }
 
     public function get(string $key, mixed $default = null): mixed
@@ -50,6 +56,10 @@ final class Options
 
     public function set(string $key, mixed $value): void
     {
+        if ($this->themeName === '') {
+            throw new RuntimeException('Cannot save theme settings before the active theme is resolved');
+        }
+
         $fullName = $this->fullName($key);
         $this->store->set($fullName, Json::encode($value));
         $this->cache[$fullName] = $value;
@@ -118,9 +128,15 @@ final class Options
         return $this->store;
     }
 
+    public function themeName(): string
+    {
+        return $this->themeName;
+    }
+
     public static function reset(): void
     {
         self::$instance = null;
+        ThemeConfig::reset();
     }
 
     private function fullName(string $key): string
@@ -129,7 +145,7 @@ final class Options
             throw new InvalidArgumentException('Invalid option name');
         }
 
-        if ($this->themeName !== '' && preg_match('/^[A-Za-z0-9_]{1,100}$/', $this->themeName) === 1) {
+        if ($this->themeName !== '' && preg_match('/^[A-Za-z0-9_-]{1,100}$/', $this->themeName) === 1) {
             return $this->themeName . '_' . $key;
         }
 

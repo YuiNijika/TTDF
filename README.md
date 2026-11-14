@@ -35,23 +35,65 @@ TTDF v5 是面向 Typecho 1.2.1+ / 1.3.x 的现代主题开发框架，要求 PH
 
 1. 备份主题的 `app/`、模板与 `assets/`。
 2. 用新版本整体替换 `vendor/yuinijika/ttdf/`。
-3. 保留并检查 `app/setup.php` 的字段 schema，按需执行设置迁移。
+3. 保留并检查 `app/config/setup.php` 的字段 schema，按需执行设置迁移。
 
 ## 目录结构
 
 ```text
-functions.php                         主题入口，注册自动加载并启动框架
+functions.php                         唯一 PHP 入口，仅注册自动加载并启动框架
 vendor/yuinijika/ttdf/core/           框架核心，只读依赖区
 vendor/yuinijika/ttdf/static/         框架静态资源，只读依赖区
-app/                                  主题配置、组件与页面
+app/                                  主题代码区
+  config/                             主题配置
+    app.php                           运行配置：版本、debug、REST、CORS、CDN、settings
+    setup.php                         后台设置字段与分组
+    theme.php                         文章/页面自定义字段
+  router/                             自动路由页面，router.pages_dir 默认指向这里
   components/                         可复用组件与模板映射目标
-assets/                               主题自有静态资源
+assets/                              主题自有静态资源
 *.php                                 Typecho 模板
 ```
 
+`functions.php` 只负责加载自动加载器并调用 `TTDF\Framework::boot()`。Typecho
+需要的 `themeConfig()` 与 `themeFields()` 由框架核心统一注册，主题不需要再写
+这两个函数，也不要在主题根目录新增其他 PHP 入口。
+
+## 主题配置
+
+`app/config/app.php` 是主题运行配置的唯一入口：
+
+```php
+return [
+    'version' => '1.0.0',
+    'debug' => false,
+    'rest' => [
+        'enabled' => false,
+        'prefix' => 'ttdf/v1',
+        'cors' => ['allowed_origins' => []],
+        'token_env' => 'TTDF_REST_TOKEN',
+    ],
+    'router' => [
+        'enabled' => true,
+        'pages_dir' => 'router',
+    ],
+    'assets' => ['cdn' => ''],
+    'settings' => [
+        'table' => 'ttdf',
+        'schema_version' => 2,
+    ],
+];
+```
+
+- `router.pages_dir` 是相对 `app/` 的路径，默认值 `router` 表示 `app/router/`。
+- `debug`、REST 开关、CORS 白名单、Token 环境变量和资源 CDN 都可以在后台
+  “运行配置”中覆盖；配置值作为默认值，主题设置作为站点级覆盖。
+- `settings.table` 是自定义设置表名（不含 Typecho 表前缀），
+  `settings.schema_version` 是设置数据的 schema 版本，迁移器会升级到这个版本。
+  它不定义设置项本身；设置项在 `app/config/setup.php` 中定义。
+
 ## 页面模板映射
 
-`app/setup.php` 的 `Templates` 字段把 Typecho 模板入口映射到
+`app/config/setup.php` 的 `Templates` 字段把 Typecho 模板入口映射到
 `app/components/` 组件。默认映射与回退组件包括 `Post`、`Page`、`Archive`
 与 `NotFound`；入口模板通过 `TTDF\Theme\Templates::render()` 渲染配置组件，
 组件缺失时继续执行模板内置内容。

@@ -107,4 +107,13 @@ final class AutoRouterTest extends TestCase
         self::assertStringEndsWith('/team/[member]/[post].php', $post['file']);
         self::assertSame(['post' => 'hello', 'member' => 'alice'], $post['params']);
     }
+
+    public function testFrontControllerPrefixIsStripped(): void
+    {
+        self::assertSame('about', AutoRouter::normalizePath('/index.php/about'));
+        self::assertSame('blog/hello', AutoRouter::normalizePath('/index.php/blog/hello?preview=1'));
+        self::assertSame('about', AutoRouter::normalizePath('/site/index.php/about', 'site'));
+        self::assertSame('', AutoRouter::normalizePath('/index.php'));
+        self::assertNull(AutoRouter::resolve($this->root, AutoRouter::normalizePath('/index.php/%2e%2e/secret')));
+    }
 }
