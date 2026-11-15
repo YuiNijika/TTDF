@@ -14,6 +14,8 @@ final class Paths
 
     public const ROUTER_DIR = 'app/router';
 
+    public const PAGES_DIR = 'app/pages';
+
     public const APP_CONFIG = 'app/config/app.php';
 
     public const SETTINGS = 'app/config/theme.php';
@@ -47,5 +49,17 @@ final class Paths
         return $relative === ''
             ? Path::join($root, self::ROUTER_DIR)
             : Path::join(self::app($root), $relative);
+    }
+
+    public static function pages(string $root): string
+    {
+        return Path::join($root, self::PAGES_DIR);
+    }
+
+    public static function page(string $root, string $relative = ''): string
+    {
+        return $relative === ''
+            ? self::pages($root)
+            : Path::join(self::pages($root), $relative);
     }
 }

@@ -5,7 +5,7 @@
 ## 项目定位
 
 - **ttdf-framework**：指本仓库 `D:\Codes\TTDF` 本身，负责框架核心、autoloader、配置、路由、Hook、REST、设置表、测试、文档与发布。
-- **typecho-theme**：指使用 TTDF v5 构建的独立 Typecho 主题工程，例如包含自己的 `functions.php`、模板、`app/config/`、`app/router/`、`app/components/` 和资源的主题。
+- **typecho-theme**：指使用 TTDF v5 构建的独立 Typecho 主题工程，例如包含自己的 `functions.php`、`app/pages/` 页面模板、`app/config/`、`app/router/`、`app/components/` 和资源的主题。
 
 当前 `master` 是 v5 开发线，版本固定为 `5.0.0-next`；`v4` 分支已冻结，只用于旧主题与旧站点，不在 `master` 上恢复 v4 全局 API。
 
@@ -23,10 +23,12 @@
 
 - 运行时要求 PHP 8.2+、Typecho 1.2.1+ / 1.3.x；所有 PHP 文件使用 `declare(strict_types=1)`。
 - 框架代码使用 `TTDF\` 命名空间，PSR-4 映射为 `TTDF\` → `vendor/yuinijika/ttdf/core/`、`TTDF\App\` → `app/`。
-- 框架核心托管在 `vendor/yuinijika/ttdf/core/`，属于只读依赖区。主题开发者只修改 `app/`、模板与 `assets/`；升级框架时整体替换 `vendor/yuinijika/ttdf/`，不要手工改核心文件。
-- 主题目录固定为：`functions.php` 唯一 PHP 入口、`app/config/app.php` 运行配置、`app/config/theme.php` 后台设置字段、`app/config/fields.php` 文章/页面字段、`app/router/` 自动路由页面、`app/components/` 组件。不要恢复 `app/app.config.php`、`app/config/setup.php`、`app/setup.php`、`app/fields.php` 或 `app/pages/`。
-- `functions.php` 只负责 PHP 版本检查、注册自动加载器与调用 `Framework::boot()`；`themeConfig()` / `themeFields()` 由框架核心 `TypechoFunctions.php` 统一注册，主题不要重复定义。
+- 框架核心托管在 `vendor/yuinijika/ttdf/core/`，属于只读依赖区。主题开发者只修改 `app/`、`assets/` 与根 `index.php` 元信息；升级框架时整体替换 `vendor/yuinijika/ttdf/`，不要手工改核心文件。
+- 主题目录固定为：`functions.php` 唯一初始化 PHP 入口、根 `index.php` 仅作 Typecho 主题元信息 stub、`app/pages/` Typecho 页面类型模板与 partial、`app/config/app.php` 运行配置、`app/config/theme.php` 后台设置字段、`app/config/fields.php` 文章/页面字段、`app/router/` TTDF 自定义 URL 路由、`app/components/` 组件。不要恢复 `app/app.config.php`、`app/config/setup.php`、`app/setup.php`、`app/fields.php`。
+- 根 `index.php` 是 Typecho 后台主题发现机制的硬性要求（`Widget\Themes\Rows` 固定读取主题根 `index.php` 的 docblock 元信息），只允许保留 `<?php`、严格类型声明、元信息注释和 `__TYPECHO_ROOT_DIR__` 守卫，不得写页面渲染逻辑。真实首页模板是 `app/pages/index.php`。
+- `functions.php` 只负责 PHP 版本检查、注册自动加载器与调用 `Framework::boot()`；`themeConfig()` / `themeFields()` / `themeInit()` 由框架核心 `TypechoFunctions.php` 统一注册，主题不要重复定义。
 - `router.pages_dir` 是相对 `app/` 的路径，默认 `router`；不要写 `app/router`，也不要把路由页面放到主题根目录。
+- `app/router/` 只承载 TTDF 自定义 URL 路由；Typecho 已判定的首页、文章、独立页面、归档、分类、标签、搜索、作者、日期与 404 视图统一放在 `app/pages/`。框架通过 `TTDF\Theme\PageTemplates` 在 `themeInit` 阶段改写 `Archive::$themeDir`，不得自行解析 URL 复刻 Typecho 的归档判断。
 - 框架静态资源托管在 `vendor/yuinijika/ttdf/static/`，属于只读依赖区；不得再向 `core/` 放置 Vue、Element Plus、设置页脚本或样式。
 - `vendor/yuinijika/ttdf/static/options/options.js` 与 `options.css` 是手写源码；`static/vue/*`、`static/element-plus/*` 只通过 `pnpm add vue@latest element-plus@latest` 与 `pnpm sync:static` 同步，不手工编辑 dist 文件。
 - `vendor/yuinijika/ttdf/package.json` 与 `pnpm-lock.yaml` 必须保留以复现静态资源，只忽略 `node_modules/`；不要在主题包中分发 `node_modules/`。
@@ -36,7 +38,7 @@
 - 不新增 v4 兼容层；`Get`、`GetPost`、`GetUser`、`GetComment`、`GetSite`、`GetTheme`、`TTDF_*`、OPP 函数、全局 `config()` 已移除。
 - 主题设置保留自定义 `ttdf` 表，但只能通过 `TTDF\Theme\Options` 读写；值使用 JSON，字段必须来自 `app/config/theme.php` 白名单。
 - `app/config/app.php` 的 `settings.table` / `settings.schema_version` 只描述存储表与 schema 版本，不定义设置项；`debug`、REST、CORS、Token 环境变量、资源 CDN 通过 `TTDF\Theme\ThemeConfig` 合并配置默认值与站点设置。
-- 页面模板入口固定使用 Typecho 官方模板名（`post.php`、`page.php`、`archive.php`、`404.php`）；页面主体映射使用 `TemplateMap` 字段与 `TTDF\Theme\Templates`，槽位只能是 `post`、`page`、`index`、`archive`、`category`、`tag`、`search`、`author`、`date`、`404`。
+- 页面模板入口固定在 `app/pages/`，并使用 Typecho 官方模板名（`index.php`、`post.php`、`page.php`、`archive.php`、`single.php`、`404.php`）；默认只保留 `index.php`、`archive.php`、`post.php`、`page.php`、`404.php`，partial 如 `comments.php` 同样放在 `app/pages/`。页面主体映射使用 `TemplateMap` 字段与 `TTDF\Theme\Templates`，槽位只能是 `post`、`page`、`index`、`archive`、`category`、`tag`、`search`、`author`、`date`、`404`。
 - `TemplateMap` 的组件值只允许 `[A-Za-z0-9_/-]`，不得包含 `..`；`Templates::render()` 必须通过 `Components::exists()` 校验后再 include，组件缺失时返回 `false` 并保留入口模板回退。
 - `Options::all()` 只返回当前主题前缀下的值；迁移只处理当前主题与 schema 字段，不得改写其他主题的行。
 - 禁止在每次请求中建表、写入默认值或执行迁移；建表与迁移只允许在后台设置页、保存动作或显式迁移命令中执行。
@@ -66,9 +68,10 @@
 - 损坏的附件 JSON 不得回退成可访问路径；只对确认为旧版纯路径的文本走 legacy 分支。
 - `Widget\Upload::attachmentHandle()` 在 Typecho 1.2.x 接收 `['attachment' => (object) ['path' => ...]]`，在 1.3.x 接收 `Typecho\Config`；通过反射兼容，不要写死单版签名。
 - Typecho 只有 `Widget\Archive` 的 `header` / `footer` / `beforeRender` / `afterRender` 是真实钩子；不存在 `Widget\Contents\Post` / `Widget\Contents\Page` 类，不要按旧文档注册。
-- 主题 `functions.php` 在 Archive 渲染阶段加载；REST 与自定义页面必须兼容 Typecho 的 404 handler，不要在启动阶段写数据库。`themeConfig()` / `themeFields()` 由核心注册，仍会在 Typecho 需要时调用。
+- 主题根 `functions.php` 在 Archive 初始化阶段从主题根加载；`themeInit()` 随后把 `themeDir` 指向 `app/pages/`，Typecho 才据此执行 `need()` 与 `render()`。REST 与自定义页面必须兼容 Typecho 的 404 handler，不要在启动阶段写数据库。`themeConfig()` / `themeFields()` / `themeInit()` 由核心注册，仍会在 Typecho 需要时调用。
 - 自动路由同时支持 `[slug].php` 与 `[slug]/index.php`；动态目录必须先校验 `realpath` 边界。
-- 示例主题使用 `index.php` / `archive.php` / `post.php` / `page.php` / `comments.php`，数据读取走 Typecho 原生 Widget。
+- 示例主题的页面模板使用 `app/pages/index.php` / `archive.php` / `post.php` / `page.php` / `comments.php`，数据读取走 Typecho 原生 Widget；模板内引用主题根资源时必须使用 `\TTDF\Framework::root()`，不要依赖 `__DIR__` 推断主题根。
+- `PageTemplates` 选择模板时必须保持 Typecho 原生回退顺序：`{type}/{slug}.php` → `{type}.php` → attachment 的 `page.php` / `post.php` → `single.php` / `archive.php` → `index.php`；文件名只允许 `[A-Za-z0-9_/-]+.php`，拒绝 `..`、反斜杠、绝对路径和跨目录 `realpath`。
 
 # 常见任务流程
 
@@ -106,15 +109,25 @@
 4. 归档槽位通过 `Templates::archiveSlot()` 解析，不要在模板里散落 `if/else` 组件名
 5. 补 `TemplatesTest` 与设置页字段文档
 
+## 新增或调整页面模板
+
+1. Typecho 页面类型模板与 partial 一律放 `app/pages/`，根目录只保留元信息 stub `index.php`
+2. 默认入口命名为 `index.php`、`archive.php`、`post.php`、`page.php`、`404.php`；归档细粒度模板使用 `{type}/{slug}.php`
+3. 模板内 `$this->need()` 与 `$this->render()` 由框架改写后的 `themeDir` 解析，不要手工拼主题根路径
+4. 需要在模板中引用主题根资产或组件清单时使用 `\TTDF\Framework::root()`，不要通过 `__DIR__` 推导
+5. 修改 `PageTemplates` 的回退顺序时同步更新 `PageTemplatesTest` 与线上 `ttdf/v5/structure`、`skill/typecho-theme-dev`
+
 ## 文档更新
 
-1. 只通过线上 Docs Agent 维护：`docs-rev.py pull` → 本地编辑 → `push --dry-run` → 确认后提交
-2. 新建页面使用 `create`，已有页面使用 `push`；不要用 `push` 建页
-3. 文档路径：v5 文档 `ttdf/v5/*`，v4 归档 `ttdf/v4/*`，Skill `skill/ttdf-dev` 与 `skill/typecho-theme-dev`
-4. 不在仓库内保存完整文档或 Skill 镜像
-5. `create` 会直接上线；`push` 只进入待审队列，可用 `POST /admin/site/docs/revisions/{uuid}/approve` 批准
-6. 分区目录与排序通过 `PUT /admin/site/docs/metas` 维护；先用 `POST /agent/token` 换取 JWT，再以 `Cookie: access_token=<jwt>` 调用后台接口
-7. `ttdf/v4/*` 只做归档修订，不新增功能文档；新内容写入 `ttdf/v5/*`
+1. 文档只通过线上 Docs Agent 维护，API 根地址为 `https://api.miomoe.cn`；线上文档是唯一真源
+2. 读取页面：`GET /site/docs/page?path=ttdf/v5/structure`；提交修订：`POST /agent/docs/revisions`（`X-API-Key`）
+3. 新建页面使用文档系统的 create 流程；已有页面使用修订接口，不要用修订接口创建新页面
+4. 修订提交后进入待审队列，取返回的 `uuid`，用 `POST /agent/token` 换取 JWT，再以 `Cookie: access_token=<jwt>` 调用 `POST /admin/site/docs/revisions/{uuid}/approve`
+5. 分区目录与排序通过 `PUT /admin/site/docs/metas` 维护，同样需要 JWT Cookie
+6. 文档路径：v5 文档 `ttdf/v5/*`，v4 归档 `ttdf/v4/*`，Skill `skill/ttdf-dev` 与 `skill/typecho-theme-dev`
+7. 不在仓库内保存完整文档或 Skill 镜像；API Key 只从本机受控环境读取，禁止写入仓库、命令行历史或提交记录
+8. `ttdf/v4/*` 只做归档修订，不新增功能文档；新内容写入 `ttdf/v5/*`
+9. 修改页面模板目录、启动流程、公共 API 或安全边界时，必须同步更新受影响的 v5 文档与两个 Skill
 
 ## 发布
 

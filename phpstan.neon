@@ -5,6 +5,7 @@ parameters:
         - app
     excludePaths:
         - app/components/*
+        - app/pages/*
         - app/router/*
     scanFiles:
         - tests/Stubs/Typecho.php

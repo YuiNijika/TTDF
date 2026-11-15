@@ -10,11 +10,13 @@ use TTDF\Support\Escaper;
 use TTDF\Theme\Templates;
 use TTDF\View\Components;
 
-Components::render(__DIR__, 'AppHeader', ['archive' => $this]);
+$root = \TTDF\Framework::root();
+
+Components::render($root, 'AppHeader', ['archive' => $this]);
 $slot = Templates::archiveSlot($this);
-$rendered = Templates::render(__DIR__, $slot, $this, 'Archive');
+$rendered = Templates::render($root, $slot, $this, 'Archive');
 if (!$rendered && $slot !== 'archive') {
-    $rendered = Templates::render(__DIR__, 'archive', $this, 'Archive');
+    $rendered = Templates::render($root, 'archive', $this, 'Archive');
 }
 if (!$rendered):
 ?>
@@ -52,4 +54,4 @@ if (!$rendered):
 <nav class="pagination"><?php $this->pageNav(); ?></nav>
 <?php endif; ?>
 
-<?php Components::render(__DIR__, 'AppFooter', ['archive' => $this]); ?>
+<?php Components::render($root, 'AppFooter', ['archive' => $this]); ?>

@@ -10,8 +10,10 @@ use TTDF\Support\Escaper;
 use TTDF\Theme\Templates;
 use TTDF\View\Components;
 
-Components::render(__DIR__, 'AppHeader', ['archive' => $this]);
-$rendered = Templates::render(__DIR__, 'page', $this, 'Page');
+$root = \TTDF\Framework::root();
+
+Components::render($root, 'AppHeader', ['archive' => $this]);
+$rendered = Templates::render($root, 'page', $this, 'Page');
 if (!$rendered):
 ?>
 <article>
@@ -22,4 +24,4 @@ if (!$rendered):
 <?php $this->need('comments.php'); ?>
 <?php endif; ?>
 
-<?php Components::render(__DIR__, 'AppFooter', ['archive' => $this]); ?>
+<?php Components::render($root, 'AppFooter', ['archive' => $this]); ?>

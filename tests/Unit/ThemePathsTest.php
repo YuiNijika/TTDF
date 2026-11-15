@@ -23,7 +23,13 @@ final class ThemePathsTest extends TestCase
         self::assertFileDoesNotExist($root . '/app/config/setup.php');
         self::assertFileExists($root . '/app/config/fields.php');
         self::assertFileDoesNotExist($root . '/app/setup.php');
-        self::assertDirectoryDoesNotExist($root . '/app/pages');
+        self::assertDirectoryExists(Paths::pages($root));
+        self::assertFileExists($root . '/index.php');
+        self::assertFileDoesNotExist($root . '/archive.php');
+        self::assertFileDoesNotExist($root . '/post.php');
+        self::assertFileDoesNotExist($root . '/page.php');
+        self::assertFileDoesNotExist($root . '/404.php');
+        self::assertFileDoesNotExist($root . '/comments.php');
     }
 
     public function testThemeConfigFallsBackToStaticConfiguration(): void

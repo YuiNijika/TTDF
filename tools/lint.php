@@ -12,7 +12,6 @@ $directories = [
 $files = [
     $root . '/functions.php',
     $root . '/index.php',
-    $root . '/404.php',
 ];
 
 foreach ($directories as $directory) {

@@ -19,3 +19,10 @@ if (!function_exists('themeFields')) {
         \TTDF\Theme\Settings::fields($layout);
     }
 }
+
+if (!function_exists('themeInit')) {
+    function themeInit(object $archive): void
+    {
+        \TTDF\Theme\PageTemplates::apply($archive, \TTDF\Framework::root());
+    }
+}
