@@ -7,6 +7,7 @@ namespace TTDF\Tests\Unit;
 use PHPUnit\Framework\TestCase;
 use TTDF\Compat\Typecho;
 use TTDF\Config\Config;
+use TTDF\Hooks\Hooks;
 use TTDF\Http\Response;
 use TTDF\Http\ResponseException;
 use TTDF\Http\Rest\Router;
@@ -23,6 +24,7 @@ final class RestRouterTest extends TestCase
         $_SERVER['REQUEST_URI'] = '/ttdf/v1/site';
         $_GET = [];
         Config::load(['rest' => ['enabled' => true, 'prefix' => 'ttdf/v1']]);
+        Hooks::reset();
         Options::reset();
         Typecho::resetRoutes();
         \Typecho\Router::reset();
@@ -35,6 +37,7 @@ final class RestRouterTest extends TestCase
     protected function tearDown(): void
     {
         Response::capture(false);
+        Hooks::reset();
         Config::reset();
         Options::reset();
         Typecho::resetRoutes();

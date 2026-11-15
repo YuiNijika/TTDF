@@ -4,11 +4,16 @@ declare(strict_types=1);
 
 namespace TTDF\Http;
 
+use Throwable;
+use TTDF\Hooks\Hooks;
+use TTDF\Http\Rest\Router as RestRouter;
 use TTDF\Support\Json;
 
 final class Response
 {
     private static bool $capture = false;
+
+    private static bool $filtering = false;
 
     /**
      * Enable capture mode for tests and headless integrations. When enabled,
@@ -29,6 +34,8 @@ final class Response
      */
     public static function json(array $payload, int $status = 200): never
     {
+        $payload = self::filterRestPayload($payload, $status);
+
         if (self::$capture) {
             throw new ResponseException($payload, $status);
         }
@@ -46,6 +53,34 @@ final class Response
 
         echo Json::encode($payload);
         exit;
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
+    private static function filterRestPayload(array $payload, int $status): array
+    {
+        if (self::$filtering || !RestRouter::isHandling()) {
+            return $payload;
+        }
+
+        self::$filtering = true;
+        try {
+            $filtered = Hooks::applyFilters(
+                'rest.response',
+                $payload,
+                $status,
+                RestRouter::scope()
+            );
+
+            return is_array($filtered) ? $filtered : $payload;
+        } catch (Throwable $exception) {
+            error_log('TTDF REST response filter error: ' . $exception->getMessage());
+            return $payload;
+        } finally {
+            self::$filtering = false;
+        }
     }
 
     /**

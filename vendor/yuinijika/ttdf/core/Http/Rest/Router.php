@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace TTDF\Http\Rest;
 
 use InvalidArgumentException;
+use RuntimeException;
 use TTDF\Compat\Typecho;
 use TTDF\Config\Config;
+use TTDF\Hooks\Hooks;
 use TTDF\Http\PayloadTooLargeException;
 use TTDF\Http\Request;
 use TTDF\Http\Response;
@@ -14,6 +16,10 @@ use TTDF\Http\ResponseException;
 
 final class Router
 {
+    private static string $scope = Registry::AUTH_PUBLIC;
+
+    private static bool $handling = false;
+
     public static function registerRoutes(): void
     {
         $prefix = trim((string) Config::get('rest.prefix', 'ttdf/v1'), '/');
@@ -59,11 +65,19 @@ final class Router
 
     public static function handle(string $root): never
     {
+        self::$handling = true;
         try {
             $segments = self::segments();
             $method = Request::method();
+            $path = implode('/', $segments);
+            $isAdmin = $segments !== [] && $segments[0] === 'admin';
+            self::$scope = $isAdmin ? Registry::AUTH_ADMIN : Registry::AUTH_PUBLIC;
 
-            if ($segments !== [] && $segments[0] === 'admin') {
+            $registry = new Registry();
+            Hooks::doAction('rest.request', $method, $path, self::$scope);
+            Hooks::doAction('rest.routes', $registry, $method, $path);
+
+            if ($isAdmin) {
                 if ($method === 'OPTIONS') {
                     Response::error('Method not allowed', 405);
                 }
@@ -71,6 +85,10 @@ final class Router
                 Auth::requireAdmin();
                 Auth::requireSameOrigin();
                 Auth::requireNonce();
+                $route = $registry->match($method, $path, Registry::AUTH_ADMIN);
+                if ($route !== null) {
+                    self::dispatchCustom($route);
+                }
                 self::dispatchAdmin($root, array_slice($segments, 1), $method);
             }
 
@@ -84,6 +102,10 @@ final class Router
 
             Auth::requirePublicAccess();
             Cors::apply();
+            $route = $registry->match($method, $path, Registry::AUTH_PUBLIC);
+            if ($route !== null) {
+                self::dispatchCustom($route);
+            }
             self::dispatchPublic($segments);
         } catch (ResponseException $exception) {
             throw $exception;
@@ -92,9 +114,53 @@ final class Router
         } catch (InvalidArgumentException $exception) {
             Response::error($exception->getMessage(), 400);
         } catch (\Throwable $exception) {
+            Hooks::doAction('rest.exception', $exception, self::$scope);
             error_log('TTDF REST error: ' . $exception->getMessage());
             Response::error('Internal server error', 500);
+        } finally {
+            self::$handling = false;
         }
+    }
+
+    public static function scope(): string
+    {
+        return self::$scope;
+    }
+
+    public static function isHandling(): bool
+    {
+        return self::$handling;
+    }
+
+    private static function dispatchCustom(RouteMatch $match): never
+    {
+        $route = $match->route;
+        $request = new RouteRequest($route->method, $route->path, $match->params, $route->auth);
+        $result = ($route->handler)($request);
+
+        if ($result instanceof Result) {
+            if ($result->error !== null) {
+                Response::error($result->error, $result->status, $result->errors);
+            }
+
+            if ($result->empty) {
+                Response::noContent($result->status);
+            }
+
+            Response::success($result->data, $result->meta, $result->status);
+        }
+
+        if (is_array($result)) {
+            Response::success($result);
+        }
+
+        if ($result === null) {
+            Response::noContent();
+        }
+
+        throw new RuntimeException(
+            'REST route handler must return TTDF\\Http\\Rest\\Result, an array, or null'
+        );
     }
 
     /**
