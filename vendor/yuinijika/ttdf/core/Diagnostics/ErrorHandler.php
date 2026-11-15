@@ -22,6 +22,14 @@ final class ErrorHandler
 
     private static bool $emitted = false;
 
+    /**
+     * Typecho's own handler, kept so a 404 can still render the theme's 404
+     * template instead of the framework error page.
+     *
+     * @var callable|null
+     */
+    private static $previousExceptionHandler = null;
+
     public static function register(bool $debug, string $logFile): void
     {
         if (self::$registered) {
@@ -38,7 +46,7 @@ final class ErrorHandler
         }
 
         set_error_handler([self::class, 'handleError']);
-        set_exception_handler([self::class, 'handleException']);
+        self::$previousExceptionHandler = set_exception_handler([self::class, 'handleException']);
         register_shutdown_function([self::class, 'handleShutdown']);
     }
 
@@ -60,6 +68,22 @@ final class ErrorHandler
     public static function handleException(Throwable $exception): void
     {
         if (self::$handling || self::$emitted) {
+            return;
+        }
+
+        $previous = self::$previousExceptionHandler;
+
+        if ($exception->getCode() === 404 && $previous !== null) {
+            self::$handling = true;
+            self::$emitted = true;
+
+            try {
+                self::report($exception, 'not_found', 'warning');
+                $previous($exception);
+            } finally {
+                self::$handling = false;
+            }
+
             return;
         }
 
@@ -109,9 +133,9 @@ final class ErrorHandler
         self::emit($exception);
     }
 
-    public static function report(Throwable $exception, string $context = ''): void
+    public static function report(Throwable $exception, string $context = '', string $level = 'error'): void
     {
-        self::$logger?->write('error', $exception->getMessage(), [
+        self::$logger?->write($level, $exception->getMessage(), [
             'class' => $exception::class,
             'context' => $context,
             'file' => $exception->getFile(),
@@ -128,7 +152,7 @@ final class ErrorHandler
     public static function render(Throwable $exception, ?bool $debug = null): string
     {
         $debug ??= self::$debug;
-        $status = self::statusCode();
+        $status = self::statusCode($exception);
         $title = self::title($status);
         $description = self::description($status);
         $request = $_SERVER['REQUEST_URI'] ?? '';
@@ -217,6 +241,7 @@ final class ErrorHandler
         self::$baseBufferLevel = 0;
         self::$handling = false;
         self::$emitted = false;
+        self::$previousExceptionHandler = null;
     }
 
     private static function emit(Throwable $exception): void
@@ -228,7 +253,7 @@ final class ErrorHandler
         self::$emitted = true;
 
         if (!headers_sent()) {
-            http_response_code(self::statusCode());
+            http_response_code(self::statusCode($exception));
             header('Content-Type: text/html; charset=UTF-8');
             header('Cache-Control: no-store, max-age=0');
             header('X-Content-Type-Options: nosniff');
@@ -247,14 +272,19 @@ final class ErrorHandler
         }
     }
 
-    private static function statusCode(): int
+    private static function statusCode(?Throwable $exception = null): int
     {
         $status = http_response_code();
-        if (!is_int($status) || $status < 400 || $status > 599) {
-            return 500;
+        if (is_int($status) && $status >= 400 && $status <= 599) {
+            return $status;
         }
 
-        return $status;
+        $code = $exception?->getCode();
+        if (is_int($code) && $code >= 400 && $code <= 599) {
+            return $code;
+        }
+
+        return 500;
     }
 
     private static function title(int $status): string

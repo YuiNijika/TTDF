@@ -14,6 +14,7 @@ final class ErrorHandlerTest extends TestCase
     {
         http_response_code(200);
         ErrorHandler::reset();
+        set_exception_handler(null);
     }
 
     public function testProductionPageIsCompleteAndHidesExceptionDetails(): void
@@ -50,5 +51,56 @@ final class ErrorHandlerTest extends TestCase
 
         self::assertStringContainsString('<h1>页面没找到</h1>', $html);
         self::assertStringContainsString('<span class="code">404</span>', $html);
+    }
+
+    public function testNotFoundExceptionFallsBackToTypechoHandler(): void
+    {
+        $captured = null;
+        set_exception_handler(function (\Throwable $exception) use (&$captured): void {
+            $captured = $exception;
+        });
+
+        ErrorHandler::register(false, self::logFile());
+
+        $exception = new RuntimeException("Path '/missing' not found", 404);
+        ErrorHandler::handleException($exception);
+
+        self::assertSame($exception, $captured);
+    }
+
+    public function testOtherExceptionsStayInsideTheFrameworkPage(): void
+    {
+        $called = false;
+        set_exception_handler(function () use (&$called): void {
+            $called = true;
+        });
+
+        ErrorHandler::register(false, self::logFile());
+
+        ErrorHandler::handleException(new RuntimeException('boom', 500));
+
+        self::assertFalse($called);
+    }
+
+    public function testExceptionCodeProvidesMissingStatus(): void
+    {
+        http_response_code(200);
+
+        $html = ErrorHandler::render(new RuntimeException('missing', 404), false);
+
+        self::assertStringContainsString('<h1>页面没找到</h1>', $html);
+        self::assertStringContainsString('<span class="code">404</span>', $html);
+    }
+
+    private static function logFile(): string
+    {
+        $file = sys_get_temp_dir() . '/ttdf-error-handler-test-' . bin2hex(random_bytes(6)) . '.log';
+        register_shutdown_function(static function () use ($file): void {
+            if (is_file($file)) {
+                unlink($file);
+            }
+        });
+
+        return $file;
     }
 }
