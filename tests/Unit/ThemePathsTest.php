@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace TTDF\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use TTDF\Config\Config;
+use TTDF\Theme\Options;
 use TTDF\Theme\Paths;
 use TTDF\Theme\ThemeConfig;
 
@@ -32,9 +34,9 @@ final class ThemePathsTest extends TestCase
         self::assertFileDoesNotExist($root . '/comments.php');
     }
 
-    public function testThemeConfigFallsBackToStaticConfiguration(): void
+    public function testThemeConfigUsesStaticRuntimeDefaultsAndIgnoresStaticAssets(): void
     {
-        \TTDF\Config\Config::load([
+        Config::load([
             'debug' => true,
             'rest' => [
                 'enabled' => true,
@@ -43,7 +45,7 @@ final class ThemePathsTest extends TestCase
             ],
             'assets' => ['cdn' => 'https://cdn.example.test/base'],
         ]);
-        \TTDF\Theme\Options::reset();
+        Options::reset();
         ThemeConfig::reset();
 
         try {
@@ -51,10 +53,29 @@ final class ThemePathsTest extends TestCase
             self::assertTrue(ThemeConfig::restEnabled());
             self::assertSame('CUSTOM_REST_TOKEN', ThemeConfig::tokenEnv());
             self::assertSame(['https://a.test'], ThemeConfig::corsOrigins());
-            self::assertSame('https://cdn.example.test/base', ThemeConfig::assetsCdn());
+            self::assertSame('', ThemeConfig::assetsCdn());
         } finally {
-            \TTDF\Config\Config::reset();
-            \TTDF\Theme\Options::reset();
+            Config::reset();
+            Options::reset();
+            ThemeConfig::reset();
+        }
+    }
+
+    public function testAssetsCdnComesFromThemeSettingOnly(): void
+    {
+        $property = new \ReflectionProperty(Options::class, 'instance');
+        $property->setValue(null, new Options(new InMemoryOptionsStore([
+            'Theme_Assets_CDN' => '"https://cdn.example.test/theme/"',
+        ]), 'Theme'));
+
+        Config::load(['assets' => ['cdn' => 'https://ignored.example.test/']]);
+        ThemeConfig::reset();
+
+        try {
+            self::assertSame('https://cdn.example.test/theme/', ThemeConfig::assetsCdn());
+        } finally {
+            Config::reset();
+            Options::reset();
             ThemeConfig::reset();
         }
     }

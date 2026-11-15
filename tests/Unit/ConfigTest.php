@@ -16,6 +16,7 @@ final class ConfigTest extends TestCase
         putenv('TTDF_DEBUG');
         putenv('TTDF_REST_ENABLED');
         putenv('TTDF_REST_CORS_ORIGINS');
+        putenv('TTDF_SETTINGS_TABLE');
     }
 
     public function testDotAccessAndDefaults(): void
@@ -103,5 +104,46 @@ PHP);
                 @rmdir($root);
             }
         }
+    }
+
+    public function testPublicConfigDropsVersionAndAssetsAndKeepsHiddenSettingsDefaults(): void
+    {
+        $root = sys_get_temp_dir() . '/ttdf-config-' . uniqid('', true);
+        mkdir($root . '/app/config', 0777, true);
+        file_put_contents($root . '/app/config/app.php', <<<'PHP'
+<?php
+
+return [
+    'version' => '9.9.9',
+    'debug' => true,
+    'assets' => ['cdn' => 'https://cdn.invalid.test'],
+];
+PHP);
+
+        try {
+            $config = ConfigLoader::load($root);
+
+            self::assertArrayNotHasKey('version', $config);
+            self::assertArrayNotHasKey('assets', $config);
+            self::assertSame('ttdf', $config['settings']['table']);
+            self::assertSame(2, $config['settings']['schema_version']);
+            self::assertTrue($config['debug']);
+        } finally {
+            @unlink($root . '/app/config/app.php');
+            @rmdir($root . '/app/config');
+            @rmdir($root . '/app');
+            @rmdir($root);
+        }
+    }
+
+    public function testSettingsTableEnvironmentOverrideStillWorks(): void
+    {
+        putenv('TTDF_SETTINGS_TABLE=ttdf_custom');
+
+        $config = ConfigLoader::load(dirname(__DIR__, 2));
+
+        self::assertSame('ttdf_custom', $config['settings']['table']);
+        self::assertArrayNotHasKey('version', $config);
+        self::assertArrayNotHasKey('assets', $config);
     }
 }

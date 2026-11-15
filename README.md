@@ -11,6 +11,7 @@ TTDF v5 是面向 Typecho 1.2.1+ / 1.3.x 的现代主题开发框架，要求 PH
 - Typecho 原生 Widget、路由、数据库与安全能力
 - 安全的自动页面路由与组件加载
 - 可配置的页面模板映射（Typecho 入口模板 → `app/components/` 组件）
+- 基于 Arco Design Vue 的后台设置面板与组件交互回归
 - 首页、归档、文章、页面与评论模板，使用 Typecho 原生 Widget
 - 确定性 Hook / Filter 系统
 - 只读公开 REST API 与 nonce 保护的后台接口
@@ -41,22 +42,24 @@ TTDF v5 是面向 Typecho 1.2.1+ / 1.3.x 的现代主题开发框架，要求 PH
 
 ```text
 functions.php                         唯一 PHP 入口，仅注册自动加载并启动框架
+index.php                              Typecho 主题元信息，@version 是主题版本唯一来源
 vendor/yuinijika/ttdf/core/           框架核心，只读依赖区
 vendor/yuinijika/ttdf/static/         框架静态资源，只读依赖区
 app/                                  主题代码区
   config/                             主题配置
-    app.php                           运行配置：版本、debug、REST、CORS、CDN、settings
+    app.php                           运行配置：debug、REST、CORS、router
     theme.php                         后台主题设置字段与分组
     fields.php                        文章/页面自定义字段
   router/                             自动路由页面，router.pages_dir 默认指向这里
+  pages/                              Typecho 页面类型模板与 partial
   components/                         可复用组件与模板映射目标
 assets/                              主题自有静态资源
-*.php                                 Typecho 模板
 ```
 
 `functions.php` 只负责加载自动加载器并调用 `TTDF\Framework::boot()`。Typecho
 需要的 `themeConfig()` 与 `themeFields()` 由框架核心统一注册，主题不需要再写
-这两个函数，也不要在主题根目录新增其他 PHP 入口。
+这两个函数，也不要在主题根目录新增其他 PHP 入口。页面模板固定放在
+`app/pages/`，由框架在 `themeInit` 阶段接管 Typecho 的模板目录。
 
 ## 主题配置
 
@@ -64,7 +67,6 @@ assets/                              主题自有静态资源
 
 ```php
 return [
-    'version' => '1.0.0',
     'debug' => false,
     'rest' => [
         'enabled' => false,
@@ -76,20 +78,16 @@ return [
         'enabled' => true,
         'pages_dir' => 'router',
     ],
-    'assets' => ['cdn' => ''],
-    'settings' => [
-        'table' => 'ttdf',
-        'schema_version' => 2,
-    ],
 ];
 ```
 
 - `router.pages_dir` 是相对 `app/` 的路径，默认值 `router` 表示 `app/router/`。
-- `debug`、REST 开关、CORS 白名单、Token 环境变量和资源 CDN 都可以在后台
-  “运行配置”中覆盖；配置值作为默认值，主题设置作为站点级覆盖。
-- `settings.table` 是自定义设置表名（不含 Typecho 表前缀），
-  `settings.schema_version` 是设置数据的 schema 版本，迁移器会升级到这个版本。
-  它不定义设置项本身；设置项在 `app/config/theme.php` 中定义。
+- 主题版本只写在根 `index.php` 的 docblock `@version`；`app/config/app.php`
+  不再接受 `version`。
+- `debug`、REST 开关、CORS 白名单与 Token 环境变量可以在后台“运行配置”中覆盖。
+- 资源 CDN 只来自主题设置 `Assets_CDN`；`app/config/app.php` 不再接受 `assets`。
+- `settings.table` 与 `settings.schema_version` 是框架内部隐藏默认值，不在公开
+  配置中声明；必要时可由 `TTDF_SETTINGS_TABLE` 环境变量覆盖表名。
 
 ## 页面模板映射
 
@@ -121,17 +119,22 @@ composer test
 
 ### 更新框架静态资源
 
-`vendor/yuinijika/ttdf/static/` 中的 Vue、Element Plus 发行文件由 pnpm 同步，
+`vendor/yuinijika/ttdf/static/` 中的 Vue、Arco Design Vue 发行文件由 pnpm 同步，
 设置页的 `options/options.js` 与 `options/options.css` 为手写源码：
 
 ```bash
 cd vendor/yuinijika/ttdf
 pnpm install
-pnpm add vue@latest element-plus@latest
+pnpm add vue@latest @arco-design/web-vue@latest
 pnpm sync:static
+pnpm check:static
+pnpm test:ui
 ```
 
 `package.json` 与 `pnpm-lock.yaml` 用于复现构建，必须保留；只忽略 `node_modules/`。
+
+`pnpm test:ui` 使用 Vitest + jsdom 覆盖全部设置字段控件，以及保存、错误提示、
+Tab URL 同步、导出、导入和迁移流程。
 
 ## 安全说明
 

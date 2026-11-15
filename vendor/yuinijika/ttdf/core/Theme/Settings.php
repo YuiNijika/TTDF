@@ -35,7 +35,7 @@ final class Settings
             'apiUrl' => rtrim(Typecho::siteUrl(), '/') . '/' . trim((string) Config::get('rest.prefix', 'ttdf/v1'), '/') . '/admin',
             'nonce' => Typecho::securityToken(),
             'themeName' => Typecho::themeName(),
-            'themeVersion' => (string) Config::get('version', ''),
+            'themeVersion' => Typecho::themeVersion(),
             'ttdfVersion' => Framework::VERSION,
         ];
 
@@ -43,13 +43,14 @@ final class Settings
         echo '<script>window.ttdfOptionsInfo = ' . Escaper::js($payload) . ';</script>' . PHP_EOL;
 
         Assets::printStaticStyles([
-            'element-plus/index.css',
+            'arco/index.css',
             'options/options.css',
         ]);
 
         Assets::printStaticScripts([
             'vue/vue.global.prod.js',
-            'element-plus/index.full.min.js',
+            'arco/arco-vue.min.js',
+            'arco/arco-vue-icon.min.js',
             'options/options.js',
         ]);
     }
@@ -147,6 +148,7 @@ final class Settings
         return [
             'meta' => [
                 'theme' => Typecho::themeName(),
+                'themeVersion' => Typecho::themeVersion(),
                 'frameworkVersion' => Framework::VERSION,
                 'exportedAt' => date('c'),
             ],
@@ -196,7 +198,7 @@ final class Settings
     {
         return [
             'themeName' => Typecho::themeName(),
-            'themeVersion' => (string) Config::get('version', ''),
+            'themeVersion' => Typecho::themeVersion(),
             'ttdfVersion' => Framework::VERSION,
             'typechoVersion' => Typecho::version(),
             'components' => Templates::available(self::root()),

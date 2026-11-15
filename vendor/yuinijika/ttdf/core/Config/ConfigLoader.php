@@ -11,7 +11,6 @@ final class ConfigLoader
 {
     /** @var array<string, mixed> */
     private const DEFAULTS = [
-        'version' => '5.0.0-next',
         'debug' => false,
         'rest' => [
             'enabled' => false,
@@ -25,9 +24,8 @@ final class ConfigLoader
             'enabled' => true,
             'pages_dir' => 'router',
         ],
-        'assets' => [
-            'cdn' => '',
-        ],
+        // Internal storage defaults. Themes may override these values, but
+        // app/config/app.php does not advertise them as public options.
         'settings' => [
             'table' => 'ttdf',
             'schema_version' => 2,
@@ -50,6 +48,7 @@ final class ConfigLoader
         }
 
         $config = array_replace_recursive(self::DEFAULTS, $config);
+        unset($config['version'], $config['assets']);
         self::applyEnvironment($config);
         self::validate($config);
 

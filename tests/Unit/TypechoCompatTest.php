@@ -68,4 +68,42 @@ final class TypechoCompatTest extends TestCase
         self::assertStringNotContainsString('<script', $html);
         self::assertStringNotContainsString('<a ', $html);
     }
+
+    public function testThemeVersionReadsRootIndexDocblock(): void
+    {
+        $root = sys_get_temp_dir() . '/ttdf-theme-' . uniqid('', true);
+        mkdir($root, 0777, true);
+        file_put_contents($root . '/index.php', <<<'PHP'
+<?php
+
+/**
+ * @package Theme
+ * @version 2.4.6
+ */
+PHP);
+
+        try {
+            self::assertSame('2.4.6', Typecho::themeVersion($root));
+        } finally {
+            @unlink($root . '/index.php');
+            @rmdir($root);
+        }
+    }
+
+    public function testThemeVersionDoesNotUseLegacyOptionFallback(): void
+    {
+        $options = new class {
+            public string $themeVersion = '9.9.9';
+        };
+        \Helper::$optionsOverride = $options;
+        $root = sys_get_temp_dir() . '/ttdf-theme-' . uniqid('', true);
+        mkdir($root, 0777, true);
+
+        try {
+            self::assertSame('', Typecho::themeVersion($root));
+        } finally {
+            \Helper::$optionsOverride = null;
+            @rmdir($root);
+        }
+    }
 }

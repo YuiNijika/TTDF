@@ -9,9 +9,9 @@ use TTDF\Config\Config;
 /**
  * Theme-facing runtime configuration.
  *
- * Values from app/config/app.php provide defaults; saved theme settings take
- * precedence so site owners can change debug, REST, CORS, token and CDN
- * behavior without editing framework or theme code.
+ * Values from app/config/app.php provide runtime defaults for debug, REST,
+ * CORS and the token environment. The asset CDN is read from the theme
+ * setting only; saved theme settings take precedence where both sources exist.
  */
 final class ThemeConfig
 {
@@ -70,11 +70,8 @@ final class ThemeConfig
     public static function assetsCdn(): string
     {
         $value = self::setting('Assets_CDN');
-        if (is_string($value)) {
-            return trim($value);
-        }
 
-        return trim((string) Config::get('assets.cdn', ''));
+        return is_string($value) ? trim($value) : '';
     }
 
     public static function reset(): void

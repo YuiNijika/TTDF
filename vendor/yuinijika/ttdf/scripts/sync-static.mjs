@@ -6,8 +6,9 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 const files = [
     ['node_modules/vue/dist/vue.global.prod.js', 'static/vue/vue.global.prod.js'],
-    ['node_modules/element-plus/dist/index.css', 'static/element-plus/index.css'],
-    ['node_modules/element-plus/dist/index.full.min.js', 'static/element-plus/index.full.min.js'],
+    ['node_modules/@arco-design/web-vue/dist/arco.min.css', 'static/arco/index.css'],
+    ['node_modules/@arco-design/web-vue/dist/arco-vue.min.js', 'static/arco/arco-vue.min.js'],
+    ['node_modules/@arco-design/web-vue/dist/arco-vue-icon.min.js', 'static/arco/arco-vue-icon.min.js'],
 ];
 
 for (const [source, target] of files) {

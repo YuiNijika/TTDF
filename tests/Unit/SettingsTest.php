@@ -60,13 +60,11 @@ final class SettingsTest extends TestCase
         ], $result['Templates']);
     }
 
-    public function testThemeInfoReportsConfiguredThemeVersion(): void
+    public function testThemeInfoReportsThemeRootIndexVersion(): void
     {
-        Config::load(['version' => '1.2.3']);
-
         $info = Settings::themeInfo();
 
-        self::assertSame('1.2.3', $info['themeVersion']);
+        self::assertSame('5.0.0-next', $info['themeVersion']);
         self::assertSame('5.0.0-next', $info['ttdfVersion']);
         self::assertSame('1.3.0', $info['typechoVersion']);
     }

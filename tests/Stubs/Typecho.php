@@ -208,6 +208,14 @@ namespace Typecho {
             return new self($component);
         }
 
+        /**
+         * @return array<string, mixed>
+         */
+        public static function parseInfo(string $pluginFile): array
+        {
+            return [];
+        }
+
         public function __set(string $name, mixed $value): void
         {
             self::$hooks[$this->component][$name] = $value;

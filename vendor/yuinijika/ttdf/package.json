@@ -3,21 +3,27 @@
   "version": "5.0.0-next",
   "private": true,
   "type": "module",
-  "description": "Build tooling that syncs Vue and Element Plus distributions into the TTDF framework static directory.",
+  "description": "Build tooling that syncs Vue and Arco Design Vue distributions into the TTDF framework static directory.",
   "scripts": {
     "sync:static": "node scripts/sync-static.mjs",
-    "check:static": "node --check static/options/options.js"
+    "check:static": "node --check static/options/options.js",
+    "test:ui": "vitest run --config vitest.config.mjs"
   },
   "keywords": [
     "ttdf",
     "typecho",
     "vue",
-    "element-plus"
+    "arco-design"
   ],
   "author": "YuiNijika",
   "license": "MIT",
   "dependencies": {
-    "element-plus": "^2.14.8",
+    "@arco-design/web-vue": "2.59.0",
     "vue": "^3.5.45"
+  },
+  "devDependencies": {
+    "@vue/test-utils": "^2.5.1",
+    "jsdom": "^31.0.1",
+    "vitest": "^5.1.0"
   }
 }

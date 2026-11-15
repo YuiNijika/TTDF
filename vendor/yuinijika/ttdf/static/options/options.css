@@ -1,19 +1,25 @@
 /**
  * TTDF v5 theme settings panel.
  *
- * Scoped to .TTDF-container so Typecho's admin styles and Element Plus
+ * Scoped to .TTDF-container so Typecho's admin styles and Arco Design
  * defaults remain untouched outside the panel.
  */
 .TTDF-container {
   --ttdf-panel-height: clamp(520px, 48vh, 1080px);
   --ttdf-header: #2271b1;
-  --ttdf-primary: #409eff;
-  --ttdf-nav-accent: #4f46e5;
-  --ttdf-nav-active: #1a73e8;
+  --ttdf-primary: #2271b1;
+  --ttdf-nav-accent: #1a73e8;
   --ttdf-primary-soft: #e8f0fe;
   --ttdf-border: #ddd;
   --ttdf-muted: #6b7280;
   --ttdf-text: #1f2937;
+  --primary-1: 232, 240, 254;
+  --primary-2: 210, 227, 252;
+  --primary-3: 166, 198, 250;
+  --primary-4: 114, 167, 235;
+  --primary-5: 57, 133, 211;
+  --primary-6: 34, 113, 177;
+  --primary-7: 26, 89, 140;
   max-width: 1200px;
   margin: 20px auto;
   border: 1px solid var(--ttdf-border);
@@ -23,10 +29,6 @@
   overflow: hidden;
 }
 
-/*
- * Typecho narrows theme settings to 66% of the page. The panel opts into a
- * wider column at runtime by adding .ttdf-options-column to its parent.
- */
 .typecho-page-main > .ttdf-options-column {
   flex: 0 0 100%;
   width: 100%;
@@ -42,7 +44,6 @@
   box-sizing: border-box;
 }
 
-/* Header */
 .TTDF-header {
   display: flex;
   align-items: center;
@@ -60,6 +61,7 @@
   font-weight: 650;
   line-height: 1.25;
   letter-spacing: -0.02em;
+  text-wrap: balance;
 }
 
 .TTDF-title small {
@@ -84,41 +86,36 @@
 .TTDF-actions {
   display: flex;
   align-items: center;
-  gap: 0;
-}
-
-.TTDF-actions .el-button {
-  margin-left: 0;
 }
 
 .TTDF-button-group {
   display: inline-flex;
   align-items: stretch;
-  border-radius: 4px;
+  border-radius: 6px;
   overflow: hidden;
 }
 
-.TTDF-button-group .el-button {
+.TTDF-button-group .arco-btn {
   height: 34px;
   margin: 0;
   border-radius: 0;
 }
 
-.TTDF-button-group > .el-button:first-child {
-  border-radius: 4px 0 0 4px;
+.TTDF-button-group > .arco-btn:first-child {
+  border-radius: 6px 0 0 6px;
 }
 
-.TTDF-button-group .el-dropdown {
+.TTDF-button-group .arco-dropdown {
   display: flex;
   align-items: stretch;
 }
 
-.TTDF-button-group .el-dropdown .el-button {
+.TTDF-button-group .arco-dropdown .arco-btn {
   border-left: 1px solid rgba(255, 255, 255, 0.38);
-  border-radius: 0 4px 4px 0;
+  border-radius: 0 6px 6px 0;
 }
 
-.TTDF-button-group .TTDF-more-button.el-button {
+.TTDF-button-group .TTDF-more-button.arco-btn {
   width: 38px;
   height: 34px;
   padding: 0;
@@ -131,29 +128,19 @@
   transition: transform 0.18s ease;
 }
 
-.TTDF-button-group .TTDF-more-button[aria-expanded="true"] .TTDF-chevron,
-.TTDF-button-group .el-dropdown.is-active .TTDF-chevron {
+.TTDF-button-group .TTDF-more-button[aria-expanded="true"] .TTDF-chevron {
   transform: rotate(180deg);
 }
 
-/* The panel owns the save action; hide Typecho's generated submit row. */
 .ttdf-options-form .typecho-option-submit,
 form[action*="themes-edit"] .typecho-option-submit {
   display: none !important;
 }
 
-.TTDF-error {
+.TTDF-container .TTDF-error.arco-alert {
   margin: 12px 22px 0;
-  padding: 10px 14px;
-  border: 1px solid #f0b4b4;
-  border-radius: 6px;
-  background: #fff1f0;
-  color: #b42318;
-  font-size: 13px;
-  line-height: 1.5;
 }
 
-/* Body */
 .TTDF-body {
   display: flex;
   height: var(--ttdf-panel-height);
@@ -161,47 +148,59 @@ form[action*="themes-edit"] .typecho-option-submit {
   background: #fafbfc;
 }
 
-.TTDF-nav {
+.TTDF-spin {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.TTDF-spin > .arco-spin {
+  width: 100%;
+  height: 100%;
+}
+
+.TTDF-tabs {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.TTDF-tabs .arco-tabs-nav-vertical {
   flex: 0 0 200px;
   width: 200px;
   height: 100%;
-  padding: 0;
+  padding: 8px 0;
   border-right: 1px solid var(--ttdf-border);
   background: #f8f9fa;
   overflow-y: auto;
 }
 
-.TTDF-nav-item {
-  display: block;
-  width: 100%;
-  padding: 12px 20px;
-  border: 0;
+.TTDF-tabs .arco-tabs-nav-vertical .arco-tabs-tab {
+  justify-content: flex-start;
+  margin: 0;
+  padding: 10px 20px;
   border-left: 3px solid transparent;
-  border-radius: 0;
-  background: transparent;
   color: #555555;
-  font-family: inherit;
   font-size: 14px;
   font-weight: 500;
-  line-height: 1.4;
   text-align: left;
-  cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
-.TTDF-nav-item:hover {
+.TTDF-tabs .arco-tabs-nav-vertical .arco-tabs-tab:hover {
   background: #f0f0f0;
   color: var(--ttdf-nav-accent);
 }
 
-.TTDF-nav-item.active {
+.TTDF-tabs .arco-tabs-nav-vertical .arco-tabs-tab-active {
   border-left-color: var(--ttdf-nav-accent);
   background: var(--ttdf-primary-soft);
-  color: var(--ttdf-nav-active);
+  color: var(--ttdf-nav-accent);
   font-weight: 600;
 }
 
-.TTDF-content {
+.TTDF-tabs .arco-tabs-content {
   flex: 1 1 auto;
   min-width: 0;
   height: 100%;
@@ -211,21 +210,18 @@ form[action*="themes-edit"] .typecho-option-submit {
   scrollbar-gutter: stable;
 }
 
+.TTDF-tabs .arco-tabs-content-item:not(.arco-tabs-content-item-active) {
+  display: none;
+}
+
 .TTDF-content-card {
   min-height: 100%;
-  padding: 16px;
-  border: 1px solid #ddd;
   border-radius: 10px;
   background: #ffffff;
 }
 
-.TTDF-tab-panel {
-  display: none;
-}
-
-.TTDF-tab-panel.active {
-  display: block;
-  animation: ttdf-fade-in 0.18s ease-out;
+.TTDF-content-card > .arco-card-body {
+  padding: 16px;
 }
 
 .TTDF-footer {
@@ -238,37 +234,8 @@ form[action*="themes-edit"] .typecho-option-submit {
   text-align: right;
 }
 
-/* Loading and empty states */
-.loading-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  min-height: 180px;
-  color: #606266;
-  font-size: 14px;
-}
-
-.nav-empty {
-  padding: 18px;
-  color: #999999;
-  font-size: 13px;
-  text-align: center;
-}
-
-.skeleton-item {
-  height: 16px;
-  margin: 14px 18px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #eef0f3 25%, #f6f7f9 50%, #eef0f3 75%);
-  background-size: 200% 100%;
-  animation: ttdf-skeleton 1.2s ease-in-out infinite;
-}
-
-.ttdf-loading-dot {
-  display: inline-block;
-  color: #409eff;
-  animation: ttdf-pulse 1s ease-in-out infinite;
+.TTDF-container .arco-skeleton {
+  padding: 20px;
 }
 
 .TTDF-fatal {
@@ -282,7 +249,6 @@ form[action*="themes-edit"] .typecho-option-submit {
   line-height: 1.5;
 }
 
-/* Fields */
 .ttdf-field {
   margin-bottom: 16px;
 }
@@ -300,61 +266,14 @@ form[action*="themes-edit"] .typecho-option-submit {
   line-height: 1.4;
 }
 
-.ttdf-field .form-group {
-  margin-bottom: 0;
-}
-
-.TTDF-container .el-form-item {
-  margin-bottom: 0;
-}
-
-.TTDF-container .el-form-item__content {
-  line-height: 1.4;
-}
-
-.TTDF-container .el-select,
-.TTDF-container .el-cascader,
-.TTDF-container .el-input-number {
-  width: 100%;
-}
-
-.TTDF-container .el-select__wrapper {
-  min-height: 32px;
-  border-radius: 7px;
-  box-shadow: 0 0 0 1px #d0d7de inset;
-}
-
-.TTDF-container .el-select__wrapper.is-focused {
-  box-shadow: 0 0 0 1px var(--ttdf-primary) inset;
-}
-
-/*
- * Typecho's admin input rules paint the filter input white, which hides the
- * selected value in Element Plus selects. Keep the input transparent so the
- * selected label remains visible, including values created by allow-create.
- */
-.TTDF-container .el-select__input {
-  border: 0 !important;
-  background-color: transparent !important;
-  box-shadow: none !important;
-}
-
-.TTDF-container .el-select__selected-item {
-  color: var(--ttdf-text);
-}
-
-.TTDF-container .el-select__placeholder {
-  color: #98a2b3;
-}
-
-.field-description {
+.ttdf-field-description {
   margin-top: 6px;
   color: #8a8f98;
   font-size: 12px;
   line-height: 1.55;
 }
 
-.field-description code,
+.ttdf-field-description code,
 .TTDF-container code {
   padding: 1px 5px;
   border-radius: 4px;
@@ -364,67 +283,95 @@ form[action*="themes-edit"] .typecho-option-submit {
   font-size: 0.92em;
 }
 
-/* Tags */
-.tags-container {
+.TTDF-container .arco-select,
+.TTDF-container .arco-cascader,
+.TTDF-container .arco-input-number,
+.TTDF-container .arco-picker {
+  width: 100%;
+}
+
+.TTDF-container .arco-input-wrapper,
+.TTDF-container .arco-textarea-wrapper,
+.TTDF-container .arco-select-view,
+.TTDF-container .arco-cascader-view,
+.TTDF-container .arco-picker {
+  border-radius: 7px;
+}
+
+.TTDF-container .arco-select-view-value,
+.TTDF-container .arco-select-view-input {
+  min-width: 0;
+  color: var(--ttdf-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.TTDF-container .arco-form-item {
+  margin-bottom: 0;
+}
+
+.TTDF-container .arco-form-item-content {
+  line-height: 1.4;
+}
+
+.TTDF-choice-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.TTDF-switch-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+}
+
+.TTDF-switch-text {
+  color: var(--ttdf-muted);
+  font-size: 13px;
+}
+
+.TTDF-container .ttdf-code-input textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  tab-size: 4;
+}
+
+.ttdf-tags {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
 }
 
-.tag-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  border: 0;
-  border-radius: 4px;
-  background: #f0f2f5;
-  color: #303133;
-  font-size: 12px;
-  line-height: 1.4;
+.ttdf-inline-input {
+  width: 180px;
 }
 
-.tag-remove {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  color: #8a8f98;
-  font-size: 15px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.tag-remove:hover {
-  background: transparent;
-  color: #d93025;
-}
-
-/* Add list */
-.add-list-container {
+.ttdf-add-list {
   display: grid;
   gap: 8px;
 }
 
-.add-list-item {
+.ttdf-add-list-item {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-/* Template map */
-.template-map-container {
+.ttdf-add-list-item > .arco-input-wrapper {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ttdf-template-map {
   display: grid;
   gap: 6px;
 }
 
-.template-map-row {
+.ttdf-template-map-row {
   display: grid;
   grid-template-columns: minmax(150px, 210px) minmax(0, 1fr);
   align-items: center;
@@ -432,7 +379,7 @@ form[action*="themes-edit"] .typecho-option-submit {
   min-height: 32px;
 }
 
-.template-map-label {
+.ttdf-template-map-label {
   display: flex;
   align-items: baseline;
   gap: 8px;
@@ -443,7 +390,7 @@ form[action*="themes-edit"] .typecho-option-submit {
   line-height: 1.4;
 }
 
-.template-map-label code {
+.ttdf-template-map-label code {
   padding: 1px 5px;
   border-radius: 4px;
   background: #f1f5f9;
@@ -452,18 +399,17 @@ form[action*="themes-edit"] .typecho-option-submit {
   font-size: 11px;
 }
 
-.template-map-select {
+.ttdf-template-map-select {
   width: 100%;
 }
 
-.template-map-hint {
+.ttdf-template-map-hint {
   margin: 2px 0 0;
   color: #6b7280;
   font-size: 12px;
   line-height: 1.45;
 }
 
-/* Custom HTML blocks rendered by DynamicHtmlRenderer */
 .TTDF-container h2,
 .TTDF-container h3,
 .TTDF-container h4,
@@ -492,7 +438,7 @@ form[action*="themes-edit"] .typecho-option-submit {
   font-size: 14px;
 }
 
-.TTDF-content p {
+.TTDF-content-card p {
   margin: 0 0 8px;
   color: var(--ttdf-muted);
   font-size: 13px;
@@ -528,39 +474,9 @@ form[action*="themes-edit"] .typecho-option-submit {
   gap: 12px;
 }
 
-@keyframes ttdf-fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes ttdf-skeleton {
-  0% {
-    background-position: 200% 0;
-  }
-
-  100% {
-    background-position: -200% 0;
-  }
-}
-
-@keyframes ttdf-pulse {
-  0%,
-  100% {
-    opacity: 0.35;
-    transform: scale(0.85);
-  }
-
-  50% {
-    opacity: 1;
-    transform: scale(1);
-  }
+.TTDF-container :focus-visible {
+  outline: 2px solid var(--ttdf-nav-accent);
+  outline-offset: 2px;
 }
 
 @media (max-width: 900px) {
@@ -579,12 +495,15 @@ form[action*="themes-edit"] .typecho-option-submit {
 
 @media (max-width: 760px) {
   .TTDF-body {
-    flex-direction: column;
     height: auto;
     min-height: 0;
   }
 
-  .TTDF-nav {
+  .TTDF-tabs {
+    flex-direction: column;
+  }
+
+  .TTDF-tabs .arco-tabs-nav-vertical {
     display: flex;
     flex: 0 0 auto;
     width: 100%;
@@ -596,29 +515,28 @@ form[action*="themes-edit"] .typecho-option-submit {
     overflow-y: hidden;
   }
 
-  .TTDF-nav-item {
-    width: auto;
+  .TTDF-tabs .arco-tabs-nav-vertical .arco-tabs-tab {
     min-width: 108px;
     padding: 10px 14px;
     border-left: 0;
     border-bottom: 3px solid transparent;
+    justify-content: center;
     text-align: center;
     white-space: nowrap;
   }
 
-  .TTDF-nav-item.active {
+  .TTDF-tabs .arco-tabs-nav-vertical .arco-tabs-tab-active {
     border-left-color: transparent;
     border-bottom-color: var(--ttdf-primary);
   }
 
-  .TTDF-content {
+  .TTDF-tabs .arco-tabs-content {
     height: auto;
     padding: 10px;
     overflow-y: visible;
   }
 
-  .TTDF-content-card {
-    min-height: 0;
+  .TTDF-content-card > .arco-card-body {
     padding: 12px;
   }
 
@@ -634,16 +552,16 @@ form[action*="themes-edit"] .typecho-option-submit {
     flex: 1 1 auto;
   }
 
-  .TTDF-button-group .el-dropdown {
+  .TTDF-button-group .arco-dropdown {
     flex: 0 0 auto;
   }
 
-  .template-map-row {
+  .ttdf-template-map-row {
     grid-template-columns: 1fr;
     gap: 4px;
   }
 
-  .add-list-item {
+  .ttdf-add-list-item {
     flex-direction: column;
     align-items: stretch;
   }

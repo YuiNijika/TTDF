@@ -34,6 +34,32 @@ final class Typecho
         return is_scalar($value) ? (string) $value : '';
     }
 
+    public static function themeVersion(?string $root = null): string
+    {
+        $root = $root ?? (class_exists(\TTDF\Framework::class) ? \TTDF\Framework::root() : '');
+        $file = $root !== '' ? rtrim(str_replace('\\', '/', $root), '/') . '/index.php' : '';
+
+        if ($file !== '' && is_file($file)) {
+            if (class_exists('Typecho\\Plugin')) {
+                try {
+                    $info = \Typecho\Plugin::parseInfo($file);
+                    if (isset($info['version']) && is_scalar($info['version']) && (string) $info['version'] !== '') {
+                        return (string) $info['version'];
+                    }
+                } catch (\Throwable) {
+                    // Fall through to the docblock parser.
+                }
+            }
+
+            $docblock = self::firstDocblock($file);
+            if ($docblock !== null && preg_match('/@version\s+([^\s*]+)/i', $docblock, $matches) === 1) {
+                return trim($matches[1]);
+            }
+        }
+
+        return '';
+    }
+
     public static function version(): string
     {
         if (self::options() === null) {
@@ -195,6 +221,18 @@ final class Typecho
         }
 
         return strip_tags($html, $allowedTags);
+    }
+
+    private static function firstDocblock(string $file): ?string
+    {
+        $tokens = @token_get_all((string) @file_get_contents($file));
+        foreach ($tokens as $token) {
+            if (is_array($token) && $token[0] === T_DOC_COMMENT) {
+                return (string) $token[1];
+            }
+        }
+
+        return null;
     }
 
     private static function option(string $name): mixed

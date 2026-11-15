@@ -7,7 +7,6 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
 }
 
 return [
-    'version' => '5.0.0-next',
     'debug' => false,
 
     'rest' => [
@@ -24,14 +23,4 @@ return [
         'pages_dir' => 'router',
     ],
 
-    'assets' => [
-        'cdn' => '',
-    ],
-
-    'settings' => [
-        // 自定义设置表名；Typecho 会自动加上站点表前缀。
-        'table' => 'ttdf',
-        // 当前主题设置的 schema 版本，迁移器会升级到这个版本。
-        'schema_version' => 2,
-    ],
 ];
