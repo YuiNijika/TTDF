@@ -6,6 +6,21 @@ namespace TTDF\Hooks;
 
 final class Hooks
 {
+    /**
+     * v4 hook names remain valid aliases. They are resolved to the v5 hook
+     * group, so callbacks registered on either name run exactly once.
+     *
+     * @var array<string, string>
+     */
+    private const LEGACY_ALIASES = [
+        'load_head' => 'theme.head',
+        'load_foot' => 'theme.after_main',
+        'header' => 'typecho.archive.header',
+        'footer' => 'typecho.archive.footer',
+        'before_render' => 'typecho.archive.before_render',
+        'after_render' => 'typecho.archive.after_render',
+    ];
+
     /** @var array<string, list<array{priority: int, sequence: int, callback: callable}>> */
     private static array $actions = [];
 
@@ -26,7 +41,14 @@ final class Hooks
 
     public static function doAction(string $hook, mixed ...$args): void
     {
-        foreach (self::sorted(self::$actions[$hook] ?? []) as $entry) {
+        $entries = [];
+        foreach (self::group($hook) as $name) {
+            foreach (self::$actions[$name] ?? [] as $entry) {
+                $entries[] = $entry;
+            }
+        }
+
+        foreach (self::sorted($entries) as $entry) {
             ($entry['callback'])(...$args);
         }
     }
@@ -42,10 +64,12 @@ final class Hooks
 
     public static function removeAction(string $hook, callable $callback): void
     {
-        self::$actions[$hook] = array_values(array_filter(
-            self::$actions[$hook] ?? [],
-            static fn (array $entry): bool => $entry['callback'] !== $callback
-        ));
+        foreach (self::group($hook) as $name) {
+            self::$actions[$name] = array_values(array_filter(
+                self::$actions[$name] ?? [],
+                static fn (array $entry): bool => $entry['callback'] !== $callback
+            ));
+        }
     }
 
     public static function removeFilter(string $hook, callable $callback): void
@@ -58,7 +82,13 @@ final class Hooks
 
     public static function hasAction(string $hook): bool
     {
-        return (self::$actions[$hook] ?? []) !== [];
+        foreach (self::group($hook) as $name) {
+            if ((self::$actions[$name] ?? []) !== []) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static function hasFilter(string $hook): bool
@@ -83,6 +113,23 @@ final class Hooks
             'sequence' => ++self::$sequence,
             'callback' => $callback,
         ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function group(string $hook): array
+    {
+        $canonical = self::LEGACY_ALIASES[$hook] ?? $hook;
+        $names = [$canonical];
+
+        foreach (self::LEGACY_ALIASES as $alias => $target) {
+            if ($target === $canonical) {
+                $names[] = $alias;
+            }
+        }
+
+        return array_values(array_unique($names));
     }
 
     /**

@@ -13,9 +13,11 @@ use TTDF\Theme\Options;
 
 $options = Typecho::options();
 $footer = (string) Options::instance()->get('FooterText', (string) ($options?->title ?? ''));
+$archive = $viewData['archive'] ?? null;
 ?>
-<?php Hooks::doAction('theme.before_footer'); ?>
+<?php Hooks::doAction('theme.before_footer', $archive); ?>
 </main>
+<?php Hooks::doAction('theme.after_main', $archive); ?>
 <footer>
     <p>&copy; <?php echo date('Y'); ?> <?php echo Escaper::html($footer); ?></p>
 </footer>

@@ -101,17 +101,25 @@ final class Typecho
 
     public static function isAdmin(): bool
     {
+        if (!self::isLoggedIn()) {
+            return false;
+        }
+
+        try {
+            return (bool) \Widget\User::alloc()->pass('administrator', true);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    public static function isLoggedIn(): bool
+    {
         if (!class_exists('Widget\\User')) {
             return false;
         }
 
         try {
-            $user = \Widget\User::alloc();
-            if (!$user->hasLogin()) {
-                return false;
-            }
-
-            return (bool) $user->pass('administrator', true);
+            return (bool) \Widget\User::alloc()->hasLogin();
         } catch (\Throwable) {
             return false;
         }

@@ -6,6 +6,7 @@ namespace TTDF\Http;
 
 use InvalidArgumentException;
 use TTDF\Support\Json;
+use TTDF\Compat\Typecho;
 
 final class Request
 {
@@ -29,6 +30,28 @@ final class Request
     public static function method(): string
     {
         return strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+    }
+
+    public static function path(): string
+    {
+        $uri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
+        $path = parse_url($uri, PHP_URL_PATH);
+        $path = is_string($path) ? rawurldecode($path) : '/';
+        $path = trim($path, '/');
+
+        $base = parse_url(Typecho::siteUrl(), PHP_URL_PATH);
+        $base = is_string($base) ? trim(rawurldecode($base), '/') : '';
+        if ($base !== '' && ($path === $base || str_starts_with($path, $base . '/'))) {
+            $path = ltrim(substr($path, strlen($base)), '/');
+        }
+
+        if ($path === 'index.php') {
+            $path = '';
+        } elseif (str_starts_with($path, 'index.php/')) {
+            $path = substr($path, strlen('index.php/'));
+        }
+
+        return $path;
     }
 
     public static function query(string $key, mixed $default = null): mixed

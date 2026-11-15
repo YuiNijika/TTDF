@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace TTDF;
 
 use RuntimeException;
+use TTDF\Ajax\Endpoint as AjaxEndpoint;
 use TTDF\Config\Config;
 use TTDF\Config\ConfigLoader;
 use TTDF\Diagnostics\ErrorHandler;
+use TTDF\Diagnostics\RuntimeConsole;
 use TTDF\Hooks\Hooks;
 use TTDF\Hooks\TypechoBridge;
 use TTDF\Http\Rest\Router as RestRouter;
@@ -32,6 +34,7 @@ final class Framework
             return;
         }
 
+        RuntimeConsole::start();
         self::$root = $root;
         Config::load(ConfigLoader::load($root));
         require_once __DIR__ . '/TypechoFunctions.php';
@@ -42,8 +45,11 @@ final class Framework
         );
 
         TypechoBridge::register();
+        RuntimeConsole::register();
+        AjaxEndpoint::registerRoutes();
         Hooks::doAction('framework.boot');
 
+        AjaxEndpoint::handleIfRequested();
         RestRouter::syncRoutes();
         RestRouter::handleIfRequested($root);
         AutoRouter::boot($root);
@@ -75,5 +81,7 @@ final class Framework
     {
         self::$booted = false;
         self::$root = '';
+        AjaxEndpoint::reset();
+        RuntimeConsole::reset();
     }
 }

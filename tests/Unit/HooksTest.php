@@ -46,4 +46,40 @@ final class HooksTest extends TestCase
 
         self::assertFalse(Hooks::hasAction('demo'));
     }
+
+    public function testLegacyLoadFootAliasRunsModernCallbacks(): void
+    {
+        $calls = [];
+        Hooks::addAction('theme.after_main', static function () use (&$calls): void {
+            $calls[] = 'modern';
+        });
+
+        Hooks::doAction('load_foot');
+
+        self::assertSame(['modern'], $calls);
+    }
+
+    public function testModernHookRunsLegacyCallbacks(): void
+    {
+        $calls = [];
+        Hooks::addAction('load_foot', static function () use (&$calls): void {
+            $calls[] = 'legacy';
+        });
+
+        Hooks::doAction('theme.after_main');
+
+        self::assertSame(['legacy'], $calls);
+    }
+
+    public function testLegacyArchiveAliasSharesCallbacks(): void
+    {
+        $calls = [];
+        Hooks::addAction('header', static function () use (&$calls): void {
+            $calls[] = 'legacy';
+        });
+
+        Hooks::doAction('typecho.archive.header');
+
+        self::assertSame(['legacy'], $calls);
+    }
 }
