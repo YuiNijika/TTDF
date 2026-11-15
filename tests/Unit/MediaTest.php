@@ -60,9 +60,30 @@ final class MediaTest extends TestCase
             'https://cdn.example.test/logo.png',
             Media::url('https://cdn.example.test/logo.png')
         );
+        self::assertSame('/usr/uploads/2026/11/logo.png', Media::url('/usr/uploads/2026/11/logo.png'));
         self::assertSame('', Media::url('javascript:alert(1)'));
-        self::assertSame('', Media::url('/usr/uploads/logo.png'));
+        self::assertSame('', Media::url('//cdn.example.test/logo.png'));
         self::assertSame('', Media::url('999'));
+    }
+
+    public function testTextMediaValuesKeepUrlsAndLegacyIds(): void
+    {
+        self::assertSame('https://cdn.example.test/logo.png', Media::normalizeUrl(' https://cdn.example.test/logo.png '));
+        self::assertSame('/usr/uploads/2026/11/logo.png', Media::normalizeUrl('/usr/uploads/2026/11/logo.png'));
+        self::assertSame('42', Media::normalizeUrl(' 42 '));
+        self::assertSame('', Media::normalizeUrl('javascript:alert(1)'));
+        self::assertSame('', Media::normalizeUrl('//cdn.example.test/logo.png'));
+        self::assertSame('', Media::normalizeUrl('usr/uploads/logo.png'));
+        self::assertSame('', Media::normalizeUrl(['https://cdn.example.test/logo.png']));
+    }
+
+    public function testTextareaMediaValuesKeepOneUrlPerLine(): void
+    {
+        self::assertSame(
+            "https://cdn.example.test/a.png\n/usr/uploads/b.png",
+            Media::normalizeUrlList(" https://cdn.example.test/a.png \r\njavascript:alert(1)\n\n/usr/uploads/b.png\n//evil.test/c.png")
+        );
+        self::assertSame('', Media::normalizeUrlList(['https://cdn.example.test/a.png']));
     }
 
     public function testMediaListKeepsImageAttachmentsAndClampsPagination(): void

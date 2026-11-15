@@ -114,6 +114,21 @@ final class PageTemplatesTest extends TestCase
         foreach (['', '../post.php', '/post.php', 'C:/post.php', 'post\\page.php', 'post.txt', 'bad name.php'] as $file) {
             self::assertFalse(PageTemplates::isSafeFile($file));
         }
+
+        foreach (['header.php', 'footer.php', 'comments.php', 'sidebar.php', 'Header.php'] as $file) {
+            self::assertFalse(PageTemplates::isSafeFile($file));
+        }
+    }
+
+    public function testComponentFragmentsInPagesDirectoryAreNeverSelected(): void
+    {
+        foreach (['header.php', 'footer.php', 'comments.php', 'sidebar.php'] as $file) {
+            file_put_contents($this->root . '/app/pages/' . $file, '<?php echo "fragment";');
+        }
+
+        $archive = new FakeArchive('custom', null, 'header.php');
+        self::assertSame('archive.php', PageTemplates::apply($archive, $this->root));
+        self::assertSame('archive.php', $archive->currentThemeFile());
     }
 
     public function testPathsExposePagesDirectory(): void

@@ -17,12 +17,40 @@ const field = (type, extra = {}) => ({
     ...extra
 });
 
+const mediaItem = {
+    id: 9,
+    title: 'Brand logo',
+    name: 'logo.png',
+    url: 'https://example.test/usr/uploads/logo.png',
+    size: 2048,
+    type: 'png'
+};
+
+const mediaFetchMock = () => vi.fn(async (url) => {
+    const path = new URL(url).pathname;
+    if (path.endsWith('/media/9')) {
+        return jsonResponse(mediaItem);
+    }
+    if (path.endsWith('/media')) {
+        return jsonResponse({
+            items: [mediaItem],
+            page: 1,
+            pageSize: 40,
+            total: 1,
+            lastPage: 1
+        });
+    }
+    return jsonResponse(null, 404);
+});
+
 describe('Arco settings controls', () => {
     it('renders every supported field type', () => {
         const fields = [
             field('Text'),
+            field('Text', { media: true }),
             field('Password'),
             field('Textarea'),
+            field('Textarea', { media: true }),
             field('Code'),
             field('Select', { options: { left: '左侧', right: '右侧' } }),
             field('Radio', { options: { left: '左侧', right: '右侧' } }),
@@ -259,6 +287,60 @@ describe('Arco settings controls', () => {
         expect(formField.vm.mediaOpen).toBe(true);
 
         wrapper.unmount();
+    });
+
+    it('stores the media url instead of an id for Text fields with media enabled', async () => {
+        vi.stubGlobal('fetch', mediaFetchMock());
+
+        const wrapper = mountField(field('Text', { media: true }), '12', {
+            apiUrl: 'https://example.test/ttdf/v1/admin',
+            nonce: 'nonce-value'
+        });
+        await flushPromises();
+
+        const formField = wrapper.findComponent(window.TTDFOptions.FormField);
+        await formField.vm.loadMedia(1);
+        expect(formField.vm.mediaItems).toHaveLength(1);
+
+        formField.vm.chooseMedia(formField.vm.mediaItems[0]);
+        expect(lastEmitted(wrapper)?.[0]).toBe('https://example.test/usr/uploads/logo.png');
+
+        wrapper.unmount();
+        vi.unstubAllGlobals();
+    });
+
+    it('keeps a textarea and media button for Textarea fields with media enabled', async () => {
+        vi.stubGlobal('fetch', mediaFetchMock());
+
+        const wrapper = mountField(
+            field('Textarea', { media: true }),
+            'https://example.test/usr/uploads/a.png',
+            {
+                apiUrl: 'https://example.test/ttdf/v1/admin',
+                nonce: 'nonce-value'
+            }
+        );
+        await flushPromises();
+
+        const control = wrapper.find('.ttdf-text-media');
+        expect(control.exists()).toBe(true);
+        expect(control.classes()).toContain('is-multiline');
+        expect(control.find('textarea').exists()).toBe(true);
+        expect(control.text()).toContain('媒体库');
+
+        const formField = wrapper.findComponent(window.TTDFOptions.FormField);
+        await formField.vm.loadMedia(1);
+        formField.vm.chooseMedia(formField.vm.mediaItems[0]);
+
+        expect(lastEmitted(wrapper)?.[0]).toBe(
+            'https://example.test/usr/uploads/a.png\nhttps://example.test/usr/uploads/logo.png'
+        );
+
+        formField.vm.clearMedia();
+        expect(lastEmitted(wrapper)?.[0]).toBe('');
+
+        wrapper.unmount();
+        vi.unstubAllGlobals();
     });
 
     it('filters TemplateMap options through the field component allowlist', async () => {

@@ -15,7 +15,7 @@ return [
                 'name' => 'Logo',
                 'value' => '',
                 'label' => '站点 Logo',
-                'description' => '从媒体库选择图片；留空时显示站点标题。值保存为 Typecho 附件 ID。',
+                'description' => '从媒体库选择图片；留空时显示站点标题。值保存为图片地址。',
                 'media' => true,
             ],
             [

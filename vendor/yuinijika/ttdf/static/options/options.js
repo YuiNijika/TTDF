@@ -36,7 +36,7 @@
         if (field.type === 'Media') {
             return true;
         }
-        if (field.type !== 'Text') {
+        if (field.type !== 'Text' && field.type !== 'Textarea') {
             return false;
         }
         if (field.media === true) {
@@ -291,6 +291,7 @@
             const inputId = computed(() => 'ttdf-input-' + testId.value);
             const isMediaField = computed(() => mediaEnabled(props.field));
             const isMediaType = computed(() => props.field.type === 'Media');
+            const isMediaList = computed(() => props.field.type === 'Textarea');
             const tags = computed(() => asArray(props.modelValue));
             const listItems = computed(() => asArray(props.modelValue));
             const cascaderValue = computed(() => asArray(props.modelValue));
@@ -474,14 +475,36 @@
             };
 
             const hasMediaValue = computed(() => String(props.modelValue || '') !== '');
+            const firstMediaValue = (value) => {
+                const text = String(value === undefined || value === null ? '' : value).trim();
+                if (text === '') {
+                    return '';
+                }
+                const [first] = text.split(/\r?\n/);
+                return String(first === undefined ? '' : first).trim();
+            };
+            const isMediaUrl = (value) => /^(?:https?:\/\/|\/(?!\/))/i.test(String(value || '').trim());
+            const mediaUrlTitle = (value) => {
+                const url = String(value || '').trim();
+                let path = url;
+                try {
+                    path = new URL(url, 'http://localhost').pathname;
+                    path = decodeURIComponent(path);
+                } catch (error) {
+                    path = url;
+                }
+                const name = path.split('/').filter(Boolean).pop();
+                return name ? String(name) : '图片地址';
+            };
             const mediaSelectedTitle = computed(() => {
                 if (mediaPreview.value && mediaPreview.value.title) {
                     return String(mediaPreview.value.title);
                 }
-                if (hasMediaValue.value && /^https?:\/\//i.test(String(props.modelValue))) {
-                    return '外部图片';
+                const current = firstMediaValue(props.modelValue);
+                if (current !== '' && isMediaUrl(current)) {
+                    return mediaUrlTitle(current);
                 }
-                return hasMediaValue.value ? '附件 #' + String(props.modelValue) : '';
+                return current !== '' ? '附件 #' + current : '';
             });
             const mediaSelectedSize = computed(() => (
                 mediaPreview.value ? formatMediaSize(mediaPreview.value.size) : ''
@@ -538,29 +561,30 @@
             };
 
             const loadSelectedMedia = async (value) => {
-                const id = String(value || '').trim();
-                if (id === '') {
+                const current = firstMediaValue(value);
+                if (current === '') {
                     mediaPreview.value = null;
                     return;
                 }
 
-                if (/^https?:\/\//i.test(id)) {
+                if (isMediaUrl(current)) {
                     mediaPreview.value = {
                         id: 0,
-                        title: '外部图片',
-                        url: id,
+                        title: mediaUrlTitle(current),
+                        url: current,
                         size: 0
                     };
                     return;
                 }
 
-                if (!props.apiUrl) {
+                if (!props.apiUrl || !/^\d+$/.test(current)) {
+                    mediaPreview.value = null;
                     return;
                 }
 
                 mediaSelectedLoading.value = true;
                 try {
-                    mediaPreview.value = await mediaRequest('/media/' + encodeURIComponent(id));
+                    mediaPreview.value = await mediaRequest('/media/' + encodeURIComponent(current));
                 } catch (error) {
                     mediaPreview.value = null;
                 } finally {
@@ -605,7 +629,22 @@
             };
 
             const chooseMedia = (item) => {
-                setValue(String(item.id));
+                const picked = isMediaType.value
+                    ? String(item.id)
+                    : String(item.url || '').trim();
+
+                if (picked === '') {
+                    message('error', '该图片没有可用地址，请重新上传后再选择');
+                    return;
+                }
+
+                if (isMediaList.value) {
+                    const current = String(props.modelValue || '').trim();
+                    setValue(current === '' || current === picked ? picked : current + '\n' + picked);
+                } else {
+                    setValue(picked);
+                }
+
                 mediaPreview.value = item;
                 mediaOpen.value = false;
                 message('success', '已选择图片：' + (item.title || item.name || ('#' + item.id)));
@@ -764,6 +803,7 @@
                 inactiveText,
                 isMediaField,
                 isMediaType,
+                isMediaList,
                 listItems,
                 loadMedia,
                 mediaError,
@@ -837,7 +877,7 @@
                     @update:model-value="setValue"
                 />
                 <a-textarea
-                    v-else-if="field.type === 'Textarea'"
+                    v-else-if="field.type === 'Textarea' && !isMediaField"
                     :id="inputId"
                     :aria-label="field.label || field.name || '多行文本设置'"
                     :model-value="modelValue"
@@ -990,14 +1030,39 @@
                     @update:model-value="setValue"
                 />
                 <div v-else-if="isMediaField" class="ttdf-media-field">
-                    <div v-if="!isMediaType" class="ttdf-text-media">
+                    <div
+                        v-if="!isMediaType"
+                        class="ttdf-text-media"
+                        :class="{ 'is-multiline': isMediaList }"
+                    >
+                        <div
+                            v-if="mediaPreview && mediaPreview.url && !mediaPreview.broken"
+                            class="ttdf-text-media-thumb"
+                        >
+                            <img
+                                :src="mediaPreview.url"
+                                :alt="mediaSelectedTitle"
+                                @error="mediaPreview.broken = true"
+                            />
+                        </div>
                         <a-input
+                            v-if="!isMediaList"
                             :id="inputId"
                             class="ttdf-text-media-input"
-                            :aria-label="field.label || field.name || '媒体附件 ID'"
+                            :aria-label="field.label || field.name || '图片地址'"
                             :model-value="modelValue"
-                            :placeholder="field.placeholder || '输入附件 ID，或从媒体库选择…'"
+                            :placeholder="field.placeholder || '输入图片地址，或从媒体库选择…'"
                             allow-clear
+                            @update:model-value="setValue"
+                        />
+                        <a-textarea
+                            v-else
+                            :id="inputId"
+                            class="ttdf-text-media-input"
+                            :aria-label="field.label || field.name || '图片地址'"
+                            :model-value="modelValue"
+                            :auto-size="{ minRows: field.rows || 3, maxRows: Math.max(field.rows || 3, 10) }"
+                            :placeholder="field.placeholder || '每行一个图片地址，或从媒体库追加…'"
                             @update:model-value="setValue"
                         />
                         <a-button html-type="button" @click="openMedia">媒体库</a-button>

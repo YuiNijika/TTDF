@@ -74,29 +74,48 @@ final class SettingsTest extends TestCase
         ], $result['Templates']);
     }
 
-    public function testMediaValidationKeepsAttachmentIdsOnly(): void
+    public function testMediaValidationKeepsUrlsForTextFields(): void
     {
         $result = Settings::validate([
-            'Logo' => ' 42 ',
+            'Logo' => ' https://cdn.test/logo.png ',
             'SubTitle' => '../not-a-media-value',
         ]);
 
-        self::assertSame('42', $result['Logo']);
+        self::assertSame('https://cdn.test/logo.png', $result['Logo']);
         self::assertSame('../not-a-media-value', $result['SubTitle']);
 
+        self::assertSame('42', Settings::validate(['Logo' => ' 42 '])['Logo']);
+        self::assertSame(
+            '/usr/uploads/2026/11/logo.png',
+            Settings::validate(['Logo' => '/usr/uploads/2026/11/logo.png'])['Logo']
+        );
+        self::assertSame('', Settings::validate(['Logo' => 'javascript:alert(1)'])['Logo']);
+        self::assertSame('', Settings::validate(['Logo' => '//evil.test/logo.png'])['Logo']);
+        self::assertSame('', Settings::validate(['Logo' => ['https://cdn.test/logo.png']])['Logo']);
+    }
+
+    public function testMediaFieldModesDistinguishTextFieldsFromPickerFields(): void
+    {
         self::assertTrue(Settings::isMediaField(['type' => 'Text', 'name' => 'Logo', 'media' => true]));
         self::assertTrue(Settings::isMediaField([
             'type' => 'Text',
             'name' => 'Logo',
             'media' => ['enabled' => true],
         ]));
+        self::assertTrue(Settings::isMediaField(['type' => 'Textarea', 'name' => 'Banners', 'media' => true]));
         self::assertTrue(Settings::isMediaField(['type' => 'Media', 'name' => 'Logo']));
+        self::assertSame('url', Settings::mediaMode(['type' => 'Text', 'name' => 'Logo', 'media' => true]));
+        self::assertSame('url', Settings::mediaMode(['type' => 'Textarea', 'name' => 'Banners', 'media' => true]));
+        self::assertSame('reference', Settings::mediaMode(['type' => 'Media', 'name' => 'Logo']));
         self::assertFalse(Settings::isMediaField(['type' => 'Text', 'name' => 'Logo']));
         self::assertFalse(Settings::isMediaField([
             'type' => 'Text',
             'name' => 'Logo',
             'media' => ['enabled' => false],
         ]));
+        self::assertFalse(Settings::isMediaField(['type' => 'Textarea', 'name' => 'FooterText']));
+        self::assertNull(Settings::mediaMode(['type' => 'Textarea', 'name' => 'FooterText']));
+        self::assertNull(Settings::mediaMode(['type' => 'Select', 'name' => 'Mode', 'media' => true]));
     }
 
     public function testThemeInfoReportsThemeRootIndexVersion(): void

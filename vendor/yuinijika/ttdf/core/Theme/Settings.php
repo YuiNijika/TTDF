@@ -113,11 +113,16 @@ final class Settings
 
             $type = (string) ($field['type'] ?? 'Text');
             $value = $input[$name];
+            $mediaMode = self::mediaMode($field);
 
-            if (self::isMediaField($field)) {
+            if ($mediaMode === 'reference') {
                 $value = is_scalar($value) && ctype_digit(trim((string) $value))
                     ? trim((string) $value)
                     : '';
+            } elseif ($mediaMode === 'url') {
+                $value = $type === 'Textarea'
+                    ? Media::normalizeUrlList($value)
+                    : Media::normalizeUrl($value);
             } elseif ($type === 'TemplateMap') {
                 $value = Templates::filterMap(
                     Templates::normalizeMap(is_array($value) ? $value : []),
@@ -148,25 +153,45 @@ final class Settings
     }
 
     /**
-     * Media is available as a dedicated field type or a Text field capability.
+     * Resolve how a field stores its media value.
+     *
+     * `type => 'Media'` is a dedicated picker and stores the attachment cid,
+     * while `Text` / `Textarea` keep their editable control and store the
+     * media URL the library wrote into it.
      *
      * @param array<string, mixed> $field
+     * @return 'reference'|'url'|null
      */
-    public static function isMediaField(array $field): bool
+    public static function mediaMode(array $field): ?string
     {
-        if (($field['type'] ?? 'Text') === 'Media') {
-            return true;
+        $type = (string) ($field['type'] ?? 'Text');
+
+        if ($type === 'Media') {
+            return 'reference';
+        }
+
+        if (!in_array($type, ['Text', 'Textarea'], true)) {
+            return null;
         }
 
         $media = $field['media'] ?? false;
         if (is_bool($media)) {
-            return $media;
-        }
-        if (is_array($media)) {
-            return ($media['enabled'] ?? true) !== false;
+            return $media ? 'url' : null;
         }
 
-        return false;
+        if (is_array($media)) {
+            return ($media['enabled'] ?? true) !== false ? 'url' : null;
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array<string, mixed> $field
+     */
+    public static function isMediaField(array $field): bool
+    {
+        return self::mediaMode($field) !== null;
     }
 
     /**

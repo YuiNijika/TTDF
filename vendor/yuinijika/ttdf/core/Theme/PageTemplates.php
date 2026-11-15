@@ -15,6 +15,12 @@ final class PageTemplates
     private const FILE_PATTERN = '/^[A-Za-z0-9_\/-]+\.php$/';
 
     /**
+     * Typecho fragments that belong in `app/components`, never in `app/pages`.
+     * They are rejected here so a stray file can never be served as a page.
+     */
+    private const RESERVED_FILES = ['header.php', 'footer.php', 'comments.php', 'sidebar.php'];
+
+    /**
      * @return string|null The selected file relative to app/pages.
      */
     public static function apply(object $archive, string $root): ?string
@@ -56,6 +62,7 @@ final class PageTemplates
             && !str_contains($file, '\\')
             && !str_starts_with($file, '/')
             && !str_contains($file, '..')
+            && !in_array(strtolower($file), self::RESERVED_FILES, true)
             && preg_match(self::FILE_PATTERN, $file) === 1;
     }
 

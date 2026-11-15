@@ -24,7 +24,8 @@
 - 运行时要求 PHP 8.2+、Typecho 1.2.1+ / 1.3.x；所有 PHP 文件使用 `declare(strict_types=1)`。
 - 框架代码使用 `TTDF\` 命名空间，PSR-4 映射为 `TTDF\` → `vendor/yuinijika/ttdf/core/`、`TTDF\App\` → `app/`。
 - 框架核心托管在 `vendor/yuinijika/ttdf/core/`，属于只读依赖区。主题开发者只修改 `app/`、`assets/` 与根 `index.php` 元信息；升级框架时整体替换 `vendor/yuinijika/ttdf/`，不要手工改核心文件。
-- 主题目录固定为：`functions.php` 唯一初始化 PHP 入口、根 `index.php` 仅作 Typecho 主题元信息 stub、`app/pages/` Typecho 页面类型模板与 partial、`app/config/app.php` 运行配置、`app/config/theme.php` 后台设置字段、`app/config/fields.php` 文章/页面字段、`app/router/` TTDF 自定义 URL 路由、`app/components/` 组件。不要恢复 `app/app.config.php`、`app/config/setup.php`、`app/setup.php`、`app/fields.php`。
+- 主题目录固定为：`functions.php` 唯一初始化 PHP 入口、根 `index.php` 仅作 Typecho 主题元信息 stub、`app/pages/` 仅 Typecho 页面类型模板、`app/config/app.php` 运行配置、`app/config/theme.php` 后台设置字段、`app/config/fields.php` 文章/页面字段、`app/router/` TTDF 自定义 URL 路由、`app/components/` 组件。不要恢复 `app/app.config.php`、`app/config/setup.php`、`app/setup.php`、`app/fields.php`。
+- `app/pages/` 只接受 Typecho 页面类型文件（`index.php`、`{type}.php`、`{type}/{slug}.php`）；`header.php`、`footer.php`、`sidebar.php`、`comments.php` 不属于页面类型，一律作为组件放在 `app/components/`，约定名分别是 `AppHeader`、`AppFooter`、`Sidebar`、`Comments`。入口模板用 `Components::render($root, 'AppHeader', ['archive' => $this])` 加载，禁止 `$this->need('header.php')` 这类片段加载；`PageTemplates::isSafeFile()` 必须继续拒绝这些保留名，`PageTemplatesTest` 必须覆盖该拒绝行为。
 - 根 `index.php` 是 Typecho 后台主题发现机制的硬性要求（`Widget\Themes\Rows` 固定读取主题根 `index.php` 的 docblock 元信息），只允许保留 `<?php`、严格类型声明、元信息注释和 `__TYPECHO_ROOT_DIR__` 守卫，不得写页面渲染逻辑。真实首页模板是 `app/pages/index.php`。
 - 主题版本号的唯一来源是根 `index.php` 的 `@version` 元信息；`app/config/app.php` 不配置版本号，`Typecho::themeVersion()` 只读取主题根 `index.php` 的 docblock，不回退到设置表或配置数组。
 - `functions.php` 只负责 PHP 版本检查、注册自动加载器与调用 `Framework::boot()`；`themeConfig()` / `themeFields()` / `themeInit()` 由框架核心 `TypechoFunctions.php` 统一注册，主题不要重复定义。
@@ -44,7 +45,7 @@
 - `settings.table` / `settings.schema_version` 是框架内部的隐藏存储默认值，不定义设置项，也不要求在 `app/config/app.php` 出现；主题可按需隐藏覆盖，`TTDF_SETTINGS_TABLE` 环境变量仍可覆盖表名。
 - `debug`、REST、CORS、Token 开关与 Token 环境变量通过 `TTDF\Theme\ThemeConfig` 合并静态默认值与主题设置；资源 CDN 只从主题设置 `Assets_CDN` 读取，静态 `assets.cdn` 已移除。
 - 页面模板入口固定在 `app/pages/`，并使用 Typecho 官方模板名（`index.php`、`post.php`、`page.php`、`archive.php`、`single.php`、`404.php`）；默认只保留 `index.php`、`archive.php`、`post.php`、`page.php`、`404.php`。页面主体映射使用 `TemplateMap` 字段与 `TTDF\Theme\Templates`，槽位只能是 `post`、`page`、`index`、`archive`、`category`、`tag`、`search`、`author`、`date`、`404`。
-- 评论渲染固定为 `app/components/Comments.php`，不得再创建 `app/pages/comments.php`；`post.php` / `page.php` 的内联回退与 `Post` / `Page` 组件都必须通过 `Components::render(..., 'Comments', ['archive' => $archive])` 加载。
+- 评论渲染固定为 `app/components/Comments.php`，不得再创建 `app/pages/comments.php`；`post.php` / `page.php` 的内联回退与 `Post` / `Page` 组件都必须通过 `Components::render(..., 'Comments', ['archive' => $archive])` 加载。页头、页尾、侧栏同理固定在 `app/components/AppHeader.php`、`AppFooter.php`、`Sidebar.php`，入口模板只在最外层用 `Components::render()` 调用一次。
 - 评论组件内不能访问 `$archive->user` / `$archive->options`（Typecho 受保护成员）；登录用户与站点配置分别使用 `Widget\User::alloc()` 与 `Widget\Options::alloc()`。
 - `TemplateMap` 的组件值只允许 `[A-Za-z0-9_/-]`，不得包含 `..`；`Templates::render()` 必须通过 `Components::exists()` 校验后再 include，组件缺失时返回 `false` 并保留入口模板回退。
 - `TemplateMap` 字段必须声明 `components` 白名单（如 `['Post', 'Page', 'Archive', 'NotFound']`），只列可独立渲染页面主体的组件；`PostMeta`、`Comments`、`AppHeader` 等片段不得进入白名单。`Settings::validate()` 与 `Templates::mapping()` 都必须按白名单过滤，运行时过滤用于兼容旧版本保存的非法映射。
@@ -60,12 +61,20 @@
 - 公开 REST Token 由 `REST_Token_Switch` / `rest.token_enabled`（环境变量 `TTDF_REST_TOKEN_ENABLED`）显式开关，默认关闭；关闭时不校验 Bearer Token，开启时必须从环境变量读取至少 32 字符的值并使用 `hash_equals`，不得授予管理员权限。
 - JSON 请求体上限 1 MiB，超限返回 413；不要先读取完整请求体再判断大小。
 - REST 路由必须在 `Framework::boot()` 中按请求同步，不依赖后台保存时的内存路由或 `__routes_registered` 标记；公开接口关闭时仍要为管理员注册管理路由。
+- REST 扩展入口固定为 `TTDF\Http\Rest\Registry`，只能通过 `rest.routes` 钩子按请求注册；不得在核心 `Router` 里增加主题专属 `match` 分支，也不得在主题内维护全局路由数组。
+- 自定义公开路由只允许 GET，仍受 REST 开关、公开 Token 与 CORS 约束；自定义管理路由必须位于 `admin/` 下，仍受管理员登录 + nonce + 同源校验。不得在扩展路由内绕过 `Auth`。
+- `Registry` 路径只允许小写字母、数字、`-`、`_` 与 `{name}` 占位符；最多 8 段、180 字符；拒绝 `..`、反斜杠、空段、重复参数名、大写与查询字符串。相同 `method + path` 重复注册必须抛 `InvalidArgumentException`。
+- `Registry` 必须拒绝占用内置公开前缀（`site`、`posts`、`pages`、`categories`、`tags`、`comments`、`attachments`、`search`）与内置管理前缀（`admin/options`、`admin/schema`、`admin/config`、`admin/media` 等）及其子路径，避免覆盖 `posts/{cid}`、`admin/media/{id}` 等内置路由。
+- 自定义路由处理器只返回数组、`Result` 或 `null`；`Result::success()` / `Result::error()` / `Result::noContent()` 负责状态码与载荷，其他返回类型必须落到 500。
+- REST 钩子固定为 `rest.request`、`rest.routes`、`rest.response`、`rest.exception`。`rest.routes` 每次 REST 请求都会执行，注册回调必须轻量，不得查询数据库、建表、迁移或发起外部请求。
+- `rest.response` 是 filter，参数为 `array $payload, int $status, string $scope`，必须返回数组；框架在非数组或回调抛错时回退原载荷。过滤器不得注入邮箱、IP、Token、日志或未审核字段。
+- `rest.exception` 只用于受控日志，不得回显异常消息、SQL、文件路径或 Token；生产响应必须继续只返回 `Internal server error`。
 - `REST_Token_Env` 缺失时回退到 `rest.token_env`；开关开启但环境变量名或值为空、或值少于 32 字符时必须返回 500，禁止静默放行。开关只影响 `/ttdf/v1` 公共只读接口，后台管理接口仍使用管理员登录 + nonce + 同源校验。
 - 自定义 AJAX 只能通过 `TTDF\Ajax\Endpoint` 注册与分发，入口固定为 `/ttdf/ajax`；动作名必须匹配 `^[a-z0-9][a-z0-9_-]{0,63}$`。
 - AJAX 动作默认使用 `POST` + 管理员 + Typecho nonce + 同源校验；`auth => user` 只要求登录用户，`auth => public` 必须显式关闭 nonce 并确认动作无副作用、无敏感数据。
 - AJAX 鉴权与输入解析分别固定在 `TTDF\Ajax\Guard` 与 `TTDF\Ajax\Payload`；不要在主题内自建入口、读取 `php://input` 或绕过 nonce。
 - 运行时控制台脚本由 `TTDF\Diagnostics\RuntimeConsole` 在 `theme.footer` 统一输出，`window.frameWorkConfig` 只允许 `version` 与 `loadtime`；不得恢复 `TyAjax`、`RESTAPI` 或其他接口信息字段。
-- 媒体库支持专用 `Media` 字段类型与 `Text + media` 字段能力两种声明：`type => 'Media'` 直接渲染媒体选择器；`type => 'Text'` 且 `media => true`（或 `media => ['enabled' => true]`）时保留文本框并在旁边提供媒体库按钮。两者都只保存 Typecho 图片附件 `cid` 的数字字符串。读取历史绝对 URL 仅作兼容，主题输出必须走 `TTDF\Theme\Media::url()`，不得自行拼接上传目录或读取附件路径。
+- 媒体库支持三种声明：`type => 'Media'` 直接渲染媒体选择器并保存 Typecho 图片附件 `cid` 数字字符串；`type => 'Text'` / `type => 'Textarea'` 且 `media => true`（或 `media => ['enabled' => true]`）时保留可编辑控件并在旁边提供媒体库按钮，保存的是图片地址而不是 `cid`。`Settings::mediaMode()` 返回 `reference`（`Media`）或 `url`（文本类字段），`Settings::isMediaField()` 保持 `mediaMode() !== null` 语义；`Media::normalizeUrl()` 只接受 `http(s)` 绝对 URL、`/` 开头的站点根路径与遗留 `cid`，`Media::normalizeUrlList()` 对 `Textarea` 逐行清洗并把非法行丢弃。前端选择图片后 `Text` 写入地址、`Textarea` 追加为新行；不得再手工拼接上传目录或读取附件路径。
 - 媒体库接口只允许管理员登录 + Typecho nonce + 同源访问；只暴露 `type=attachment`、`status=publish` 的图片附件，不得返回其他附件类型。
 - 媒体上传只接受 `$_FILES['file']`，单张上限 5 MiB，必须同时校验 `getimagesize()` MIME 与 JPG/PNG/GIF/WebP/BMP 扩展名；上传文件写入 Typecho 原生上传目录并建立附件记录。
 - 媒体删除必须限定在 `usr/uploads/` 内并校验真实路径，禁止通过损坏的附件路径删除任意文件；重命名只允许修改附件 `title`，不得改文件路径或扩展名。
@@ -88,11 +97,11 @@
 - `Widget\Upload::attachmentHandle()` 在 Typecho 1.2.x 接收 `['attachment' => (object) ['path' => ...]]`，在 1.3.x 接收 `Typecho\Config`；通过反射兼容，不要写死单版签名。
 - Typecho 只有 `Widget\Archive` 的 `header` / `footer` / `beforeRender` / `afterRender` 是真实钩子；不存在 `Widget\Contents\Post` / `Widget\Contents\Page` 类，不要按旧文档注册。
 - v4 钩子名 `load_head`、`load_foot`、`header`、`footer`、`before_render`、`after_render` 由 `TTDF\Hooks\Hooks` 转发到对应 v5 Hook 并共享回调，同一事件只执行一次；`load_foot` 对应 `theme.footer`，不要恢复 `TTDF_Hook` 全局类。
-- 主题 `header.php` / `footer.php` 只加载自定义 assets，并分别触发 `theme.head` / `theme.footer`；不要直接调用 `$this->header()` / `$this->footer()`。框架由 `TTDF\Theme\ArchiveLayout` 在 Hook 内调用 Typecho 原生 header/footer，`theme.after_main` 只用于 `</main>` 之后的附加逻辑。
+- 主题 `app/components/AppHeader.php` / `AppFooter.php` 只加载自定义 assets，并分别触发 `theme.head` / `theme.footer`；不要直接调用 `$this->header()` / `$this->footer()`，也不要把它们放回 `app/pages/`。框架由 `TTDF\Theme\ArchiveLayout` 在 Hook 内调用 Typecho 原生 header/footer，`theme.after_main` 只用于 `</main>` 之后的附加逻辑。
 - 主题根 `functions.php` 在 Archive 初始化阶段从主题根加载；`themeInit()` 随后把 `themeDir` 指向 `app/pages/`，Typecho 才据此执行 `need()` 与 `render()`。REST 与自定义页面必须兼容 Typecho 的 404 handler，不要在启动阶段写数据库。`themeConfig()` / `themeFields()` / `themeInit()` 由核心注册，仍会在 Typecho 需要时调用。
 - 自动路由同时支持 `[slug].php` 与 `[slug]/index.php`；动态目录必须先校验 `realpath` 边界。
-- 示例主题的页面模板使用 `app/pages/index.php` / `archive.php` / `post.php` / `page.php`，评论由 `app/components/Comments.php` 渲染，数据读取走 Typecho 原生 Widget；模板内引用主题根资源时必须使用 `\TTDF\Framework::root()`，不要依赖 `__DIR__` 推断主题根。
-- `PageTemplates` 选择模板时必须保持 Typecho 原生回退顺序：`{type}/{slug}.php` → `{type}.php` → attachment 的 `page.php` / `post.php` → `single.php` / `archive.php` → `index.php`；文件名只允许 `[A-Za-z0-9_/-]+.php`，拒绝 `..`、反斜杠、绝对路径和跨目录 `realpath`。
+- 示例主题的页面模板使用 `app/pages/index.php` / `archive.php` / `post.php` / `page.php`，页头、页尾、侧栏与评论分别由 `app/components/AppHeader.php` / `AppFooter.php` / `Sidebar.php` / `Comments.php` 渲染，数据读取走 Typecho 原生 Widget；组件内只能用 `$viewData['archive']`，不能假设 `$this` 存在，模板内引用主题根资源时必须使用 `\TTDF\Framework::root()`，不要依赖 `__DIR__` 推断主题根。
+- `PageTemplates` 选择模板时必须保持 Typecho 原生回退顺序：`{type}/{slug}.php` → `{type}.php` → attachment 的 `page.php` / `post.php` → `single.php` / `archive.php` → `index.php`；文件名只允许 `[A-Za-z0-9_/-]+.php`，拒绝 `..`、反斜杠、绝对路径和跨目录 `realpath`，并拒绝 `header.php` / `footer.php` / `comments.php` / `sidebar.php` 保留名。
 
 # 常见任务流程
 
@@ -116,16 +125,17 @@
 6. 设置页“保存设置”下拉菜单的“执行迁移”调用 `POST /admin/migrate`，保持幂等
 7. 新增或调整 Arco 字段控件时，同步更新 `static/options/options.js`、`options.css` 与 `tests/options/*.test.mjs`
 8. 设置页依赖通过 `Vue` / `ArcoVue` 全局构建延迟解析，测试中不得依赖加载顺序副作用
-9. `type => 'Media'` 或 `Text + media` 字段由设置页媒体库对话框通过 `/ttdf/v1/admin/media*` 选择附件；保存 `cid`，不要保存临时 URL；`Text + media` 必须同时保留可编辑文本框与媒体库按钮
+9. `type => 'Media'`、`Text + media` 与 `Textarea + media` 字段由设置页媒体库对话框通过 `/ttdf/v1/admin/media*` 选择附件；`Media` 保存 `cid`，文本类字段保存图片地址（`Textarea` 每行一个，追加不覆盖），都不要保存临时 URL；`Text + media` / `Textarea + media` 必须保留可编辑控件与媒体库按钮
 10. 媒体库改动至少补主题输出、列表过滤、分页/搜索、上传校验、重命名与删除边界测试
 
 ## 新增 REST 接口
 
-1. 公开接口只允许 GET，并在 `PublicController` 显式过滤 `publish` / `approved` / 密码保护
-2. 管理接口放 `/ttdf/v1/admin/*`，必须管理员登录 + nonce
-3. 不返回邮箱、IP、Token、日志或未审核数据
-4. 补鉴权、CORS、分页和内容过滤测试
-5. 媒体管理接口固定为 `GET/POST /admin/media`、`GET/POST/DELETE /admin/media/{id}`；上传是 `multipart/form-data`，其余写操作使用 JSON
+1. 主题专属接口优先通过 `rest.routes` + `Registry` 实现，不修改 `core/`；只有框架级通用能力才改 `PublicController` / `AdminController`
+2. 公开接口只允许 GET，并在处理器或 `PublicController` 显式过滤 `publish` / `approved` / 密码保护
+3. 管理接口放 `/ttdf/v1/admin/*`，必须管理员登录 + nonce + 同源
+4. 不返回邮箱、IP、Token、日志或未审核数据
+5. 补鉴权、CORS、分页、内容过滤与非法/重复/保留路径测试；扩展路由至少覆盖公开关闭 404、管理 401/403、`rest.response` scope 与 `rest.exception`
+6. 媒体管理接口固定为 `GET/POST /admin/media`、`GET/POST/DELETE /admin/media/{id}`；上传是 `multipart/form-data`，其余写操作使用 JSON
 
 ## 新增 AJAX 动作
 
@@ -150,7 +160,7 @@
 3. 模板内 `$this->need()` 与 `$this->render()` 由框架改写后的 `themeDir` 解析，不要手工拼主题根路径
 4. 需要在模板中引用主题根资产或组件清单时使用 `\TTDF\Framework::root()`，不要通过 `__DIR__` 推导
 5. 修改 `PageTemplates` 的回退顺序时同步更新 `PageTemplatesTest` 与线上 `ttdf/v5/structure`、`skill/typecho-theme-dev`
-6. 评论表单与评论列表只通过 `Comments` 组件加载，不要恢复 `need('comments.php')`
+6. 评论表单与评论列表只通过 `Comments` 组件加载，页头、页尾、侧栏只通过 `AppHeader` / `AppFooter` / `Sidebar` 组件加载，不要恢复 `need('comments.php')`、`need('header.php')`、`need('footer.php')`、`need('sidebar.php')`
 
 ## 文档更新
 

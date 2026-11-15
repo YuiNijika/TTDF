@@ -11,9 +11,10 @@ use TTDF\Http\Rest\Attachment;
 /**
  * Resolve a theme media setting to a safe attachment URL.
  *
- * Media-enabled fields store the Typecho attachment cid as a string. Absolute
- * http(s) values remain supported so imported settings and legacy logo URLs
- * keep working without a database lookup.
+ * A dedicated `Media` field stores the Typecho attachment cid as a string,
+ * while `Text` / `Textarea` media fields store the URL. Absolute http(s) URLs,
+ * site-relative paths and legacy cids are all resolved here so themes never
+ * have to guess which flavour a saved value uses.
  */
 final class Media
 {
@@ -53,7 +54,10 @@ final class Media
             return $empty;
         }
 
-        if (preg_match('#^https?://#i', $value) === 1) {
+        if (
+            preg_match('#^https?://#i', $value) === 1
+            || (str_starts_with($value, '/') && !str_starts_with($value, '//'))
+        ) {
             $url = Attachment::safeUrl($value);
             if ($url === '') {
                 return $empty;
@@ -123,5 +127,57 @@ final class Media
         $metadata = self::metadata($value, $db);
 
         return $metadata['url'];
+    }
+
+    /**
+     * Normalize what a media-enabled Text field stores: an absolute http(s)
+     * URL, a site-relative path or a cid saved by an older version. Anything
+     * else, including non-http schemes and protocol-relative values, is
+     * dropped so a settings save can never persist an unsafe URL.
+     */
+    public static function normalizeUrl(mixed $value): string
+    {
+        if (!is_scalar($value)) {
+            return '';
+        }
+
+        $value = trim((string) $value);
+        if ($value === '') {
+            return '';
+        }
+
+        if (ctype_digit($value)) {
+            return $value;
+        }
+
+        if (str_starts_with($value, '/') && !str_starts_with($value, '//')) {
+            return $value;
+        }
+
+        $url = Attachment::safeUrl($value);
+
+        return preg_match('#^https?://#i', $url) === 1 ? $url : '';
+    }
+
+    /**
+     * A media-enabled Textarea keeps one normalized URL per line.
+     */
+    public static function normalizeUrlList(mixed $value): string
+    {
+        if (!is_scalar($value)) {
+            return '';
+        }
+
+        $lines = preg_split('/\r\n|\r|\n/', (string) $value);
+        $urls = [];
+
+        foreach (is_array($lines) ? $lines : [] as $line) {
+            $url = self::normalizeUrl($line);
+            if ($url !== '') {
+                $urls[] = $url;
+            }
+        }
+
+        return implode("\n", $urls);
     }
 }
