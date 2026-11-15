@@ -7,6 +7,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
 }
 
 use TTDF\Support\Escaper;
+use TTDF\View\Components;
 
 $archive = $viewData['archive'] ?? null;
 if (!is_object($archive)) {
@@ -29,4 +30,4 @@ if (!is_object($archive)) {
     <p>下一篇：<?php $archive->theNext('%s', '没有了'); ?></p>
 </nav>
 
-<?php $archive->need('comments.php'); ?>
+<?php Components::render(\TTDF\Framework::root(), 'Comments', ['archive' => $archive]); ?>

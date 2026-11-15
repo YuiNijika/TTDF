@@ -115,7 +115,10 @@ final class Settings
             $value = $input[$name];
 
             if ($type === 'TemplateMap') {
-                $value = Templates::normalizeMap(is_array($value) ? $value : []);
+                $value = Templates::filterMap(
+                    Templates::normalizeMap(is_array($value) ? $value : []),
+                    Templates::allowedComponents($field)
+                );
             } elseif (in_array($type, ['Checkbox', 'Tags', 'AddList', 'Cascader', 'Transfer'], true)) {
                 if (is_string($value)) {
                     $value = array_values(array_filter(array_map('trim', explode(',', $value))));

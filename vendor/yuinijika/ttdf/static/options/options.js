@@ -284,13 +284,43 @@
                 Array.isArray(props.components) ? props.components : []
             ));
 
-            const componentOptions = (slot) => {
-                const current = String(templateMap.value[slot] || '').trim();
-                const components = availableComponents.value.slice();
-                if (current !== '' && !components.includes(current)) {
-                    components.unshift(current);
+            const fieldComponents = computed(() => {
+                const allowlist = Array.isArray(props.field.components)
+                    ? props.field.components.map((component) => String(component)).filter((component) => component !== '')
+                    : [];
+
+                if (allowlist.length === 0) {
+                    return availableComponents.value;
                 }
-                return components;
+
+                const allowed = new Set(allowlist);
+                return availableComponents.value.filter((component) => allowed.has(String(component)));
+            });
+
+            const ignoredMappings = computed(() => {
+                const allowed = new Set(fieldComponents.value.map((component) => String(component)));
+                if (allowed.size === 0) {
+                    return 0;
+                }
+
+                return Object.values(templateMap.value).filter((component) => {
+                    const value = String(component || '').trim();
+                    return value !== '' && !allowed.has(value);
+                }).length;
+            });
+
+            const componentOptions = () => fieldComponents.value.slice();
+
+            const slotPlaceholder = (slot) => {
+                if (slot === '404') {
+                    return '留空使用 404 内联回退';
+                }
+
+                if (['index', 'archive', 'category', 'tag', 'search', 'author', 'date'].includes(slot)) {
+                    return '留空回退到 archive 槽位';
+                }
+
+                return '留空使用入口模板回退';
             };
 
             const addTag = () => {
@@ -362,6 +392,8 @@
                 addTag,
                 componentOptions,
                 cascaderValue,
+                fieldComponents,
+                ignoredMappings,
                 inputId,
                 inactiveText,
                 listItems,
@@ -372,6 +404,7 @@
                 removeTag,
                 setTemplate,
                 setValue,
+                slotPlaceholder,
                 tags,
                 templateMap,
                 templateSlots,
@@ -382,18 +415,18 @@
             };
         },
         template: `
-            <DynamicHtmlRenderer
-                v-if="field.type === 'Html'"
-                :html-content="field.content || ''"
-            />
+            <div v-if="field.type === 'Html'" class="ttdf-html-block">
+                <DynamicHtmlRenderer :html-content="field.content || ''" />
+            </div>
             <div v-else class="ttdf-field" :data-testid="testId" :data-field-type="field.type">
                 <label v-if="field.label" class="ttdf-field-label" :for="inputId">{{ field.label }}</label>
+                <div class="ttdf-field-control">
                 <a-input
                     v-if="field.type === 'Text'"
                     :id="inputId"
                     :aria-label="field.label || field.name || '文本设置'"
                     :model-value="modelValue"
-                    :placeholder="field.placeholder || field.description || ''"
+                    :placeholder="field.placeholder || ''"
                     allow-clear
                     @update:model-value="setValue"
                 />
@@ -403,7 +436,7 @@
                     :aria-label="field.label || field.name || '密码设置'"
                     :model-value="modelValue"
                     type="password"
-                    :placeholder="field.placeholder || field.description || ''"
+                    :placeholder="field.placeholder || ''"
                     allow-clear
                     @update:model-value="setValue"
                 />
@@ -413,7 +446,7 @@
                     :aria-label="field.label || field.name || '多行文本设置'"
                     :model-value="modelValue"
                     :auto-size="{ minRows: field.rows || 5, maxRows: Math.max(field.rows || 5, 12) }"
-                    :placeholder="field.placeholder || field.description || ''"
+                    :placeholder="field.placeholder || ''"
                     @update:model-value="setValue"
                 />
                 <a-select
@@ -574,9 +607,8 @@
                             :model-value="templateMap[slot.key] || ''"
                             :aria-label="'模板槽位 ' + slot.label"
                             class="ttdf-template-map-select"
-                            :placeholder="'留空使用回退内容…'"
+                            :placeholder="slotPlaceholder(slot.key)"
                             allow-search
-                            allow-create
                             allow-clear
                             @update:model-value="(value) => setTemplate(slot.key, value)"
                         >
@@ -588,7 +620,10 @@
                         </a-select>
                     </div>
                     <p class="ttdf-template-map-hint">
-                        组件来自 <code>app/components/</code>；留空时使用模板内置回退内容。
+                        仅列出 <code>app/components/</code> 中可独立渲染的页面组件；留空时按槽位回退。
+                    </p>
+                    <p v-if="ignoredMappings > 0" class="ttdf-template-map-warning" role="status">
+                        有 {{ ignoredMappings }} 个已保存映射不在白名单内，运行时已忽略；保存后会清除。
                     </p>
                 </div>
                 <div v-else-if="field.type === 'AddList'" class="ttdf-add-list">
@@ -619,6 +654,7 @@
                     :placeholder="field.placeholder || ''"
                     @update:model-value="setValue"
                 />
+                </div>
                 <div v-if="field.description" class="ttdf-field-description" v-html="field.description"></div>
             </div>
         `
@@ -897,20 +933,22 @@
                     }
                 };
 
-                const tabList = computed(() => Object.keys(config.tabs || {}).map((id) => ({
-                    id,
-                    title: (config.tabs[id] && config.tabs[id].title) || id
-                })));
+                const tabList = computed(() => Object.keys(config.tabs || {}).map((id) => {
+                    const tab = config.tabs[id] || {};
 
-                const currentTab = computed(() => config.tabs[activeTab.value] || null);
-                const hasTabHtml = computed(() => {
-                    const blocks = currentTab.value && currentTab.value.html;
-                    return Array.isArray(blocks) && blocks.length > 0;
-                });
-                const hasTabFields = computed(() => {
-                    const fields = currentTab.value && currentTab.value.fields;
-                    return Array.isArray(fields) && fields.length > 0;
-                });
+                    return {
+                        id,
+                        title: tab.title || id,
+                        html: Array.isArray(tab.html) ? tab.html : [],
+                        fields: Array.isArray(tab.fields) ? tab.fields : []
+                    };
+                }));
+
+                const currentTab = computed(() => (
+                    tabList.value.find((tab) => tab.id === activeTab.value)
+                    || tabList.value[0]
+                    || null
+                ));
 
                 onMounted(initConfig);
 
@@ -923,8 +961,6 @@
                     exportSettings,
                     formData,
                     handleAction,
-                    hasTabFields,
-                    hasTabHtml,
                     importSettings,
                     loading,
                     runMigration,
@@ -941,10 +977,10 @@
                         <div>
                             <h1 class="TTDF-title">
                                 {{ config.themeName || '主题设置' }}
-                                <small v-if="config.themeVersion"> · {{ config.themeVersion }}</small>
+                                <small v-if="config.themeVersion">{{ config.themeVersion }}</small>
                             </h1>
                             <p class="TTDF-subtitle">
-                                TTDF {{ config.ttdfVersion || '' }}
+                                TTDF v{{ config.ttdfVersion || '' }}
                                 <span v-if="dirty" class="TTDF-dirty"> · 有未保存的更改</span>
                             </p>
                         </div>
@@ -976,48 +1012,81 @@
                     <a-alert v-if="error" type="error" class="TTDF-error" role="alert">{{ error }}</a-alert>
 
                     <div class="TTDF-body">
-                        <a-spin :loading="loading" class="TTDF-spin">
-                            <a-skeleton v-if="loading" :animation="true" :rows="8" />
-                            <a-empty v-else-if="tabList.length === 0" description="暂无选项卡" />
-                            <a-tabs
-                                v-else
-                                :active-key="activeTab"
-                                class="TTDF-tabs"
-                                direction="vertical"
-                                destroy-on-hide
-                                lazy-load
-                                @change="switchTab"
-                            >
-                                <a-tab-pane
+                        <div v-if="loading" class="TTDF-skeleton" aria-busy="true" aria-live="polite">
+                            <aside class="TTDF-skeleton-nav" aria-hidden="true">
+                                <div class="TTDF-skeleton-nav-title"></div>
+                                <div v-for="index in 3" :key="index" class="TTDF-skeleton-nav-item"></div>
+                            </aside>
+                            <div class="TTDF-skeleton-main" aria-hidden="true">
+                                <div class="TTDF-skeleton-heading"></div>
+                                <div v-for="index in 4" :key="index" class="TTDF-skeleton-row">
+                                    <div class="TTDF-skeleton-label"></div>
+                                    <div class="TTDF-skeleton-control"></div>
+                                </div>
+                            </div>
+                            <span class="TTDF-visually-hidden">正在加载设置…</span>
+                        </div>
+                        <a-empty
+                            v-else-if="tabList.length === 0"
+                            class="TTDF-empty"
+                            description="暂无选项卡"
+                        />
+                        <template v-else>
+                            <nav class="TTDF-nav" aria-label="设置分类">
+                                <p class="TTDF-nav-heading">设置分类</p>
+                                <button
                                     v-for="tab in tabList"
+                                    :id="'ttdf-tab-' + tab.id"
                                     :key="tab.id"
-                                    :title="tab.title"
-                                >
-                                    <a-card :bordered="false" class="TTDF-content-card">
-                                        <template v-if="hasTabHtml">
-                                            <DynamicHtmlRenderer
-                                                v-for="(block, index) in currentTab.html"
-                                                :key="index"
-                                                :html-content="block.content"
-                                            />
-                                        </template>
-                                        <a-form v-if="hasTabFields" :model="formData" layout="vertical">
-                                            <FormField
-                                                v-for="(field, index) in currentTab.fields"
-                                                :key="field.name || ('field-' + index)"
-                                                :field="field"
-                                                :index="index"
-                                                :model-value="field.name ? formData[field.name] : undefined"
-                                                :components="config.components"
-                                                :slots="config.templateSlots"
-                                                @update:model-value="(value) => field.name && updateField(field.name, value)"
-                                            />
-                                        </a-form>
-                                        <a-empty v-if="!hasTabHtml && !hasTabFields" description="当前选项卡暂无内容" />
-                                    </a-card>
-                                </a-tab-pane>
-                            </a-tabs>
-                        </a-spin>
+                                    type="button"
+                                    class="TTDF-nav-item"
+                                    :class="{ 'is-active': activeTab === tab.id }"
+                                    :aria-current="activeTab === tab.id ? 'page' : undefined"
+                                    :aria-controls="'ttdf-panel-settings'"
+                                    @click="switchTab(tab.id)"
+                                >{{ tab.title }}</button>
+                            </nav>
+                            <section
+                                id="ttdf-panel-settings"
+                                class="TTDF-content"
+                                :aria-labelledby="'ttdf-tab-' + activeTab"
+                            >
+                                <header class="TTDF-content-header">
+                                    <h2 class="TTDF-panel-title">{{ currentTab.title }}</h2>
+                                    <span v-if="currentTab.fields.length" class="TTDF-panel-meta">
+                                        {{ currentTab.fields.length }} 项设置
+                                    </span>
+                                </header>
+                                <div class="TTDF-content-card">
+                                    <DynamicHtmlRenderer
+                                        v-for="(block, index) in currentTab.html"
+                                        :key="index"
+                                        :html-content="block.content"
+                                    />
+                                    <a-form
+                                        v-if="currentTab.fields.length"
+                                        :model="formData"
+                                        layout="vertical"
+                                        class="TTDF-form"
+                                    >
+                                        <FormField
+                                            v-for="(field, index) in currentTab.fields"
+                                            :key="field.name || ('field-' + index)"
+                                            :field="field"
+                                            :index="index"
+                                            :model-value="field.name ? formData[field.name] : undefined"
+                                            :components="config.components"
+                                            :slots="config.templateSlots"
+                                            @update:model-value="(value) => field.name && updateField(field.name, value)"
+                                        />
+                                    </a-form>
+                                    <a-empty
+                                        v-if="!currentTab.html.length && !currentTab.fields.length"
+                                        description="当前选项卡暂无内容"
+                                    />
+                                </div>
+                            </section>
+                        </template>
                     </div>
 
                     <footer class="TTDF-footer">

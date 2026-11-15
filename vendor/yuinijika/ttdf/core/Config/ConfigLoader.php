@@ -18,6 +18,7 @@ final class ConfigLoader
             'cors' => [
                 'allowed_origins' => [],
             ],
+            'token_enabled' => false,
             'token_env' => 'TTDF_REST_TOKEN',
         ],
         'router' => [
@@ -68,6 +69,11 @@ final class ConfigLoader
         $restEnabled = getenv('TTDF_REST_ENABLED');
         if ($restEnabled !== false) {
             $config['rest']['enabled'] = self::toBool($restEnabled);
+        }
+
+        $tokenEnabled = getenv('TTDF_REST_TOKEN_ENABLED');
+        if ($tokenEnabled !== false) {
+            $config['rest']['token_enabled'] = self::toBool($tokenEnabled);
         }
 
         $origins = getenv('TTDF_REST_CORS_ORIGINS');

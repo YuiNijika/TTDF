@@ -18,6 +18,11 @@ final class State
         return ThemeConfig::tokenEnv();
     }
 
+    public static function tokenEnabled(): bool
+    {
+        return ThemeConfig::tokenEnabled();
+    }
+
     /**
      * @return list<string>
      */

@@ -23,12 +23,17 @@ final class TemplatesTest extends TestCase
             $this->root . '/app/components/custom/Article.php',
             '<?php declare(strict_types=1); echo "article:" . (is_object($archive) ? "archive" : "none");'
         );
+        file_put_contents(
+            $this->root . '/app/components/Broken.php',
+            '<?php declare(strict_types=1); echo "partial"; throw new \RuntimeException("broken component");'
+        );
     }
 
     protected function tearDown(): void
     {
         @unlink($this->root . '/app/components/Post.php');
         @unlink($this->root . '/app/components/custom/Article.php');
+        @unlink($this->root . '/app/components/Broken.php');
         @rmdir($this->root . '/app/components/custom');
         @rmdir($this->root . '/app/components');
         @rmdir($this->root . '/app');
@@ -83,9 +88,50 @@ final class TemplatesTest extends TestCase
     public function testAvailableListsComponentsRecursively(): void
     {
         self::assertSame(
-            ['Post', 'custom/Article'],
+            ['Broken', 'Post', 'custom/Article'],
             Templates::available($this->root)
         );
+    }
+
+    public function testFilterMapDropsComponentsOutsideAllowlist(): void
+    {
+        $map = [
+            'post' => 'Post',
+            '404' => 'PostMeta',
+            'page' => '',
+        ];
+
+        self::assertSame([
+            'post' => 'Post',
+            'page' => '',
+        ], Templates::filterMap($map, ['Post', 'Page']));
+
+        self::assertSame($map, Templates::filterMap($map, []));
+    }
+
+    public function testAllowedComponentsSanitizesFieldAllowlist(): void
+    {
+        self::assertSame(
+            ['Post', 'custom/Article'],
+            Templates::allowedComponents([
+                'components' => ['Post', ' custom\\Article ', '../Secret', 'bad name', 123, 'Post'],
+            ])
+        );
+
+        self::assertSame([], Templates::allowedComponents(null));
+        self::assertSame([], Templates::allowedComponents(['components' => 'Post']));
+    }
+
+    public function testRenderDiscardsPartialOutputWhenComponentFails(): void
+    {
+        ob_start();
+        $rendered = Templates::render($this->root, '404', new \stdClass(), 'Broken', [
+            '404' => 'Broken',
+        ]);
+        $html = (string) ob_get_clean();
+
+        self::assertFalse($rendered);
+        self::assertSame('', $html);
     }
 
     public function testArchiveSlotFallsBackToArchive(): void

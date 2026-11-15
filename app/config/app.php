@@ -15,6 +15,7 @@ return [
         'cors' => [
             'allowed_origins' => [],
         ],
+        'token_enabled' => false,
         'token_env' => 'TTDF_REST_TOKEN',
     ],
 

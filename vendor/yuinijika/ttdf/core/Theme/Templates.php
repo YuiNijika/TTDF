@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace TTDF\Theme;
 
+use TTDF\Diagnostics\ErrorHandler;
+use TTDF\Framework;
 use TTDF\View\Components;
 
 final class Templates
@@ -24,11 +26,17 @@ final class Templates
     /**
      * @return array<string, string>
      */
-    public static function mapping(): array
+    public static function mapping(?string $root = null): array
     {
         $value = Options::instance()->get('Templates', []);
+        $map = self::normalizeMap(is_array($value) ? $value : []);
+        $root ??= Framework::root();
 
-        return self::normalizeMap(is_array($value) ? $value : []);
+        if ($root === '') {
+            return $map;
+        }
+
+        return self::filterMap($map, self::allowedComponents(Schema::field($root, 'Templates')));
     }
 
     /**
@@ -71,6 +79,68 @@ final class Templates
     }
 
     /**
+     * Read the component allowlist declared by a TemplateMap field.
+     *
+     * @param array<string, mixed>|null $field
+     * @return list<string>
+     */
+    public static function allowedComponents(?array $field): array
+    {
+        $allowed = $field['components'] ?? [];
+        if (!is_array($allowed)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($allowed as $value) {
+            if (!is_string($value)) {
+                continue;
+            }
+
+            $name = trim(str_replace('\\', '/', $value));
+            $name = trim($name, '/');
+            if ($name === '' || str_contains($name, '..')) {
+                continue;
+            }
+
+            if (preg_match('/^[A-Za-z0-9_\/-]+$/', $name) !== 1) {
+                continue;
+            }
+
+            if (!in_array($name, $result, true)) {
+                $result[] = $name;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Drop mappings outside the allowlist. An empty allowlist keeps the map
+     * untouched for themes that have not opted into component filtering.
+     *
+     * @param array<string, string> $map
+     * @param list<string> $allowed
+     * @return array<string, string>
+     */
+    public static function filterMap(array $map, array $allowed): array
+    {
+        if ($allowed === []) {
+            return $map;
+        }
+
+        $set = array_flip($allowed);
+        $result = [];
+        foreach ($map as $slot => $component) {
+            if ($component === '' || isset($set[$component])) {
+                $result[$slot] = $component;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
      * Resolve the configured component for a slot, falling back to a default.
      *
      * @param array<string, string>|null $map
@@ -100,11 +170,35 @@ final class Templates
             return false;
         }
 
-        Components::render($root, $component, [
-            'archive' => $archive,
-            'slot' => $slot,
-        ]);
+        $level = ob_get_level();
+        ob_start();
 
+        try {
+            Components::render($root, $component, [
+                'archive' => $archive,
+                'slot' => $slot,
+            ]);
+
+            while (ob_get_level() > $level + 1) {
+                ob_end_flush();
+            }
+
+            $html = (string) ob_get_clean();
+        } catch (\Throwable $exception) {
+            while (ob_get_level() > $level) {
+                ob_end_clean();
+            }
+
+            ErrorHandler::report($exception, 'template:' . $slot . ':' . $component);
+
+            if (ErrorHandler::isDebug()) {
+                throw $exception;
+            }
+
+            return false;
+        }
+
+        echo $html;
         return true;
     }
 

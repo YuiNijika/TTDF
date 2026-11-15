@@ -10,7 +10,7 @@ use TTDF\Config\Config;
  * Theme-facing runtime configuration.
  *
  * Values from app/config/app.php provide runtime defaults for debug, REST,
- * CORS and the token environment. The asset CDN is read from the theme
+ * CORS, token enforcement and the token environment. The asset CDN is read from the theme
  * setting only; saved theme settings take precedence where both sources exist.
  */
 final class ThemeConfig
@@ -32,6 +32,16 @@ final class ThemeConfig
 
         return (bool) Config::get('rest.enabled', false)
             || (self::isConfigured($value) && self::toBool($value));
+    }
+
+    public static function tokenEnabled(): bool
+    {
+        $value = self::setting('REST_Token_Switch');
+        if (self::isConfigured($value)) {
+            return self::toBool($value);
+        }
+
+        return self::toBool(Config::get('rest.token_enabled', false));
     }
 
     public static function tokenEnv(): string

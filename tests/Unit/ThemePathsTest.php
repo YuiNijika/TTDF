@@ -32,6 +32,30 @@ final class ThemePathsTest extends TestCase
         self::assertFileDoesNotExist($root . '/page.php');
         self::assertFileDoesNotExist($root . '/404.php');
         self::assertFileDoesNotExist($root . '/comments.php');
+        self::assertFileDoesNotExist($root . '/app/pages/comments.php');
+        self::assertFileExists($root . '/app/components/Comments.php');
+    }
+
+    public function testCommentsRenderOnlyThroughTheComponentLoader(): void
+    {
+        $root = dirname(__DIR__, 2);
+
+        foreach ([
+            'app/pages/post.php',
+            'app/pages/page.php',
+            'app/components/Post.php',
+            'app/components/Page.php',
+        ] as $file) {
+            $source = file_get_contents($root . '/' . $file);
+            self::assertIsString($source);
+            self::assertStringNotContainsString("need('comments.php')", $source);
+            self::assertStringContainsString("'Comments'", $source);
+        }
+
+        $component = file_get_contents($root . '/app/components/Comments.php');
+        self::assertIsString($component);
+        self::assertStringContainsString("\$viewData['archive']", $component);
+        self::assertStringContainsString('ttdf-comment-form', $component);
     }
 
     public function testThemeConfigUsesStaticRuntimeDefaultsAndIgnoresStaticAssets(): void
@@ -40,6 +64,7 @@ final class ThemePathsTest extends TestCase
             'debug' => true,
             'rest' => [
                 'enabled' => true,
+                'token_enabled' => true,
                 'token_env' => 'CUSTOM_REST_TOKEN',
                 'cors' => ['allowed_origins' => ['https://a.test']],
             ],
@@ -51,9 +76,44 @@ final class ThemePathsTest extends TestCase
         try {
             self::assertTrue(ThemeConfig::debug());
             self::assertTrue(ThemeConfig::restEnabled());
+            self::assertTrue(ThemeConfig::tokenEnabled());
             self::assertSame('CUSTOM_REST_TOKEN', ThemeConfig::tokenEnv());
             self::assertSame(['https://a.test'], ThemeConfig::corsOrigins());
             self::assertSame('', ThemeConfig::assetsCdn());
+        } finally {
+            Config::reset();
+            Options::reset();
+            ThemeConfig::reset();
+        }
+    }
+
+    public function testTokenSwitchSettingOverridesStaticDefault(): void
+    {
+        Config::load([
+            'rest' => [
+                'enabled' => true,
+                'token_enabled' => true,
+            ],
+        ]);
+        ThemeConfig::reset();
+
+        try {
+            self::assertTrue(ThemeConfig::tokenEnabled());
+
+            $property = new \ReflectionProperty(Options::class, 'instance');
+            $property->setValue(null, new Options(new InMemoryOptionsStore([
+                'Theme_REST_Token_Switch' => 'false',
+            ]), 'Theme'));
+            ThemeConfig::reset();
+
+            self::assertFalse(ThemeConfig::tokenEnabled());
+
+            $property->setValue(null, new Options(new InMemoryOptionsStore([
+                'Theme_REST_Token_Switch' => 'true',
+            ]), 'Theme'));
+            ThemeConfig::reset();
+
+            self::assertTrue(ThemeConfig::tokenEnabled());
         } finally {
             Config::reset();
             Options::reset();

@@ -173,6 +173,33 @@ describe('Arco settings controls', () => {
         wrapper.unmount();
     });
 
+    it('filters TemplateMap options through the field component allowlist', async () => {
+        const wrapper = mountField(
+            field('TemplateMap', {
+                value: { '404': 'PostMeta', archive: '' },
+                components: ['Post', 'NotFound']
+            }),
+            { '404': 'PostMeta', archive: '' },
+            {
+                components: ['Post', 'NotFound', 'PostMeta'],
+                slots: { '404': '404', archive: '归档' }
+            }
+        );
+
+        await nextTick();
+        const formField = wrapper.findComponent(window.TTDFOptions.FormField);
+        expect(formField.vm.componentOptions('404')).toEqual(['Post', 'NotFound']);
+        expect(formField.vm.ignoredMappings).toBe(1);
+        expect(wrapper.text()).toContain('1 个已保存映射');
+
+        const select = wrapper.findComponent({ name: 'Select' });
+        expect(select.props('allowCreate')).toBeFalsy();
+        const selects = wrapper.findAllComponents({ name: 'Select' });
+        expect(selects[0].props('placeholder')).toBe('留空使用 404 内联回退');
+        expect(selects[1].props('placeholder')).toBe('留空回退到 archive 槽位');
+        wrapper.unmount();
+    });
+
     it('updates cascader and transfer controls', async () => {
         const cascader = mountField(
             field('Cascader', {

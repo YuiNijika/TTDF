@@ -24,6 +24,17 @@ const config = {
                 }
             ]
         },
+        templates: {
+            title: '页面模板',
+            fields: [
+                {
+                    type: 'TemplateMap',
+                    name: 'Templates',
+                    value: { post: 'Post' },
+                    label: '模板映射'
+                }
+            ]
+        },
         runtime: {
             title: '运行配置',
             fields: [
@@ -57,7 +68,11 @@ const createFetchMock = () => vi.fn(async (url, options = {}) => {
         return jsonResponse(config);
     }
     if (path.endsWith('/form-data')) {
-        return jsonResponse({ SubTitle: 'Saved title', RESTAPI_Switch: false });
+        return jsonResponse({
+            SubTitle: 'Saved title',
+            Templates: { post: 'Post' },
+            RESTAPI_Switch: false
+        });
     }
     if (path.endsWith('/theme-info')) {
         return jsonResponse(themeInfo);
@@ -105,26 +120,42 @@ describe('TTDF settings application', () => {
         );
         expect(wrapper.find('.TTDF-title').text()).toContain('TTDF Theme');
         expect(wrapper.find('.TTDF-title').text()).toContain('2.1.0');
-        expect(wrapper.find('.arco-tabs-nav-vertical').exists()).toBe(true);
-        expect(wrapper.find('.arco-tabs-content').exists()).toBe(true);
+        expect(wrapper.find('.TTDF-nav').exists()).toBe(true);
+        expect(wrapper.find('.TTDF-content').exists()).toBe(true);
         expect(wrapper.find('.settings-intro').exists()).toBe(true);
         expect(wrapper.find('input').element.value).toBe('Saved title');
         wrapper.unmount();
     });
 
-    it('switches tabs and writes the selected tab into the URL', async () => {
+    it('renders content for every tab after switching', async () => {
         const wrapper = mountApp();
         await flushPromises();
 
-        const tabs = wrapper.findAll('.arco-tabs-tab');
-        expect(tabs.length).toBe(2);
-        expect(wrapper.findAll('.arco-tabs-content-item-active')).toHaveLength(1);
+        const tabs = wrapper.findAll('.TTDF-nav-item');
+        expect(tabs.length).toBe(3);
+        expect(wrapper.find('.settings-intro').exists()).toBe(true);
+
         await tabs[1].trigger('click');
+        await flushPromises();
+
+        expect(new URL(window.location.href).searchParams.get('tab')).toBe('templates');
+        expect(wrapper.find('.ttdf-template-map').exists()).toBe(true);
+        expect(wrapper.findAll('.ttdf-template-map-row').length).toBeGreaterThan(0);
+
+        await wrapper.findAll('.TTDF-nav-item')[2].trigger('click');
         await flushPromises();
 
         expect(new URL(window.location.href).searchParams.get('tab')).toBe('runtime');
         expect(wrapper.find('.arco-switch').exists()).toBe(true);
-        expect(wrapper.findAll('.arco-tabs-content-item-active')).toHaveLength(1);
+        wrapper.unmount();
+    });
+
+    it('shows skeleton blocks instead of a spinner while loading', () => {
+        const wrapper = mountApp();
+
+        expect(wrapper.find('.TTDF-skeleton').exists()).toBe(true);
+        expect(wrapper.findAll('.TTDF-skeleton-row').length).toBe(4);
+        expect(wrapper.find('.arco-spin').exists()).toBe(false);
         wrapper.unmount();
     });
 
@@ -142,6 +173,7 @@ describe('TTDF settings application', () => {
         expect(saveCall[1].headers['X-Typecho-Token']).toBe('nonce-value');
         expect(JSON.parse(saveCall[1].body)).toEqual({
             SubTitle: 'Saved title',
+            Templates: { post: 'Post' },
             RESTAPI_Switch: false
         });
         expect(successSpy).toHaveBeenCalledWith('保存成功：设置已更新');

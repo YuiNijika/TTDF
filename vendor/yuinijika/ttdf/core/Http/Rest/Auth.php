@@ -62,13 +62,13 @@ final class Auth
             Response::error('REST API is disabled', 404);
         }
 
-        $envName = State::tokenEnv();
-        $expected = $envName !== '' ? (string) getenv($envName) : '';
-        if ($expected === '') {
+        if (!State::tokenEnabled()) {
             return;
         }
 
-        if (strlen($expected) < 32) {
+        $envName = State::tokenEnv();
+        $expected = $envName !== '' ? (string) getenv($envName) : '';
+        if ($envName === '' || $expected === '' || strlen($expected) < 32) {
             Response::error('REST token is misconfigured', 500);
         }
 

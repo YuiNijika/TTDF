@@ -21,7 +21,7 @@ if (!$rendered):
     <div class="page-content"><?php $this->content(); ?></div>
 </article>
 
-<?php $this->need('comments.php'); ?>
+<?php Components::render($root, 'Comments', ['archive' => $this]); ?>
 <?php endif; ?>
 
 <?php Components::render($root, 'AppFooter', ['archive' => $this]); ?>

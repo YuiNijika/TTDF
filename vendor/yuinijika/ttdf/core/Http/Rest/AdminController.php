@@ -106,6 +106,7 @@ final class AdminController
             'typechoVersion' => Typecho::version(),
             'frameworkVersion' => Framework::VERSION,
             'restEnabled' => State::enabled(),
+            'restTokenEnabled' => State::tokenEnabled(),
             'settingsSchemaVersion' => $options->schemaVersion(),
             'settingsTable' => (string) Config::get('settings.table', 'ttdf'),
             'logWritable' => is_dir(dirname($logFile)) ? is_writable(dirname($logFile)) : is_writable($this->root),

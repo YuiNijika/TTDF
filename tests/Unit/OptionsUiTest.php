@@ -8,14 +8,15 @@ use PHPUnit\Framework\TestCase;
 
 final class OptionsUiTest extends TestCase
 {
-    public function testSettingsPanelUsesArcoVerticalTabs(): void
+    public function testSettingsPanelUsesSemanticSectionNavigation(): void
     {
         $script = $this->asset('options.js');
 
-        self::assertStringContainsString('<a-tabs', $script);
-        self::assertStringContainsString('direction="vertical"', $script);
-        self::assertStringContainsString('<a-tab-pane', $script);
+        self::assertStringContainsString('<nav class="TTDF-nav" aria-label="设置分类">', $script);
         self::assertStringContainsString('v-for="tab in tabList"', $script);
+        self::assertStringContainsString('class="TTDF-nav-item"', $script);
+        self::assertStringContainsString('type="button"', $script);
+        self::assertStringContainsString('id="ttdf-panel-settings"', $script);
     }
 
     public function testSettingsPanelHeightScalesWithTheViewport(): void
@@ -45,6 +46,12 @@ final class OptionsUiTest extends TestCase
         self::assertStringContainsString('.arco-select-view-value', $css);
         self::assertStringContainsString('componentOptions(slot.key)', $script);
         self::assertStringContainsString(":model-value=\"templateMap[slot.key] || ''\"", $script);
+        self::assertStringContainsString('field.components', $script);
+        self::assertStringContainsString('ignoredMappings', $script);
+        self::assertStringContainsString('slotPlaceholder', $script);
+        self::assertStringContainsString('留空使用 404 内联回退', $script);
+        self::assertStringContainsString('留空回退到 archive 槽位', $script);
+        self::assertStringNotContainsString('allow-create', $script);
     }
 
     public function testImportExportAndMigrationShareOneMenu(): void
@@ -77,13 +84,31 @@ final class OptionsUiTest extends TestCase
         self::assertStringNotContainsString('▾', $script);
     }
 
-    public function testHeaderSubtitleKeepsLightContrast(): void
+    public function testPanelUsesNeutralPaletteWithoutBlueBars(): void
     {
         $css = $this->asset('options.css');
 
         self::assertStringContainsString('.TTDF-content-card p {', $css);
         self::assertStringContainsString('.TTDF-subtitle {', $css);
-        self::assertStringContainsString('color: rgba(255, 255, 255, 0.9);', $css);
+        self::assertStringContainsString('--ttdf-ink: #18181b;', $css);
+        self::assertStringContainsString('color: var(--ttdf-muted);', $css);
+        self::assertStringNotContainsString('#2271b1', $css);
+        self::assertStringNotContainsString('#1a73e8', $css);
+        self::assertStringNotContainsString('--ttdf-nav-accent', $css);
+    }
+
+    public function testLoadingUsesSkeletonBlocksInsteadOfSpinner(): void
+    {
+        $script = $this->asset('options.js');
+        $css = $this->asset('options.css');
+
+        self::assertStringContainsString('class="TTDF-skeleton"', $script);
+        self::assertStringContainsString('TTDF-skeleton-nav', $script);
+        self::assertStringContainsString('TTDF-skeleton-control', $script);
+        self::assertStringContainsString('.TTDF-skeleton {', $css);
+        self::assertStringContainsString('@keyframes ttdf-skeleton-shimmer', $css);
+        self::assertStringNotContainsString('<a-spin', $script);
+        self::assertStringNotContainsString('TTDF-spin', $css);
     }
 
     public function testSaveSuccessMessageUsesChinesePrefix(): void
@@ -101,7 +126,8 @@ final class OptionsUiTest extends TestCase
         $static = dirname(__DIR__, 2) . '/vendor/yuinijika/ttdf/static';
 
         self::assertStringContainsString('ArcoVue', $script);
-        self::assertStringContainsString('<a-spin', $script);
+        self::assertStringContainsString('<a-empty', $script);
+        self::assertStringContainsString('<a-form', $script);
         self::assertStringContainsString('<a-dropdown', $script);
         self::assertStringContainsString('<a-select', $script);
         self::assertStringNotContainsString('Element Plus', $script);
@@ -114,6 +140,18 @@ final class OptionsUiTest extends TestCase
         self::assertFileExists($static . '/arco/arco-vue-icon.min.js');
         self::assertFileDoesNotExist($static . '/element-plus/index.css');
         self::assertFileDoesNotExist($static . '/element-plus/index.full.min.js');
+    }
+
+    public function testFormControlsKeepVisibleDefaultBorders(): void
+    {
+        $css = $this->asset('options.css');
+
+        self::assertStringContainsString('.TTDF-container .arco-input-wrapper,', $css);
+        self::assertStringContainsString('.TTDF-container .arco-select-view,', $css);
+        self::assertStringContainsString('border: 1px solid var(--ttdf-line-strong);', $css);
+        self::assertStringNotContainsString('border-color: transparent', $css);
+        self::assertStringContainsString('.arco-select-view input:focus-visible', $css);
+        self::assertStringNotContainsString('input:not(.arco-input):focus-visible', $css);
     }
 
     private function asset(string $name): string

@@ -32,7 +32,7 @@ if (!$rendered):
     <p>下一篇：<?php $this->theNext('%s', '没有了'); ?></p>
 </nav>
 
-<?php $this->need('comments.php'); ?>
+<?php Components::render($root, 'Comments', ['archive' => $this]); ?>
 <?php endif; ?>
 
 <?php Components::render($root, 'AppFooter', ['archive' => $this]); ?>

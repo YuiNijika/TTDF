@@ -60,6 +60,20 @@ final class SettingsTest extends TestCase
         ], $result['Templates']);
     }
 
+    public function testTemplateMapValidationDropsComponentsOutsideFieldAllowlist(): void
+    {
+        $result = Settings::validate([
+            'Templates' => [
+                'post' => 'Post',
+                '404' => 'PostMeta',
+            ],
+        ]);
+
+        self::assertSame([
+            'post' => 'Post',
+        ], $result['Templates']);
+    }
+
     public function testThemeInfoReportsThemeRootIndexVersion(): void
     {
         $info = Settings::themeInfo();

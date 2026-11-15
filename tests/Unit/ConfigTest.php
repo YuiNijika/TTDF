@@ -15,6 +15,7 @@ final class ConfigTest extends TestCase
         Config::reset();
         putenv('TTDF_DEBUG');
         putenv('TTDF_REST_ENABLED');
+        putenv('TTDF_REST_TOKEN_ENABLED');
         putenv('TTDF_REST_CORS_ORIGINS');
         putenv('TTDF_SETTINGS_TABLE');
     }
@@ -33,14 +34,23 @@ final class ConfigTest extends TestCase
     {
         putenv('TTDF_DEBUG=1');
         putenv('TTDF_REST_ENABLED=true');
+        putenv('TTDF_REST_TOKEN_ENABLED=true');
         putenv('TTDF_REST_CORS_ORIGINS=https://a.test,https://b.test');
 
         $config = ConfigLoader::load(dirname(__DIR__, 2));
 
         self::assertTrue($config['debug']);
         self::assertTrue($config['rest']['enabled']);
+        self::assertTrue($config['rest']['token_enabled']);
         self::assertSame(['https://a.test', 'https://b.test'], $config['rest']['cors']['allowed_origins']);
         self::assertSame('router', $config['router']['pages_dir']);
+    }
+
+    public function testTokenEnforcementIsDisabledByDefault(): void
+    {
+        $config = ConfigLoader::load(dirname(__DIR__, 2));
+
+        self::assertFalse($config['rest']['token_enabled']);
     }
 
     public function testLegacyAppConfigPathIsNoLongerAccepted(): void
