@@ -25,7 +25,7 @@ final class RuntimeConsole
 
     public static function register(): void
     {
-        Hooks::addAction('theme.after_main', [self::class, 'render'], 9999);
+        Hooks::addAction('theme.footer', [self::class, 'render'], 9999);
     }
 
     public static function render(mixed ...$args): void

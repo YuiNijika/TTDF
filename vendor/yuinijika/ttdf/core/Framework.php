@@ -14,6 +14,7 @@ use TTDF\Hooks\Hooks;
 use TTDF\Hooks\TypechoBridge;
 use TTDF\Http\Rest\Router as RestRouter;
 use TTDF\Routing\AutoRouter;
+use TTDF\Theme\ArchiveLayout;
 use TTDF\Theme\ThemeConfig;
 
 final class Framework
@@ -45,6 +46,7 @@ final class Framework
         );
 
         TypechoBridge::register();
+        ArchiveLayout::register();
         RuntimeConsole::register();
         AjaxEndpoint::registerRoutes();
         Hooks::doAction('framework.boot');
@@ -82,6 +84,7 @@ final class Framework
         self::$booted = false;
         self::$root = '';
         AjaxEndpoint::reset();
+        ArchiveLayout::reset();
         RuntimeConsole::reset();
     }
 }

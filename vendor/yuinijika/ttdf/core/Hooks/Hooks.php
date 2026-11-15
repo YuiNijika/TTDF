@@ -14,7 +14,7 @@ final class Hooks
      */
     private const LEGACY_ALIASES = [
         'load_head' => 'theme.head',
-        'load_foot' => 'theme.after_main',
+        'load_foot' => 'theme.footer',
         'header' => 'typecho.archive.header',
         'footer' => 'typecho.archive.footer',
         'before_render' => 'typecho.archive.before_render',

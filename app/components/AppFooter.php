@@ -21,5 +21,6 @@ $archive = $viewData['archive'] ?? null;
 <footer>
     <p>&copy; <?php echo date('Y'); ?> <?php echo Escaper::html($footer); ?></p>
 </footer>
+<?php Hooks::doAction('theme.footer', $archive); ?>
 </body>
 </html>

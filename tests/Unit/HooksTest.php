@@ -50,7 +50,7 @@ final class HooksTest extends TestCase
     public function testLegacyLoadFootAliasRunsModernCallbacks(): void
     {
         $calls = [];
-        Hooks::addAction('theme.after_main', static function () use (&$calls): void {
+        Hooks::addAction('theme.footer', static function () use (&$calls): void {
             $calls[] = 'modern';
         });
 
@@ -66,7 +66,7 @@ final class HooksTest extends TestCase
             $calls[] = 'legacy';
         });
 
-        Hooks::doAction('theme.after_main');
+        Hooks::doAction('theme.footer');
 
         self::assertSame(['legacy'], $calls);
     }

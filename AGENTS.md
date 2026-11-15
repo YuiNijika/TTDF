@@ -64,7 +64,7 @@
 - 自定义 AJAX 只能通过 `TTDF\Ajax\Endpoint` 注册与分发，入口固定为 `/ttdf/ajax`；动作名必须匹配 `^[a-z0-9][a-z0-9_-]{0,63}$`。
 - AJAX 动作默认使用 `POST` + 管理员 + Typecho nonce + 同源校验；`auth => user` 只要求登录用户，`auth => public` 必须显式关闭 nonce 并确认动作无副作用、无敏感数据。
 - AJAX 鉴权与输入解析分别固定在 `TTDF\Ajax\Guard` 与 `TTDF\Ajax\Payload`；不要在主题内自建入口、读取 `php://input` 或绕过 nonce。
-- 运行时控制台脚本由 `TTDF\Diagnostics\RuntimeConsole` 统一输出，`window.frameWorkConfig` 只允许 `version` 与 `loadtime`；不得恢复 `TyAjax`、`RESTAPI` 或其他接口信息字段。
+- 运行时控制台脚本由 `TTDF\Diagnostics\RuntimeConsole` 在 `theme.footer` 统一输出，`window.frameWorkConfig` 只允许 `version` 与 `loadtime`；不得恢复 `TyAjax`、`RESTAPI` 或其他接口信息字段。
 - 媒体库支持专用 `Media` 字段类型与 `Text + media` 字段能力两种声明：`type => 'Media'` 直接渲染媒体选择器；`type => 'Text'` 且 `media => true`（或 `media => ['enabled' => true]`）时保留文本框并在旁边提供媒体库按钮。两者都只保存 Typecho 图片附件 `cid` 的数字字符串。读取历史绝对 URL 仅作兼容，主题输出必须走 `TTDF\Theme\Media::url()`，不得自行拼接上传目录或读取附件路径。
 - 媒体库接口只允许管理员登录 + Typecho nonce + 同源访问；只暴露 `type=attachment`、`status=publish` 的图片附件，不得返回其他附件类型。
 - 媒体上传只接受 `$_FILES['file']`，单张上限 5 MiB，必须同时校验 `getimagesize()` MIME 与 JPG/PNG/GIF/WebP/BMP 扩展名；上传文件写入 Typecho 原生上传目录并建立附件记录。
@@ -87,7 +87,8 @@
 - 损坏的附件 JSON 不得回退成可访问路径；只对确认为旧版纯路径的文本走 legacy 分支。
 - `Widget\Upload::attachmentHandle()` 在 Typecho 1.2.x 接收 `['attachment' => (object) ['path' => ...]]`，在 1.3.x 接收 `Typecho\Config`；通过反射兼容，不要写死单版签名。
 - Typecho 只有 `Widget\Archive` 的 `header` / `footer` / `beforeRender` / `afterRender` 是真实钩子；不存在 `Widget\Contents\Post` / `Widget\Contents\Page` 类，不要按旧文档注册。
-- v4 钩子名 `load_head`、`load_foot`、`header`、`footer`、`before_render`、`after_render` 由 `TTDF\Hooks\Hooks` 转发到对应 v5 Hook 并共享回调，同一事件只执行一次；不要恢复 `TTDF_Hook` 全局类。
+- v4 钩子名 `load_head`、`load_foot`、`header`、`footer`、`before_render`、`after_render` 由 `TTDF\Hooks\Hooks` 转发到对应 v5 Hook 并共享回调，同一事件只执行一次；`load_foot` 对应 `theme.footer`，不要恢复 `TTDF_Hook` 全局类。
+- 主题 `header.php` / `footer.php` 只加载自定义 assets，并分别触发 `theme.head` / `theme.footer`；不要直接调用 `$this->header()` / `$this->footer()`。框架由 `TTDF\Theme\ArchiveLayout` 在 Hook 内调用 Typecho 原生 header/footer，`theme.after_main` 只用于 `</main>` 之后的附加逻辑。
 - 主题根 `functions.php` 在 Archive 初始化阶段从主题根加载；`themeInit()` 随后把 `themeDir` 指向 `app/pages/`，Typecho 才据此执行 `need()` 与 `render()`。REST 与自定义页面必须兼容 Typecho 的 404 handler，不要在启动阶段写数据库。`themeConfig()` / `themeFields()` / `themeInit()` 由核心注册，仍会在 Typecho 需要时调用。
 - 自动路由同时支持 `[slug].php` 与 `[slug]/index.php`；动态目录必须先校验 `realpath` 边界。
 - 示例主题的页面模板使用 `app/pages/index.php` / `archive.php` / `post.php` / `page.php`，评论由 `app/components/Comments.php` 渲染，数据读取走 Typecho 原生 Widget；模板内引用主题根资源时必须使用 `\TTDF\Framework::root()`，不要依赖 `__DIR__` 推断主题根。

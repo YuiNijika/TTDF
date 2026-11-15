@@ -8,7 +8,6 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
 
 use TTDF\Compat\Typecho;
 use TTDF\Hooks\Hooks;
-use TTDF\Seo\Meta;
 use TTDF\Support\Escaper;
 use TTDF\Theme\Media;
 use TTDF\Theme\Options;
@@ -28,22 +27,6 @@ if ($title === '') {
         : $siteTitle;
 }
 
-$description = (string) ($viewData['description'] ?? '');
-if ($description === '' && is_object($archive) && is_callable([$archive, 'getArchiveDescription'])) {
-    $description = trim((string) $archive->getArchiveDescription());
-}
-if ($description === '') {
-    $description = $siteDescription;
-}
-
-$canonical = (string) ($viewData['canonical'] ?? '');
-if ($canonical === '' && is_object($archive) && is_callable([$archive, 'getArchiveUrl'])) {
-    $canonical = trim((string) $archive->getArchiveUrl());
-}
-if ($canonical === '') {
-    $canonical = Typecho::siteUrl();
-}
-
 $subtitle = (string) Options::instance()->get('SubTitle', '');
 $logoUrl = Media::url(Options::instance()->get('Logo', ''));
 ?>
@@ -52,12 +35,8 @@ $logoUrl = Media::url(Options::instance()->get('Logo', ''));
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <?php Meta::render([
-        'title' => $title,
-        'description' => $description,
-        'canonical' => $canonical,
-    ]); ?>
-    <?php Hooks::doAction('theme.head'); ?>
+    <title><?php echo Escaper::html($title); ?></title>
+    <?php Hooks::doAction('theme.head', $archive); ?>
 </head>
 <body>
 <header>
@@ -74,5 +53,5 @@ $logoUrl = Media::url(Options::instance()->get('Logo', ''));
         <p><?php echo Escaper::html($siteDescription); ?></p>
     <?php endif; ?>
 </header>
-<?php Hooks::doAction('theme.after_header'); ?>
+<?php Hooks::doAction('theme.after_header', $archive); ?>
 <main>
