@@ -10,6 +10,7 @@ use TTDF\Compat\Typecho;
 use TTDF\Hooks\Hooks;
 use TTDF\Seo\Meta;
 use TTDF\Support\Escaper;
+use TTDF\Theme\Media;
 use TTDF\Theme\Options;
 
 $options = Typecho::options();
@@ -44,6 +45,7 @@ if ($canonical === '') {
 }
 
 $subtitle = (string) Options::instance()->get('SubTitle', '');
+$logoUrl = Media::url(Options::instance()->get('Logo', ''));
 ?>
 <!doctype html>
 <html lang="zh-CN">
@@ -59,7 +61,13 @@ $subtitle = (string) Options::instance()->get('SubTitle', '');
 </head>
 <body>
 <header>
-    <a href="<?php echo Escaper::url(Typecho::siteUrl()); ?>"><?php echo Escaper::html($siteTitle); ?></a>
+    <?php if ($logoUrl !== ''): ?>
+        <a class="site-logo" href="<?php echo Escaper::url(Typecho::siteUrl()); ?>">
+            <img src="<?php echo Escaper::url($logoUrl); ?>" alt="<?php echo Escaper::attr($siteTitle); ?>">
+        </a>
+    <?php else: ?>
+        <a href="<?php echo Escaper::url(Typecho::siteUrl()); ?>"><?php echo Escaper::html($siteTitle); ?></a>
+    <?php endif; ?>
     <?php if ($subtitle !== ''): ?>
         <p><?php echo Escaper::html($subtitle); ?></p>
     <?php elseif ($siteDescription !== ''): ?>

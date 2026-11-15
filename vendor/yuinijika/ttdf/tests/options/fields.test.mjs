@@ -1,7 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { flushPromises } from '@vue/test-utils';
 import { nextTick } from 'vue';
 import {
     cleanupMounts,
+    jsonResponse,
     lastEmitted,
     mountField
 } from './helpers.mjs';
@@ -34,6 +36,7 @@ describe('Arco settings controls', () => {
             field('Tags'),
             field('Cascader', { options: [] }),
             field('Transfer', { data: [] }),
+            field('Media'),
             field('TemplateMap'),
             field('AddList'),
             field('Html', { content: '<a-tag>说明</a-tag>' }),
@@ -173,6 +176,91 @@ describe('Arco settings controls', () => {
         wrapper.unmount();
     });
 
+    it('loads, selects, and renames media library images from a Media field', async () => {
+        const fetchMock = vi.fn(async (url) => {
+            const path = new URL(url).pathname;
+            if (path.endsWith('/media/9')) {
+                return jsonResponse({
+                    id: 9,
+                    title: 'Brand logo',
+                    name: 'logo.png',
+                    url: 'https://example.test/usr/uploads/logo.png',
+                    size: 2048,
+                    type: 'png'
+                });
+            }
+            if (path.endsWith('/media')) {
+                return jsonResponse({
+                    items: [{
+                        id: 9,
+                        title: 'Brand logo',
+                        name: 'logo.png',
+                        url: 'https://example.test/usr/uploads/logo.png',
+                        size: 2048,
+                        type: 'png'
+                    }],
+                    page: 1,
+                    pageSize: 40,
+                    total: 1,
+                    lastPage: 1
+                });
+            }
+            return jsonResponse(null, 404);
+        });
+        vi.stubGlobal('fetch', fetchMock);
+
+        const wrapper = mountField(field('Media'), '9', {
+            apiUrl: 'https://example.test/ttdf/v1/admin',
+            nonce: 'nonce-value'
+        });
+        await flushPromises();
+
+        expect(wrapper.find('.ttdf-media-selected').exists()).toBe(true);
+        expect(wrapper.text()).toContain('Brand logo');
+
+        const formField = wrapper.findComponent(window.TTDFOptions.FormField);
+        await formField.vm.loadMedia(1);
+        expect(formField.vm.mediaItems).toHaveLength(1);
+
+        formField.vm.chooseMedia(formField.vm.mediaItems[0]);
+        expect(lastEmitted(wrapper)?.[0]).toBe('9');
+
+        formField.vm.startRename(formField.vm.mediaItems[0]);
+        formField.vm.renameValue = 'New logo';
+        await formField.vm.submitRename(formField.vm.mediaItems[0]);
+        await flushPromises();
+        expect(fetchMock.mock.calls.some(([url, options]) => (
+            String(url).endsWith('/media/9') && options.method === 'POST'
+        ))).toBe(true);
+
+        formField.vm.clearMedia();
+        expect(lastEmitted(wrapper)?.[0]).toBe('');
+
+        wrapper.unmount();
+        vi.unstubAllGlobals();
+    });
+
+    it('keeps a text input and media button for Text fields with media enabled', async () => {
+        const wrapper = mountField(field('Text', { media: true }), '12');
+        await flushPromises();
+        const control = wrapper.find('.ttdf-text-media');
+
+        expect(control.exists()).toBe(true);
+        expect(control.find('input').exists()).toBe(true);
+        expect(control.text()).toContain('媒体库');
+        expect(control.text()).toContain('移除');
+        expect(wrapper.find('.ttdf-media-selected').exists()).toBe(false);
+
+        await control.find('input').setValue('42');
+        expect(lastEmitted(wrapper)?.[0]).toBe('42');
+
+        await control.findAll('button')[0].trigger('click');
+        const formField = wrapper.findComponent(window.TTDFOptions.FormField);
+        expect(formField.vm.mediaOpen).toBe(true);
+
+        wrapper.unmount();
+    });
+
     it('filters TemplateMap options through the field component allowlist', async () => {
         const wrapper = mountField(
             field('TemplateMap', {
@@ -194,9 +282,45 @@ describe('Arco settings controls', () => {
 
         const select = wrapper.findComponent({ name: 'Select' });
         expect(select.props('allowCreate')).toBeFalsy();
-        const selects = wrapper.findAllComponents({ name: 'Select' });
-        expect(selects[0].props('placeholder')).toBe('留空使用 404 内联回退');
-        expect(selects[1].props('placeholder')).toBe('留空回退到 archive 槽位');
+        const selectFor = (slot) => (
+            wrapper.find('.ttdf-template-map-row[data-slot="' + slot + '"]')
+                .findComponent({ name: 'Select' })
+        );
+        expect(selectFor('404').props('placeholder')).toBe('留空使用 404 内联回退');
+        expect(selectFor('archive').props('placeholder')).toBe('留空回退到 archive 槽位');
+        wrapper.unmount();
+    });
+
+    it('groups template slots and reports mapped and fallback counts', async () => {
+        const wrapper = mountField(
+            field('TemplateMap', { slots: {} }),
+            { post: 'Post', search: 'Search' },
+            {
+                slots: {
+                    post: '文章',
+                    page: '独立页面',
+                    index: '首页',
+                    archive: '归档',
+                    category: '分类',
+                    tag: '标签',
+                    search: '搜索',
+                    author: '作者',
+                    date: '日期',
+                    '404': '404'
+                }
+            }
+        );
+        await nextTick();
+
+        const groups = wrapper.findAll('.ttdf-template-map-group');
+        expect(groups).toHaveLength(3);
+        expect(wrapper.text()).toContain('内容页面');
+        expect(wrapper.text()).toContain('归档与发现');
+        expect(wrapper.text()).toContain('系统页面');
+        expect(wrapper.find('.ttdf-template-map-stats').text()).toContain('2 已映射');
+        expect(wrapper.find('.ttdf-template-map-stats').text()).toContain('8 回退');
+        expect(wrapper.findAll('.ttdf-template-map-status.is-mapped')).toHaveLength(2);
+
         wrapper.unmount();
     });
 

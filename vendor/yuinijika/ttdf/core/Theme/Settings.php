@@ -114,7 +114,11 @@ final class Settings
             $type = (string) ($field['type'] ?? 'Text');
             $value = $input[$name];
 
-            if ($type === 'TemplateMap') {
+            if (self::isMediaField($field)) {
+                $value = is_scalar($value) && ctype_digit(trim((string) $value))
+                    ? trim((string) $value)
+                    : '';
+            } elseif ($type === 'TemplateMap') {
                 $value = Templates::filterMap(
                     Templates::normalizeMap(is_array($value) ? $value : []),
                     Templates::allowedComponents($field)
@@ -141,6 +145,28 @@ final class Settings
         }
 
         return $result;
+    }
+
+    /**
+     * Media is available as a dedicated field type or a Text field capability.
+     *
+     * @param array<string, mixed> $field
+     */
+    public static function isMediaField(array $field): bool
+    {
+        if (($field['type'] ?? 'Text') === 'Media') {
+            return true;
+        }
+
+        $media = $field['media'] ?? false;
+        if (is_bool($media)) {
+            return $media;
+        }
+        if (is_array($media)) {
+            return ($media['enabled'] ?? true) !== false;
+        }
+
+        return false;
     }
 
     /**

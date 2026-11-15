@@ -297,6 +297,8 @@ namespace Widget {
 
         public static bool $administrator = true;
 
+        public int $uid = 1;
+
         public static function alloc(): self
         {
             return new self();
@@ -321,6 +323,26 @@ namespace Widget {
 
     final class Upload
     {
+        /**
+         * @param array<string, mixed> $file
+         * @return array<string, mixed>|false
+         */
+        public static function uploadHandle(array $file): array|false
+        {
+            $name = isset($file['name']) && is_string($file['name']) ? $file['name'] : '';
+            if ($name === '') {
+                return false;
+            }
+
+            return [
+                'name' => $name,
+                'path' => '/usr/uploads/2026/11/media.png',
+                'size' => isset($file['size']) && is_numeric($file['size']) ? (int) $file['size'] : 0,
+                'type' => 'png',
+                'mime' => 'image/png',
+            ];
+        }
+
         public static function attachmentHandle(\Typecho\Config $attachment): string
         {
             return 'https://example.test' . (string) $attachment->path;

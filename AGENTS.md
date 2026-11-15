@@ -61,6 +61,10 @@
 - JSON 请求体上限 1 MiB，超限返回 413；不要先读取完整请求体再判断大小。
 - REST 路由必须在 `Framework::boot()` 中按请求同步，不依赖后台保存时的内存路由或 `__routes_registered` 标记；公开接口关闭时仍要为管理员注册管理路由。
 - `REST_Token_Env` 缺失时回退到 `rest.token_env`；开关开启但环境变量名或值为空、或值少于 32 字符时必须返回 500，禁止静默放行。开关只影响 `/ttdf/v1` 公共只读接口，后台管理接口仍使用管理员登录 + nonce + 同源校验。
+- 媒体库支持专用 `Media` 字段类型与 `Text + media` 字段能力两种声明：`type => 'Media'` 直接渲染媒体选择器；`type => 'Text'` 且 `media => true`（或 `media => ['enabled' => true]`）时保留文本框并在旁边提供媒体库按钮。两者都只保存 Typecho 图片附件 `cid` 的数字字符串。读取历史绝对 URL 仅作兼容，主题输出必须走 `TTDF\Theme\Media::url()`，不得自行拼接上传目录或读取附件路径。
+- 媒体库接口只允许管理员登录 + Typecho nonce + 同源访问；只暴露 `type=attachment`、`status=publish` 的图片附件，不得返回其他附件类型。
+- 媒体上传只接受 `$_FILES['file']`，单张上限 5 MiB，必须同时校验 `getimagesize()` MIME 与 JPG/PNG/GIF/WebP/BMP 扩展名；上传文件写入 Typecho 原生上传目录并建立附件记录。
+- 媒体删除必须限定在 `usr/uploads/` 内并校验真实路径，禁止通过损坏的附件路径删除任意文件；重命名只允许修改附件 `title`，不得改文件路径或扩展名。
 - 所有输出必须转义；URL 从 Typecho 配置与路由生成，不信任 `HTTP_HOST`；SQL 只通过 Typecho 查询构造器绑定参数。
 - 公开评论 HTML 必须使用 Typecho 的 `stripTags` 与 `commentsHTMLTagAllowed` 白名单清理；不要直接输出 Markdown 渲染结果。
 - 文件 include 必须做 `realpath` 边界校验；禁止 `eval`、`extract`、`unserialize` 用户输入和跨目录 include。
@@ -106,6 +110,8 @@
 6. 设置页“保存设置”下拉菜单的“执行迁移”调用 `POST /admin/migrate`，保持幂等
 7. 新增或调整 Arco 字段控件时，同步更新 `static/options/options.js`、`options.css` 与 `tests/options/*.test.mjs`
 8. 设置页依赖通过 `Vue` / `ArcoVue` 全局构建延迟解析，测试中不得依赖加载顺序副作用
+9. `type => 'Media'` 或 `Text + media` 字段由设置页媒体库对话框通过 `/ttdf/v1/admin/media*` 选择附件；保存 `cid`，不要保存临时 URL；`Text + media` 必须同时保留可编辑文本框与媒体库按钮
+10. 媒体库改动至少补主题输出、列表过滤、分页/搜索、上传校验、重命名与删除边界测试
 
 ## 新增 REST 接口
 
@@ -113,6 +119,7 @@
 2. 管理接口放 `/ttdf/v1/admin/*`，必须管理员登录 + nonce
 3. 不返回邮箱、IP、Token、日志或未审核数据
 4. 补鉴权、CORS、分页和内容过滤测试
+5. 媒体管理接口固定为 `GET/POST /admin/media`、`GET/POST/DELETE /admin/media/{id}`；上传是 `multipart/form-data`，其余写操作使用 JSON
 
 ## 新增模板槽位
 

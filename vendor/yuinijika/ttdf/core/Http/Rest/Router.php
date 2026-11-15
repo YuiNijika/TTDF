@@ -125,7 +125,11 @@ final class Router
     private static function dispatchAdmin(string $root, array $segments, string $method): never
     {
         $controller = new AdminController($root);
+        $media = new MediaController();
         $endpoint = $segments[0] ?? '';
+        $mediaId = isset($segments[1]) && ctype_digit((string) $segments[1])
+            ? (int) $segments[1]
+            : 0;
 
         if ($method === 'GET') {
             match ($endpoint) {
@@ -136,6 +140,7 @@ final class Router
                 'theme-info' => $controller->themeInfo(),
                 'export' => $controller->export(),
                 'diagnostics' => $controller->diagnostics(),
+                'media' => $mediaId > 0 ? $media->show($mediaId) : $media->index(),
                 default => Response::error('Endpoint not found', 404),
             };
         }
@@ -145,8 +150,13 @@ final class Router
                 'options' => $controller->optionsPost(),
                 'import' => $controller->import(),
                 'migrate' => $controller->migrate(),
+                'media' => $mediaId > 0 ? $media->rename($mediaId) : $media->upload(),
                 default => Response::error('Endpoint not found', 404),
             };
+        }
+
+        if ($method === 'DELETE' && $endpoint === 'media' && $mediaId > 0) {
+            $media->delete($mediaId);
         }
 
         Response::error('Method not allowed', 405);

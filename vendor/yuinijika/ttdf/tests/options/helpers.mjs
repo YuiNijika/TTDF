@@ -37,6 +37,14 @@ const FieldHarness = {
         index: {
             type: Number,
             default: 0
+        },
+        apiUrl: {
+            type: String,
+            default: ''
+        },
+        nonce: {
+            type: String,
+            default: ''
         }
     },
     emits: ['update:modelValue'],
@@ -61,6 +69,8 @@ const FieldHarness = {
             :components="components"
             :slots="slots"
             :index="index"
+            :api-url="apiUrl"
+            :nonce="nonce"
             @update:model-value="update"
         />
     `

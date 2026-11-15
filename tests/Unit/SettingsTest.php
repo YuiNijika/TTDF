@@ -74,6 +74,31 @@ final class SettingsTest extends TestCase
         ], $result['Templates']);
     }
 
+    public function testMediaValidationKeepsAttachmentIdsOnly(): void
+    {
+        $result = Settings::validate([
+            'Logo' => ' 42 ',
+            'SubTitle' => '../not-a-media-value',
+        ]);
+
+        self::assertSame('42', $result['Logo']);
+        self::assertSame('../not-a-media-value', $result['SubTitle']);
+
+        self::assertTrue(Settings::isMediaField(['type' => 'Text', 'name' => 'Logo', 'media' => true]));
+        self::assertTrue(Settings::isMediaField([
+            'type' => 'Text',
+            'name' => 'Logo',
+            'media' => ['enabled' => true],
+        ]));
+        self::assertTrue(Settings::isMediaField(['type' => 'Media', 'name' => 'Logo']));
+        self::assertFalse(Settings::isMediaField(['type' => 'Text', 'name' => 'Logo']));
+        self::assertFalse(Settings::isMediaField([
+            'type' => 'Text',
+            'name' => 'Logo',
+            'media' => ['enabled' => false],
+        ]));
+    }
+
     public function testThemeInfoReportsThemeRootIndexVersion(): void
     {
         $info = Settings::themeInfo();

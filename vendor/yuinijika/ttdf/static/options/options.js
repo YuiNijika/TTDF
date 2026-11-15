@@ -29,9 +29,34 @@
         return [];
     };
 
+    const mediaEnabled = (field) => {
+        if (!field) {
+            return false;
+        }
+        if (field.type === 'Media') {
+            return true;
+        }
+        if (field.type !== 'Text') {
+            return false;
+        }
+        if (field.media === true) {
+            return true;
+        }
+        return Boolean(
+            field.media
+            && typeof field.media === 'object'
+            && !Array.isArray(field.media)
+            && field.media.enabled !== false
+        );
+    };
+
     const normalizeValue = (field, value) => {
         if (value === undefined || value === null) {
             value = field.value !== undefined ? field.value : (field.default !== undefined ? field.default : '');
+        }
+
+        if (mediaEnabled(field)) {
+            return value === undefined || value === null ? '' : String(value);
         }
 
         switch (field.type) {
@@ -231,17 +256,41 @@
             index: {
                 type: Number,
                 default: 0
+            },
+            apiUrl: {
+                type: String,
+                default: ''
+            },
+            nonce: {
+                type: String,
+                default: ''
             }
         },
         emits: ['update:modelValue'],
         setup(props, { emit }) {
-            const { ref, computed } = VueLib;
+            const { ref, computed, watch } = VueLib;
             const newTag = ref('');
             const newItem = ref('');
+            const mediaOpen = ref(false);
+            const mediaLoading = ref(false);
+            const mediaUploading = ref(false);
+            const mediaItems = ref([]);
+            const mediaTotal = ref(0);
+            const mediaPage = ref(1);
+            const mediaPageSize = 40;
+            const mediaSearch = ref('');
+            const mediaError = ref('');
+            const mediaPreview = ref(null);
+            const mediaSelectedLoading = ref(false);
+            const renamingId = ref(0);
+            const renameValue = ref('');
+            const uploadInput = ref(null);
 
             const setValue = (value) => emit('update:modelValue', value);
             const testId = computed(() => fieldTestId(props.field, props.index));
             const inputId = computed(() => 'ttdf-input-' + testId.value);
+            const isMediaField = computed(() => mediaEnabled(props.field));
+            const isMediaType = computed(() => props.field.type === 'Media');
             const tags = computed(() => asArray(props.modelValue));
             const listItems = computed(() => asArray(props.modelValue));
             const cascaderValue = computed(() => asArray(props.modelValue));
@@ -267,6 +316,61 @@
 
                 return Object.entries(source).map(([key, label]) => ({ key, label: String(label) }));
             });
+
+            const templateSlotGroups = computed(() => {
+                const groups = [
+                    {
+                        key: 'content',
+                        label: '内容页面',
+                        description: '单篇文章与独立页面。',
+                        slots: []
+                    },
+                    {
+                        key: 'archive',
+                        label: '归档与发现',
+                        description: '首页、列表、筛选与搜索结果。',
+                        slots: []
+                    },
+                    {
+                        key: 'utility',
+                        label: '系统页面',
+                        description: '错误页与兜底入口。',
+                        slots: []
+                    },
+                    {
+                        key: 'other',
+                        label: '其他入口',
+                        description: '自定义模板槽位。',
+                        slots: []
+                    }
+                ];
+                const groupIndex = {
+                    post: 0,
+                    page: 0,
+                    index: 1,
+                    archive: 1,
+                    category: 1,
+                    tag: 1,
+                    search: 1,
+                    author: 1,
+                    date: 1,
+                    '404': 2
+                };
+
+                templateSlots.value.forEach((slot) => {
+                    const index = Number.isInteger(groupIndex[slot.key]) ? groupIndex[slot.key] : 3;
+                    groups[index].slots.push(slot);
+                });
+
+                return groups.filter((group) => group.slots.length > 0);
+            });
+
+            const templateMappedCount = computed(() => (
+                templateSlots.value.filter((slot) => String(templateMap.value[slot.key] || '').trim() !== '').length
+            ));
+            const templateFallbackCount = computed(() => (
+                Math.max(0, templateSlots.value.length - templateMappedCount.value)
+            ));
 
             const transferData = computed(() => {
                 const source = Array.isArray(props.field.data)
@@ -369,6 +473,265 @@
                 setValue(next);
             };
 
+            const hasMediaValue = computed(() => String(props.modelValue || '') !== '');
+            const mediaSelectedTitle = computed(() => {
+                if (mediaPreview.value && mediaPreview.value.title) {
+                    return String(mediaPreview.value.title);
+                }
+                if (hasMediaValue.value && /^https?:\/\//i.test(String(props.modelValue))) {
+                    return '外部图片';
+                }
+                return hasMediaValue.value ? '附件 #' + String(props.modelValue) : '';
+            });
+            const mediaSelectedSize = computed(() => (
+                mediaPreview.value ? formatMediaSize(mediaPreview.value.size) : ''
+            ));
+
+            const formatMediaSize = (bytes) => {
+                const size = Number(bytes || 0);
+                if (!Number.isFinite(size) || size <= 0) {
+                    return '';
+                }
+                if (size >= 1024 * 1024) {
+                    return (size / (1024 * 1024)).toFixed(size >= 10 * 1024 * 1024 ? 0 : 1) + ' MB';
+                }
+                return Math.max(1, Math.round(size / 1024)) + ' KB';
+            };
+
+            const mediaRequest = async (path, options = {}) => {
+                if (!props.apiUrl) {
+                    throw new Error('未配置媒体库接口');
+                }
+
+                const response = await fetch(String(props.apiUrl).replace(/\/+$/, '') + path, {
+                    credentials: 'same-origin',
+                    ...options,
+                    headers: {
+                        'X-Typecho-Token': props.nonce,
+                        'Accept': 'application/json',
+                        ...(options.headers || {})
+                    }
+                });
+
+                let payload = null;
+                try {
+                    payload = await response.json();
+                } catch (parseError) {
+                    payload = null;
+                }
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        throw new Error('登录状态失效，请刷新后台页面后重试');
+                    }
+                    if (response.status === 403) {
+                        throw new Error('请求被拒绝：nonce 失效或来源不一致');
+                    }
+                    throw new Error((payload && payload.message) || ('HTTP ' + response.status));
+                }
+
+                if (!payload || ![200, 201].includes(payload.code)) {
+                    throw new Error((payload && payload.message) || '媒体库请求失败');
+                }
+
+                return payload.data;
+            };
+
+            const loadSelectedMedia = async (value) => {
+                const id = String(value || '').trim();
+                if (id === '') {
+                    mediaPreview.value = null;
+                    return;
+                }
+
+                if (/^https?:\/\//i.test(id)) {
+                    mediaPreview.value = {
+                        id: 0,
+                        title: '外部图片',
+                        url: id,
+                        size: 0
+                    };
+                    return;
+                }
+
+                if (!props.apiUrl) {
+                    return;
+                }
+
+                mediaSelectedLoading.value = true;
+                try {
+                    mediaPreview.value = await mediaRequest('/media/' + encodeURIComponent(id));
+                } catch (error) {
+                    mediaPreview.value = null;
+                } finally {
+                    mediaSelectedLoading.value = false;
+                }
+            };
+
+            const loadMedia = async (page = 1) => {
+                if (!props.apiUrl) {
+                    mediaError.value = '未配置媒体库接口';
+                    return;
+                }
+
+                mediaLoading.value = true;
+                mediaError.value = '';
+                try {
+                    const query = new URLSearchParams({
+                        page: String(Math.max(1, Number(page) || 1)),
+                        pageSize: String(mediaPageSize)
+                    });
+                    const search = mediaSearch.value.trim();
+                    if (search !== '') {
+                        query.set('search', search);
+                    }
+
+                    const data = await mediaRequest('/media?' + query.toString());
+                    mediaItems.value = Array.isArray(data && data.items) ? data.items : [];
+                    mediaTotal.value = Math.max(0, Number(data && data.total) || 0);
+                    mediaPage.value = Math.max(1, Number(data && data.page) || 1);
+                } catch (error) {
+                    mediaError.value = error.message;
+                    message('error', '媒体库加载失败：' + error.message);
+                } finally {
+                    mediaLoading.value = false;
+                }
+            };
+
+            const openMedia = () => {
+                mediaOpen.value = true;
+                mediaSearch.value = '';
+                void loadMedia(1);
+            };
+
+            const chooseMedia = (item) => {
+                setValue(String(item.id));
+                mediaPreview.value = item;
+                mediaOpen.value = false;
+                message('success', '已选择图片：' + (item.title || item.name || ('#' + item.id)));
+            };
+
+            const clearMedia = () => {
+                setValue('');
+                mediaPreview.value = null;
+            };
+
+            const pickUpload = () => {
+                if (uploadInput.value && typeof uploadInput.value.click === 'function') {
+                    uploadInput.value.click();
+                }
+            };
+
+            const handleUpload = async (event) => {
+                const input = event.target;
+                const file = input.files && input.files[0];
+                if (!file) {
+                    return;
+                }
+
+                if (file.type && !file.type.startsWith('image/')) {
+                    mediaError.value = '仅支持图片文件';
+                    message('error', mediaError.value);
+                    input.value = '';
+                    return;
+                }
+
+                if (file.size > 5 * 1024 * 1024) {
+                    mediaError.value = '图片不能超过 5 MB';
+                    message('error', mediaError.value);
+                    input.value = '';
+                    return;
+                }
+
+                mediaUploading.value = true;
+                mediaError.value = '';
+                try {
+                    const body = new FormData();
+                    body.append('file', file, file.name);
+                    const item = await mediaRequest('/media', {
+                        method: 'POST',
+                        body
+                    });
+
+                    if (mediaPage.value === 1 && mediaSearch.value.trim() === '') {
+                        mediaItems.value = [item, ...mediaItems.value];
+                    }
+                    mediaTotal.value += 1;
+                    setValue(String(item.id));
+                    mediaPreview.value = item;
+                    message('success', '已上传并选择：' + (item.title || item.name || ('#' + item.id)));
+                } catch (error) {
+                    mediaError.value = error.message;
+                    message('error', '上传失败：' + error.message);
+                } finally {
+                    mediaUploading.value = false;
+                    input.value = '';
+                }
+            };
+
+            const removeMedia = async (item) => {
+                const confirmed = await confirmAction({
+                    title: '删除图片',
+                    content: '确定删除“' + (item.title || item.name || '该图片') + '”吗？文章中的引用也会失效。',
+                    okText: '删除'
+                });
+                if (!confirmed) {
+                    return;
+                }
+
+                try {
+                    await mediaRequest('/media/' + encodeURIComponent(item.id), { method: 'DELETE' });
+                    if (String(props.modelValue || '') === String(item.id)) {
+                        clearMedia();
+                    }
+                    await loadMedia(mediaPage.value);
+                    message('success', '图片已删除');
+                } catch (error) {
+                    mediaError.value = error.message;
+                    message('error', '删除失败：' + error.message);
+                }
+            };
+
+            const startRename = (item) => {
+                renamingId.value = Number(item.id);
+                renameValue.value = String(item.title || item.name || '');
+            };
+
+            const cancelRename = () => {
+                renamingId.value = 0;
+                renameValue.value = '';
+            };
+
+            const submitRename = async (item) => {
+                const name = renameValue.value.trim();
+                if (name === '') {
+                    message('error', '图片名称不能为空');
+                    return;
+                }
+
+                try {
+                    const updated = await mediaRequest('/media/' + encodeURIComponent(item.id), {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name })
+                    });
+                    mediaItems.value = mediaItems.value.map((candidate) => (
+                        String(candidate.id) === String(item.id) ? updated : candidate
+                    ));
+                    if (mediaPreview.value && String(mediaPreview.value.id) === String(item.id)) {
+                        mediaPreview.value = updated;
+                    }
+                    cancelRename();
+                    message('success', '图片已重命名');
+                } catch (error) {
+                    message('error', '重命名失败：' + error.message);
+                }
+            };
+
+            watch(() => props.modelValue, (value) => {
+                void loadSelectedMedia(value);
+            }, { immediate: true });
+
             const numberValue = computed(() => {
                 const number = Number.parseFloat(props.modelValue);
                 return Number.isFinite(number) ? number : Number(props.field.min || 0);
@@ -393,25 +756,58 @@
                 componentOptions,
                 cascaderValue,
                 fieldComponents,
+                formatMediaSize,
+                handleUpload,
+                hasMediaValue,
                 ignoredMappings,
                 inputId,
                 inactiveText,
+                isMediaField,
+                isMediaType,
                 listItems,
+                loadMedia,
+                mediaError,
+                mediaItems,
+                mediaLoading,
+                mediaOpen,
+                mediaPage,
+                mediaPageSize,
+                mediaPreview,
+                mediaSearch,
+                mediaSelectedLoading,
+                mediaSelectedSize,
+                mediaSelectedTitle,
+                mediaTotal,
+                mediaUploading,
                 newItem,
                 newTag,
                 numberValue,
+                openMedia,
+                chooseMedia,
+                clearMedia,
+                cancelRename,
+                pickUpload,
+                removeMedia,
                 removeItem,
                 removeTag,
+                renameValue,
+                renamingId,
+                startRename,
+                submitRename,
                 setTemplate,
                 setValue,
                 slotPlaceholder,
                 tags,
                 templateMap,
+                templateFallbackCount,
+                templateMappedCount,
+                templateSlotGroups,
                 templateSlots,
                 testId,
                 transferData,
                 transferValue,
-                updateItem
+                updateItem,
+                uploadInput
             };
         },
         template: `
@@ -422,7 +818,7 @@
                 <label v-if="field.label" class="ttdf-field-label" :for="inputId">{{ field.label }}</label>
                 <div class="ttdf-field-control">
                 <a-input
-                    v-if="field.type === 'Text'"
+                    v-if="field.type === 'Text' && !isMediaField"
                     :id="inputId"
                     :aria-label="field.label || field.name || '文本设置'"
                     :model-value="modelValue"
@@ -593,32 +989,246 @@
                     show-search
                     @update:model-value="setValue"
                 />
-                <div v-else-if="field.type === 'TemplateMap'" class="ttdf-template-map">
-                    <div
-                        v-for="slot in templateSlots"
-                        :key="slot.key"
-                        class="ttdf-template-map-row"
-                    >
-                        <div class="ttdf-template-map-label">
-                            <span>{{ slot.label }}</span>
-                            <code>{{ slot.key }}</code>
-                        </div>
-                        <a-select
-                            :model-value="templateMap[slot.key] || ''"
-                            :aria-label="'模板槽位 ' + slot.label"
-                            class="ttdf-template-map-select"
-                            :placeholder="slotPlaceholder(slot.key)"
-                            allow-search
+                <div v-else-if="isMediaField" class="ttdf-media-field">
+                    <div v-if="!isMediaType" class="ttdf-text-media">
+                        <a-input
+                            :id="inputId"
+                            class="ttdf-text-media-input"
+                            :aria-label="field.label || field.name || '媒体附件 ID'"
+                            :model-value="modelValue"
+                            :placeholder="field.placeholder || '输入附件 ID，或从媒体库选择…'"
                             allow-clear
-                            @update:model-value="(value) => setTemplate(slot.key, value)"
-                        >
-                            <a-option
-                                v-for="component in componentOptions(slot.key)"
-                                :key="component"
-                                :value="component"
-                            >{{ component }}</a-option>
-                        </a-select>
+                            @update:model-value="setValue"
+                        />
+                        <a-button html-type="button" @click="openMedia">媒体库</a-button>
+                        <a-button
+                            v-if="hasMediaValue"
+                            html-type="button"
+                            @click="clearMedia"
+                        >移除</a-button>
                     </div>
+                    <template v-else>
+                        <div v-if="hasMediaValue" class="ttdf-media-selected">
+                            <div class="ttdf-media-selected-thumb">
+                                <img
+                                    v-if="mediaPreview && mediaPreview.url && !mediaPreview.broken"
+                                    :src="mediaPreview.url"
+                                    :alt="mediaSelectedTitle"
+                                    @error="mediaPreview.broken = true"
+                                />
+                                <span v-else class="ttdf-media-thumb-fallback" aria-hidden="true">▧</span>
+                            </div>
+                            <div class="ttdf-media-selected-meta">
+                                <strong>{{ mediaSelectedTitle }}</strong>
+                                <span v-if="mediaSelectedSize">{{ mediaSelectedSize }}</span>
+                                <span v-if="mediaSelectedLoading" class="ttdf-media-muted">正在读取媒体信息…</span>
+                                <span v-else-if="!mediaPreview" class="ttdf-media-warn">未找到该附件，可能已被删除</span>
+                            </div>
+                            <div class="ttdf-media-selected-actions">
+                                <a-button html-type="button" size="small" @click="openMedia">更换</a-button>
+                                <a-button html-type="button" size="small" status="danger" @click="clearMedia">移除</a-button>
+                            </div>
+                        </div>
+                        <div v-else class="ttdf-media-empty">
+                            <span class="ttdf-media-empty-icon" aria-hidden="true">▧</span>
+                            <div class="ttdf-media-empty-copy">
+                                <strong>尚未选择图片</strong>
+                                <p>从媒体库选择或上传新图片，支持 JPG、PNG、GIF、WebP、BMP。</p>
+                            </div>
+                            <a-button type="primary" html-type="button" @click="openMedia">打开媒体库</a-button>
+                        </div>
+                    </template>
+
+                    <a-modal
+                        v-model:visible="mediaOpen"
+                        modal-class="ttdf-media-modal"
+                        :width="'min(960px, calc(100vw - 32px))'"
+                        :footer="false"
+                        unmount-on-close
+                    >
+                        <template #title>
+                            <div class="ttdf-media-modal-title">
+                                <span>媒体库</span>
+                                <small>{{ mediaTotal }} 张图片</small>
+                            </div>
+                        </template>
+
+                        <div class="ttdf-media-toolbar">
+                            <a-input
+                                v-model="mediaSearch"
+                                class="ttdf-media-search"
+                                placeholder="搜索图片名称…"
+                                aria-label="搜索媒体图片"
+                                allow-clear
+                                @press-enter="loadMedia(1)"
+                                @clear="loadMedia(1)"
+                            />
+                            <a-button html-type="button" @click="loadMedia(mediaPage)">刷新</a-button>
+                            <a-button
+                                type="primary"
+                                html-type="button"
+                                :loading="mediaUploading"
+                                @click="pickUpload"
+                            >上传图片</a-button>
+                            <input
+                                ref="uploadInput"
+                                class="ttdf-media-file"
+                                type="file"
+                                accept="image/jpeg,image/png,image/gif,image/webp,image/bmp"
+                                @change="handleUpload"
+                            />
+                        </div>
+                        <p class="ttdf-media-hint">支持 JPG、PNG、GIF、WebP、BMP，单张不超过 5 MB。上传后会保存为 Typecho 附件。</p>
+
+                        <div v-if="mediaError" class="ttdf-media-error" role="alert">{{ mediaError }}</div>
+
+                        <div v-if="mediaLoading" class="ttdf-media-grid" aria-busy="true" aria-label="正在加载媒体库">
+                            <div v-for="index in 6" :key="index" class="ttdf-media-card ttdf-media-card-skeleton" aria-hidden="true">
+                                <div class="ttdf-media-thumb"></div>
+                                <div class="ttdf-media-card-body">
+                                    <span class="ttdf-media-skeleton-line"></span>
+                                    <span class="ttdf-media-skeleton-line is-short"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <a-empty
+                            v-else-if="mediaItems.length === 0"
+                            class="ttdf-media-empty-state"
+                            description="媒体库还没有图片，先上传一张吧。"
+                        />
+                        <div v-else class="ttdf-media-grid">
+                            <article
+                                v-for="item in mediaItems"
+                                :key="item.id"
+                                class="ttdf-media-card"
+                                :class="{ 'is-selected': String(item.id) === String(modelValue) }"
+                                role="button"
+                                tabindex="0"
+                                :aria-pressed="String(item.id) === String(modelValue)"
+                                :aria-label="'选择图片 ' + item.title"
+                                @click="chooseMedia(item)"
+                                @keydown.enter.prevent="chooseMedia(item)"
+                                @keydown.space.prevent="chooseMedia(item)"
+                            >
+                                <div class="ttdf-media-thumb">
+                                    <img
+                                        v-if="!item.broken"
+                                        :src="item.url"
+                                        :alt="item.title"
+                                        loading="lazy"
+                                        decoding="async"
+                                        @error="item.broken = true"
+                                    />
+                                    <span v-else class="ttdf-media-thumb-fallback">无法预览</span>
+                                    <span
+                                        v-if="String(item.id) === String(modelValue)"
+                                        class="ttdf-media-check"
+                                        aria-hidden="true"
+                                    >✓</span>
+                                </div>
+                                <div class="ttdf-media-card-body">
+                                    <template v-if="renamingId === Number(item.id)">
+                                        <a-input
+                                            v-model="renameValue"
+                                            class="ttdf-media-rename-input"
+                                            size="small"
+                                            aria-label="新的图片名称"
+                                            @click.stop
+                                            @keydown.stop
+                                            @press-enter="submitRename(item)"
+                                        />
+                                        <div class="ttdf-media-card-actions">
+                                            <a-button html-type="button" size="mini" type="primary" @click.stop="submitRename(item)">保存</a-button>
+                                            <a-button html-type="button" size="mini" @click.stop="cancelRename">取消</a-button>
+                                        </div>
+                                    </template>
+                                    <template v-else>
+                                        <strong class="ttdf-media-card-title" :title="item.title">{{ item.title }}</strong>
+                                        <span class="ttdf-media-card-meta">{{ formatMediaSize(item.size) || item.type || '图片' }}</span>
+                                        <div class="ttdf-media-card-actions">
+                                            <a-button html-type="button" size="mini" @click.stop="startRename(item)">重命名</a-button>
+                                            <a-button html-type="button" size="mini" status="danger" @click.stop="removeMedia(item)">删除</a-button>
+                                        </div>
+                                    </template>
+                                </div>
+                            </article>
+                        </div>
+
+                        <div v-if="mediaTotal > mediaPageSize" class="ttdf-media-pagination">
+                            <span>第 {{ mediaPage }} / {{ Math.ceil(mediaTotal / mediaPageSize) }} 页</span>
+                            <a-pagination
+                                :current="mediaPage"
+                                :page-size="mediaPageSize"
+                                :total="mediaTotal"
+                                size="small"
+                                @change="loadMedia"
+                            />
+                        </div>
+                        <div class="ttdf-media-modal-footer">
+                            <a-button html-type="button" @click="mediaOpen = false">完成</a-button>
+                        </div>
+                    </a-modal>
+                </div>
+                <div v-else-if="field.type === 'TemplateMap'" class="ttdf-template-map">
+                    <div class="ttdf-template-map-overview">
+                        <div class="ttdf-template-map-overview-copy">
+                            <strong>入口映射</strong>
+                            <span>为每个 Typecho 页面入口选择要渲染的组件；未映射时使用入口模板回退。</span>
+                        </div>
+                        <div class="ttdf-template-map-stats" role="status" aria-live="polite">
+                            <span><b>{{ templateMappedCount }}</b> 已映射</span>
+                            <span><b>{{ templateFallbackCount }}</b> 回退</span>
+                        </div>
+                    </div>
+                    <section
+                        v-for="group in templateSlotGroups"
+                        :key="group.key"
+                        class="ttdf-template-map-group"
+                    >
+                        <header class="ttdf-template-map-group-header">
+                            <div>
+                                <h3>{{ group.label }}</h3>
+                                <p>{{ group.description }}</p>
+                            </div>
+                            <span>{{ group.slots.length }} 个入口</span>
+                        </header>
+                        <div class="ttdf-template-map-grid">
+                            <div
+                                v-for="slot in group.slots"
+                                :key="slot.key"
+                                class="ttdf-template-map-row"
+                                :data-slot="slot.key"
+                            >
+                                <div class="ttdf-template-map-row-header">
+                                    <div class="ttdf-template-map-label">
+                                        <span>{{ slot.label }}</span>
+                                        <code translate="no">{{ slot.key }}</code>
+                                    </div>
+                                    <span
+                                        class="ttdf-template-map-status"
+                                        :class="{ 'is-mapped': String(templateMap[slot.key] || '').trim() !== '' }"
+                                    >
+                                        {{ String(templateMap[slot.key] || '').trim() !== '' ? '已映射' : '回退' }}
+                                    </span>
+                                </div>
+                                <a-select
+                                    :model-value="templateMap[slot.key] || ''"
+                                    :aria-label="'模板槽位 ' + slot.label"
+                                    class="ttdf-template-map-select"
+                                    :placeholder="slotPlaceholder(slot.key)"
+                                    allow-search
+                                    allow-clear
+                                    @update:model-value="(value) => setTemplate(slot.key, value)"
+                                >
+                                    <a-option
+                                        v-for="component in componentOptions(slot.key)"
+                                        :key="component"
+                                        :value="component"
+                                    >{{ component }}</a-option>
+                                </a-select>
+                            </div>
+                        </div>
+                    </section>
                     <p class="ttdf-template-map-hint">
                         仅列出 <code>app/components/</code> 中可独立渲染的页面组件；留空时按槽位回退。
                     </p>
@@ -954,6 +1564,8 @@
 
                 return {
                     activeTab,
+                    apiUrl,
+                    appInfoNonce,
                     config,
                     currentTab,
                     dirty,
@@ -1077,6 +1689,8 @@
                                             :model-value="field.name ? formData[field.name] : undefined"
                                             :components="config.components"
                                             :slots="config.templateSlots"
+                                            :api-url="apiUrl"
+                                            :nonce="appInfoNonce"
                                             @update:model-value="(value) => field.name && updateField(field.name, value)"
                                         />
                                     </a-form>
@@ -1090,7 +1704,7 @@
                     </div>
 
                     <footer class="TTDF-footer">
-                        TTDF {{ config.ttdfVersion || '' }} · {{ config.themeName || '' }}
+                        TTDF v{{ config.ttdfVersion || '' }} · {{ config.themeName || '' }}
                     </footer>
                 </div>
             `

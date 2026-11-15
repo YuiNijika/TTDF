@@ -67,6 +67,16 @@ final class Request
     }
 
     /**
+     * @return array<string, mixed>|null
+     */
+    public static function file(string $key): ?array
+    {
+        $file = $_FILES[$key] ?? null;
+
+        return is_array($file) ? $file : null;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public static function json(): array
