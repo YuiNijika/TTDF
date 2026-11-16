@@ -60,6 +60,12 @@ final class AttachmentTest extends TestCase
         self::assertSame('', Attachment::url('{"path":'));
     }
 
+    public function testMetadataDoesNotTreatJsonScalarsAsLegacyPaths(): void
+    {
+        self::assertSame('', Attachment::metadata('"foo"')['path']);
+        self::assertSame('', Attachment::metadata('"foo"')['name']);
+    }
+
     public function testUrlUsesTypecho13ConfigSignature(): void
     {
         $text = '{"path":"/usr/uploads/photo.jpg","type":"jpg"}';

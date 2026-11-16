@@ -32,6 +32,22 @@ final class OptionsTest extends TestCase
         self::assertSame('Legacy', $options->get('SubTitle'));
     }
 
+    public function testUnprefixedLegacyRowIsNotReadAsCurrentThemeValue(): void
+    {
+        $store = new InMemoryOptionsStore([
+            'SubTitle' => '"global"',
+            'Theme_SubTitle' => '"theme"',
+        ]);
+        $options = new Options($store, 'Theme');
+
+        self::assertSame('theme', $options->get('SubTitle'));
+        self::assertSame(
+            'fallback',
+            (new Options(new InMemoryOptionsStore(['SubTitle' => '"global"']), 'Theme'))
+                ->get('SubTitle', 'fallback')
+        );
+    }
+
     public function testExplicitEmptyStringIsDistinctFromMissingValue(): void
     {
         $store = new InMemoryOptionsStore(['Theme_REST_Token_Env' => '""']);
@@ -45,10 +61,42 @@ final class OptionsTest extends TestCase
     {
         $store = new InMemoryOptionsStore();
         $options = new Options($store, 'Theme');
-        $options->import(['__schema_version' => '9', 'SubTitle' => 'Imported']);
+        $options->import([
+            '__schema_version' => '9',
+            '__schema_version_Theme' => '8',
+            'SubTitle' => 'Imported',
+        ]);
 
         self::assertSame('Imported', $options->get('SubTitle'));
         self::assertNull($store->get('__schema_version'));
+        self::assertNull($store->get('__schema_version_Theme'));
+    }
+
+    public function testSchemaVersionIsScopedPerTheme(): void
+    {
+        $store = new InMemoryOptionsStore();
+        $first = new Options($store, 'Theme');
+        $second = new Options($store, 'Other');
+
+        $first->ensureInstalled();
+        $first->setSchemaVersion(2);
+
+        self::assertSame(2, $first->schemaVersion());
+        self::assertNull($second->schemaVersion());
+
+        $second->ensureInstalled();
+
+        self::assertSame(1, $second->schemaVersion());
+        self::assertSame(2, $first->schemaVersion());
+    }
+
+    public function testFreshThemeInstallStartsAtConfiguredSchemaVersion(): void
+    {
+        $options = new Options(new InMemoryOptionsStore(), 'Theme');
+
+        $options->ensureInstalled();
+
+        self::assertSame(2, $options->schemaVersion());
     }
 
     public function testAllOnlyReturnsCurrentThemeValues(): void
@@ -73,6 +121,25 @@ final class OptionsTest extends TestCase
         $this->expectException(RuntimeException::class);
 
         (new Options(new InMemoryOptionsStore(), ''))->set('SubTitle', 'Hello');
+    }
+
+    public function testUnresolvedThemeNeverReadsOrListsGlobalRows(): void
+    {
+        $store = new InMemoryOptionsStore([
+            'SubTitle' => '"global"',
+            'Theme_SubTitle' => '"theme"',
+        ]);
+        $options = new Options($store, '');
+
+        self::assertSame('fallback', $options->get('SubTitle', 'fallback'));
+        self::assertSame([], $options->all());
+    }
+
+    public function testDeleteRequiresResolvedTheme(): void
+    {
+        $this->expectException(RuntimeException::class);
+
+        (new Options(new InMemoryOptionsStore(), ''))->delete('SubTitle');
     }
 
     public function testThemeNameWithHyphenKeepsPrefix(): void

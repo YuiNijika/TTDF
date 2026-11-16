@@ -29,6 +29,7 @@ final class ErrorHandlerTest extends TestCase
         self::assertStringNotContainsString('secret', $html);
         self::assertStringNotContainsString('script', $html);
         self::assertStringNotContainsString('TTDF error:', $html);
+        self::assertStringContainsString('href="https://example.test/"', $html);
     }
 
     public function testDebugPageEscapesExceptionDetails(): void

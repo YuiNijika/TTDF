@@ -66,6 +66,13 @@ final class MediaTest extends TestCase
         self::assertSame('', Media::url('999'));
     }
 
+    public function testThemeMediaDetectsImageUrlsFromTheirExtension(): void
+    {
+        self::assertTrue(Media::metadata('https://cdn.example.test/logo.png')['isImage']);
+        self::assertFalse(Media::metadata('https://cdn.example.test/manual.pdf')['isImage']);
+        self::assertFalse(Media::metadata('/usr/uploads/archive.zip')['isImage']);
+    }
+
     public function testTextMediaValuesKeepUrlsAndLegacyIds(): void
     {
         self::assertSame('https://cdn.example.test/logo.png', Media::normalizeUrl(' https://cdn.example.test/logo.png '));
@@ -146,6 +153,8 @@ final class MediaTest extends TestCase
         self::assertCondition($query, 'table.contents.type = ?', ['attachment']);
         self::assertCondition($query, 'table.contents.status = ?', ['publish']);
         self::assertCondition($query, 'table.contents.title LIKE ?', ['%logo%']);
+        self::assertTrue($this->hasWhereValue($query, '"path"'));
+        self::assertNotSame([], $this->findWhere($query, 'NOT LIKE ?')['values']);
     }
 
     public function testMediaItemsIgnoreNonImageAttachments(): void
@@ -175,8 +184,31 @@ final class MediaTest extends TestCase
         self::assertSame('', MediaController::imageExtension('shell.php'));
     }
 
+    public function testDeleteRefusesNonImageAttachments(): void
+    {
+        Db::$fetcher = static fn (Query $query): array => $query->table === 'table.contents'
+            ? [[
+                'cid' => 9,
+                'title' => 'Manual',
+                'text' => json_encode([
+                    'name' => 'manual.pdf',
+                    'path' => '/usr/uploads/manual.pdf',
+                    'size' => 1024,
+                    'type' => 'pdf',
+                    'mime' => 'application/pdf',
+                ], JSON_THROW_ON_ERROR),
+            ]]
+            : [];
+
+        $exception = $this->capture(static fn () => (new MediaController())->delete(9));
+
+        self::assertSame(404, $exception->status());
+        self::assertSame('媒体文件不存在', $exception->payload()['message']);
+    }
+
     public function testUploadDeleteGuardOnlyAcceptsTypechoUploadsDirectory(): void
     {
+        self::assertSame('usr/uploads', Upload::directory());
         self::assertTrue(Upload::isUploadPath('usr/uploads/2026/11/logo.png'));
         self::assertTrue(Upload::isUploadPath('/usr/uploads/2026/11/logo.png'));
         self::assertFalse(Upload::isUploadPath('usr/uploads/../config.inc.php'));
@@ -210,6 +242,33 @@ final class MediaTest extends TestCase
         }
 
         self::fail('Condition not found: ' . $condition);
+    }
+
+    /**
+     * @return array{condition: string, values: list<mixed>}
+     */
+    private function findWhere(Query $query, string $fragment): array
+    {
+        foreach ($query->wheres as $where) {
+            if (str_contains($where['condition'], $fragment)) {
+                return $where;
+            }
+        }
+
+        self::fail(sprintf('Condition containing "%s" was not found', $fragment));
+    }
+
+    private function hasWhereValue(Query $query, string $fragment): bool
+    {
+        foreach ($query->wheres as $where) {
+            foreach ($where['values'] as $value) {
+                if (is_string($value) && str_contains($value, $fragment)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**

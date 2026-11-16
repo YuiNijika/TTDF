@@ -9,6 +9,7 @@ use TTDF\Config\Config;
 use TTDF\Support\Json;
 use TTDF\Theme\Options;
 use TTDF\Theme\Schema;
+use TTDF\Theme\Settings;
 
 final class Migrator
 {
@@ -41,29 +42,43 @@ final class Migrator
         $prefix = $theme !== '' ? $theme . '_' : '';
         $migrated = 0;
 
+        $entries = [];
         foreach ($this->options->store()->all() as $name => $raw) {
-            if ($name === '__schema_version') {
+            if (str_starts_with($name, '__schema_version')) {
                 continue;
             }
 
             if ($prefix !== '' && str_starts_with($name, $prefix)) {
                 $fieldName = substr($name, strlen($prefix));
+                if (!isset($fields[$fieldName])) {
+                    continue;
+                }
+                $targetName = $name;
+                $priority = 2;
             } elseif (isset($fields[$name])) {
                 $fieldName = $name;
+                $targetName = $prefix . $name;
+                $priority = 1;
             } else {
                 continue;
             }
 
-            $value = $this->decode($raw);
-            if (isset($fields[$fieldName])) {
-                $value = $this->coerce($fields[$fieldName], $value);
+            if (!isset($entries[$fieldName]) || $priority > $entries[$fieldName]['priority']) {
+                $entries[$fieldName] = [
+                    'target' => $targetName,
+                    'raw' => $raw,
+                    'priority' => $priority,
+                ];
             }
+        }
 
-            $this->options->store()->set($name, Json::encode($value));
+        foreach ($entries as $fieldName => $entry) {
+            $value = Settings::normalizeValue($fields[$fieldName], $this->decode($entry['raw']));
+            $this->options->store()->set($entry['target'], Json::encode($value));
             $migrated++;
         }
 
-        $this->options->store()->set('__schema_version', (string) $target);
+        $this->options->setSchemaVersion($target);
         Options::reset();
 
         return [
@@ -104,12 +119,15 @@ final class Migrator
         $rows = [];
 
         foreach ($this->options->store()->all() as $name => $raw) {
-            if ($name === '__schema_version') {
+            if (str_starts_with($name, '__schema_version')) {
                 continue;
             }
 
             if ($prefix !== '' && str_starts_with($name, $prefix)) {
-                $rows[$name] = $raw;
+                $fieldName = substr($name, strlen($prefix));
+                if (isset($fields[$fieldName])) {
+                    $rows[$name] = $raw;
+                }
             } elseif (isset($fields[$name])) {
                 $rows[$name] = $raw;
             }
@@ -127,32 +145,4 @@ final class Migrator
         }
     }
 
-    /**
-     * @param array<string, mixed> $field
-     */
-    private function coerce(array $field, mixed $value): mixed
-    {
-        $type = (string) ($field['type'] ?? 'Text');
-
-        if (in_array($type, ['Checkbox', 'Tags', 'AddList', 'Cascader', 'Transfer'], true)) {
-            if (is_string($value)) {
-                return array_values(array_filter(array_map('trim', explode(',', $value))));
-            }
-
-            return is_array($value) ? array_values($value) : [];
-        }
-
-        if ($type === 'Switch') {
-            return is_bool($value)
-                ? $value
-                : (is_scalar($value)
-                    && in_array(strtolower((string) $value), ['1', 'true', 'yes', 'on'], true));
-        }
-
-        if (in_array($type, ['Number', 'Slider'], true)) {
-            return is_numeric($value) ? $value + 0 : 0;
-        }
-
-        return is_scalar($value) ? (string) $value : '';
-    }
 }

@@ -50,10 +50,28 @@ final class ConfigLoader
 
         $config = array_replace_recursive(self::DEFAULTS, $config);
         unset($config['version'], $config['assets']);
+        self::validateShape($config);
         self::applyEnvironment($config);
+        self::normalizeBooleans($config);
         self::validate($config);
 
         return $config;
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    private static function validateShape(array $config): void
+    {
+        foreach (['rest', 'router', 'settings'] as $section) {
+            if (!is_array($config[$section] ?? null)) {
+                throw new RuntimeException('TTDF configuration section must be an array: ' . $section);
+            }
+        }
+
+        if (!is_array($config['rest']['cors'] ?? null)) {
+            throw new RuntimeException('TTDF configuration section must be an array: rest.cors');
+        }
     }
 
     /**
@@ -123,8 +141,28 @@ final class ConfigLoader
         }
     }
 
-    private static function toBool(string $value): bool
+    /**
+     * @param array<string, mixed> $config
+     */
+    private static function normalizeBooleans(array &$config): void
     {
-        return in_array(strtolower(trim($value)), ['1', 'true', 'yes', 'on'], true);
+        $config['debug'] = self::toBool($config['debug'] ?? false);
+        $config['rest']['enabled'] = self::toBool($config['rest']['enabled'] ?? false);
+        $config['rest']['token_enabled'] = self::toBool($config['rest']['token_enabled'] ?? false);
+        $config['router']['enabled'] = self::toBool($config['router']['enabled'] ?? true);
+    }
+
+    private static function toBool(mixed $value): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_int($value) || is_float($value)) {
+            return $value != 0;
+        }
+
+        return is_string($value)
+            && in_array(strtolower(trim($value)), ['1', 'true', 'yes', 'on'], true);
     }
 }

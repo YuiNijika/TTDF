@@ -1357,6 +1357,7 @@
                 const saving = ref(false);
                 const dirty = ref(false);
                 const error = ref('');
+                const initError = ref(String(appInfo.initError || ''));
 
                 const request = async (path, options = {}) => {
                     if (!apiUrl) {
@@ -1635,6 +1636,7 @@
                     currentTab,
                     dirty,
                     error,
+                    initError,
                     exportSettings,
                     formData,
                     handleAction,
@@ -1687,6 +1689,7 @@
                     </header>
 
                     <a-alert v-if="error" type="error" class="TTDF-error" role="alert">{{ error }}</a-alert>
+                    <a-alert v-if="initError" type="warning" class="TTDF-error" role="alert">{{ initError }}</a-alert>
 
                     <div class="TTDF-body">
                         <div v-if="loading" class="TTDF-skeleton" aria-busy="true" aria-live="polite">

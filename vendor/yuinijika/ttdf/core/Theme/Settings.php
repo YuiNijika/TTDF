@@ -20,6 +20,7 @@ final class Settings
     public static function config(object $form): void
     {
         $options = Options::instance();
+        $initializationError = '';
         try {
             $options->ensureInstalled();
             self::migrateLegacyValues($options);
@@ -29,14 +30,24 @@ final class Settings
             }
         } catch (\Throwable $exception) {
             error_log('TTDF settings table initialization failed: ' . $exception->getMessage());
+            $initializationError = '主题设置初始化失败，请检查数据库权限、设置表结构或 logs/error.log。';
+        }
+
+        $indexUrl = Typecho::indexUrl();
+        if ($indexUrl === '') {
+            $indexUrl = Typecho::siteUrl();
         }
 
         $payload = [
-            'apiUrl' => rtrim(Typecho::siteUrl(), '/') . '/' . trim((string) Config::get('rest.prefix', 'ttdf/v1'), '/') . '/admin',
+            'apiUrl' => rtrim($indexUrl, '/')
+                . '/'
+                . trim((string) Config::get('rest.prefix', 'ttdf/v1'), '/')
+                . '/admin',
             'nonce' => Typecho::securityToken(),
             'themeName' => Typecho::themeName(),
             'themeVersion' => Typecho::themeVersion(),
             'ttdfVersion' => Framework::VERSION,
+            'initError' => $initializationError,
         ];
 
         echo '<div id="options-app"></div>' . PHP_EOL;
@@ -60,17 +71,10 @@ final class Settings
      */
     public static function fields(object $layout): void
     {
-        $file = Paths::themeFields(self::root());
-        if (!is_file($file)) {
-            return;
+        $fields = Fields::declarations(self::root());
+        if ($fields !== []) {
+            Fields::addToLayout($layout, $fields);
         }
-
-        $fields = require $file;
-        if (!is_array($fields)) {
-            return;
-        }
-
-        Fields::addToLayout($layout, $fields);
     }
 
     /**
@@ -90,8 +94,9 @@ final class Settings
         $values = [];
 
         foreach (Schema::fields(self::root()) as $name => $field) {
-            $default = $field['value'] ?? '';
-            $values[$name] = $options->get($name, $default);
+            $stored = $options->get($name, null);
+            $value = $stored === null ? ($field['value'] ?? '') : $stored;
+            $values[$name] = self::normalizeValue($field, $value);
         }
 
         return $values;
@@ -111,42 +116,7 @@ final class Settings
                 continue;
             }
 
-            $type = (string) ($field['type'] ?? 'Text');
-            $value = $input[$name];
-            $mediaMode = self::mediaMode($field);
-
-            if ($mediaMode === 'reference') {
-                $value = is_scalar($value) && ctype_digit(trim((string) $value))
-                    ? trim((string) $value)
-                    : '';
-            } elseif ($mediaMode === 'url') {
-                $value = $type === 'Textarea'
-                    ? Media::normalizeUrlList($value)
-                    : Media::normalizeUrl($value);
-            } elseif ($type === 'TemplateMap') {
-                $value = Templates::filterMap(
-                    Templates::normalizeMap(is_array($value) ? $value : []),
-                    Templates::allowedComponents($field)
-                );
-            } elseif (in_array($type, ['Checkbox', 'Tags', 'AddList', 'Cascader', 'Transfer'], true)) {
-                if (is_string($value)) {
-                    $value = array_values(array_filter(array_map('trim', explode(',', $value))));
-                }
-                if (!is_array($value)) {
-                    $value = [];
-                }
-            } elseif ($type === 'Switch') {
-                $value = is_bool($value)
-                    ? $value
-                    : (is_scalar($value)
-                        && in_array(strtolower((string) $value), ['1', 'true', 'yes', 'on'], true));
-            } elseif (in_array($type, ['Number', 'Slider'], true)) {
-                $value = is_numeric($value) ? (float) $value : 0;
-            } else {
-                $value = is_scalar($value) ? (string) $value : '';
-            }
-
-            $result[$name] = $value;
+            $result[$name] = self::normalizeValue($field, $input[$name]);
         }
 
         return $result;
@@ -283,8 +253,67 @@ final class Settings
                 ? $typecho->{$name}
                 : null;
             if (is_array($legacy) || is_scalar($legacy)) {
-                $options->set($name, $legacy);
+                $options->set($name, self::normalizeValue($field, $legacy));
             }
         }
+    }
+
+    /**
+     * Normalize one schema value for both persisted reads and writes.
+     *
+     * @param array<string, mixed> $field
+     */
+    public static function normalizeValue(array $field, mixed $value): mixed
+    {
+        $type = (string) ($field['type'] ?? 'Text');
+        $mediaMode = self::mediaMode($field);
+
+        if ($mediaMode === 'reference') {
+            $value = is_scalar($value) ? trim((string) $value) : '';
+
+            return ctype_digit($value) && (int) $value > 0 ? $value : '';
+        }
+
+        if ($mediaMode === 'url') {
+            return $type === 'Textarea'
+                ? Media::normalizeUrlList($value)
+                : Media::normalizeUrl($value);
+        }
+
+        if ($type === 'TemplateMap') {
+            return Templates::filterMap(
+                Templates::normalizeMap(is_array($value) ? $value : []),
+                Templates::allowedComponents($field)
+            );
+        }
+
+        if (in_array($type, ['Checkbox', 'Tags', 'AddList', 'Cascader', 'Transfer'], true)) {
+            if (is_string($value)) {
+                return array_values(array_filter(array_map('trim', explode(',', $value))));
+            }
+
+            return is_array($value) ? $value : [];
+        }
+
+        if ($type === 'Switch') {
+            return is_bool($value)
+                ? $value
+                : (is_scalar($value)
+                    && in_array(strtolower(trim((string) $value)), ['1', 'true', 'yes', 'on'], true));
+        }
+
+        if (in_array($type, ['Number', 'Slider'], true)) {
+            if (!is_numeric($value)) {
+                return 0;
+            }
+
+            if (is_int($value) || (is_string($value) && preg_match('/^[+-]?\d+$/', trim($value)) === 1)) {
+                return (int) $value;
+            }
+
+            return (float) $value;
+        }
+
+        return is_scalar($value) ? (string) $value : '';
     }
 }

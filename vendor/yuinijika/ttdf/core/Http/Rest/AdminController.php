@@ -87,6 +87,10 @@ final class AdminController
 
         Options::instance()->ensureInstalled();
         $count = Settings::import($settings);
+        if ($count === 0) {
+            Response::error('No valid settings were provided', 422);
+        }
+
         Response::success(['imported' => $count]);
     }
 

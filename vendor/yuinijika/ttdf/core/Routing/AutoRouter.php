@@ -115,9 +115,13 @@ final class AutoRouter
         $restPrefix = trim((string) Config::get('rest.prefix', 'ttdf/v1'), '/');
         $restRequest = $restPrefix !== ''
             && ($path === $restPrefix || str_starts_with($path, $restPrefix . '/'));
+        $ajaxRequest = $path === 'ttdf/ajax' || str_starts_with($path, 'ttdf/ajax/');
 
-        return in_array($first, ['admin', 'feed', 'assets', 'favicon.ico', 'robots.txt', 'sitemap.xml'], true)
-            || $restRequest;
+        return in_array(
+            $first,
+            ['admin', 'feed', 'assets', 'usr', 'favicon.ico', 'robots.txt', 'sitemap.xml'],
+            true
+        ) || $restRequest || $ajaxRequest;
     }
 
     /**

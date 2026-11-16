@@ -13,13 +13,7 @@ final class Assets
 {
     public static function url(string $path): string
     {
-        $path = ltrim(str_replace('\\', '/', $path), '/');
-        $cdn = ThemeConfig::assetsCdn();
-        $base = $cdn !== '' && preg_match('#^https?://#i', $cdn) === 1
-            ? rtrim($cdn, '/')
-            : rtrim(Typecho::themeUrl(), '/');
-
-        return Escaper::url($base . '/' . $path . '?v=' . rawurlencode(Framework::VERSION));
+        return self::buildUrl($path, self::themeVersion());
     }
 
     public static function staticUrl(string $path): string
@@ -29,7 +23,37 @@ final class Assets
             $relative = Framework::STATIC_RELATIVE_PATH;
         }
 
-        return self::url($relative . '/' . ltrim(str_replace('\\', '/', $path), '/'));
+        return self::buildUrl(
+            $relative . '/' . ltrim(str_replace('\\', '/', $path), '/'),
+            Framework::VERSION
+        );
+    }
+
+    private static function themeVersion(): string
+    {
+        $version = Typecho::themeVersion();
+
+        return $version !== '' ? $version : Framework::VERSION;
+    }
+
+    private static function buildUrl(string $path, string $version): string
+    {
+        $path = ltrim(str_replace('\\', '/', $path), '/');
+        $cdn = ThemeConfig::assetsCdn();
+        $base = $cdn !== '' && preg_match('#^https?://#i', $cdn) === 1
+            ? rtrim($cdn, '/')
+            : rtrim(Typecho::themeUrl(), '/');
+        $fragment = '';
+        if (str_contains($path, '#')) {
+            [$path, $fragment] = explode('#', $path, 2);
+        }
+        $separator = str_contains($path, '?') ? '&' : '?';
+        $url = $base . '/' . $path . $separator . 'v=' . rawurlencode($version);
+        if ($fragment !== '') {
+            $url .= '#' . $fragment;
+        }
+
+        return Escaper::url($url);
     }
 
     /**

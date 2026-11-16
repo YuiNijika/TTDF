@@ -60,6 +60,30 @@ final class TypechoCompatTest extends TestCase
         self::assertArrayNotHasKey('TTDF_TEST', \Typecho\Router::routes());
     }
 
+    public function testIndexUrlUsesTypechoEntryAndFallsBackToIndexPhp(): void
+    {
+        $withIndex = new class {
+            public string $siteUrl = 'https://example.test/blog/';
+            public string $index = 'https://example.test/blog/index.php/';
+        };
+        \Helper::$optionsOverride = $withIndex;
+        try {
+            self::assertSame('https://example.test/blog/index.php', Typecho::indexUrl());
+        } finally {
+            \Helper::$optionsOverride = null;
+        }
+
+        $withoutIndex = new class {
+            public string $siteUrl = 'https://example.test/';
+        };
+        \Helper::$optionsOverride = $withoutIndex;
+        try {
+            self::assertSame('https://example.test/index.php', Typecho::indexUrl());
+        } finally {
+            \Helper::$optionsOverride = null;
+        }
+    }
+
     public function testCommentHtmlUsesTypechoWhitelist(): void
     {
         $html = Typecho::commentHtml('<p>ok</p><script>alert(1)</script><a href="#">link</a>');

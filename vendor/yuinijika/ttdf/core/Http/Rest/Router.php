@@ -174,8 +174,8 @@ final class Router
 
         match ($resource) {
             'site' => $controller->site(),
-            'posts' => $id > 0 ? $controller->post($id) : $controller->posts(),
-            'pages' => $id > 0 ? $controller->page($id) : $controller->pages(),
+            'posts' => self::contentRoute($controller, 'post', $segments, $id),
+            'pages' => self::contentRoute($controller, 'page', $segments, $id),
             'categories' => $controller->categories(),
             'tags' => $controller->tags(),
             'comments' => $controller->comments(),
@@ -183,6 +183,26 @@ final class Router
             'search' => $controller->search(),
             default => Response::error('Endpoint not found', 404),
         };
+    }
+
+    /**
+     * @param list<string> $segments
+     */
+    private static function contentRoute(
+        PublicController $controller,
+        string $type,
+        array $segments,
+        int $id
+    ): never {
+        if (count($segments) === 1) {
+            $type === 'post' ? $controller->posts() : $controller->pages();
+        }
+
+        if (count($segments) === 2 && $id > 0) {
+            $type === 'post' ? $controller->post($id) : $controller->page($id);
+        }
+
+        Response::error($type === 'post' ? 'Post not found' : 'Page not found', 404);
     }
 
     /**
@@ -237,25 +257,27 @@ final class Router
         $path = self::requestPath();
         $suffix = $path === $prefix ? '' : substr($path, strlen($prefix) + 1);
 
-        return array_values(array_filter(
+        $segments = array_values(array_filter(
             explode('/', trim($suffix, '/')),
             static fn (string $segment): bool => $segment !== ''
         ));
+
+        foreach ($segments as $segment) {
+            if (
+                $segment === '.'
+                || $segment === '..'
+                || str_contains($segment, "\0")
+                || str_contains($segment, '\\')
+            ) {
+                Response::error('Endpoint not found', 404);
+            }
+        }
+
+        return $segments;
     }
 
     private static function requestPath(): string
     {
-        $uri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
-        $path = parse_url($uri, PHP_URL_PATH);
-        $path = is_string($path) ? rawurldecode($path) : '/';
-        $path = trim($path, '/');
-
-        $base = parse_url(Typecho::siteUrl(), PHP_URL_PATH);
-        $base = is_string($base) ? trim(rawurldecode($base), '/') : '';
-        if ($base !== '' && ($path === $base || str_starts_with($path, $base . '/'))) {
-            $path = ltrim(substr($path, strlen($base)), '/');
-        }
-
-        return $path;
+        return Request::path();
     }
 }

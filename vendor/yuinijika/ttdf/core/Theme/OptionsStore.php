@@ -20,6 +20,4 @@ interface OptionsStore
     public function exists(string $name): bool;
 
     public function install(): void;
-
-    public function schemaVersion(): ?int;
 }

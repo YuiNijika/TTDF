@@ -72,6 +72,17 @@ final class SettingsTest extends TestCase
         self::assertSame([
             'post' => 'Post',
         ], $result['Templates']);
+
+        $result = Settings::validate([
+            'Templates' => [
+                'post' => 'Post',
+                '404' => 'Post',
+            ],
+        ]);
+
+        self::assertSame([
+            'post' => 'Post',
+        ], $result['Templates']);
     }
 
     public function testMediaValidationKeepsUrlsForTextFields(): void

@@ -7,8 +7,10 @@ namespace TTDF\Http\Rest;
 use TTDF\Compat\Typecho;
 use TTDF\Config\Config;
 use TTDF\Framework;
+use TTDF\Hooks\Hooks;
 use TTDF\Http\Request;
 use TTDF\Http\Response;
+use TTDF\Theme\Fields;
 use Typecho\Db;
 use Typecho\Db\Query;
 
@@ -370,7 +372,7 @@ final class PublicController
             'author' => $this->author((int) ($row['authorId'] ?? 0)),
             'categories' => $this->postTerms($cid, 'category'),
             'tags' => $this->postTerms($cid, 'tag'),
-            'fields' => $this->postFields($cid),
+            'fields' => $this->postFields($cid, $row),
             'excerpt' => $this->excerpt($text),
         ];
 
@@ -444,20 +446,43 @@ final class PublicController
     }
 
     /**
+     * @param array<string, mixed> $row
      * @return array<string, string>
      */
-    private function postFields(int $cid): array
+    private function postFields(int $cid, array $row): array
     {
+        $declared = Fields::names(Framework::root());
+        if ($declared === []) {
+            return [];
+        }
+
+        $allowed = array_flip($declared);
         $select = $this->db->select('name', 'value')->from('table.fields')->where('cid = ?', $cid);
         $result = [];
         foreach ($this->rows($select) as $row) {
             $name = (string) ($row['name'] ?? '');
-            if ($name !== '') {
+            if ($name !== '' && isset($allowed[$name])) {
                 $result[$name] = (string) ($row['value'] ?? '');
             }
         }
 
-        return $result;
+        $filtered = Hooks::applyFilters('rest.post.fields', $result, $cid, $row);
+        if (!is_array($filtered)) {
+            return $result;
+        }
+
+        $safe = [];
+        foreach ($filtered as $name => $value) {
+            if (
+                is_string($name)
+                && preg_match('/^[A-Za-z0-9_]{1,100}$/', $name) === 1
+                && is_scalar($value)
+            ) {
+                $safe[$name] = (string) $value;
+            }
+        }
+
+        return $safe;
     }
 
     /**
@@ -489,8 +514,14 @@ final class PublicController
             return '';
         }
 
-        return mb_strlen($plain) > $length
-            ? mb_substr($plain, 0, $length) . '...'
+        if (function_exists('mb_strlen') && function_exists('mb_substr')) {
+            return mb_strlen($plain) > $length
+                ? mb_substr($plain, 0, $length) . '...'
+                : $plain;
+        }
+
+        return strlen($plain) > $length
+            ? substr($plain, 0, $length) . '...'
             : $plain;
     }
 
@@ -565,7 +596,12 @@ final class PublicController
                 return '';
             }
 
-            $url = \Typecho\Router::url($name, $params, Typecho::siteUrl());
+            $prefix = Typecho::indexUrl();
+            if ($prefix === '') {
+                $prefix = Typecho::siteUrl();
+            }
+
+            $url = \Typecho\Router::url($name, $params, $prefix);
             return $url === '#' ? '' : $url;
         } catch (\Throwable) {
             return '';

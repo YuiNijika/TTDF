@@ -84,4 +84,46 @@ final class LoggerTest extends TestCase
         self::assertStringNotContainsString('api-value', $contents);
         self::assertStringContainsString('visible', $contents);
     }
+
+    public function testObjectPropertiesAreRedactedRecursively(): void
+    {
+        $file = $this->directory . '/error.log';
+        $logger = new Logger($file);
+        $payload = new \stdClass();
+        $payload->token = 'object-token';
+        $payload->safe = 'visible-object-value';
+        $payload->nested = (object) [
+            'password' => 'object-password',
+            'safe' => 'nested-visible',
+        ];
+
+        $logger->write('error', 'object context', ['payload' => $payload]);
+
+        $contents = (string) file_get_contents($file);
+
+        self::assertStringContainsString('visible-object-value', $contents);
+        self::assertStringContainsString('nested-visible', $contents);
+        self::assertStringNotContainsString('object-token', $contents);
+        self::assertStringNotContainsString('object-password', $contents);
+    }
+
+    public function testCamelCaseCredentialKeysAreRedacted(): void
+    {
+        $file = $this->directory . '/error.log';
+        $logger = new Logger($file);
+
+        $logger->write('error', 'camel case context', [
+            'accessToken' => 'camel-token',
+            'refreshToken' => 'refresh-token',
+            'userEmail' => 'camel@example.test',
+            'safeField' => 'visible',
+        ]);
+
+        $contents = (string) file_get_contents($file);
+
+        self::assertStringContainsString('visible', $contents);
+        self::assertStringNotContainsString('camel-token', $contents);
+        self::assertStringNotContainsString('refresh-token', $contents);
+        self::assertStringNotContainsString('camel@example.test', $contents);
+    }
 }

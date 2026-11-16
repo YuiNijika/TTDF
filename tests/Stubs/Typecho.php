@@ -252,6 +252,10 @@ namespace Typecho {
 
         public static function url(string $name, ?array $value = null, ?string $prefix = null): string
         {
+            if ($name === 'TTDF_AJAX') {
+                return '#';
+            }
+
             $base = rtrim((string) $prefix, '/');
             $slug = (string) ($value['slug'] ?? '');
 
@@ -323,6 +327,8 @@ namespace Widget {
 
     final class Upload
     {
+        public const UPLOAD_DIR = '/usr/uploads';
+
         /**
          * @param array<string, mixed> $file
          * @return array<string, mixed>|false
@@ -384,6 +390,7 @@ namespace {
 
             $options = new \stdClass();
             $options->siteUrl = 'https://example.test/';
+            $options->index = 'https://example.test/';
             $options->themeUrl = 'https://example.test/usr/themes/ttdf';
             $options->theme = 'Theme';
             $options->title = 'Example';

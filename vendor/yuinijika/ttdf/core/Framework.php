@@ -6,6 +6,7 @@ namespace TTDF;
 
 use RuntimeException;
 use TTDF\Ajax\Endpoint as AjaxEndpoint;
+use TTDF\Compat\Typecho as TypechoCompat;
 use TTDF\Config\Config;
 use TTDF\Config\ConfigLoader;
 use TTDF\Diagnostics\ErrorHandler;
@@ -15,6 +16,8 @@ use TTDF\Hooks\TypechoBridge;
 use TTDF\Http\Rest\Router as RestRouter;
 use TTDF\Routing\AutoRouter;
 use TTDF\Theme\ArchiveLayout;
+use TTDF\Theme\Options;
+use TTDF\Theme\Schema;
 use TTDF\Theme\ThemeConfig;
 
 final class Framework
@@ -81,10 +84,19 @@ final class Framework
 
     public static function reset(): void
     {
+        RestRouter::unregisterRoutes();
+        TypechoCompat::removeRoute(AjaxEndpoint::ROUTE_NAME);
         self::$booted = false;
         self::$root = '';
         AjaxEndpoint::reset();
         ArchiveLayout::reset();
         RuntimeConsole::reset();
+        Hooks::reset();
+        TypechoBridge::reset();
+        Options::reset();
+        Schema::reset();
+        ErrorHandler::reset();
+        Config::reset();
+        TypechoCompat::resetRoutes();
     }
 }

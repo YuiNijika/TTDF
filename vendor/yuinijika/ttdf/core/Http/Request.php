@@ -109,13 +109,17 @@ final class Request
             throw new PayloadTooLargeException('Request body is too large');
         }
 
-        $raw = self::$body ?? file_get_contents('php://input');
-        if ($raw === false || $raw === '') {
-            return [];
+        if (self::$body !== null) {
+            if (strlen(self::$body) > self::MAX_BODY_BYTES) {
+                throw new PayloadTooLargeException('Request body is too large');
+            }
+            $raw = self::$body;
+        } else {
+            $raw = self::readBody();
         }
 
-        if (strlen($raw) > self::MAX_BODY_BYTES) {
-            throw new PayloadTooLargeException('Request body is too large');
+        if ($raw === '') {
+            return [];
         }
 
         $data = Json::decode($raw);
@@ -129,5 +133,32 @@ final class Request
     public static function ip(): string
     {
         return (string) ($_SERVER['REMOTE_ADDR'] ?? '');
+    }
+
+    private static function readBody(): string
+    {
+        $handle = fopen('php://input', 'rb');
+        if ($handle === false) {
+            return '';
+        }
+
+        $raw = '';
+        try {
+            while (!feof($handle)) {
+                $chunk = fread($handle, 8192);
+                if ($chunk === false || $chunk === '') {
+                    break;
+                }
+
+                $raw .= $chunk;
+                if (strlen($raw) > self::MAX_BODY_BYTES) {
+                    throw new PayloadTooLargeException('Request body is too large');
+                }
+            }
+        } finally {
+            fclose($handle);
+        }
+
+        return $raw;
     }
 }

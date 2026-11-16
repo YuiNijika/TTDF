@@ -22,6 +22,20 @@ final class Typecho
         return is_scalar($value) ? (string) $value : '';
     }
 
+    /**
+     * Typecho's entry URL (`/` with rewrite, `/index.php` without).
+     */
+    public static function indexUrl(): string
+    {
+        $value = self::option('index');
+        if (is_scalar($value) && trim((string) $value) !== '') {
+            return rtrim((string) $value, '/');
+        }
+
+        $site = rtrim(self::siteUrl(), '/');
+        return $site === '' ? '' : $site . '/index.php';
+    }
+
     public static function themeUrl(): string
     {
         $value = self::option('themeUrl');

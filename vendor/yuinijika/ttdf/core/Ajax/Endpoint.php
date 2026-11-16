@@ -46,6 +46,10 @@ final class Endpoint
             throw new InvalidArgumentException('Invalid AJAX action name');
         }
 
+        if (isset(self::$actions[$action])) {
+            throw new InvalidArgumentException('AJAX action is already registered: ' . $action);
+        }
+
         $method = strtoupper((string) ($options['method'] ?? 'POST'));
         if (!in_array($method, ['GET', 'POST', 'ANY'], true)) {
             throw new InvalidArgumentException('Invalid AJAX method');
@@ -87,7 +91,7 @@ final class Endpoint
             $url = '';
         }
 
-        if ($url === '') {
+        if ($url === '' || $url === '#') {
             $url = rtrim(Typecho::siteUrl(), '/') . '/index.php/' . self::PATH;
         }
 

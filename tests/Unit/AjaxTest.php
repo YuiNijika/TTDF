@@ -46,6 +46,15 @@ final class AjaxTest extends TestCase
         Endpoint::register('../bad', static fn (): array => []);
     }
 
+    public function testRejectsDuplicateActionRegistration(): void
+    {
+        Endpoint::register('duplicate', static fn (): array => []);
+
+        $this->expectException(InvalidArgumentException::class);
+
+        Endpoint::register('duplicate', static fn (): array => []);
+    }
+
     public function testPublicActionReturnsJson(): void
     {
         Endpoint::register('ping', static fn (array $data): array => [
@@ -150,6 +159,14 @@ final class AjaxTest extends TestCase
 
         self::assertSame('ttdf/ajax', Request::path());
         self::assertTrue(Endpoint::isRequest());
+    }
+
+    public function testUrlFallsBackWhenTypechoReturnsAnEmptyHash(): void
+    {
+        self::assertSame(
+            'https://example.test/index.php/ttdf/ajax?action=ping',
+            Endpoint::url('ping')
+        );
     }
 
     private function invoke(): ResponseException

@@ -11,7 +11,7 @@ final class InMemoryOptionsStore implements OptionsStore
     /** @var array<string, string> */
     private array $data = [];
 
-    public function __construct(array $data = [], private int $version = 2)
+    public function __construct(array $data = [])
     {
         $this->data = $data;
     }
@@ -24,9 +24,6 @@ final class InMemoryOptionsStore implements OptionsStore
     public function set(string $name, string $value): void
     {
         $this->data[$name] = $value;
-        if ($name === '__schema_version' && ctype_digit($value)) {
-            $this->version = (int) $value;
-        }
     }
 
     public function delete(string $name): void
@@ -46,12 +43,5 @@ final class InMemoryOptionsStore implements OptionsStore
 
     public function install(): void
     {
-        $this->data['__schema_version'] = '2';
-        $this->version = 2;
-    }
-
-    public function schemaVersion(): ?int
-    {
-        return $this->version;
     }
 }

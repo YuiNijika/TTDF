@@ -28,15 +28,19 @@ final class Templates
      */
     public static function mapping(?string $root = null): array
     {
-        $value = Options::instance()->get('Templates', []);
-        $map = self::normalizeMap(is_array($value) ? $value : []);
         $root ??= Framework::root();
+        $field = $root !== '' ? Schema::field($root, 'Templates') : null;
+        $value = Options::instance()->get('Templates', null);
+        if ($value === null && $field !== null) {
+            $value = $field['value'] ?? [];
+        }
+        $map = self::normalizeMap(is_array($value) ? $value : []);
 
         if ($root === '') {
             return $map;
         }
 
-        return self::filterMap($map, self::allowedComponents(Schema::field($root, 'Templates')));
+        return self::filterMap($map, self::allowedComponents($field));
     }
 
     /**
@@ -116,8 +120,11 @@ final class Templates
     }
 
     /**
-     * Drop mappings outside the allowlist. An empty allowlist keeps the map
-     * untouched for themes that have not opted into component filtering.
+     * Drop mappings outside the allowlist.
+     *
+     * A TemplateMap field must declare its independent page components. An
+     * empty allowlist therefore disables the mapping instead of allowing
+     * fragments such as Comments or AppHeader to become page renderers.
      *
      * @param array<string, string> $map
      * @param list<string> $allowed
@@ -126,18 +133,32 @@ final class Templates
     public static function filterMap(array $map, array $allowed): array
     {
         if ($allowed === []) {
-            return $map;
+            return [];
         }
 
         $set = array_flip($allowed);
         $result = [];
         foreach ($map as $slot => $component) {
-            if ($component === '' || isset($set[$component])) {
+            $slot = (string) $slot;
+            if (self::slotAccepts($slot, $component) && ($component === '' || isset($set[$component]))) {
                 $result[$slot] = $component;
             }
         }
 
         return $result;
+    }
+
+    /**
+     * Typecho's 404 archive has no content type, so only a dedicated
+     * NotFound component may render that slot.
+     */
+    private static function slotAccepts(string $slot, string $component): bool
+    {
+        if ($slot !== '404' || $component === '') {
+            return true;
+        }
+
+        return $component === 'NotFound';
     }
 
     /**

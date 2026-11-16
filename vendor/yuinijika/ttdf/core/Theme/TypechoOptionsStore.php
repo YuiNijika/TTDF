@@ -107,19 +107,6 @@ final class TypechoOptionsStore implements OptionsStore
         }
 
         $this->db->query($sql);
-
-        if ($this->get('__schema_version') === null) {
-            $this->db->query($this->db->insert($this->table())->rows([
-                'name' => '__schema_version',
-                'value' => '1',
-            ]));
-        }
-    }
-
-    public function schemaVersion(): ?int
-    {
-        $value = $this->get('__schema_version');
-        return $value !== null && ctype_digit($value) ? (int) $value : null;
     }
 
     private function table(): string

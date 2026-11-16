@@ -116,4 +116,14 @@ final class AutoRouterTest extends TestCase
         self::assertSame('', AutoRouter::normalizePath('/index.php'));
         self::assertNull(AutoRouter::resolve($this->root, AutoRouter::normalizePath('/index.php/%2e%2e/secret')));
     }
+
+    public function testFrameworkReservedPathsAreSkipped(): void
+    {
+        $method = new \ReflectionMethod(AutoRouter::class, 'shouldSkip');
+
+        self::assertTrue($method->invoke(null, 'ttdf/ajax'));
+        self::assertTrue($method->invoke(null, 'ttdf/v1/posts'));
+        self::assertTrue($method->invoke(null, 'usr/themes/classic/app.css'));
+        self::assertFalse($method->invoke(null, 'about'));
+    }
 }

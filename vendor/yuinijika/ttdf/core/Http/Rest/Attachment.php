@@ -19,11 +19,27 @@ final class Attachment
         $text = trim($text);
         $decoded = $text === '' ? null : Json::decode($text);
         $data = is_array($decoded) ? $decoded : [];
-        $looksLikeJson = str_starts_with($text, '{') || str_starts_with($text, '[');
+        $looksLikeJson = str_starts_with($text, '{')
+            || str_starts_with($text, '[')
+            || str_starts_with($text, '"')
+            || str_starts_with($text, "'");
+        $legacyPath = !str_contains($text, '..')
+            && !str_contains($text, '\\')
+            && !str_contains($text, "\0")
+            && preg_match('/\s/', $text) !== 1
+            && \TTDF\Compat\Upload::isUploadPath($text)
+            || preg_match('#^https?://#i', $text) === 1;
 
         $path = isset($data['path']) && is_string($data['path'])
             ? trim($data['path'])
-            : (is_array($decoded) || $looksLikeJson ? '' : $text);
+            : ($legacyPath && !is_array($decoded) && !$looksLikeJson ? $text : '');
+        if (
+            $path !== ''
+            && preg_match('#^https?://#i', $path) !== 1
+            && !\TTDF\Compat\Upload::isUploadPath($path)
+        ) {
+            $path = '';
+        }
 
         $name = isset($data['name']) && is_string($data['name']) ? trim($data['name']) : '';
         if ($name === '' && $path !== '') {

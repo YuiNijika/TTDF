@@ -72,7 +72,7 @@ final class Media
                 'size' => 0,
                 'mime' => '',
                 'type' => strtolower(pathinfo((string) parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION)),
-                'isImage' => true,
+                'isImage' => self::isImagePath($url),
             ];
         }
 
@@ -151,7 +151,12 @@ final class Media
         }
 
         if (str_starts_with($value, '/') && !str_starts_with($value, '//')) {
-            return $value;
+            return str_contains($value, '..')
+                || str_contains($value, '\\')
+                || str_contains($value, "\0")
+                || preg_match('/[\x00-\x1F\x7F]/', $value) === 1
+                    ? ''
+                    : $value;
         }
 
         $url = Attachment::safeUrl($value);
@@ -179,5 +184,13 @@ final class Media
         }
 
         return implode("\n", $urls);
+    }
+
+    private static function isImagePath(string $url): bool
+    {
+        $path = (string) parse_url($url, PHP_URL_PATH);
+        $extension = strtolower((string) pathinfo($path, PATHINFO_EXTENSION));
+
+        return in_array($extension, ['jpg', 'jpeg', 'gif', 'png', 'tiff', 'bmp', 'webp', 'avif'], true);
     }
 }

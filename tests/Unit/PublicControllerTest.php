@@ -6,6 +6,7 @@ namespace TTDF\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
 use TTDF\Config\Config;
+use TTDF\Hooks\Hooks;
 use TTDF\Http\Response;
 use TTDF\Http\ResponseException;
 use TTDF\Http\Rest\PublicController;
@@ -19,6 +20,7 @@ final class PublicControllerTest extends TestCase
         $_GET = [];
         Config::load(['rest' => ['enabled' => true, 'prefix' => 'ttdf/v1']]);
         Db::reset();
+        Hooks::reset();
         Response::capture(true);
     }
 
@@ -27,6 +29,8 @@ final class PublicControllerTest extends TestCase
         Response::capture(false);
         Config::reset();
         Db::reset();
+        Hooks::reset();
+        \Helper::$optionsOverride = null;
         $_GET = [];
     }
 
@@ -57,11 +61,19 @@ final class PublicControllerTest extends TestCase
                     'description' => '',
                     'order' => 1,
                 ]],
-                'table.fields' => [['name' => 'cover', 'value' => 'cover.jpg']],
+                'table.fields' => [
+                    ['name' => 'TTDF_Fields_Text', 'value' => 'cover.jpg'],
+                    ['name' => 'private_note', 'value' => 'secret'],
+                ],
                 'table.users' => [['uid' => 1, 'name' => 'admin', 'screenName' => 'Admin']],
                 default => [],
             };
         };
+
+        Hooks::addFilter('rest.post.fields', static function (array $fields): array {
+            $fields['cover'] = 'filtered.jpg';
+            return $fields;
+        });
 
         $payload = $this->capture(static fn () => (new PublicController())->posts())->payload();
 
@@ -73,7 +85,9 @@ final class PublicControllerTest extends TestCase
         self::assertSame(7, $payload['data'][0]['cid']);
         self::assertSame('https://example.test/archives/7/', $payload['data'][0]['permalink']);
         self::assertSame('news', $payload['data'][0]['categories'][0]['slug']);
-        self::assertSame('cover.jpg', $payload['data'][0]['fields']['cover']);
+        self::assertSame('cover.jpg', $payload['data'][0]['fields']['TTDF_Fields_Text']);
+        self::assertSame('filtered.jpg', $payload['data'][0]['fields']['cover']);
+        self::assertArrayNotHasKey('private_note', $payload['data'][0]['fields']);
         self::assertSame('Admin', $payload['data'][0]['author']['screenName']);
 
         $query = $this->findQuery('table.contents', 'title');
@@ -150,6 +164,43 @@ final class PublicControllerTest extends TestCase
         $payload = $this->capture(static fn () => (new PublicController())->posts())->payload();
 
         self::assertSame('', $payload['data'][0]['excerpt']);
+    }
+
+    public function testPermalinksUseIndexPhpWhenRewriteIsDisabled(): void
+    {
+        $options = new \stdClass();
+        $options->siteUrl = 'https://example.test/';
+        $options->index = 'https://example.test/index.php/';
+        \Helper::$optionsOverride = $options;
+
+        Db::$fetcher = static function (Query $query): array {
+            if (in_array('COUNT(*) AS num', $query->fields, true)) {
+                return [['num' => 1]];
+            }
+
+            if ($query->table === 'table.contents') {
+                return [[
+                    'cid' => 7,
+                    'title' => 'Hello',
+                    'slug' => 'hello',
+                    'created' => 1_700_000_000,
+                    'modified' => 1_700_000_000,
+                    'text' => 'Hello',
+                    'commentsNum' => 0,
+                    'authorId' => 0,
+                    'type' => 'post',
+                ]];
+            }
+
+            return [];
+        };
+
+        $payload = $this->capture(static fn () => (new PublicController())->posts())->payload();
+
+        self::assertSame(
+            'https://example.test/index.php/archives/7/',
+            $payload['data'][0]['permalink']
+        );
     }
 
     public function testCommentsOnlyExposeApprovedSafeFields(): void

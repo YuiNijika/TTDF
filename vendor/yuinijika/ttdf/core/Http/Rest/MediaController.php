@@ -220,6 +220,17 @@ final class MediaController
         ]);
 
         if ($item === null) {
+            try {
+                @$this->db->query(
+                    $this->db->delete('table.contents')
+                        ->where('cid = ?', $cid)
+                        ->where('type = ?', 'attachment')
+                );
+            } catch (Throwable) {
+                // The upload is still unusable; the guarded file delete below
+                // is the important cleanup step.
+            }
+            Upload::delete($path);
             Response::error('上传完成但无法生成媒体信息', 500);
         }
 
@@ -272,7 +283,7 @@ final class MediaController
         }
 
         $row = $this->findRow($id);
-        if ($row === null) {
+        if ($row === null || self::itemFromRow($row) === null) {
             Response::error('媒体文件不存在', 404);
         }
 
@@ -390,15 +401,68 @@ final class MediaController
      */
     private static function imageCondition(): array
     {
-        $conditions = ['table.contents.text LIKE ?'];
-        $params = ['%"mime":"image%'];
+        $directory = Upload::directory();
+        $prefixes = [$directory . '/', '/' . $directory . '/'];
+
+        $mimeConditions = [
+            'table.contents.text LIKE ?',
+            'table.contents.text LIKE ?',
+        ];
+        $mimeParams = ['%"mime":"image/%', '%"mime": "image/%'];
+
+        $typeConditions = [];
+        $typeParams = [];
 
         foreach (array_keys(self::IMAGE_TYPES) as $extension) {
-            $conditions[] = 'table.contents.text LIKE ?';
-            $params[] = '%"type":"' . $extension . '"%';
+            $typeConditions[] = 'table.contents.text LIKE ?';
+            $typeParams[] = '%"type":"' . $extension . '"%';
+            $typeConditions[] = 'table.contents.text LIKE ?';
+            $typeParams[] = '%"type": "' . $extension . '"%';
         }
 
-        return ['(' . implode(' OR ', $conditions) . ')', $params];
+        $typeOnly = '((' . implode(' OR ', $typeConditions) . ') AND table.contents.text NOT LIKE ?)';
+        $typeParams[] = '%"mime"%';
+
+        // Typecho stores attachment JSON both with and without escaped
+        // slashes (`\/usr\/uploads` vs `/usr/uploads`), and MySQL treats
+        // backslash as a LIKE escape character. Match the path key plus the
+        // upload directory name so the predicate works across databases.
+        $directoryName = trim((string) basename($directory), '/');
+        $jsonPathConditions = [
+            'table.contents.text LIKE ?',
+            'table.contents.text LIKE ?',
+        ];
+        $jsonPathParams = ['%"path"%', '%' . $directoryName . '%'];
+
+        $legacyPathConditions = [];
+        $legacyParams = [];
+        foreach ($prefixes as $prefix) {
+            $legacyPathConditions[] = 'table.contents.text LIKE ?';
+            $legacyParams[] = $prefix . '%';
+        }
+
+        $legacyExtensionConditions = [];
+        foreach (array_keys(self::IMAGE_TYPES) as $extension) {
+            $legacyExtensionConditions[] = 'table.contents.text LIKE ?';
+            $legacyParams[] = '%' . $extension;
+        }
+
+        $imageMeta = '((' . implode(' OR ', array_merge($mimeConditions, [$typeOnly])) . '))';
+        $jsonPath = '(' . implode(' OR ', $jsonPathConditions) . ')';
+        $legacy = '((' . implode(' OR ', $legacyPathConditions) . ') AND ('
+            . implode(' OR ', $legacyExtensionConditions) . '))';
+        $condition = '((' . $imageMeta . ' AND ' . $jsonPath . ') OR ' . $legacy . ')'
+            . ' AND table.contents.text NOT LIKE ?';
+
+        $params = array_merge(
+            $mimeParams,
+            $typeParams,
+            $jsonPathParams,
+            $legacyParams,
+            ['%..%']
+        );
+
+        return ['(' . $condition . ')', $params];
     }
 
     private static function currentUserId(): int

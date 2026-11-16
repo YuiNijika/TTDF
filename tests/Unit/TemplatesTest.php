@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace TTDF\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use TTDF\Theme\Options;
+use TTDF\Theme\Schema;
 use TTDF\Theme\Templates;
 
 final class TemplatesTest extends TestCase
@@ -13,7 +15,10 @@ final class TemplatesTest extends TestCase
 
     protected function setUp(): void
     {
+        Options::reset();
+        Schema::reset();
         $this->root = sys_get_temp_dir() . '/ttdf-templates-' . uniqid('', true);
+        mkdir($this->root . '/app/config', 0777, true);
         mkdir($this->root . '/app/components/custom', 0777, true);
         file_put_contents(
             $this->root . '/app/components/Post.php',
@@ -31,13 +36,56 @@ final class TemplatesTest extends TestCase
 
     protected function tearDown(): void
     {
+        Options::reset();
+        Schema::reset();
+        @unlink($this->root . '/app/config/theme.php');
         @unlink($this->root . '/app/components/Post.php');
         @unlink($this->root . '/app/components/custom/Article.php');
         @unlink($this->root . '/app/components/Broken.php');
         @rmdir($this->root . '/app/components/custom');
         @rmdir($this->root . '/app/components');
+        @rmdir($this->root . '/app/config');
         @rmdir($this->root . '/app');
         @rmdir($this->root);
+    }
+
+    public function testMappingUsesSchemaDefaultBeforeSettingsAreSaved(): void
+    {
+        file_put_contents($this->root . '/app/config/theme.php', <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+return [
+    'Templates' => [
+        'title' => 'Templates',
+        'fields' => [
+            [
+                'type' => 'TemplateMap',
+                'name' => 'Templates',
+                'value' => ['post' => 'Post', '404' => 'NotFound'],
+                'components' => ['Post', 'Page', 'NotFound'],
+            ],
+        ],
+    ],
+];
+PHP);
+
+        $store = new InMemoryOptionsStore();
+        $options = new Options($store, 'Theme');
+        $instance = new \ReflectionProperty(Options::class, 'instance');
+        $instance->setValue(null, $options);
+
+        self::assertSame([
+            'post' => 'Post',
+            '404' => 'NotFound',
+        ], Templates::mapping($this->root));
+
+        $options->set('Templates', ['post' => 'Page']);
+
+        self::assertSame([
+            'post' => 'Page',
+        ], Templates::mapping($this->root));
     }
 
     public function testNormalizeMapKeepsOnlyKnownSlotsAndSafeNames(): void
@@ -106,7 +154,21 @@ final class TemplatesTest extends TestCase
             'page' => '',
         ], Templates::filterMap($map, ['Post', 'Page']));
 
-        self::assertSame($map, Templates::filterMap($map, []));
+        self::assertSame([], Templates::filterMap($map, []));
+    }
+
+    public function testFilterMapOnlyAllowsNotFoundForThe404Slot(): void
+    {
+        $map = [
+            '404' => 'Post',
+        ];
+
+        self::assertSame([], Templates::filterMap($map, ['Post', 'NotFound']));
+        self::assertSame([], Templates::filterMap(['404' => 'custom/NotFound'], ['custom/NotFound']));
+        self::assertSame(
+            ['404' => 'NotFound'],
+            Templates::filterMap(['404' => 'NotFound'], ['Post', 'NotFound'])
+        );
     }
 
     public function testAllowedComponentsSanitizesFieldAllowlist(): void

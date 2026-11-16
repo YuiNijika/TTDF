@@ -72,6 +72,26 @@ final class RestRouterTest extends TestCase
         self::assertTrue(Router::isRequest());
     }
 
+    public function testIndexPhpPrefixStillMatches(): void
+    {
+        $_SERVER['REQUEST_URI'] = '/index.php/ttdf/v1/site';
+        self::assertTrue(Router::isRequest());
+
+        $payload = $this->capture(static fn () => Router::handle(dirname(__DIR__, 2)))->payload();
+        self::assertSame(200, $payload['code']);
+        self::assertSame('5.0.0-next', $payload['data']['frameworkVersion']);
+    }
+
+    public function testSubdirectoryInstallWithIndexPhpPrefixStillMatches(): void
+    {
+        $options = \Helper::options();
+        $options->siteUrl = 'https://example.test/blog';
+        \Helper::$optionsOverride = $options;
+
+        $_SERVER['REQUEST_URI'] = '/blog/index.php/ttdf/v1/site';
+        self::assertTrue(Router::isRequest());
+    }
+
     public function testRoutesAreRegisteredOnlyWhenPublicApiIsEnabled(): void
     {
         Router::syncRoutes();
@@ -178,6 +198,26 @@ final class RestRouterTest extends TestCase
 
         self::assertSame(404, $exception->status());
         self::assertSame('REST API is disabled', $exception->payload()['message']);
+    }
+
+    public function testInvalidContentDetailPathDoesNotFallBackToTheList(): void
+    {
+        $_SERVER['REQUEST_URI'] = '/ttdf/v1/posts/not-a-number';
+
+        $exception = $this->capture(static fn () => Router::handle(dirname(__DIR__, 2)));
+
+        self::assertSame(404, $exception->status());
+        self::assertSame('Post not found', $exception->payload()['message']);
+    }
+
+    public function testTraversalSegmentsAreRejectedBeforeRouteDispatch(): void
+    {
+        $_SERVER['REQUEST_URI'] = '/ttdf/v1/posts/%2e%2e/admin/options';
+
+        $exception = $this->capture(static fn () => Router::handle(dirname(__DIR__, 2)));
+
+        self::assertSame(404, $exception->status());
+        self::assertSame('Endpoint not found', $exception->payload()['message']);
     }
 
     public function testOversizedAdminBodyReturns413(): void

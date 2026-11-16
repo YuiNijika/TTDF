@@ -7,6 +7,48 @@ namespace TTDF\Theme;
 final class Fields
 {
     /**
+     * Read the theme field declarations from `app/config/fields.php`.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public static function declarations(string $root): array
+    {
+        $file = Paths::themeFields($root);
+        if (!is_file($file)) {
+            return [];
+        }
+
+        $fields = require $file;
+        if (!is_array($fields)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($fields as $field) {
+            if (!is_array($field)) {
+                continue;
+            }
+
+            $name = (string) ($field['name'] ?? '');
+            if (preg_match('/^[A-Za-z0-9_]{1,100}$/', $name) !== 1) {
+                continue;
+            }
+
+            $result[$name] = $field;
+        }
+
+        return $result;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function names(string $root): array
+    {
+        return array_keys(self::declarations($root));
+    }
+
+    /**
      * @param object $layout Typecho layout instance
      * @param array<string, array<string, mixed>> $fields
      */

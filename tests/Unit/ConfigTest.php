@@ -156,4 +156,56 @@ PHP);
         self::assertArrayNotHasKey('version', $config);
         self::assertArrayNotHasKey('assets', $config);
     }
+
+    public function testStringBooleanValuesAreNormalized(): void
+    {
+        $root = sys_get_temp_dir() . '/ttdf-config-' . uniqid('', true);
+        mkdir($root . '/app/config', 0777, true);
+        file_put_contents($root . '/app/config/app.php', <<<'PHP'
+<?php
+
+return [
+    'debug' => 'false',
+    'rest' => [
+        'enabled' => 'off',
+        'token_enabled' => '0',
+    ],
+    'router' => [
+        'enabled' => 'yes',
+    ],
+];
+PHP);
+
+        try {
+            $config = ConfigLoader::load($root);
+
+            self::assertFalse($config['debug']);
+            self::assertFalse($config['rest']['enabled']);
+            self::assertFalse($config['rest']['token_enabled']);
+            self::assertTrue($config['router']['enabled']);
+        } finally {
+            @unlink($root . '/app/config/app.php');
+            @rmdir($root . '/app/config');
+            @rmdir($root . '/app');
+            @rmdir($root);
+        }
+    }
+
+    public function testSectionShapeMustBeAnArray(): void
+    {
+        $root = sys_get_temp_dir() . '/ttdf-config-' . uniqid('', true);
+        mkdir($root . '/app/config', 0777, true);
+        file_put_contents($root . '/app/config/app.php', "<?php\n\nreturn ['rest' => 'invalid'];\n");
+
+        try {
+            $this->expectException(\RuntimeException::class);
+            $this->expectExceptionMessage('rest');
+            ConfigLoader::load($root);
+        } finally {
+            @unlink($root . '/app/config/app.php');
+            @rmdir($root . '/app/config');
+            @rmdir($root . '/app');
+            @rmdir($root);
+        }
+    }
 }

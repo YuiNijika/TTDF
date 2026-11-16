@@ -64,6 +64,14 @@ final class AssetsTest extends TestCase
         );
     }
 
+    public function testExistingQueryAndFragmentArePreserved(): void
+    {
+        self::assertSame(
+            'https://example.test/usr/themes/ttdf/assets/app.css?theme=dark&amp;v=5.0.0-next#main',
+            Assets::url('assets/app.css?theme=dark#main')
+        );
+    }
+
     public function testStaticUrlPointsAtVendoredFrameworkAssets(): void
     {
         self::assertSame(

@@ -81,26 +81,59 @@ final class Logger
     }
 
     /**
-     * @param array<string, mixed> $context
-     * @return array<string, mixed>
+     * @return mixed
      */
-    private function redact(array $context): array
+    private function redact(mixed $value, int $depth = 0): mixed
     {
+        if ($depth >= 8) {
+            return is_object($value) ? '[object:' . $value::class . ']' : '[max-depth]';
+        }
+
+        if (is_object($value)) {
+            if ($value instanceof \Throwable) {
+                return [
+                    'class' => $value::class,
+                    'code' => $value->getCode(),
+                ];
+            }
+
+            return [
+                'class' => $value::class,
+                'properties' => $this->redact(get_object_vars($value), $depth + 1),
+            ];
+        }
+
+        if (!is_array($value)) {
+            return $value;
+        }
+
         $result = [];
-        foreach ($context as $key => $value) {
+        foreach ($value as $key => $item) {
             $lower = strtolower((string) $key);
-            if (
-                in_array($lower, self::REDACT_KEYS, true)
-                || preg_match('/(?:^|_)(?:token|secret|password|passwd|api_?key)$/', $lower) === 1
-            ) {
+            if ($this->isSensitiveKey($lower)) {
                 $result[$key] = '[redacted]';
                 continue;
             }
 
-            $result[$key] = is_array($value) ? $this->redact($value) : $value;
+            $result[$key] = $this->redact($item, $depth + 1);
         }
 
         return $result;
+    }
+
+    private function isSensitiveKey(string $key): bool
+    {
+        if (in_array($key, self::REDACT_KEYS, true)) {
+            return true;
+        }
+
+        foreach (['token', 'secret', 'password', 'passwd', 'apikey', 'api_key', 'email'] as $suffix) {
+            if (str_ends_with($key, $suffix)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

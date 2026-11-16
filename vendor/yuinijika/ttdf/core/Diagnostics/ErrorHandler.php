@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace TTDF\Diagnostics;
 
 use Throwable;
+use TTDF\Compat\Typecho;
 
 final class ErrorHandler
 {
@@ -219,7 +220,7 @@ final class ErrorHandler
             . '<span class="code">' . self::escape((string) $status) . '</span>'
             . '<h1>' . self::escape($title) . '</h1>'
             . '<p>' . self::escape($description) . '</p>'
-            . '<div class="actions"><a href="/">返回首页</a></div>'
+            . '<div class="actions"><a href="' . self::escape(self::homeUrl()) . '">返回首页</a></div>'
             . $details
             . '</article></main></body></html>';
     }
@@ -316,5 +317,15 @@ final class ErrorHandler
     private static function escape(string $value): string
     {
         return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5, 'UTF-8');
+    }
+
+    private static function homeUrl(): string
+    {
+        try {
+            $url = trim(Typecho::siteUrl());
+            return $url !== '' ? $url : '/';
+        } catch (Throwable) {
+            return '/';
+        }
     }
 }

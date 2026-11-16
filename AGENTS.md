@@ -11,13 +11,17 @@
 
 # 开发场景 Skill 读取
 
-任务开始时，先只读浏览线上 Skill 首页：
+任务开始时，先只读浏览线上 Skill 与 v5 文档。文档站点是 SPA，不要用浏览器
+页面或 `.mdx` 后缀抓取；统一通过 Docs Agent API 读取：
 
-- 框架内部任务：浏览 `https://blog.miomoe.cn/docs/skill/ttdf-dev.mdx`
-- 主题开发任务：浏览 `https://blog.miomoe.cn/docs/skill/typecho-theme-dev.mdx`
-- v5 文档：浏览 `https://blog.miomoe.cn/docs/ttdf/v5/index.mdx`
+```text
+GET https://api.miomoe.cn/site/docs/page?path=skill/ttdf-dev
+GET https://api.miomoe.cn/site/docs/page?path=skill/typecho-theme-dev
+GET https://api.miomoe.cn/site/docs/page?path=ttdf/v5/index
+```
 
-线上 URL 后缀 `.mdx` 直接返回 Markdown。线上文档是唯一真源，不要在仓库内维护完整文档镜像，也不要依赖 `D:\Codes\TTDF-Docs` 的旧内容。
+框架内部任务读 `skill/ttdf-dev` 与 `ttdf/v5/*`，主题开发任务读
+`skill/typecho-theme-dev` 与 `ttdf/v5/*`。线上文档是唯一真源，不要在仓库内维护完整文档镜像，也不要依赖 `D:\Codes\TTDF-Docs` 的旧内容。
 
 # 硬性约束
 
@@ -42,7 +46,7 @@
 - 不新增 v4 兼容层；`Get`、`GetPost`、`GetUser`、`GetComment`、`GetSite`、`GetTheme`、`TTDF_*`、OPP 函数、全局 `config()` 已移除。
 - 主题设置保留自定义 `ttdf` 表，但只能通过 `TTDF\Theme\Options` 读写；值使用 JSON，字段必须来自 `app/config/theme.php` 白名单。
 - `app/config/app.php` 只公开 `debug`、`rest` 与 `router`。`version`、`assets`、`settings` 不得写入主题的公开配置：版本在根 `index.php`，资源 CDN 在主题设置 `Assets_CDN`。
-- `settings.table` / `settings.schema_version` 是框架内部的隐藏存储默认值，不定义设置项，也不要求在 `app/config/app.php` 出现；主题可按需隐藏覆盖，`TTDF_SETTINGS_TABLE` 环境变量仍可覆盖表名。
+- `settings.table` / `settings.schema_version` 是框架内部的隐藏存储默认值，不定义设置项，也不要求在 `app/config/app.php` 出现；主题可按需隐藏覆盖，`TTDF_SETTINGS_TABLE` 环境变量仍可覆盖表名。schema 版本按主题保存为 `__schema_version_{theme}`，不得恢复整表共享的 `__schema_version`。
 - `debug`、REST、CORS、Token 开关与 Token 环境变量通过 `TTDF\Theme\ThemeConfig` 合并静态默认值与主题设置；资源 CDN 只从主题设置 `Assets_CDN` 读取，静态 `assets.cdn` 已移除。
 - 页面模板入口固定在 `app/pages/`，并使用 Typecho 官方模板名（`index.php`、`post.php`、`page.php`、`archive.php`、`single.php`、`404.php`）；默认只保留 `index.php`、`archive.php`、`post.php`、`page.php`、`404.php`。页面主体映射使用 `TemplateMap` 字段与 `TTDF\Theme\Templates`，槽位只能是 `post`、`page`、`index`、`archive`、`category`、`tag`、`search`、`author`、`date`、`404`。
 - 评论渲染固定为 `app/components/Comments.php`，不得再创建 `app/pages/comments.php`；`post.php` / `page.php` 的内联回退与 `Post` / `Page` 组件都必须通过 `Components::render(..., 'Comments', ['archive' => $archive])` 加载。页头、页尾、侧栏同理固定在 `app/components/AppHeader.php`、`AppFooter.php`、`Sidebar.php`，入口模板只在最外层用 `Components::render()` 调用一次。
@@ -52,7 +56,7 @@
 - `404` 只能映射到 `NotFound` 或显式留空；不要映射到 `Post` / `PostMeta`，Typecho 404 Archive 的 `type` 为 null，`permalink()` 会触发 TypeError。
 - `Templates::render()` 必须在独立输出缓冲中执行组件；组件抛错时丢弃已输出的半截 HTML。生产模式返回 `false` 让入口模板回退，调试模式重新抛出到全局错误页。
 - `Diagnostics\ErrorHandler` 必须清空半截输出并渲染完整独立 HTML 错误页，不得只 echo `TTDF error:` 文本；状态码沿用 Typecho 已设置的 4xx/5xx，否则回退 500，生产模式隐藏异常消息与堆栈，调试模式显示并转义详情。
-- `Options::all()` 只返回当前主题前缀下的值；迁移只处理当前主题与 schema 字段，不得改写其他主题的行。
+- `Options::all()` 只返回当前主题前缀下的值；`Options::get()` 不读取无前缀旧键。迁移只处理当前主题与 schema 字段，可将无前缀 v4 字段复制到当前主题键，但不得改写其他主题的行。
 - 禁止在每次请求中建表、写入默认值或执行迁移；建表与迁移只允许在后台设置页、保存动作或显式迁移命令中执行。
 - REST 公开接口只读，必须过滤未发布、私密、密码保护和未审核内容；匿名评论写入已移除。
 - 管理接口必须同时满足管理员登录 + Typecho nonce + 同源；CORS 只允许显式白名单，禁止反射任意 `Origin`。
@@ -77,7 +81,7 @@
 - 媒体库支持三种声明：`type => 'Media'` 直接渲染媒体选择器并保存 Typecho 图片附件 `cid` 数字字符串；`type => 'Text'` / `type => 'Textarea'` 且 `media => true`（或 `media => ['enabled' => true]`）时保留可编辑控件并在旁边提供媒体库按钮，保存的是图片地址而不是 `cid`。`Settings::mediaMode()` 返回 `reference`（`Media`）或 `url`（文本类字段），`Settings::isMediaField()` 保持 `mediaMode() !== null` 语义；`Media::normalizeUrl()` 只接受 `http(s)` 绝对 URL、`/` 开头的站点根路径与遗留 `cid`，`Media::normalizeUrlList()` 对 `Textarea` 逐行清洗并把非法行丢弃。前端选择图片后 `Text` 写入地址、`Textarea` 追加为新行；不得再手工拼接上传目录或读取附件路径。
 - 媒体库接口只允许管理员登录 + Typecho nonce + 同源访问；只暴露 `type=attachment`、`status=publish` 的图片附件，不得返回其他附件类型。
 - 媒体上传只接受 `$_FILES['file']`，单张上限 5 MiB，必须同时校验 `getimagesize()` MIME 与 JPG/PNG/GIF/WebP/BMP 扩展名；上传文件写入 Typecho 原生上传目录并建立附件记录。
-- 媒体删除必须限定在 `usr/uploads/` 内并校验真实路径，禁止通过损坏的附件路径删除任意文件；重命名只允许修改附件 `title`，不得改文件路径或扩展名。
+- 媒体删除必须限定在 Typecho 上传目录内并校验真实路径；上传目录优先读取 `__TYPECHO_UPLOAD_DIR__`，否则读取 `Widget\Upload::UPLOAD_DIR`；上传根目录使用 `__TYPECHO_UPLOAD_ROOT_DIR__`（缺失时回退 `__TYPECHO_ROOT_DIR__`），上传 URL 使用 `__TYPECHO_UPLOAD_URL__`（缺失时回退站点地址）；只有检测不到 Typecho 常量时才使用默认 `usr/uploads/`，不得在业务代码中硬编码。禁止通过损坏的附件路径删除任意文件；重命名只允许修改附件 `title`，不得改文件路径或扩展名。
 - 所有输出必须转义；URL 从 Typecho 配置与路由生成，不信任 `HTTP_HOST`；SQL 只通过 Typecho 查询构造器绑定参数。
 - 公开评论 HTML 必须使用 Typecho 的 `stripTags` 与 `commentsHTMLTagAllowed` 白名单清理；不要直接输出 Markdown 渲染结果。
 - 文件 include 必须做 `realpath` 边界校验；禁止 `eval`、`extract`、`unserialize` 用户输入和跨目录 include。

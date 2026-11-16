@@ -41,7 +41,7 @@ final class AdminControllerTest extends TestCase
 
             $name = (string) ($query->wheres[0]['values'][0] ?? '');
             return match ($name) {
-                '__schema_version' => [['value' => '2']],
+                '__schema_version_Theme' => [['value' => '2']],
                 'Theme_SubTitle' => [['value' => '"Hello"']],
                 default => [],
             };
@@ -112,6 +112,16 @@ final class AdminControllerTest extends TestCase
 
         self::assertSame(422, $exception->status());
         self::assertSame('Missing settings', $exception->payload()['message']);
+    }
+
+    public function testImportRejectsPayloadWithoutKnownFields(): void
+    {
+        $this->body('{"settings":{"Unknown":"ignored"}}');
+
+        $exception = $this->capture(fn () => (new AdminController($this->root))->import());
+
+        self::assertSame(422, $exception->status());
+        self::assertSame('No valid settings were provided', $exception->payload()['message']);
     }
 
     public function testMigrateIsIdempotent(): void

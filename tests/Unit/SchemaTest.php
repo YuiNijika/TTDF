@@ -52,4 +52,30 @@ PHP);
         self::assertArrayHasKey('SubTitle', $fields);
         self::assertSame(['SubTitle'], Schema::names($this->root));
     }
+
+    public function testInvalidFieldNamesAreRejected(): void
+    {
+        file_put_contents($this->root . '/app/config/theme.php', <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+return [
+    'General' => [
+        'title' => 'General',
+        'fields' => [
+            ['type' => 'Text', 'name' => 'Valid_Name'],
+            ['type' => 'Text', 'name' => 'bad-name'],
+            ['type' => 'Text', 'name' => '../escape'],
+            ['type' => 'Text', 'name' => ''],
+            ['type' => 'Text', 'name' => str_repeat('a', 101)],
+        ],
+    ],
+];
+PHP);
+
+        Schema::reset();
+
+        self::assertSame(['Valid_Name'], array_keys(Schema::fields($this->root)));
+    }
 }

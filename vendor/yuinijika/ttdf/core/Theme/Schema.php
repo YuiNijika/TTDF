@@ -47,6 +47,9 @@ final class Schema
                 if (!is_array($field) || !isset($field['name']) || !is_string($field['name'])) {
                     continue;
                 }
+                if (preg_match('/^[A-Za-z0-9_]{1,100}$/', $field['name']) !== 1) {
+                    continue;
+                }
                 if (($field['type'] ?? 'Text') === 'Html') {
                     continue;
                 }

@@ -51,7 +51,7 @@ app/                                  主题代码区
     theme.php                         后台主题设置字段与分组
     fields.php                        文章/页面自定义字段
   router/                             自动路由页面，router.pages_dir 默认指向这里
-  pages/                              Typecho 页面类型模板与 partial
+  pages/                              仅 Typecho 页面类型模板
   components/                         可复用组件与模板映射目标
 assets/                              主题自有静态资源
 ```
@@ -59,7 +59,9 @@ assets/                              主题自有静态资源
 `functions.php` 只负责加载自动加载器并调用 `TTDF\Framework::boot()`。Typecho
 需要的 `themeConfig()` 与 `themeFields()` 由框架核心统一注册，主题不需要再写
 这两个函数，也不要在主题根目录新增其他 PHP 入口。页面模板固定放在
-`app/pages/`，由框架在 `themeInit` 阶段接管 Typecho 的模板目录。
+`app/pages/`，由框架在 `themeInit` 阶段接管 Typecho 的模板目录。`header.php`、
+`footer.php`、`sidebar.php`、`comments.php` 不属于页面类型，必须分别写成
+`app/components/AppHeader.php`、`AppFooter.php`、`Sidebar.php`、`Comments.php`。
 
 ## 主题配置
 
