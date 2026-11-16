@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace TTDF\Theme;
 
 use TTDF\Compat\Typecho;
-use TTDF\Config\Config;
 use TTDF\Framework;
+use TTDF\Http\Rest\Prefixes;
+use TTDF\Support\Color;
 use TTDF\Support\Escaper;
 
 final class Settings
@@ -35,7 +36,7 @@ final class Settings
         $payload = [
             'apiUrl' => rtrim($indexUrl, '/')
                 . '/'
-                . trim((string) Config::get('rest.prefix', 'ttdf/v1'), '/')
+                . Prefixes::v1()
                 . '/admin',
             'nonce' => Typecho::securityToken(),
             'themeName' => Typecho::themeName(),
@@ -317,6 +318,10 @@ final class Settings
                 ? $value
                 : (is_scalar($value)
                     && in_array(strtolower(trim((string) $value)), ['1', 'true', 'yes', 'on'], true));
+        }
+
+        if ($type === 'ColorPicker') {
+            return Color::normalize($value);
         }
 
         if (in_array($type, ['Number', 'Slider'], true)) {

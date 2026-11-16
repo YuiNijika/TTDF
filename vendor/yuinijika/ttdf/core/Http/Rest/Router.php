@@ -7,7 +7,6 @@ namespace TTDF\Http\Rest;
 use InvalidArgumentException;
 use RuntimeException;
 use TTDF\Compat\Typecho;
-use TTDF\Config\Config;
 use TTDF\Hooks\Hooks;
 use TTDF\Http\PayloadTooLargeException;
 use TTDF\Http\Request;
@@ -20,18 +19,34 @@ final class Router
 
     private static bool $handling = false;
 
+    /** @var list<string> */
+    private static array $registered = [];
+
     public static function registerRoutes(): void
     {
-        $prefix = trim((string) Config::get('rest.prefix', 'ttdf/v1'), '/');
-        Typecho::removeRoute('TTDF_API_V1_HOME');
-        Typecho::removeRoute('TTDF_API_V1');
+        self::unregisterRoutes();
 
-        Typecho::addRoute('TTDF_API_V1_HOME', '/' . $prefix, 'Widget_Archive', 'render');
-        Typecho::addRoute('TTDF_API_V1', '/' . $prefix . '/%path alphaslash 0%', 'Widget_Archive', 'render');
+        foreach (Prefixes::for(Prefixes::V1) as $mount) {
+            $home = self::routeName('HOME', $mount['prefix']);
+            $base = self::routeName('BASE', $mount['prefix']);
+
+            Typecho::addRoute($home, '/' . $mount['prefix'], 'Widget_Archive', 'render');
+            Typecho::addRoute($base, '/' . $mount['prefix'] . '/%path alphaslash 0%', 'Widget_Archive', 'render');
+
+            self::$registered[] = $home;
+            self::$registered[] = $base;
+        }
     }
 
     public static function unregisterRoutes(): void
     {
+        foreach (self::$registered as $name) {
+            Typecho::removeRoute($name);
+        }
+
+        self::$registered = [];
+
+        // Names used before prefixes became configurable.
         Typecho::removeRoute('TTDF_API_V1_HOME');
         Typecho::removeRoute('TTDF_API_V1');
     }
@@ -57,10 +72,7 @@ final class Router
 
     public static function isRequest(): bool
     {
-        $prefix = trim((string) Config::get('rest.prefix', 'ttdf/v1'), '/');
-        $path = self::requestPath();
-
-        return $path === $prefix || str_starts_with($path, $prefix . '/');
+        return Prefixes::match(Prefixes::V1) !== null;
     }
 
     public static function handle(string $root): never
@@ -127,12 +139,27 @@ final class Router
         return self::$scope;
     }
 
+    /**
+     * Let another version of the API reuse the response filter and the
+     * "request is being handled" flag.
+     */
+    public static function enterScope(string $scope): void
+    {
+        self::$scope = $scope;
+        self::$handling = true;
+    }
+
+    public static function leaveScope(): void
+    {
+        self::$handling = false;
+    }
+
     public static function isHandling(): bool
     {
         return self::$handling;
     }
 
-    private static function dispatchCustom(RouteMatch $match): never
+    public static function dispatchCustom(RouteMatch $match): never
     {
         $route = $match->route;
         $request = new RouteRequest($route->method, $route->path, $match->params, $route->auth);
@@ -256,7 +283,7 @@ final class Router
      */
     private static function segments(): array
     {
-        $prefix = trim((string) Config::get('rest.prefix', 'ttdf/v1'), '/');
+        $prefix = Prefixes::match(Prefixes::V1) ?? Prefixes::v1();
         $path = self::requestPath();
         $suffix = $path === $prefix ? '' : substr($path, strlen($prefix) + 1);
 
@@ -277,6 +304,11 @@ final class Router
         }
 
         return $segments;
+    }
+
+    private static function routeName(string $kind, string $prefix): string
+    {
+        return 'TTDF_API_V1_' . $kind . '_' . substr(sha1($prefix), 0, 10);
     }
 
     private static function requestPath(): string

@@ -150,7 +150,8 @@ final class Templates
 
     /**
      * Typecho's 404 archive has no content type, so only a dedicated
-     * NotFound component may render that slot.
+     * NotFound component may render that slot. Components may live in
+     * subdirectories, so the check uses the file name.
      */
     private static function slotAccepts(string $slot, string $component): bool
     {
@@ -158,7 +159,7 @@ final class Templates
             return true;
         }
 
-        return $component === 'NotFound';
+        return basename($component) === 'NotFound';
     }
 
     /**

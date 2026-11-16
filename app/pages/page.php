@@ -6,22 +6,26 @@ if (!defined('__TYPECHO_ROOT_DIR__')) {
     exit;
 }
 
-use TTDF\Support\Escaper;
+use TTDF\Framework;
 use TTDF\Theme\Templates;
 use TTDF\View\Components;
 
-$root = \TTDF\Framework::root();
+$root = Framework::root();
 
-Components::render($root, 'AppHeader', ['archive' => $this]);
-$rendered = Templates::render($root, 'page', $this, 'Page');
+Components::render($root, 'layout/AppHeader', ['archive' => $this]);
+
+$rendered = Templates::render($root, 'page', $this, 'content/Page');
 if (!$rendered):
 ?>
-<article>
-    <h1><?php echo Escaper::html((string) $this->title); ?></h1>
-    <div class="page-content"><?php $this->content(); ?></div>
-</article>
+<article class="container article">
+    <header>
+        <h1 class="article__title"><?php $this->title(); ?></h1>
+    </header>
 
-<?php Components::render($root, 'Comments', ['archive' => $this]); ?>
+    <div class="article__body prose"><?php $this->content(); ?></div>
+
+    <?php Components::render($root, 'content/Comments', ['archive' => $this]); ?>
+</article>
 <?php endif; ?>
 
-<?php Components::render($root, 'AppFooter', ['archive' => $this]); ?>
+<?php Components::render($root, 'layout/AppFooter', ['archive' => $this]); ?>

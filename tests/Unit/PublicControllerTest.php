@@ -18,7 +18,7 @@ final class PublicControllerTest extends TestCase
     protected function setUp(): void
     {
         $_GET = [];
-        Config::load(['rest' => ['enabled' => true, 'prefix' => 'ttdf/v1']]);
+        Config::load(['rest' => ['enabled' => true, 'v1_prefix' => 'ttdf/v1']]);
         Db::reset();
         Hooks::reset();
         Response::capture(true);

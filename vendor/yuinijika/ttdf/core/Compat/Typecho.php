@@ -226,6 +226,120 @@ final class Typecho
     }
 
     /**
+     * Typecho's own password/hash comparison, used for cookie sessions and for
+     * validating a password before it is replaced.
+     */
+    public static function hashValidate(?string $from, ?string $to): bool
+    {
+        if ($from === null || $to === null || $from === '' || $to === '') {
+            return false;
+        }
+
+        if (class_exists('Typecho\\Common')) {
+            try {
+                return (bool) \Typecho\Common::hashValidate($from, $to);
+            } catch (\Throwable) {
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    public static function hash(string $value): string
+    {
+        if (class_exists('Typecho\\Common')) {
+            try {
+                return (string) \Typecho\Common::hash($value);
+            } catch (\Throwable) {
+                return '';
+            }
+        }
+
+        return '';
+    }
+
+    public static function random(int $length): string
+    {
+        try {
+            if (function_exists('random_bytes')) {
+                $bytes = random_bytes(max(1, (int) ceil($length / 2)));
+
+                return substr(bin2hex($bytes), 0, $length);
+            }
+        } catch (\Throwable) {
+            // Fall through to Typecho's pseudo random generator.
+        }
+
+        if (class_exists('Typecho\\Common')) {
+            try {
+                return (string) \Typecho\Common::randString($length);
+            } catch (\Throwable) {
+                return '';
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * Slug generation matches Typecho's content editing screen.
+     */
+    public static function slugName(string $value, string $default = '', int $maxLength = 128): string
+    {
+        if (class_exists('Typecho\\Common')) {
+            try {
+                return (string) \Typecho\Common::slugName($value, $default, $maxLength);
+            } catch (\Throwable) {
+                // Fall through to the local implementation.
+            }
+        }
+
+        $slug = strtolower(trim($value));
+        $slug = preg_replace('/[^a-z0-9_-]+/', '-', $slug) ?? '';
+        $slug = trim($slug, '-');
+
+        return substr($slug !== '' ? $slug : $default, 0, $maxLength);
+    }
+
+    public static function setCookie(string $name, string $value, int $expire = 0): void
+    {
+        if (class_exists('Typecho\\Cookie')) {
+            \Typecho\Cookie::set($name, $value, $expire);
+            return;
+        }
+
+        if (!headers_sent()) {
+            setcookie($name, $value, $expire > 0 ? time() + $expire : 0, '/');
+        }
+    }
+
+    public static function deleteCookie(string $name): void
+    {
+        if (class_exists('Typecho\\Cookie')) {
+            \Typecho\Cookie::delete($name);
+            return;
+        }
+
+        if (!headers_sent()) {
+            setcookie($name, '', time() - 3600, '/');
+        }
+    }
+
+    public static function cookie(string $name): string
+    {
+        if (class_exists('Typecho\\Cookie')) {
+            $value = \Typecho\Cookie::get($name);
+
+            return is_scalar($value) ? (string) $value : '';
+        }
+
+        $value = $_COOKIE[$name] ?? '';
+
+        return is_scalar($value) ? (string) $value : '';
+    }
+
+    /**
      * Apply the same tag whitelist Typecho uses when rendering comments.
      */
     public static function commentHtml(string $html): string

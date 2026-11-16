@@ -14,6 +14,8 @@ use TTDF\Diagnostics\RuntimeConsole;
 use TTDF\Hooks\Hooks;
 use TTDF\Hooks\TypechoBridge;
 use TTDF\Http\Rest\Router as RestRouter;
+use TTDF\Http\Rest\V2\Auth as RestV2Auth;
+use TTDF\Http\Rest\V2\Router as RestV2Router;
 use TTDF\Routing\AutoRouter;
 use TTDF\Theme\ArchiveLayout;
 use TTDF\Theme\Options;
@@ -57,6 +59,8 @@ final class Framework
         AjaxEndpoint::handleIfRequested();
         RestRouter::syncRoutes();
         RestRouter::handleIfRequested($root);
+        RestV2Router::syncRoutes();
+        RestV2Router::handleIfRequested($root);
         AutoRouter::boot($root);
 
         self::$booted = true;
@@ -85,6 +89,7 @@ final class Framework
     public static function reset(): void
     {
         RestRouter::unregisterRoutes();
+        RestV2Router::unregisterRoutes();
         TypechoCompat::removeRoute(AjaxEndpoint::ROUTE_NAME);
         self::$booted = false;
         self::$root = '';
@@ -98,5 +103,6 @@ final class Framework
         ErrorHandler::reset();
         Config::reset();
         TypechoCompat::resetRoutes();
+        RestV2Auth::reset();
     }
 }

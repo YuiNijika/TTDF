@@ -23,7 +23,7 @@ final class RestRouterTest extends TestCase
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_SERVER['REQUEST_URI'] = '/ttdf/v1/site';
         $_GET = [];
-        Config::load(['rest' => ['enabled' => true, 'prefix' => 'ttdf/v1']]);
+        Config::load(['rest' => ['enabled' => true, 'v1_prefix' => 'ttdf/v1']]);
         Hooks::reset();
         Options::reset();
         Typecho::resetRoutes();
@@ -95,26 +95,37 @@ final class RestRouterTest extends TestCase
     public function testRoutesAreRegisteredOnlyWhenPublicApiIsEnabled(): void
     {
         Router::syncRoutes();
-        self::assertArrayHasKey('TTDF_API_V1_HOME', \Typecho\Router::routes());
-        self::assertArrayHasKey('TTDF_API_V1', \Typecho\Router::routes());
+        self::assertTrue($this->hasRoute('/ttdf/v1'));
+        self::assertTrue($this->hasRoute('/ttdf/v1/%path alphaslash 0%'));
 
-        Config::load(['rest' => ['enabled' => false, 'prefix' => 'ttdf/v1']]);
+        Config::load(['rest' => ['enabled' => false, 'v1_prefix' => 'ttdf/v1']]);
         Options::reset();
         \Widget\User::$loggedIn = false;
         Router::syncRoutes();
-        self::assertArrayNotHasKey('TTDF_API_V1_HOME', \Typecho\Router::routes());
-        self::assertArrayNotHasKey('TTDF_API_V1', \Typecho\Router::routes());
+        self::assertFalse($this->hasRoute('/ttdf/v1'));
+        self::assertFalse($this->hasRoute('/ttdf/v1/%path alphaslash 0%'));
     }
 
     public function testAdminRoutesAreRegisteredEvenWhenPublicApiIsDisabled(): void
     {
-        Config::load(['rest' => ['enabled' => false, 'prefix' => 'ttdf/v1']]);
+        Config::load(['rest' => ['enabled' => false, 'v1_prefix' => 'ttdf/v1']]);
         Options::reset();
         $_SERVER['REQUEST_URI'] = '/ttdf/v1/admin/options';
 
         Router::syncRoutes();
 
-        self::assertArrayHasKey('TTDF_API_V1', \Typecho\Router::routes());
+        self::assertTrue($this->hasRoute('/ttdf/v1/%path alphaslash 0%'));
+    }
+
+    private function hasRoute(string $url): bool
+    {
+        foreach (\Typecho\Router::routes() as $route) {
+            if (($route['url'] ?? '') === $url) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function testSubdirectoryInstallStripsSiteBasePath(): void
@@ -191,7 +202,7 @@ final class RestRouterTest extends TestCase
 
     public function testPublicEndpointsStayDisabledByDefault(): void
     {
-        Config::load(['rest' => ['enabled' => false, 'prefix' => 'ttdf/v1']]);
+        Config::load(['rest' => ['enabled' => false, 'v1_prefix' => 'ttdf/v1']]);
         $_SERVER['REQUEST_URI'] = '/ttdf/v1/site';
 
         $exception = $this->capture(static fn () => Router::handle(dirname(__DIR__, 2)));

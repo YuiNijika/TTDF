@@ -29,7 +29,7 @@ final class RestRegistryTest extends TestCase
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_SERVER['REQUEST_URI'] = '/ttdf/v1/ext/hello/world';
         $_GET = [];
-        Config::load(['rest' => ['enabled' => true, 'prefix' => 'ttdf/v1']]);
+        Config::load(['rest' => ['enabled' => true, 'v1_prefix' => 'ttdf/v1']]);
         Hooks::reset();
         Options::reset();
         Typecho::resetRoutes();
@@ -179,7 +179,7 @@ final class RestRegistryTest extends TestCase
 
     public function testPublicCustomRouteStaysDisabledWhenRestIsDisabled(): void
     {
-        Config::load(['rest' => ['enabled' => false, 'prefix' => 'ttdf/v1']]);
+        Config::load(['rest' => ['enabled' => false, 'v1_prefix' => 'ttdf/v1']]);
         Hooks::addAction('rest.routes', static function (Registry $registry): void {
             $registry->get('ext/hello/{name}', static fn (): array => ['ok' => true]);
         });
@@ -195,7 +195,7 @@ final class RestRegistryTest extends TestCase
         Config::load([
             'rest' => [
                 'enabled' => true,
-                'prefix' => 'ttdf/v1',
+                'v1_prefix' => 'ttdf/v1',
                 'token_enabled' => true,
                 'token_env' => self::TOKEN_ENV,
             ],

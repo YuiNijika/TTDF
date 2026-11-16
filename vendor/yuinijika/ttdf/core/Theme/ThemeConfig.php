@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace TTDF\Theme;
 
 use TTDF\Config\Config;
+use TTDF\Http\Rest\Prefixes;
 
 /**
  * Theme-facing runtime configuration.
@@ -42,6 +43,40 @@ final class ThemeConfig
         }
 
         return self::toBool(Config::get('rest.token_enabled', false));
+    }
+
+    /**
+     * The v2 API is a separate switch because it can write to the site; it is
+     * off unless the theme config or the theme settings enable it.
+     */
+    public static function restV2Enabled(): bool
+    {
+        $value = self::setting('RESTV2_Switch');
+
+        return (bool) Config::get('rest.v2_enabled', false)
+            || (self::isConfigured($value) && self::toBool($value));
+    }
+
+    public static function restV2TokenTtl(): int
+    {
+        $value = self::setting('RESTV2_Token_TTL');
+        if (is_numeric($value)) {
+            return (int) $value;
+        }
+
+        $configured = Config::get('rest.v2_token_ttl', 0);
+
+        return is_numeric($configured) ? (int) $configured : 0;
+    }
+
+    public static function restV1Prefix(): string
+    {
+        return Prefixes::v1();
+    }
+
+    public static function restV2Prefix(): string
+    {
+        return Prefixes::v2();
     }
 
     public static function tokenEnv(): string

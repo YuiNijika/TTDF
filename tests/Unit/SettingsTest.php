@@ -51,8 +51,8 @@ final class SettingsTest extends TestCase
     {
         $result = Settings::validate([
             'Templates' => [
-                'post' => 'Post',
-                'page' => ' Page ',
+                'post' => 'content/Post',
+                'page' => ' content/Page ',
                 'tag' => '../Secret',
                 'unknown' => 'Post',
                 '404' => '',
@@ -60,8 +60,8 @@ final class SettingsTest extends TestCase
         ]);
 
         self::assertSame([
-            'post' => 'Post',
-            'page' => 'Page',
+            'post' => 'content/Post',
+            'page' => 'content/Page',
             '404' => '',
         ], $result['Templates']);
     }
@@ -70,24 +70,24 @@ final class SettingsTest extends TestCase
     {
         $result = Settings::validate([
             'Templates' => [
-                'post' => 'Post',
+                'post' => 'content/Post',
                 '404' => 'PostMeta',
             ],
         ]);
 
         self::assertSame([
-            'post' => 'Post',
+            'post' => 'content/Post',
         ], $result['Templates']);
 
         $result = Settings::validate([
             'Templates' => [
-                'post' => 'Post',
+                'post' => 'content/Post',
                 '404' => 'Post',
             ],
         ]);
 
         self::assertSame([
-            'post' => 'Post',
+            'post' => 'content/Post',
         ], $result['Templates']);
     }
 
@@ -133,6 +133,17 @@ final class SettingsTest extends TestCase
         self::assertFalse(Settings::isMediaField(['type' => 'Textarea', 'name' => 'FooterText']));
         self::assertNull(Settings::mediaMode(['type' => 'Textarea', 'name' => 'FooterText']));
         self::assertNull(Settings::mediaMode(['type' => 'Select', 'name' => 'Mode', 'media' => true]));
+    }
+
+    public function testColorPickerValuesAreNormalizedOrDropped(): void
+    {
+        self::assertSame('#aabbcc', Settings::validate(['Color_Accent' => '#ABC'])['Color_Accent']);
+        self::assertSame('#aabbcc', Settings::validate(['Color_Accent' => 'rgb(170,187,204)'])['Color_Accent']);
+        self::assertSame('', Settings::validate(['Color_Accent' => 'red; } body{background:url(x)'])['Color_Accent']);
+        self::assertSame('', Settings::validate(['Color_Background' => '#12345'])['Color_Background']);
+        self::assertSame('', Settings::validate(['Color_Background_Dark' => ['#000000']])['Color_Background_Dark']);
+        self::assertSame('auto', Settings::values()['Color_Mode']);
+        self::assertSame('#0f766e', Settings::values()['Color_Accent']);
     }
 
     public function testThemeInfoReportsThemeRootIndexVersion(): void

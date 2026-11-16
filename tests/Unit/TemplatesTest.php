@@ -164,7 +164,10 @@ PHP);
         ];
 
         self::assertSame([], Templates::filterMap($map, ['Post', 'NotFound']));
-        self::assertSame([], Templates::filterMap(['404' => 'custom/NotFound'], ['custom/NotFound']));
+        self::assertSame(
+            ['404' => 'custom/NotFound'],
+            Templates::filterMap(['404' => 'custom/NotFound'], ['custom/NotFound'])
+        );
         self::assertSame(
             ['404' => 'NotFound'],
             Templates::filterMap(['404' => 'NotFound'], ['Post', 'NotFound'])

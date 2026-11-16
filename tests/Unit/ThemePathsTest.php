@@ -33,7 +33,13 @@ final class ThemePathsTest extends TestCase
         self::assertFileDoesNotExist($root . '/404.php');
         self::assertFileDoesNotExist($root . '/comments.php');
         self::assertFileDoesNotExist($root . '/app/pages/comments.php');
-        self::assertFileExists($root . '/app/components/Comments.php');
+        self::assertFileExists($root . '/app/components/content/Comments.php');
+        self::assertFileExists($root . '/app/components/layout/AppHeader.php');
+        self::assertFileExists($root . '/app/components/layout/AppFooter.php');
+        self::assertFileDoesNotExist($root . '/app/components/Comments.php');
+        self::assertFileDoesNotExist($root . '/app/components/AppHeader.php');
+        self::assertFileExists($root . '/assets/style.css');
+        self::assertFileDoesNotExist($root . '/assets/css/style.css');
     }
 
     public function testCommentsRenderOnlyThroughTheComponentLoader(): void
@@ -43,16 +49,16 @@ final class ThemePathsTest extends TestCase
         foreach ([
             'app/pages/post.php',
             'app/pages/page.php',
-            'app/components/Post.php',
-            'app/components/Page.php',
+            'app/components/content/Post.php',
+            'app/components/content/Page.php',
         ] as $file) {
             $source = file_get_contents($root . '/' . $file);
             self::assertIsString($source);
             self::assertStringNotContainsString("need('comments.php')", $source);
-            self::assertStringContainsString("'Comments'", $source);
+            self::assertStringContainsString("'content/Comments'", $source);
         }
 
-        $component = file_get_contents($root . '/app/components/Comments.php');
+        $component = file_get_contents($root . '/app/components/content/Comments.php');
         self::assertIsString($component);
         self::assertStringContainsString("\$viewData['archive']", $component);
         self::assertStringContainsString('ttdf-comment-form', $component);

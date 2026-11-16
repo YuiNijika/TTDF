@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace TTDF\Http\Rest;
 
 use TTDF\Compat\Typecho;
-use TTDF\Config\Config;
 use TTDF\Framework;
 use TTDF\Hooks\Hooks;
 use TTDF\Http\Request;
@@ -23,7 +22,7 @@ final class PublicController
         $this->db = $db ?? Db::get();
     }
 
-    public function site(): never
+    public function site(?string $prefix = null): never
     {
         $options = Typecho::options() ?? new \stdClass();
         Response::success([
@@ -33,7 +32,7 @@ final class PublicController
             'theme' => Typecho::themeName(),
             'frameworkVersion' => Framework::VERSION,
             'typechoVersion' => Typecho::version(),
-            'restPrefix' => (string) Config::get('rest.prefix', 'ttdf/v1'),
+            'restPrefix' => $prefix ?? (Prefixes::match(Prefixes::V1) ?? Prefixes::v1()),
         ]);
     }
 
@@ -149,14 +148,16 @@ final class PublicController
         Response::success($comments, $this->paginationMeta($page, $pageSize, $total));
     }
 
-    public function attachments(): never
+    public function attachments(?int $authorId = null): never
     {
         [$page, $pageSize] = $this->pagination();
         $cid = Request::queryInt('cid', 0);
 
-        $total = $this->countAttachments($cid);
+        $total = $this->countAttachments($cid, $authorId);
         $rows = $this->rows(
-            $this->attachmentsQuery($cid)->offset(($page - 1) * $pageSize)->limit($pageSize)
+            $this->attachmentsQuery($cid, false, $authorId)
+                ->offset(($page - 1) * $pageSize)
+                ->limit($pageSize)
         );
 
         $items = [];
@@ -266,13 +267,13 @@ final class PublicController
         return (int) ($row->num ?? 0);
     }
 
-    private function countAttachments(int $cid): int
+    private function countAttachments(int $cid, ?int $authorId = null): int
     {
-        $row = $this->object($this->attachmentsQuery($cid, true));
+        $row = $this->object($this->attachmentsQuery($cid, true, $authorId));
         return (int) ($row->num ?? 0);
     }
 
-    private function attachmentsQuery(int $cid, bool $count = false): Query
+    private function attachmentsQuery(int $cid, bool $count = false, ?int $authorId = null): Query
     {
         $select = $this->db->select(...($count
             ? ['COUNT(*) AS num']
@@ -281,7 +282,14 @@ final class PublicController
             ->where('type = ?', 'attachment')
             ->where('status = ?', 'publish')
             ->where('created <= ?', time());
-        $this->attachmentVisibility($select);
+
+        if ($authorId !== null) {
+            // A user may list their own uploads even when the parent content is
+            // still a draft; the file already belongs to that account.
+            $select->where('authorId = ?', $authorId);
+        } else {
+            $this->attachmentVisibility($select);
+        }
 
         if ($cid > 0) {
             $select->where('parent = ?', $cid);

@@ -23,6 +23,11 @@ namespace Typecho\Db {
 
         public ?int $offset = null;
 
+        public ?string $mode = null;
+
+        /** @var array<string, mixed> */
+        public array $rows = [];
+
         public function from(string ...$tables): self
         {
             $this->table = $tables[0] ?? null;
@@ -72,6 +77,7 @@ namespace Typecho\Db {
 
         public function rows(array $rows): self
         {
+            $this->rows = $rows;
             return $this;
         }
     }
@@ -96,6 +102,70 @@ namespace Typecho {
         {
             return strip_tags((string) $html, $allowableTags ?? '');
         }
+
+        public static function hash(?string $string, ?string $salt = null): string
+        {
+            if (!isset($string)) {
+                return '';
+            }
+
+            $salt = $salt === null || $salt === '' ? 'testsalt1' : $salt;
+
+            return '$T$' . $salt . md5($salt . $string);
+        }
+
+        public static function hashValidate(?string $from, ?string $to): bool
+        {
+            if ($from === null || $to === null) {
+                return false;
+            }
+
+            if (substr($to, 0, 3) === '$T$') {
+                return self::hash($from, substr($to, 3, 9)) === $to;
+            }
+
+            return md5($from) === $to;
+        }
+
+        public static function randString(int $length, bool $specialChars = false): string
+        {
+            return substr(str_repeat('0123456789abcdef', 4), 0, $length);
+        }
+
+        public static function slugName(?string $str, string $default = '', int $maxLength = 128): string
+        {
+            $slug = strtolower(trim((string) $str));
+            $slug = preg_replace('/[^a-z0-9_-]+/', '-', $slug) ?? '';
+            $slug = trim($slug, '-');
+
+            return substr($slug !== '' ? $slug : $default, 0, $maxLength);
+        }
+    }
+
+    final class Cookie
+    {
+        /** @var array<string, string> */
+        public static array $values = [];
+
+        public static function get(string $key, ?string $default = null): ?string
+        {
+            return self::$values[$key] ?? $default;
+        }
+
+        public static function set(string $key, mixed $value, int $expire = 0): void
+        {
+            self::$values[$key] = (string) $value;
+        }
+
+        public static function delete(string $key): void
+        {
+            unset(self::$values[$key]);
+        }
+
+        public static function reset(): void
+        {
+            self::$values = [];
+        }
     }
 
     final class Db
@@ -106,8 +176,16 @@ namespace Typecho {
         /** @var (callable(Query): array<int, array<string, mixed>>)|null */
         public static $fetcher = null;
 
+        /** @var (callable(Query): int)|null */
+        public static $writer = null;
+
         /** @var list<Query> */
         public static array $executed = [];
+
+        /** @var list<Query> */
+        public static array $written = [];
+
+        public static int $nextId = 100;
 
         public static function get(): self
         {
@@ -139,21 +217,49 @@ namespace Typecho {
 
         public function insert(string $table): Query
         {
-            return new Query();
+            $query = new Query();
+            $query->mode = 'insert';
+            $query->table = $table;
+
+            return $query;
         }
 
         public function update(string $table): Query
         {
-            return new Query();
+            $query = new Query();
+            $query->mode = 'update';
+            $query->table = $table;
+
+            return $query;
         }
 
         public function delete(string $table): Query
         {
-            return new Query();
+            $query = new Query();
+            $query->mode = 'delete';
+            $query->table = $table;
+
+            return $query;
         }
 
         public function query(string|Query $query): mixed
         {
+            if ($query instanceof Query) {
+                self::$written[] = $query;
+
+                if (self::$writer !== null && in_array($query->mode, ['insert', 'update', 'delete'], true)) {
+                    return (self::$writer)($query);
+                }
+
+                if ($query->mode === 'insert') {
+                    return self::$nextId++;
+                }
+
+                if ($query->mode === 'update' || $query->mode === 'delete') {
+                    return 1;
+                }
+            }
+
             return null;
         }
 
@@ -178,7 +284,10 @@ namespace Typecho {
         public static function reset(): void
         {
             self::$fetcher = null;
+            self::$writer = null;
             self::$executed = [];
+            self::$written = [];
+            self::$nextId = 100;
         }
     }
 
@@ -301,6 +410,10 @@ namespace Widget {
 
         public static bool $administrator = true;
 
+        public static bool $credentialsValid = true;
+
+        public static int $loginUid = 1;
+
         public int $uid = 1;
 
         public static function alloc(): self
@@ -318,10 +431,23 @@ namespace Widget {
             return self::$administrator && $permission === 'administrator';
         }
 
+        public function login(string $name, string $password, bool $temporarily = false, int $expire = 0): bool
+        {
+            if (!self::$credentialsValid || $name === '' || $password === '') {
+                return false;
+            }
+
+            $this->uid = self::$loginUid;
+
+            return true;
+        }
+
         public static function reset(): void
         {
             self::$loggedIn = true;
             self::$administrator = true;
+            self::$credentialsValid = true;
+            self::$loginUid = 1;
         }
     }
 

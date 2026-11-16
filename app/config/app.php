@@ -11,12 +11,19 @@ return [
 
     'rest' => [
         'enabled' => false,
-        'prefix' => 'ttdf/v1',
+        'v1_prefix' => 'ttdf/v1',
+        'prefix' => [
+            // Extra mounts: prefix => v1|v2, or ['prefix' => 'api', 'api' => 'v2'].
+            // 'mobile' => 'v2',
+        ],
         'cors' => [
             'allowed_origins' => [],
         ],
         'token_enabled' => false,
         'token_env' => 'TTDF_REST_TOKEN',
+        'v2_enabled' => false,
+        'v2_prefix' => 'ttdf/v2',
+        'v2_token_ttl' => 0,
     ],
 
     'router' => [

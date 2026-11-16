@@ -6,6 +6,7 @@ namespace TTDF\Routing;
 
 use TTDF\Compat\Typecho;
 use TTDF\Config\Config;
+use TTDF\Http\Rest\Prefixes;
 use TTDF\Support\Path;
 use TTDF\Theme\Paths;
 
@@ -112,9 +113,13 @@ final class AutoRouter
     private static function shouldSkip(string $path): bool
     {
         $first = strtolower(explode('/', $path)[0]);
-        $restPrefix = trim((string) Config::get('rest.prefix', 'ttdf/v1'), '/');
-        $restRequest = $restPrefix !== ''
-            && ($path === $restPrefix || str_starts_with($path, $restPrefix . '/'));
+        $restRequest = false;
+        foreach (Prefixes::strings() as $restPrefix) {
+            if ($path === $restPrefix || str_starts_with($path, $restPrefix . '/')) {
+                $restRequest = true;
+                break;
+            }
+        }
         $ajaxRequest = $path === 'ttdf/ajax' || str_starts_with($path, 'ttdf/ajax/');
 
         return in_array(
