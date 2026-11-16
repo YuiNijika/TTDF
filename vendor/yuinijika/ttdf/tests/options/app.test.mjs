@@ -57,7 +57,7 @@ const config = {
 const themeInfo = {
     themeName: 'TTDF Theme',
     themeVersion: '2.1.0',
-    ttdfVersion: '5.0.1-next',
+    ttdfVersion: '5.0.2-next',
     components: config.components,
     templateSlots: config.templateSlots
 };
