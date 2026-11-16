@@ -32,6 +32,8 @@ GET https://api.miomoe.cn/site/docs/page?path=ttdf/v5/index
 - `app/pages/` 只接受 Typecho 页面类型文件（`index.php`、`{type}.php`、`{type}/{slug}.php`）；`header.php`、`footer.php`、`sidebar.php`、`comments.php` 不属于页面类型，一律作为组件放在 `app/components/`，约定名分别是 `AppHeader`、`AppFooter`、`Sidebar`、`Comments`。入口模板用 `Components::render($root, 'AppHeader', ['archive' => $this])` 加载，禁止 `$this->need('header.php')` 这类片段加载；`PageTemplates::isSafeFile()` 必须继续拒绝这些保留名，`PageTemplatesTest` 必须覆盖该拒绝行为。
 - 根 `index.php` 是 Typecho 后台主题发现机制的硬性要求（`Widget\Themes\Rows` 固定读取主题根 `index.php` 的 docblock 元信息），只允许保留 `<?php`、严格类型声明、元信息注释和 `__TYPECHO_ROOT_DIR__` 守卫，不得写页面渲染逻辑。真实首页模板是 `app/pages/index.php`。
 - 主题版本号的唯一来源是根 `index.php` 的 `@version` 元信息；`app/config/app.php` 不配置版本号，`Typecho::themeVersion()` 只读取主题根 `index.php` 的 docblock，不回退到设置表或配置数组。
+- `Assets::url()` 与 `Assets::staticUrl()` 的 `?v=` 必须使用主题版本号，不得使用 `Framework::VERSION`；版本读不到时不追加查询参数，也不要为了缓存刷新去读配置或设置表。
+- `Assets::url($path, $base = 'assets')` 与 `printStyles()` / `printScripts()` 默认补 `assets/` 前缀；路径已以该前缀开头时不得重复拼接，前缀只接受相对目录段，含 `..`、反斜杠、绝对路径或空值时按“无前缀”处理。
 - `functions.php` 只负责 PHP 版本检查、注册自动加载器与调用 `Framework::boot()`；`themeConfig()` / `themeFields()` / `themeInit()` 由框架核心 `TypechoFunctions.php` 统一注册，主题不要重复定义。
 - `router.pages_dir` 是相对 `app/` 的路径，默认 `router`；不要写 `app/router`，也不要把路由页面放到主题根目录。
 - `app/router/` 只承载 TTDF 自定义 URL 路由；Typecho 已判定的首页、文章、独立页面、归档、分类、标签、搜索、作者、日期与 404 视图统一放在 `app/pages/`。框架通过 `TTDF\Theme\PageTemplates` 在 `themeInit` 阶段改写 `Archive::$themeDir`，不得自行解析 URL 复刻 Typecho 的归档判断。
@@ -44,7 +46,9 @@ GET https://api.miomoe.cn/site/docs/page?path=ttdf/v5/index
 - 生产安装必须支持直接解压主题包运行，不要求站点安装 Composer；Composer 只用于开发、测试和静态分析。
 - 除 Typecho 必需的 `themeConfig()`、`themeFields()` 外，不新增全局函数或全局类。
 - 不新增 v4 兼容层；`Get`、`GetPost`、`GetUser`、`GetComment`、`GetSite`、`GetTheme`、`TTDF_*`、OPP 函数、全局 `config()` 已移除。
-- 主题设置保留自定义 `ttdf` 表，但只能通过 `TTDF\Theme\Options` 读写；每个主题只写一行，`name` 是主题名，`value` 是完整设置 JSON，字段必须来自 `app/config/theme.php` 白名单。不得把主题设置写入 Typecho 原生 `typecho_options` 表。
+- 主题设置只能通过 `TTDF\Theme\Options` 读写；每个主题只写一行，`value` 是完整设置 JSON，字段必须来自 `app/config/theme.php` 白名单。默认落在自定义 `ttdf` 表，`name` 是主题名。
+- Typecho `config.inc.php` 未定义 `__TTDF_DATABASE_TABLE__`，或定义为真时使用 `ttdf` 表；显式定义为 `false` 时改存 Typecho 原生 `typecho_options`，主记录名 `ttdf:{主题名}`、`user = 0`，备份名 `ttdf:{主题名}:backup_{Unix时间戳}`。原生模式不得建表、不得读写用户级 options，也不得覆盖 `theme`、`theme:{主题名}`、`siteUrl` 等 Typecho 自有选项。
+- `typecho_options.name` 是 `varchar(32)`：主记录放不下时禁止保存并给出明确异常；备份名超出 32 字符时改用紧凑标记 `ttdf:{主题名}:b_{Unix时间戳}`，`backups()` 与 `restore()` 必须同时识别 `:backup_` 与 `:b_` 两种形式。
 - `app/config/app.php` 只公开 `debug`、`rest` 与 `router`。`version`、`assets`、`settings` 不得写入主题的公开配置：版本在根 `index.php`，资源 CDN 在主题设置 `Assets_CDN`。
 - `settings.table` 是框架内部的隐藏存储默认值，不定义设置项，也不要求在 `app/config/app.php` 出现；`TTDF_SETTINGS_TABLE` 环境变量仍可覆盖表名。设置不再使用 `settings.schema_version` 或 `__schema_version_{theme}` 行。
 - `debug`、REST、CORS、Token 开关与 Token 环境变量通过 `TTDF\Theme\ThemeConfig` 合并静态默认值与主题设置；资源 CDN 只从主题设置 `Assets_CDN` 读取，静态 `assets.cdn` 已移除。
@@ -56,7 +60,7 @@ GET https://api.miomoe.cn/site/docs/page?path=ttdf/v5/index
 - `404` 只能映射到 `NotFound` 或显式留空；不要映射到 `Post` / `PostMeta`，Typecho 404 Archive 的 `type` 为 null，`permalink()` 会触发 TypeError。
 - `Templates::render()` 必须在独立输出缓冲中执行组件；组件抛错时丢弃已输出的半截 HTML。生产模式返回 `false` 让入口模板回退，调试模式重新抛出到全局错误页。
 - `Diagnostics\ErrorHandler` 必须清空半截输出并渲染完整独立 HTML 错误页，不得只 echo `TTDF error:` 文本；状态码沿用 Typecho 已设置的 4xx/5xx，否则回退 500，生产模式隐藏异常消息与堆栈，调试模式显示并转义详情。
-- 每次修改设置时整份 JSON 一次写入；覆盖已有 JSON 前必须自动备份为 `{主题名}:backup_{Unix时间戳}`，备份与主记录都留在 `ttdf` 表。手动备份、备份列表与恢复只能由管理员接口触发，不得在普通前台请求中执行。
+- 每次修改设置时整份 JSON 一次写入；覆盖已有 JSON 前必须自动备份为 `{主题名}:backup_{Unix时间戳}`，备份与主记录留在同一个存储。手动备份、备份列表与恢复只能由管理员接口触发，不得在普通前台请求中执行。
 - `Options::all()` 只返回当前主题那一行 JSON；`Options::get()` 不读取无前缀旧键。迁移是单向的：只在当前主题还没有有效 JSON 文档时，把 `{主题名}_{字段名}` 与无前缀 v4 字段转换为首次 JSON；已有 JSON 必须直接返回 `already-current`，不得覆盖、不得改写或删除旧行、其他主题行与备份行。
 - 字段改过名时在 `app/config/theme.php` 用 `aliases` 声明旧名字供迁移读取；取值优先级为 `{主题名}_{当前字段名}` > `{当前字段名}` > `{主题名}_{旧字段名}` > `{旧字段名}`，别名按当前字段类型归一化，且不得出现在设置表单、`Schema::fields()` / `names()` 或保存后的 JSON 中。
 - 禁止在每次请求中建表、写入默认值或执行迁移；建表与迁移只允许在后台设置页、保存动作或显式迁移命令中执行。

@@ -10,6 +10,8 @@ use Typecho\Db;
 
 final class TypechoOptionsStore implements OptionsStore
 {
+    private const MAX_NAME_LENGTH = 200;
+
     private readonly Db $db;
 
     public function __construct(
@@ -21,6 +23,16 @@ final class TypechoOptionsStore implements OptionsStore
         }
 
         $this->db = $db ?? Db::get();
+    }
+
+    public function key(string $name): string
+    {
+        return $name;
+    }
+
+    public function maxNameLength(): int
+    {
+        return self::MAX_NAME_LENGTH;
     }
 
     public function get(string $name): ?string

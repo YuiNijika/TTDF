@@ -97,6 +97,99 @@ final class AssetsTest extends TestCase
         );
     }
 
+    public function testAssetVersionComesFromTheThemeAndCoversFrameworkStatics(): void
+    {
+        $root = sys_get_temp_dir() . '/ttdf-assets-' . uniqid('', true);
+        mkdir($root, 0777, true);
+        file_put_contents($root . '/index.php', "<?php\n/**\n * @version 9.9.9-theme\n */\n");
+
+        $property = new \ReflectionProperty(\TTDF\Framework::class, 'root');
+        $property->setValue(null, $root);
+
+        try {
+            self::assertSame(
+                'https://example.test/usr/themes/ttdf/assets/app.css?v=9.9.9-theme',
+                Assets::url('assets/app.css')
+            );
+            self::assertSame(
+                'https://example.test/usr/themes/ttdf/vendor/yuinijika/ttdf/static/options/options.css'
+                . '?v=9.9.9-theme',
+                Assets::staticUrl('options/options.css')
+            );
+            self::assertStringNotContainsString('5.0.1-next', Assets::staticUrl('options/options.css'));
+        } finally {
+            $property->setValue(null, '');
+            @unlink($root . '/index.php');
+            @rmdir($root);
+        }
+    }
+
+    public function testUrlAppliesTheDefaultAssetsBase(): void
+    {
+        self::assertSame(
+            'https://example.test/usr/themes/ttdf/assets/css/theme.css?v=5.0.1-next',
+            Assets::url('css/theme.css')
+        );
+        self::assertSame(
+            'https://example.test/usr/themes/ttdf/assets/css/theme.css?v=5.0.1-next',
+            Assets::url('css/theme.css', 'assets')
+        );
+        self::assertSame(
+            'https://example.test/usr/themes/ttdf/assets/app.css?theme=dark&amp;v=5.0.1-next#main',
+            Assets::url('assets/app.css?theme=dark#main')
+        );
+        self::assertSame(
+            'https://example.test/usr/themes/ttdf/assets/css/theme.css?theme=dark&amp;v=5.0.1-next#main',
+            Assets::url('theme.css?theme=dark#main', 'assets/css')
+        );
+    }
+
+    public function testUrlAcceptsACustomBaseWithoutDoublePrefixing(): void
+    {
+        self::assertSame(
+            'https://example.test/usr/themes/ttdf/vendor/lib/app.js?v=5.0.1-next',
+            Assets::url('lib/app.js', 'vendor')
+        );
+        self::assertSame(
+            'https://example.test/usr/themes/ttdf/assets/app.css?v=5.0.1-next',
+            Assets::url('assets/app.css')
+        );
+        self::assertSame(
+            'https://example.test/usr/themes/ttdf/assets/app.css?v=5.0.1-next',
+            Assets::url('/assets/app.css', 'assets/')
+        );
+    }
+
+    public function testUnsafeBaseDirectoryIsIgnored(): void
+    {
+        self::assertSame(
+            'https://example.test/usr/themes/ttdf/css/theme.css?v=5.0.1-next',
+            Assets::url('css/theme.css', '../assets')
+        );
+        self::assertSame(
+            'https://example.test/usr/themes/ttdf/css/theme.css?v=5.0.1-next',
+            Assets::url('css/theme.css', '')
+        );
+    }
+
+    public function testPrintHelpersAcceptABaseDirectory(): void
+    {
+        ob_start();
+        Assets::printStyles(['css/theme.css']);
+        Assets::printScripts(['js/main.js'], 'vendor');
+        $html = (string) ob_get_clean();
+
+        self::assertStringContainsString(
+            '<link rel="stylesheet" href="https://example.test/usr/themes/ttdf/assets/css/theme.css'
+            . '?v=5.0.1-next">',
+            $html
+        );
+        self::assertStringContainsString(
+            '<script src="https://example.test/usr/themes/ttdf/vendor/js/main.js?v=5.0.1-next"></script>',
+            $html
+        );
+    }
+
     private function useThemeCdn(string $cdn): void
     {
         $property = new \ReflectionProperty(Options::class, 'instance');

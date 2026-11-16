@@ -90,8 +90,13 @@ return [
 - 资源 CDN 只来自主题设置 `Assets_CDN`；`app/config/app.php` 不再接受 `assets`。
 - `settings.table` 是框架内部隐藏默认值，不在公开配置中声明；必要时可由
   `TTDF_SETTINGS_TABLE` 环境变量覆盖表名。
-- 每个主题在 `ttdf` 表中只保留一行 JSON，`name` 是主题名；覆盖前自动备份为
-  `{主题名}:backup_{Unix时间戳}`，不会写入 Typecho 原生 `typecho_options` 表。
+- 每个主题只保留一行 JSON：默认在 `ttdf` 表，`name` 是主题名；覆盖前自动备份为
+  `{主题名}:backup_{Unix时间戳}`。
+- Typecho `config.inc.php` 定义 `__TTDF_DATABASE_TABLE__ = false` 时不建表，设置改存
+  `typecho_options` 的 `ttdf:{主题名}`（`user = 0`），备份为
+  `ttdf:{主题名}:backup_{Unix时间戳}`；行名超过 32 字符时用 `:b_` 紧凑标记。
+- 资源 URL 的 `?v=` 使用根 `index.php` 的 `@version`，主题自己的 `assets/` 与随包
+  分发的 `vendor/yuinijika/ttdf/static/` 都跟随主题版本。
 
 ## 页面模板映射
 

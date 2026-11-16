@@ -11,14 +11,20 @@ use TTDF\Config\Config;
 use TTDF\Support\Json;
 
 /**
- * Theme settings are stored as one JSON document in TTDF's settings table.
+ * Theme settings are stored as one JSON document per theme.
  *
- * The primary option name is the active theme name. Every save keeps the
+ * The row name is the active theme name, stored either in TTDF's dedicated
+ * settings table or - when `__TTDF_DATABASE_TABLE__` is defined as `false` -
+ * in Typecho's own options table under `ttdf:{theme}`. Every save keeps the
  * previous document as `{theme}:backup_{timestamp}`.
  */
 final class Options
 {
     private const BACKUP_MARKER = ':backup_';
+
+    private const COMPACT_BACKUP_MARKER = ':b_';
+
+    private const BACKUP_TIMESTAMP_LENGTH = 10;
 
     private static ?self $instance = null;
 
@@ -43,12 +49,31 @@ final class Options
         $themeName = Typecho::themeName();
         if (self::$instance === null || (self::$instance->themeName === '' && $themeName !== '')) {
             self::$instance = new self(
-                new TypechoOptionsStore((string) Config::get('settings.table', 'ttdf')),
+                self::createStore(),
                 $themeName
             );
         }
 
         return self::$instance;
+    }
+
+    /**
+     * `__TTDF_DATABASE_TABLE__` defaults to the dedicated `ttdf` table.
+     * Defining it as `false` stores settings inside Typecho's options table.
+     */
+    public static function usesDedicatedTable(): bool
+    {
+        return StorageMode::dedicatedTableEnabled(self::databaseTableFlag());
+    }
+
+    /**
+     * Logical table used by the active storage driver.
+     */
+    public static function storageTable(): string
+    {
+        return self::usesDedicatedTable()
+            ? (string) Config::get('settings.table', 'ttdf')
+            : 'options';
     }
 
     public function get(string $key, mixed $default = null): mixed
@@ -164,7 +189,7 @@ final class Options
             return false;
         }
 
-        $raw = $this->store->get($this->themeName);
+        $raw = $this->store->get($this->key());
         if ($raw === null || trim($raw) === '') {
             return false;
         }
@@ -181,7 +206,7 @@ final class Options
             return null;
         }
 
-        $raw = $this->store->get($this->themeName);
+        $raw = $this->store->get($this->key());
         if ($raw === null || trim($raw) === '') {
             return null;
         }
@@ -198,11 +223,16 @@ final class Options
             return [];
         }
 
-        $prefix = $this->backupPrefix();
+        $prefixes = $this->backupPrefixes();
+        if ($prefixes === []) {
+            return [];
+        }
+
         $items = [];
 
         foreach ($this->store->all() as $name => $raw) {
-            if (!str_starts_with($name, $prefix)) {
+            $prefix = $this->matchBackupPrefix($name, $prefixes);
+            if ($prefix === null) {
                 continue;
             }
 
@@ -233,7 +263,7 @@ final class Options
 
     public function restore(string $key): bool
     {
-        if ($this->themeName === '' || !str_starts_with($key, $this->backupPrefix())) {
+        if ($this->themeName === '' || !$this->isBackupKey($key)) {
             return false;
         }
 
@@ -263,7 +293,46 @@ final class Options
 
     public function backupPrefix(): string
     {
-        return $this->themeName . self::BACKUP_MARKER;
+        $prefixes = $this->backupPrefixes();
+        if ($prefixes === []) {
+            throw $this->keyLengthError();
+        }
+
+        return $prefixes[0];
+    }
+
+    /**
+     * Backup prefixes that fit the backing column, longest first.
+     *
+     * `:backup_` is preferred; a theme name that leaves no room falls back to
+     * the compact `:b_` marker. Both forms stay readable and keep the Unix
+     * timestamp intact.
+     *
+     * @return list<string>
+     */
+    public function backupPrefixes(): array
+    {
+        if ($this->themeName === '') {
+            return [];
+        }
+
+        $prefixes = [];
+        foreach ([self::BACKUP_MARKER, self::COMPACT_BACKUP_MARKER] as $marker) {
+            $prefix = $this->store->key($this->themeName . $marker);
+            if ($this->fits($prefix . str_repeat('0', self::BACKUP_TIMESTAMP_LENGTH))) {
+                $prefixes[] = $prefix;
+            }
+        }
+
+        return $prefixes;
+    }
+
+    /**
+     * Whether a physical row name belongs to this theme's backups.
+     */
+    public function isBackupKey(string $name): bool
+    {
+        return $this->matchBackupPrefix($name, $this->backupPrefixes()) !== null;
     }
 
     public function lastBackupKey(): ?string
@@ -281,6 +350,10 @@ final class Options
     {
         if ($this->themeName === '') {
             throw new RuntimeException('Cannot save theme settings before the active theme is resolved');
+        }
+
+        if (!$this->fits($this->key())) {
+            throw $this->keyLengthError();
         }
     }
 
@@ -300,7 +373,7 @@ final class Options
             return;
         }
 
-        $raw = $this->themeName === '' ? null : $this->store->get($this->themeName);
+        $raw = $this->themeName === '' ? null : $this->store->get($this->key());
         $decoded = $raw === null ? null : Json::decode($raw);
         $this->data = is_array($decoded) ? $decoded : [];
         $this->loaded = true;
@@ -313,7 +386,7 @@ final class Options
     {
         $this->assertWritable();
         $encoded = Json::encode($data);
-        $current = $this->store->get($this->themeName);
+        $current = $this->store->get($this->key());
         $this->lastBackupKey = null;
 
         if ($current === $encoded) {
@@ -326,7 +399,7 @@ final class Options
             $this->lastBackupKey = $this->writeBackup($current, time());
         }
 
-        $this->store->set($this->themeName, $encoded);
+        $this->store->set($this->key(), $encoded);
         $this->data = $data;
         $this->loaded = true;
     }
@@ -343,5 +416,53 @@ final class Options
 
         $this->store->set($key, $raw);
         return $key;
+    }
+
+    private static function createStore(): OptionsStore
+    {
+        if (!self::usesDedicatedTable()) {
+            return new TypechoNativeOptionsStore();
+        }
+
+        return new TypechoOptionsStore((string) Config::get('settings.table', 'ttdf'));
+    }
+
+    private static function databaseTableFlag(): mixed
+    {
+        return defined('__TTDF_DATABASE_TABLE__') ? constant('__TTDF_DATABASE_TABLE__') : null;
+    }
+
+    private function key(): string
+    {
+        return $this->store->key($this->themeName);
+    }
+
+    /**
+     * @param list<string> $prefixes
+     */
+    private function matchBackupPrefix(string $name, array $prefixes): ?string
+    {
+        foreach ($prefixes as $prefix) {
+            if (str_starts_with($name, $prefix)) {
+                return $prefix;
+            }
+        }
+
+        return null;
+    }
+
+    private function fits(string $name): bool
+    {
+        return strlen($name) <= $this->store->maxNameLength();
+    }
+
+    private function keyLengthError(): RuntimeException
+    {
+        return new RuntimeException(sprintf(
+            'Settings key "%s" exceeds the %d-character storage limit; shorten the theme directory name'
+            . ' or remove the __TTDF_DATABASE_TABLE__ override',
+            $this->key(),
+            $this->store->maxNameLength()
+        ));
     }
 }

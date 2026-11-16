@@ -203,4 +203,70 @@ final class OptionsTest extends TestCase
             Options::reset();
         }
     }
+
+    public function testBackupKeyFallsBackToTheCompactMarkerWhenTheFullNameDoesNotFit(): void
+    {
+        $store = new InMemoryOptionsStore([], 32, 'ttdf:');
+        $options = new Options($store, 'classic-22');
+
+        $options->set('SubTitle', 'First');
+        $options->set('SubTitle', 'Second');
+
+        $backups = $options->backups();
+        self::assertCount(1, $backups);
+        self::assertMatchesRegularExpression('/^ttdf:classic-22:b_\d{10}$/', $backups[0]['key']);
+        self::assertTrue($options->isBackupKey($backups[0]['key']));
+        self::assertSame('{"SubTitle":"First"}', $store->get($backups[0]['key']));
+        self::assertSame('Second', $options->get('SubTitle'));
+
+        self::assertTrue($options->restore($backups[0]['key']));
+        self::assertSame('First', $options->get('SubTitle'));
+    }
+
+    public function testBackupsReadBothMarkerFormsAndIgnoreOtherThemes(): void
+    {
+        $store = new InMemoryOptionsStore([
+            'Theme:backup_1700000000' => '{"SubTitle":"full"}',
+            'Theme:b_1700000001' => '{"SubTitle":"compact"}',
+            'Other:backup_1700000002' => '{"SubTitle":"other"}',
+        ]);
+        $options = new Options($store, 'Theme');
+
+        $backups = $options->backups();
+
+        self::assertSame(
+            ['Theme:b_1700000001', 'Theme:backup_1700000000'],
+            array_column($backups, 'key')
+        );
+        self::assertFalse($options->isBackupKey('Other:backup_1700000002'));
+        self::assertFalse($options->restore('Other:backup_1700000002'));
+    }
+
+    public function testThemeNameThatDoesNotFitTheStorageColumnIsRejectedOnWrite(): void
+    {
+        $store = new InMemoryOptionsStore([], 32, 'ttdf:');
+        $options = new Options($store, str_repeat('a', 30));
+
+        self::assertSame([], $options->backupPrefixes());
+        self::assertFalse($options->isBackupKey('ttdf:' . str_repeat('a', 30) . ':backup_1700000000'));
+        self::assertNull($options->get('SubTitle'));
+
+        $this->expectException(RuntimeException::class);
+        $options->set('SubTitle', 'Hello');
+    }
+
+    public function testDedicatedTableIsTheDefaultStorageMode(): void
+    {
+        self::assertTrue(Options::usesDedicatedTable());
+        self::assertSame('ttdf', Options::storageTable());
+    }
+
+    #[\PHPUnit\Framework\Attributes\RunInSeparateProcess]
+    public function testFalseDatabaseTableConstantMovesSettingsIntoTypechoOptions(): void
+    {
+        define('__TTDF_DATABASE_TABLE__', false);
+
+        self::assertFalse(Options::usesDedicatedTable());
+        self::assertSame('options', Options::storageTable());
+    }
 }

@@ -171,6 +171,7 @@ final class AdminControllerTest extends TestCase
 
         self::assertSame(PHP_VERSION, $payload['data']['phpVersion']);
         self::assertSame('json-document', $payload['data']['settingsStorage']);
+        self::assertSame('ttdf-table', $payload['data']['settingsDriver']);
         self::assertSame('ttdf', $payload['data']['settingsTable']);
         self::assertStringNotContainsString($token, $encoded);
         self::assertStringNotContainsString('TTDF_REST_TOKEN', $encoded);

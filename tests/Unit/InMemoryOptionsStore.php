@@ -11,9 +11,28 @@ final class InMemoryOptionsStore implements OptionsStore
     /** @var array<string, string> */
     private array $data = [];
 
-    public function __construct(array $data = [])
-    {
+    public function __construct(
+        array $data = [],
+        private readonly int $maxNameLength = 200,
+        private readonly string $keyPrefix = '',
+        private readonly string $table = 'ttdf'
+    ) {
         $this->data = $data;
+    }
+
+    public function key(string $name): string
+    {
+        return $this->keyPrefix . $name;
+    }
+
+    public function maxNameLength(): int
+    {
+        return $this->maxNameLength;
+    }
+
+    public function table(): string
+    {
+        return $this->table;
     }
 
     public function get(string $name): ?string

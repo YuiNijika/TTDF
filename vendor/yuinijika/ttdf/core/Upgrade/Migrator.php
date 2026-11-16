@@ -64,7 +64,7 @@ final class Migrator
         foreach ($this->options->store()->all() as $name => $raw) {
             if (
                 $name === $theme
-                || str_starts_with($name, $this->options->backupPrefix())
+                || $this->options->isBackupKey($name)
                 || str_starts_with($name, '__schema_version')
             ) {
                 continue;

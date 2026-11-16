@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace TTDF\Http\Rest;
 
 use TTDF\Compat\Typecho;
-use TTDF\Config\Config;
 use TTDF\Framework;
 use TTDF\Http\Request;
 use TTDF\Http\Response;
@@ -135,7 +134,8 @@ final class AdminController
             'restEnabled' => State::enabled(),
             'restTokenEnabled' => State::tokenEnabled(),
             'settingsStorage' => 'json-document',
-            'settingsTable' => (string) Config::get('settings.table', 'ttdf'),
+            'settingsDriver' => Options::usesDedicatedTable() ? 'ttdf-table' : 'typecho-options',
+            'settingsTable' => Options::storageTable(),
             'logWritable' => is_dir(dirname($logFile)) ? is_writable(dirname($logFile)) : is_writable($this->root),
             'logFile' => $logFile,
         ]);
