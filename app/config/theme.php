@@ -17,6 +17,7 @@ return [
                 'label' => '站点 Logo',
                 'description' => '从媒体库选择图片；留空时显示站点标题。值保存为图片地址。',
                 'media' => true,
+                'aliases' => ['logoUrl'],
             ],
             [
                 'type' => 'Text',

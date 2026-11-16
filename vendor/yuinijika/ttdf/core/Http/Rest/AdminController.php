@@ -30,20 +30,15 @@ final class AdminController
         $body = Request::json();
         $settings = isset($body['settings']) && is_array($body['settings']) ? $body['settings'] : $body;
 
-        $validated = Settings::validate($settings);
-        if ($validated === [] && $settings !== []) {
+        $saved = Settings::save($settings);
+        if ($saved === 0 && $settings !== []) {
             Response::error('No valid settings were provided', 422);
         }
 
-        $options = Options::instance();
-        $options->ensureInstalled();
-        foreach ($validated as $name => $value) {
-            $options->set($name, $value);
-        }
-
         Response::success([
-            'saved' => count($validated),
+            'saved' => $saved,
             'message' => '设置已更新',
+            'backup' => Options::instance()->lastBackupKey(),
         ]);
     }
 
@@ -85,13 +80,15 @@ final class AdminController
             Response::error('Missing settings', 422);
         }
 
-        Options::instance()->ensureInstalled();
         $count = Settings::import($settings);
         if ($count === 0) {
             Response::error('No valid settings were provided', 422);
         }
 
-        Response::success(['imported' => $count]);
+        Response::success([
+            'imported' => $count,
+            'backup' => Options::instance()->lastBackupKey(),
+        ]);
     }
 
     public function migrate(): never
@@ -100,9 +97,35 @@ final class AdminController
         Response::success($migrator->run());
     }
 
+    public function backup(): never
+    {
+        Response::success([
+            'backup' => Settings::backup(),
+            'backups' => Settings::backups(),
+        ]);
+    }
+
+    public function backups(): never
+    {
+        Response::success(Settings::backups());
+    }
+
+    public function restore(): never
+    {
+        $body = Request::json();
+        $key = isset($body['key']) && is_string($body['key']) ? trim($body['key']) : '';
+        if ($key === '' || Settings::restore($key) === false) {
+            Response::error('Backup not found', 422);
+        }
+
+        Response::success([
+            'restored' => $key,
+            'backup' => Options::instance()->lastBackupKey(),
+        ]);
+    }
+
     public function diagnostics(): never
     {
-        $options = Options::instance();
         $logFile = $this->root . '/logs/error.log';
 
         Response::success([
@@ -111,7 +134,7 @@ final class AdminController
             'frameworkVersion' => Framework::VERSION,
             'restEnabled' => State::enabled(),
             'restTokenEnabled' => State::tokenEnabled(),
-            'settingsSchemaVersion' => $options->schemaVersion(),
+            'settingsStorage' => 'json-document',
             'settingsTable' => (string) Config::get('settings.table', 'ttdf'),
             'logWritable' => is_dir(dirname($logFile)) ? is_writable(dirname($logFile)) : is_writable($this->root),
             'logFile' => $logFile,

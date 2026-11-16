@@ -196,6 +196,100 @@ form[action*="themes-edit"] .typecho-option-submit {
   border-radius: 9px;
 }
 
+.ttdf-backup-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.ttdf-backup-toolbar p {
+  margin: 0;
+  color: var(--ttdf-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.ttdf-backup-toolbar .arco-btn {
+  flex: 0 0 auto;
+}
+
+.ttdf-backup-error {
+  margin-bottom: 14px;
+  border-radius: 8px;
+}
+
+.ttdf-backup-list {
+  display: grid;
+  gap: 8px;
+}
+
+.ttdf-backup-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--ttdf-line);
+  border-radius: 9px;
+  background: #fff;
+}
+
+.ttdf-backup-copy {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.ttdf-backup-copy strong {
+  overflow: hidden;
+  color: var(--ttdf-ink);
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ttdf-backup-copy span {
+  color: var(--ttdf-faint);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.ttdf-backup-loading {
+  display: grid;
+  gap: 8px;
+}
+
+.ttdf-backup-skeleton {
+  display: grid;
+  gap: 7px;
+  padding: 12px 14px;
+  border: 1px solid var(--ttdf-line);
+  border-radius: 9px;
+  background: #fff;
+}
+
+.ttdf-backup-skeleton span {
+  display: block;
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f1f1ef 25%, #f8f8f7 37%, #f1f1ef 63%);
+  background-size: 400% 100%;
+  animation: ttdf-skeleton-wave 1.4s ease infinite;
+}
+
+.ttdf-backup-skeleton span:first-child {
+  width: min(72%, 360px);
+}
+
+.ttdf-backup-skeleton span:last-child {
+  width: 42%;
+}
+
 .TTDF-body {
   display: flex;
   height: var(--ttdf-panel-height);
@@ -1520,6 +1614,24 @@ form[action*="themes-edit"] .typecho-option-submit {
     padding: 13px 14px;
   }
 
+  .ttdf-backup-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ttdf-backup-toolbar .arco-btn {
+    align-self: flex-start;
+  }
+
+  .ttdf-backup-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .ttdf-backup-item .arco-btn {
+    align-self: flex-end;
+  }
+
   .ttdf-add-list-item {
     flex-direction: column;
     align-items: stretch;
@@ -1570,6 +1682,9 @@ form[action*="themes-edit"] .typecho-option-submit {
   .TTDF-container *,
   .TTDF-container *::before,
   .TTDF-container *::after,
+  .ttdf-backup-modal *,
+  .ttdf-backup-modal *::before,
+  .ttdf-backup-modal *::after,
   .ttdf-media-modal *,
   .ttdf-media-modal *::before,
   .ttdf-media-modal *::after {

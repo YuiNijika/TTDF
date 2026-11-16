@@ -25,11 +25,10 @@ final class ConfigLoader
             'enabled' => true,
             'pages_dir' => 'router',
         ],
-        // Internal storage defaults. Themes may override these values, but
-        // app/config/app.php does not advertise them as public options.
+        // Internal storage default. Themes may override the table name, but
+        // app/config/app.php does not advertise it as a public option.
         'settings' => [
             'table' => 'ttdf',
-            'schema_version' => 2,
         ],
     ];
 

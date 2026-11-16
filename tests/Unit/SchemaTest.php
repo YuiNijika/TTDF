@@ -78,4 +78,40 @@ PHP);
 
         self::assertSame(['Valid_Name'], array_keys(Schema::fields($this->root)));
     }
+
+    public function testAliasesMapLegacyNamesToTheCurrentFieldAndAreValidated(): void
+    {
+        file_put_contents($this->root . '/app/config/theme.php', <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+return [
+    'General' => [
+        'title' => 'General',
+        'fields' => [
+            [
+                'type' => 'Text',
+                'name' => 'Logo',
+                'aliases' => ['logoUrl', 'logo_url', 'bad-alias', '', 'Logo', 'SubTitle'],
+            ],
+            ['type' => 'Text', 'name' => 'SubTitle'],
+            ['type' => 'Text', 'name' => 'Plain', 'aliases' => 'logoUrl'],
+        ],
+    ],
+];
+PHP);
+
+        Schema::reset();
+
+        self::assertSame(
+            ['logoUrl' => 'Logo', 'logo_url' => 'Logo'],
+            Schema::aliases($this->root)
+        );
+        self::assertSame(['Logo', 'SubTitle', 'Plain'], Schema::names($this->root));
+
+        Schema::reset();
+
+        self::assertSame(['logoUrl' => 'Logo', 'logo_url' => 'Logo'], Schema::aliases($this->root));
+    }
 }

@@ -40,11 +40,16 @@ final class AdminControllerTest extends TestCase
             }
 
             $name = (string) ($query->wheres[0]['values'][0] ?? '');
-            return match ($name) {
-                '__schema_version_Theme' => [['value' => '2']],
-                'Theme_SubTitle' => [['value' => '"Hello"']],
-                default => [],
-            };
+            if ($name === '' && in_array('name', $query->fields, true)) {
+                return [[
+                    'name' => 'Theme',
+                    'value' => '{"SubTitle":"Hello"}',
+                ]];
+            }
+
+            return $name === 'Theme'
+                ? [['name' => 'Theme', 'value' => '{"SubTitle":"Hello"}']]
+                : [];
         };
     }
 
@@ -142,9 +147,9 @@ final class AdminControllerTest extends TestCase
         self::assertArrayHasKey('General', $schema['data']['tabs']);
         self::assertArrayHasKey('SubTitle', $schema['data']['fields']);
         self::assertArrayHasKey('General', $config['data']['tabs']);
-        self::assertSame('5.0.0-next', $config['data']['frameworkVersion']);
+        self::assertSame('5.0.1-next', $config['data']['frameworkVersion']);
         self::assertSame('Theme', $info['data']['themeName']);
-        self::assertSame('5.0.0-next', $info['data']['ttdfVersion']);
+        self::assertSame('5.0.1-next', $info['data']['ttdfVersion']);
     }
 
     public function testExportIncludesThemeMetadataAndValues(): void
@@ -152,7 +157,7 @@ final class AdminControllerTest extends TestCase
         $payload = $this->capture(fn () => (new AdminController($this->root))->export())->payload();
 
         self::assertSame('Theme', $payload['data']['meta']['theme']);
-        self::assertSame('5.0.0-next', $payload['data']['meta']['frameworkVersion']);
+        self::assertSame('5.0.1-next', $payload['data']['meta']['frameworkVersion']);
         self::assertSame('Hello', $payload['data']['settings']['SubTitle']);
     }
 
@@ -165,7 +170,8 @@ final class AdminControllerTest extends TestCase
         $encoded = json_encode($payload, JSON_THROW_ON_ERROR);
 
         self::assertSame(PHP_VERSION, $payload['data']['phpVersion']);
-        self::assertArrayHasKey('settingsSchemaVersion', $payload['data']);
+        self::assertSame('json-document', $payload['data']['settingsStorage']);
+        self::assertSame('ttdf', $payload['data']['settingsTable']);
         self::assertStringNotContainsString($token, $encoded);
         self::assertStringNotContainsString('TTDF_REST_TOKEN', $encoded);
 

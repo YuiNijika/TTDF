@@ -102,14 +102,14 @@ final class ThemePathsTest extends TestCase
 
             $property = new \ReflectionProperty(Options::class, 'instance');
             $property->setValue(null, new Options(new InMemoryOptionsStore([
-                'Theme_REST_Token_Switch' => 'false',
+                'Theme' => '{"REST_Token_Switch":false}',
             ]), 'Theme'));
             ThemeConfig::reset();
 
             self::assertFalse(ThemeConfig::tokenEnabled());
 
             $property->setValue(null, new Options(new InMemoryOptionsStore([
-                'Theme_REST_Token_Switch' => 'true',
+                'Theme' => '{"REST_Token_Switch":true}',
             ]), 'Theme'));
             ThemeConfig::reset();
 
@@ -125,7 +125,7 @@ final class ThemePathsTest extends TestCase
     {
         $property = new \ReflectionProperty(Options::class, 'instance');
         $property->setValue(null, new Options(new InMemoryOptionsStore([
-            'Theme_Assets_CDN' => '"https://cdn.example.test/theme/"',
+            'Theme' => '{"Assets_CDN":"https://cdn.example.test/theme/"}',
         ]), 'Theme'));
 
         Config::load(['assets' => ['cdn' => 'https://ignored.example.test/']]);

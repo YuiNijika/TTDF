@@ -57,9 +57,15 @@ const config = {
 const themeInfo = {
     themeName: 'TTDF Theme',
     themeVersion: '2.1.0',
-    ttdfVersion: '5.0.0-next',
+    ttdfVersion: '5.0.1-next',
     components: config.components,
     templateSlots: config.templateSlots
+};
+
+const backupEntry = {
+    key: 'TTDF Theme:backup_1700000000',
+    timestamp: 1700000000,
+    count: 3
 };
 
 const createFetchMock = () => vi.fn(async (url, options = {}) => {
@@ -79,6 +85,21 @@ const createFetchMock = () => vi.fn(async (url, options = {}) => {
     }
     if (path.endsWith('/options')) {
         return jsonResponse({ message: '设置已更新' });
+    }
+    if (path.endsWith('/backup')) {
+        return jsonResponse({
+            backup: backupEntry.key,
+            backups: [backupEntry]
+        });
+    }
+    if (path.endsWith('/backups')) {
+        return jsonResponse([backupEntry]);
+    }
+    if (path.endsWith('/restore')) {
+        return jsonResponse({
+            restored: backupEntry.key,
+            backup: 'TTDF Theme:backup_1700000001'
+        });
     }
     if (path.endsWith('/migrate')) {
         return jsonResponse({ status: 'migrated', migrated: 2 });
@@ -209,7 +230,7 @@ describe('TTDF settings application', () => {
         wrapper.unmount();
     });
 
-    it('groups export, import, and migration under one actions menu', () => {
+    it('groups export, import, backup, restore, and migration under one actions menu', () => {
         const wrapper = mountApp();
 
         expect(wrapper.find('.TTDF-button-group').exists()).toBe(true);
@@ -221,6 +242,8 @@ describe('TTDF settings application', () => {
         const source = window.TTDFOptions.createAppComponent.toString();
         expect(source).toContain('value="export"');
         expect(source).toContain('value="import"');
+        expect(source).toContain('value="backup"');
+        expect(source).toContain('value="backups"');
         expect(source).toContain('value="migrate"');
         wrapper.unmount();
     });
@@ -289,8 +312,85 @@ describe('TTDF settings application', () => {
         const migrateCall = fetchMock.mock.calls.find(([url]) => url.endsWith('/migrate'));
         expect(migrateCall).toBeTruthy();
         expect(migrateCall[1].method).toBe('POST');
-        expect(successSpy).toHaveBeenCalledWith('迁移完成，已处理 2 项');
+        expect(successSpy).toHaveBeenCalledWith('迁移完成，已写入 2 项设置');
         expect(fetchMock.mock.calls.filter(([url]) => url.endsWith('/config')).length).toBe(2);
+        wrapper.unmount();
+    });
+
+    it('reports already-current JSON without rerunning migration', async () => {
+        fetchMock.mockImplementation(async (url) => {
+            const path = new URL(url).pathname;
+            if (path.endsWith('/config')) {
+                return jsonResponse(config);
+            }
+            if (path.endsWith('/form-data')) {
+                return jsonResponse({ SubTitle: 'Saved title' });
+            }
+            if (path.endsWith('/theme-info')) {
+                return jsonResponse(themeInfo);
+            }
+            if (path.endsWith('/migrate')) {
+                return jsonResponse({ status: 'already-current', migrated: 0, backup: null });
+            }
+            return jsonResponse(null, 404);
+        });
+        vi.spyOn(ArcoVue.Modal, 'confirm').mockImplementation((options) => {
+            options.onOk?.();
+            return { close: () => {} };
+        });
+
+        const wrapper = mountApp();
+        await flushPromises();
+        wrapper.vm.handleAction('migrate');
+        await flushPromises();
+
+        expect(successSpy).toHaveBeenCalledWith('已是新版 JSON 格式，无需迁移');
+        wrapper.unmount();
+    });
+
+    it('creates a manual backup from the actions menu', async () => {
+        vi.spyOn(ArcoVue.Modal, 'confirm').mockImplementation((options) => {
+            options.onOk?.();
+            return { close: () => {} };
+        });
+
+        const wrapper = mountApp();
+        await flushPromises();
+        wrapper.vm.handleAction('backup');
+        await flushPromises();
+
+        const backupCall = fetchMock.mock.calls.find(([url]) => url.endsWith('/backup'));
+        expect(backupCall).toBeTruthy();
+        expect(backupCall[1].method).toBe('POST');
+        expect(backupCall[1].headers['X-Typecho-Token']).toBe('nonce-value');
+        expect(successSpy).toHaveBeenCalledWith('备份已创建：' + backupEntry.key);
+        wrapper.unmount();
+    });
+
+    it('lists backups and restores the selected JSON document', async () => {
+        vi.spyOn(ArcoVue.Modal, 'confirm').mockImplementation((options) => {
+            options.onOk?.();
+            return { close: () => {} };
+        });
+
+        const wrapper = mountApp();
+        await flushPromises();
+        wrapper.vm.handleAction('backups');
+        await flushPromises();
+
+        expect(fetchMock.mock.calls.some(([url]) => url.endsWith('/backups'))).toBe(true);
+        expect(wrapper.vm.backupsOpen).toBe(true);
+        expect(wrapper.vm.backupItems).toEqual([backupEntry]);
+
+        await wrapper.vm.restoreBackup(backupEntry);
+        await flushPromises();
+
+        const restoreCall = fetchMock.mock.calls.find(([url]) => url.endsWith('/restore'));
+        expect(restoreCall).toBeTruthy();
+        expect(restoreCall[1].method).toBe('POST');
+        expect(JSON.parse(restoreCall[1].body)).toEqual({ key: backupEntry.key });
+        expect(wrapper.vm.backupsOpen).toBe(false);
+        expect(successSpy).toHaveBeenCalledWith('已恢复备份：' + backupEntry.key);
         wrapper.unmount();
     });
 });

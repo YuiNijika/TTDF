@@ -116,7 +116,7 @@ PHP);
         }
     }
 
-    public function testPublicConfigDropsVersionAndAssetsAndKeepsHiddenSettingsDefaults(): void
+    public function testPublicConfigDropsVersionAndAssetsAndKeepsSettingsTableDefault(): void
     {
         $root = sys_get_temp_dir() . '/ttdf-config-' . uniqid('', true);
         mkdir($root . '/app/config', 0777, true);
@@ -136,7 +136,7 @@ PHP);
             self::assertArrayNotHasKey('version', $config);
             self::assertArrayNotHasKey('assets', $config);
             self::assertSame('ttdf', $config['settings']['table']);
-            self::assertSame(2, $config['settings']['schema_version']);
+            self::assertArrayNotHasKey('schema_version', $config['settings']);
             self::assertTrue($config['debug']);
         } finally {
             @unlink($root . '/app/config/app.php');

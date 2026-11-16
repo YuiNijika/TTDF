@@ -1355,6 +1355,12 @@
                 const activeTab = ref('');
                 const loading = ref(true);
                 const saving = ref(false);
+                const backupBusy = ref(false);
+                const backupsOpen = ref(false);
+                const backupsLoading = ref(false);
+                const backupItems = ref([]);
+                const backupError = ref('');
+                const restoringKey = ref('');
                 const dirty = ref(false);
                 const error = ref('');
                 const initError = ref(String(appInfo.initError || ''));
@@ -1436,6 +1442,126 @@
                         data[key] = cloneSerializable(formData[key]);
                     });
                     return data;
+                };
+
+                const formatBackupTime = (timestamp) => {
+                    const value = Number(timestamp);
+                    if (!Number.isFinite(value) || value <= 0) {
+                        return '';
+                    }
+
+                    const date = new Date(value * 1000);
+                    if (Number.isNaN(date.getTime())) {
+                        return '';
+                    }
+
+                    try {
+                        return new Intl.DateTimeFormat('zh-CN', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: false
+                        }).format(date);
+                    } catch (formatError) {
+                        return date.toLocaleString();
+                    }
+                };
+
+                const loadBackups = async () => {
+                    backupsLoading.value = true;
+                    backupError.value = '';
+                    try {
+                        const result = await request('/backups');
+                        backupItems.value = Array.isArray(result.data) ? result.data : [];
+                    } catch (loadError) {
+                        backupItems.value = [];
+                        backupError.value = loadError.message;
+                        message('error', '加载备份失败：' + loadError.message);
+                    } finally {
+                        backupsLoading.value = false;
+                    }
+                };
+
+                const openBackups = async () => {
+                    backupsOpen.value = true;
+                    await loadBackups();
+                };
+
+                const runBackup = async () => {
+                    if (backupBusy.value) {
+                        return;
+                    }
+
+                    const confirmed = await confirmAction({
+                        title: '立即备份',
+                        content: '将当前已保存的主题设置写入 TTDF 备份；表单中尚未保存的修改不会包含在内。',
+                        okText: '立即备份'
+                    });
+                    if (!confirmed) {
+                        return;
+                    }
+
+                    backupBusy.value = true;
+                    error.value = '';
+                    try {
+                        const result = await request('/backup', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: '{}'
+                        });
+                        const data = result.data || {};
+                        if (data.backup) {
+                            message('success', '备份已创建：' + data.backup);
+                            if (backupsOpen.value) {
+                                await loadBackups();
+                            }
+                        } else {
+                            message('info', '当前没有可备份的已保存设置');
+                        }
+                    } catch (backupErrorValue) {
+                        error.value = backupErrorValue.message;
+                        message('error', '备份失败：' + backupErrorValue.message);
+                    } finally {
+                        backupBusy.value = false;
+                    }
+                };
+
+                const restoreBackup = async (item) => {
+                    const key = typeof item === 'string' ? item : (item && item.key);
+                    if (!key || restoringKey.value !== '') {
+                        return;
+                    }
+
+                    const confirmed = await confirmAction({
+                        title: '恢复设置备份',
+                        content: '将恢复 ' + key + '，恢复前会先备份当前设置。是否继续？',
+                        okText: '恢复'
+                    });
+                    if (!confirmed) {
+                        return;
+                    }
+
+                    restoringKey.value = String(key);
+                    backupError.value = '';
+                    try {
+                        const result = await request('/restore', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ key: String(key) })
+                        });
+                        const restored = (result.data && result.data.restored) || key;
+                        backupsOpen.value = false;
+                        await initConfig();
+                        message('success', '已恢复备份：' + restored);
+                    } catch (restoreError) {
+                        backupError.value = restoreError.message;
+                        message('error', '恢复失败：' + restoreError.message);
+                    } finally {
+                        restoringKey.value = '';
+                    }
                 };
 
                 const saveSettings = async () => {
@@ -1522,8 +1648,8 @@
 
                 const runMigration = async () => {
                     const confirmed = await confirmAction({
-                        title: '确认迁移',
-                        content: '迁移会先备份当前主题设置，再转换旧值格式，是否继续？',
+                        title: '迁移旧版设置',
+                        content: '迁移会读取当前主题的旧版逐字段设置，写入新版单行 JSON。已经是新版 JSON 的主题会直接返回无需迁移，旧字段行不会删除。是否继续？',
                         okText: '开始迁移'
                     });
                     if (!confirmed) {
@@ -1538,8 +1664,8 @@
                         message(
                             'success',
                             data.status === 'already-current'
-                                ? '设置已是最新版本'
-                                : '迁移完成，已处理 ' + (data.migrated || 0) + ' 项'
+                                ? '已是新版 JSON 格式，无需迁移'
+                                : '迁移完成，已写入 ' + (data.migrated || 0) + ' 项设置'
                         );
                         await initConfig();
                     } catch (migrationError) {
@@ -1557,6 +1683,14 @@
                     }
                     if (command === 'import') {
                         importSettings();
+                        return;
+                    }
+                    if (command === 'backup') {
+                        void runBackup();
+                        return;
+                    }
+                    if (command === 'backups') {
+                        void openBackups();
                         return;
                     }
                     if (command === 'migrate') {
@@ -1632,16 +1766,27 @@
                     activeTab,
                     apiUrl,
                     appInfoNonce,
+                    backupBusy,
+                    backupError,
+                    backupItems,
+                    backupsLoading,
+                    backupsOpen,
                     config,
                     currentTab,
                     dirty,
                     error,
                     initError,
                     exportSettings,
+                    formatBackupTime,
                     formData,
                     handleAction,
                     importSettings,
+                    loadBackups,
                     loading,
+                    openBackups,
+                    restoreBackup,
+                    restoringKey,
+                    runBackup,
                     runMigration,
                     saveSettings,
                     saving,
@@ -1681,6 +1826,8 @@
                                     <template #content>
                                         <a-doption value="export">导出设置</a-doption>
                                         <a-doption value="import">导入设置</a-doption>
+                                        <a-doption value="backup">立即备份</a-doption>
+                                        <a-doption value="backups">恢复备份</a-doption>
                                         <a-doption value="migrate">执行迁移</a-doption>
                                     </template>
                                 </a-dropdown>
@@ -1774,6 +1921,55 @@
                     <footer class="TTDF-footer">
                         TTDF v{{ config.ttdfVersion || '' }} · {{ config.themeName || '' }}
                     </footer>
+
+                    <a-modal
+                        v-model:visible="backupsOpen"
+                        title="主题设置备份"
+                        class="ttdf-backup-modal"
+                        :footer="false"
+                        :width="640"
+                    >
+                        <div class="ttdf-backup-toolbar">
+                            <p>备份保存在 TTDF 自建设置表中。恢复前会先备份当前主题 JSON。</p>
+                            <a-button
+                                html-type="button"
+                                size="small"
+                                :loading="backupsLoading"
+                                @click="loadBackups"
+                            >刷新</a-button>
+                        </div>
+                        <a-alert
+                            v-if="backupError"
+                            type="error"
+                            class="ttdf-backup-error"
+                        >{{ backupError }}</a-alert>
+                        <div v-if="backupsLoading" class="ttdf-backup-loading" aria-busy="true">
+                            <div v-for="index in 3" :key="index" class="ttdf-backup-skeleton">
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </div>
+                        <div v-else-if="backupItems.length > 0" class="ttdf-backup-list">
+                            <article
+                                v-for="item in backupItems"
+                                :key="item.key"
+                                class="ttdf-backup-item"
+                            >
+                                <div class="ttdf-backup-copy">
+                                    <strong>{{ item.key }}</strong>
+                                    <span>{{ formatBackupTime(item.timestamp) }} · {{ item.count }} 项设置</span>
+                                </div>
+                                <a-button
+                                    html-type="button"
+                                    size="small"
+                                    :loading="restoringKey === item.key"
+                                    :disabled="restoringKey !== ''"
+                                    @click="restoreBackup(item)"
+                                >恢复</a-button>
+                            </article>
+                        </div>
+                        <a-empty v-else description="暂无备份" />
+                    </a-modal>
                 </div>
             `
         };

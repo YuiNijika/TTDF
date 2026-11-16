@@ -54,7 +54,7 @@ final class OptionsUiTest extends TestCase
         self::assertStringNotContainsString('allow-create', $script);
     }
 
-    public function testImportExportAndMigrationShareOneMenu(): void
+    public function testImportExportBackupRestoreAndMigrationShareOneMenu(): void
     {
         $script = $this->asset('options.js');
         $css = $this->asset('options.css');
@@ -68,8 +68,13 @@ final class OptionsUiTest extends TestCase
         self::assertStringContainsString('aria-label="更多操作"', $script);
         self::assertStringContainsString('value="export"', $script);
         self::assertStringContainsString('value="import"', $script);
+        self::assertStringContainsString('value="backup"', $script);
+        self::assertStringContainsString('value="backups"', $script);
         self::assertStringContainsString('value="migrate"', $script);
+        self::assertStringContainsString('title="主题设置备份"', $script);
+        self::assertStringContainsString('request(\'/restore\'', $script);
         self::assertStringContainsString('.TTDF-button-group', $css);
+        self::assertStringContainsString('.ttdf-backup-item', $css);
         self::assertStringContainsString('.ttdf-options-form .typecho-option-submit', $css);
     }
 

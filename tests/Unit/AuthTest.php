@@ -127,13 +127,10 @@ final class AuthTest extends TestCase
      */
     private function configure(array $settings): void
     {
-        $data = [];
-        foreach ($settings as $name => $value) {
-            $data['Theme_' . $name] = (string) json_encode($value, JSON_THROW_ON_ERROR);
-        }
-
         $property = new \ReflectionProperty(Options::class, 'instance');
-        $property->setValue(null, new Options(new InMemoryOptionsStore($data), 'Theme'));
+        $property->setValue(null, new Options(new InMemoryOptionsStore([
+            'Theme' => json_encode($settings, JSON_THROW_ON_ERROR),
+        ]), 'Theme'));
         ThemeConfig::reset();
     }
 

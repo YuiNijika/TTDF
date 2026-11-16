@@ -4,53 +4,123 @@ declare(strict_types=1);
 
 namespace TTDF\Tests\Unit;
 
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use TTDF\Theme\Options;
 
 final class OptionsTest extends TestCase
 {
-    public function testJsonRoundTripAndDefaults(): void
+    public function testThemeSettingsAreStoredAsOneJsonDocument(): void
     {
         $store = new InMemoryOptionsStore();
         $options = new Options($store, 'Theme');
 
-        $options->set('SubTitle', 'Hello');
-        $options->set('RESTAPI_Switch', true);
+        $options->merge([
+            'SubTitle' => 'Hello',
+            'RESTAPI_Switch' => true,
+            'Templates' => ['post' => 'Post'],
+        ]);
 
         self::assertSame('Hello', $options->get('SubTitle'));
         self::assertTrue($options->get('RESTAPI_Switch'));
-        self::assertSame('fallback', $options->get('Missing', 'fallback'));
-        self::assertSame('"Hello"', $store->get('Theme_SubTitle'));
+        self::assertSame(['post' => 'Post'], $options->get('Templates'));
+        self::assertSame([
+            'SubTitle' => 'Hello',
+            'RESTAPI_Switch' => true,
+            'Templates' => ['post' => 'Post'],
+        ], json_decode((string) $store->get('Theme'), true, 512, JSON_THROW_ON_ERROR));
+        self::assertNull($store->get('Theme_SubTitle'));
+        self::assertSame([], $options->backups());
     }
 
-    public function testLegacyRawStringFallback(): void
+    public function testSettingsStoreNeverWritesTypechoNativeOptionsTable(): void
     {
-        $store = new InMemoryOptionsStore(['Theme_SubTitle' => 'Legacy']);
+        $path = dirname(__DIR__, 2) . '/vendor/yuinijika/ttdf/core/Theme/TypechoOptionsStore.php';
+        $source = file_get_contents($path);
+
+        self::assertIsString($source);
+        self::assertStringNotContainsString("'table.options'", $source);
+        self::assertStringNotContainsString('typecho_options', $source);
+        self::assertStringContainsString("return 'table.' . \$this->table;", $source);
+    }
+
+    public function testEveryOverwriteBacksUpThePreviousJson(): void
+    {
+        $store = new InMemoryOptionsStore();
         $options = new Options($store, 'Theme');
 
-        self::assertSame('Legacy', $options->get('SubTitle'));
+        $options->set('SubTitle', 'First');
+        $options->set('SubTitle', 'Second');
+
+        $backups = $options->backups();
+        self::assertCount(1, $backups);
+        self::assertMatchesRegularExpression('/^Theme:backup_\d{10}$/', $backups[0]['key']);
+        self::assertSame(['SubTitle' => 'First'], $backups[0]['settings']);
+        self::assertSame('Second', $options->get('SubTitle'));
+        self::assertSame($backups[0]['key'], $options->lastBackupKey());
     }
 
-    public function testUnprefixedLegacyRowIsNotReadAsCurrentThemeValue(): void
+    public function testManualBackupUsesTheRequiredKeyFormat(): void
+    {
+        $store = new InMemoryOptionsStore();
+        $options = new Options($store, 'Theme');
+        $options->set('SubTitle', 'Hello');
+
+        $key = $options->backup(1_700_000_000);
+
+        self::assertSame('Theme:backup_1700000000', $key);
+        self::assertSame('{"SubTitle":"Hello"}', $store->get('Theme:backup_1700000000'));
+        self::assertSame('Theme:backup_', $options->backupPrefix());
+    }
+
+    public function testBackupCanBeRestored(): void
+    {
+        $store = new InMemoryOptionsStore();
+        $options = new Options($store, 'Theme');
+        $options->set('SubTitle', 'Old');
+        $key = (string) $options->backup(1_700_000_001);
+        $options->set('SubTitle', 'New');
+
+        self::assertTrue($options->restore($key));
+        self::assertSame('Old', $options->get('SubTitle'));
+        self::assertFalse($options->restore('Other:backup_1700000001'));
+        self::assertFalse($options->restore('Theme:backup_404'));
+    }
+
+    public function testAllOnlyReadsTheCurrentThemeJsonRow(): void
     {
         $store = new InMemoryOptionsStore([
-            'SubTitle' => '"global"',
-            'Theme_SubTitle' => '"theme"',
+            'Theme' => '{"SubTitle":"Hello","RESTAPI_Switch":true}',
+            'Other' => '{"SubTitle":"Other theme","Secret":"do-not-leak"}',
+            'Theme_SubTitle' => '"legacy-row"',
         ]);
         $options = new Options($store, 'Theme');
 
-        self::assertSame('theme', $options->get('SubTitle'));
-        self::assertSame(
-            'fallback',
-            (new Options(new InMemoryOptionsStore(['SubTitle' => '"global"']), 'Theme'))
-                ->get('SubTitle', 'fallback')
-        );
+        self::assertSame([
+            'SubTitle' => 'Hello',
+            'RESTAPI_Switch' => true,
+        ], $options->all());
+        self::assertSame('fallback', $options->get('Missing', 'fallback'));
+    }
+
+    public function testExistsRequiresAValidJsonDocument(): void
+    {
+        $store = new InMemoryOptionsStore(['Theme' => '{invalid-json']);
+        $options = new Options($store, 'Theme');
+
+        self::assertFalse($options->exists());
+
+        $store->set('Theme', '"legacy-scalar"');
+        self::assertFalse($options->exists());
+
+        $store->set('Theme', '{"SubTitle":"Hello"}');
+        self::assertTrue($options->exists());
     }
 
     public function testExplicitEmptyStringIsDistinctFromMissingValue(): void
     {
-        $store = new InMemoryOptionsStore(['Theme_REST_Token_Env' => '""']);
+        $store = new InMemoryOptionsStore(['Theme' => '{"REST_Token_Env":""}']);
         $options = new Options($store, 'Theme');
 
         self::assertSame('', $options->get('REST_Token_Env', null));
@@ -59,61 +129,23 @@ final class OptionsTest extends TestCase
 
     public function testImportRejectsSpecialKeys(): void
     {
-        $store = new InMemoryOptionsStore();
-        $options = new Options($store, 'Theme');
-        $options->import([
-            '__schema_version' => '9',
-            '__schema_version_Theme' => '8',
-            'SubTitle' => 'Imported',
-        ]);
-
-        self::assertSame('Imported', $options->get('SubTitle'));
-        self::assertNull($store->get('__schema_version'));
-        self::assertNull($store->get('__schema_version_Theme'));
-    }
-
-    public function testSchemaVersionIsScopedPerTheme(): void
-    {
-        $store = new InMemoryOptionsStore();
-        $first = new Options($store, 'Theme');
-        $second = new Options($store, 'Other');
-
-        $first->ensureInstalled();
-        $first->setSchemaVersion(2);
-
-        self::assertSame(2, $first->schemaVersion());
-        self::assertNull($second->schemaVersion());
-
-        $second->ensureInstalled();
-
-        self::assertSame(1, $second->schemaVersion());
-        self::assertSame(2, $first->schemaVersion());
-    }
-
-    public function testFreshThemeInstallStartsAtConfiguredSchemaVersion(): void
-    {
         $options = new Options(new InMemoryOptionsStore(), 'Theme');
 
-        $options->ensureInstalled();
-
-        self::assertSame(2, $options->schemaVersion());
+        $this->expectException(InvalidArgumentException::class);
+        $options->import(['__schema_version' => '9']);
     }
 
-    public function testAllOnlyReturnsCurrentThemeValues(): void
+    public function testReplaceWritesOneDocumentAndPreservesBackupOfOldDocument(): void
     {
-        $store = new InMemoryOptionsStore([
-            'Theme_SubTitle' => '"Hello"',
-            'Theme_RESTAPI_Switch' => 'true',
-            'Other_SubTitle' => '"Other theme"',
-            'Other_Secret' => '"do-not-leak"',
-            '__schema_version' => '2',
-        ]);
+        $store = new InMemoryOptionsStore();
         $options = new Options($store, 'Theme');
+        $options->set('SubTitle', 'Before');
 
-        self::assertSame([
-            'SubTitle' => 'Hello',
-            'RESTAPI_Switch' => true,
-        ], $options->all());
+        $options->replace(['SubTitle' => 'After']);
+
+        self::assertSame(['SubTitle' => 'After'], $options->all());
+        self::assertCount(1, $options->backups());
+        self::assertSame(['SubTitle' => 'Before'], $options->backups()[0]['settings']);
     }
 
     public function testSetRequiresResolvedTheme(): void
@@ -123,16 +155,14 @@ final class OptionsTest extends TestCase
         (new Options(new InMemoryOptionsStore(), ''))->set('SubTitle', 'Hello');
     }
 
-    public function testUnresolvedThemeNeverReadsOrListsGlobalRows(): void
+    public function testUnresolvedThemeNeverReadsOrListsRows(): void
     {
-        $store = new InMemoryOptionsStore([
-            'SubTitle' => '"global"',
-            'Theme_SubTitle' => '"theme"',
-        ]);
+        $store = new InMemoryOptionsStore(['Theme' => '{"SubTitle":"theme"}']);
         $options = new Options($store, '');
 
         self::assertSame('fallback', $options->get('SubTitle', 'fallback'));
         self::assertSame([], $options->all());
+        self::assertFalse($options->exists());
     }
 
     public function testDeleteRequiresResolvedTheme(): void
@@ -142,14 +172,14 @@ final class OptionsTest extends TestCase
         (new Options(new InMemoryOptionsStore(), ''))->delete('SubTitle');
     }
 
-    public function testThemeNameWithHyphenKeepsPrefix(): void
+    public function testThemeNameWithHyphenUsesTheExactDocumentName(): void
     {
         $store = new InMemoryOptionsStore();
         $options = new Options($store, 'classic-22');
 
         $options->set('SubTitle', 'Hello');
 
-        self::assertSame('"Hello"', $store->get('classic-22_SubTitle'));
+        self::assertSame('{"SubTitle":"Hello"}', $store->get('classic-22'));
         self::assertSame(['SubTitle' => 'Hello'], $options->all());
     }
 

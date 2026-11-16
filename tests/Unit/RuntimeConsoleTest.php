@@ -47,7 +47,7 @@ final class RuntimeConsoleTest extends TestCase
         self::assertStringContainsString('window.frameWorkConfig', $output);
         self::assertStringContainsString('TTDF v', $output);
         self::assertStringContainsString('页面加载耗时', $output);
-        self::assertStringContainsString('"framework":"5.0.0-next"', $output);
+        self::assertStringContainsString('"framework":"5.0.1-next"', $output);
         self::assertStringNotContainsString('TyAjax', $output);
         self::assertStringNotContainsString('RESTAPI', $output);
         self::assertSame(1, substr_count($output, 'window.frameWorkConfig ='));

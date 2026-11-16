@@ -29,7 +29,7 @@ final class AssetsTest extends TestCase
     public function testThemeUrlIncludesVersionQuery(): void
     {
         self::assertSame(
-            'https://example.test/usr/themes/ttdf/assets/app.css?v=5.0.0-next',
+            'https://example.test/usr/themes/ttdf/assets/app.css?v=5.0.1-next',
             Assets::url('assets/app.css')
         );
     }
@@ -39,7 +39,7 @@ final class AssetsTest extends TestCase
         $this->useThemeCdn('https://cdn.example.test/base/');
 
         self::assertSame(
-            'https://cdn.example.test/base/assets/app.css?v=5.0.0-next',
+            'https://cdn.example.test/base/assets/app.css?v=5.0.1-next',
             Assets::url('/assets/app.css')
         );
     }
@@ -49,7 +49,7 @@ final class AssetsTest extends TestCase
         $this->useThemeCdn('javascript:alert(1)');
 
         self::assertSame(
-            'https://example.test/usr/themes/ttdf/assets/app.css?v=5.0.0-next',
+            'https://example.test/usr/themes/ttdf/assets/app.css?v=5.0.1-next',
             Assets::url('assets/app.css')
         );
     }
@@ -59,7 +59,7 @@ final class AssetsTest extends TestCase
         Config::load(['assets' => ['cdn' => 'https://ignored.example.test/base/']]);
 
         self::assertSame(
-            'https://example.test/usr/themes/ttdf/assets/app.css?v=5.0.0-next',
+            'https://example.test/usr/themes/ttdf/assets/app.css?v=5.0.1-next',
             Assets::url('assets/app.css')
         );
     }
@@ -67,7 +67,7 @@ final class AssetsTest extends TestCase
     public function testExistingQueryAndFragmentArePreserved(): void
     {
         self::assertSame(
-            'https://example.test/usr/themes/ttdf/assets/app.css?theme=dark&amp;v=5.0.0-next#main',
+            'https://example.test/usr/themes/ttdf/assets/app.css?theme=dark&amp;v=5.0.1-next#main',
             Assets::url('assets/app.css?theme=dark#main')
         );
     }
@@ -75,7 +75,7 @@ final class AssetsTest extends TestCase
     public function testStaticUrlPointsAtVendoredFrameworkAssets(): void
     {
         self::assertSame(
-            'https://example.test/usr/themes/ttdf/vendor/yuinijika/ttdf/static/options/options.css?v=5.0.0-next',
+            'https://example.test/usr/themes/ttdf/vendor/yuinijika/ttdf/static/options/options.css?v=5.0.1-next',
             Assets::staticUrl('options/options.css')
         );
     }
@@ -88,11 +88,11 @@ final class AssetsTest extends TestCase
         $html = (string) ob_get_clean();
 
         self::assertStringContainsString(
-            '<link rel="stylesheet" href="https://example.test/usr/themes/ttdf/assets/app.css?v=5.0.0-next">',
+            '<link rel="stylesheet" href="https://example.test/usr/themes/ttdf/assets/app.css?v=5.0.1-next">',
             $html
         );
         self::assertStringContainsString(
-            '<script src="https://example.test/usr/themes/ttdf/assets/main.js?v=5.0.0-next"></script>',
+            '<script src="https://example.test/usr/themes/ttdf/assets/main.js?v=5.0.1-next"></script>',
             $html
         );
     }
@@ -101,7 +101,7 @@ final class AssetsTest extends TestCase
     {
         $property = new \ReflectionProperty(Options::class, 'instance');
         $property->setValue(null, new Options(new InMemoryOptionsStore([
-            'Theme_Assets_CDN' => json_encode($cdn, JSON_THROW_ON_ERROR),
+            'Theme' => json_encode(['Assets_CDN' => $cdn], JSON_THROW_ON_ERROR),
         ]), 'Theme'));
         ThemeConfig::reset();
     }

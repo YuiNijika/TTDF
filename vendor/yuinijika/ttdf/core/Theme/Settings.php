@@ -8,7 +8,6 @@ use TTDF\Compat\Typecho;
 use TTDF\Config\Config;
 use TTDF\Framework;
 use TTDF\Support\Escaper;
-use TTDF\Upgrade\Migrator;
 
 final class Settings
 {
@@ -23,14 +22,9 @@ final class Settings
         $initializationError = '';
         try {
             $options->ensureInstalled();
-            self::migrateLegacyValues($options);
-            $targetVersion = max(1, (int) Config::get('settings.schema_version', 2));
-            if (($options->schemaVersion() ?? 0) < $targetVersion) {
-                (new Migrator($options, self::root()))->run();
-            }
         } catch (\Throwable $exception) {
-            error_log('TTDF settings table initialization failed: ' . $exception->getMessage());
-            $initializationError = '主题设置初始化失败，请检查数据库权限、设置表结构或 logs/error.log。';
+            error_log('TTDF settings storage initialization failed: ' . $exception->getMessage());
+            $initializationError = '主题设置存储初始化失败，请检查数据库权限或设置表结构。';
         }
 
         $indexUrl = Typecho::indexUrl();
@@ -186,12 +180,56 @@ final class Settings
     public static function import(array $settings): int
     {
         $validated = self::validate($settings);
-        $options = Options::instance();
-        foreach ($validated as $name => $value) {
-            $options->set($name, $value);
-        }
+        self::save($validated);
 
         return count($validated);
+    }
+
+    /**
+     * Save one validated JSON document for the active theme.
+     *
+     * @param array<string, mixed> $input
+     */
+    public static function save(array $input): int
+    {
+        $validated = self::validate($input);
+        if ($validated === []) {
+            return 0;
+        }
+
+        $options = Options::instance();
+        $options->ensureInstalled();
+        $options->merge($validated);
+
+        return count($validated);
+    }
+
+    public static function backup(): ?string
+    {
+        $options = Options::instance();
+        $options->ensureInstalled();
+
+        return $options->backup();
+    }
+
+    /**
+     * @return list<array{key: string, timestamp: int, count: int}>
+     */
+    public static function backups(): array
+    {
+        return array_map(
+            static fn (array $backup): array => [
+                'key' => $backup['key'],
+                'timestamp' => $backup['timestamp'],
+                'count' => count($backup['settings']),
+            ],
+            Options::instance()->backups()
+        );
+    }
+
+    public static function restore(string $key): bool
+    {
+        return Options::instance()->restore($key);
     }
 
     /**
@@ -235,27 +273,6 @@ final class Settings
         $root = Framework::root();
 
         return $root !== '' ? $root : dirname(__DIR__, 5);
-    }
-
-    private static function migrateLegacyValues(Options $options): void
-    {
-        $typecho = Typecho::options();
-        if ($typecho === null) {
-            return;
-        }
-
-        foreach (Schema::fields(self::root()) as $name => $field) {
-            if ($options->get($name, null) !== null) {
-                continue;
-            }
-
-            $legacy = property_exists($typecho, $name) || method_exists($typecho, '__get')
-                ? $typecho->{$name}
-                : null;
-            if (is_array($legacy) || is_scalar($legacy)) {
-                $options->set($name, self::normalizeValue($field, $legacy));
-            }
-        }
     }
 
     /**

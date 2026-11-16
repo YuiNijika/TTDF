@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace TTDF\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
-use TTDF\Upgrade\Migrator;
 use TTDF\Theme\Options;
 use TTDF\Theme\Schema;
+use TTDF\Upgrade\Migrator;
 
 final class MigratorTest extends TestCase
 {
@@ -36,6 +36,7 @@ return [
                 'components' => ['Post', 'Page', 'NotFound'],
             ],
             ['type' => 'Text', 'name' => 'Logo', 'value' => '', 'media' => true],
+            ['type' => 'Text', 'name' => 'Slogan', 'value' => '', 'aliases' => ['sloganText']],
             ['type' => 'Number', 'name' => 'Width', 'value' => 720],
         ],
     ],
@@ -49,30 +50,53 @@ PHP);
         @unlink($this->root . '/app/config/theme.php');
         @rmdir($this->root . '/app/config');
         @rmdir($this->root . '/app');
-        foreach (glob($this->root . '/logs/*') ?: [] as $file) {
-            @unlink($file);
-        }
-        @rmdir($this->root . '/logs');
         @rmdir($this->root);
     }
 
-    public function testMigrationIsIdempotentAndCoercesTypes(): void
+    public function testMigrationWritesOneJsonDocumentAndIsIdempotent(): void
     {
         $store = new InMemoryOptionsStore([
             'Theme_SubTitle' => 'Legacy title',
             'Theme_RESTAPI_Switch' => 'true',
-            '__schema_version_Theme' => '1',
         ]);
         $options = new Options($store, 'Theme');
-        $migrator = new Migrator($options, $this->root);
 
-        $first = $migrator->run();
+        $first = (new Migrator($options, $this->root))->run();
+
         self::assertSame('migrated', $first['status']);
-        self::assertTrue($options->get('RESTAPI_Switch'));
+        self::assertSame(2, $first['migrated']);
         self::assertSame('Legacy title', $options->get('SubTitle'));
+        self::assertTrue($options->get('RESTAPI_Switch'));
+        self::assertSame('Legacy title', $store->get('Theme_SubTitle'));
+        self::assertSame(
+            ['SubTitle' => 'Legacy title', 'RESTAPI_Switch' => true],
+            json_decode((string) $store->get('Theme'), true, 512, JSON_THROW_ON_ERROR)
+        );
 
-        $second = $migrator->run();
+        $second = (new Migrator($options, $this->root))->run();
         self::assertSame('already-current', $second['status']);
+        self::assertSame(0, $second['migrated']);
+    }
+
+    public function testExistingJsonDocumentIsAlreadyCurrentAndLegacyRowsStayUntouched(): void
+    {
+        $store = new InMemoryOptionsStore([
+            'Theme' => '{"SubTitle":"Current title"}',
+            'Theme_SubTitle' => 'Legacy title',
+            'Theme_RESTAPI_Switch' => 'true',
+        ]);
+        $options = new Options($store, 'Theme');
+
+        $result = (new Migrator($options, $this->root))->run();
+
+        self::assertSame('already-current', $result['status']);
+        self::assertSame(0, $result['migrated']);
+        self::assertNull($result['backup']);
+        self::assertSame('Current title', $options->get('SubTitle'));
+        self::assertNull($options->get('RESTAPI_Switch'));
+        self::assertSame('{"SubTitle":"Current title"}', $store->get('Theme'));
+        self::assertSame('true', $store->get('Theme_RESTAPI_Switch'));
+        self::assertSame([], $options->backups());
     }
 
     public function testOtherThemeRowsAreLeftUntouched(): void
@@ -80,35 +104,18 @@ PHP);
         $store = new InMemoryOptionsStore([
             'Theme_SubTitle' => 'Legacy title',
             'Other_SubTitle' => 'plain legacy value',
-            '__schema_version_Theme' => '1',
+            'Other' => '{"SubTitle":"Other JSON"}',
         ]);
         $options = new Options($store, 'Theme');
 
         (new Migrator($options, $this->root))->run();
 
-        self::assertSame('"Legacy title"', $store->get('Theme_SubTitle'));
         self::assertSame('plain legacy value', $store->get('Other_SubTitle'));
+        self::assertSame('{"SubTitle":"Other JSON"}', $store->get('Other'));
+        self::assertSame('{"SubTitle":"Legacy title"}', $store->get('Theme'));
     }
 
-    public function testBackupOnlyContainsCurrentThemeRows(): void
-    {
-        $store = new InMemoryOptionsStore([
-            'Theme_SubTitle' => 'Legacy title',
-            'Other_SubTitle' => 'other theme secret',
-            '__schema_version_Theme' => '1',
-        ]);
-        $options = new Options($store, 'Theme');
-
-        $result = (new Migrator($options, $this->root))->run();
-
-        self::assertNotNull($result['backup']);
-        $backup = (string) file_get_contents((string) $result['backup']);
-        self::assertStringContainsString('Theme_SubTitle', $backup);
-        self::assertStringNotContainsString('Other_SubTitle', $backup);
-        self::assertStringNotContainsString('other theme secret', $backup);
-    }
-
-    public function testUnknownPrefixedRowsAreIgnoredAndNotBackedUp(): void
+    public function testUnknownRowsAreIgnored(): void
     {
         $store = new InMemoryOptionsStore([
             'Theme_SubTitle' => 'Legacy title',
@@ -117,24 +124,19 @@ PHP);
         ]);
         $options = new Options($store, 'Theme');
 
-        $result = (new Migrator($options, $this->root))->run();
+        (new Migrator($options, $this->root))->run();
 
-        self::assertSame('migrated', $result['status']);
         self::assertSame('sensitive legacy value', $store->get('Theme_UnknownField'));
-        self::assertNotNull($result['backup']);
-        $backup = (string) file_get_contents((string) $result['backup']);
-        self::assertStringContainsString('Theme_SubTitle', $backup);
-        self::assertStringNotContainsString('Theme_UnknownField', $backup);
-        self::assertStringNotContainsString('sensitive legacy value', $backup);
+        self::assertSame('1', $store->get('__schema_version_Theme'));
+        self::assertSame(['SubTitle' => 'Legacy title'], $options->all());
     }
 
-    public function testMigrationUsesSharedSchemaNormalizationForStructuredFields(): void
+    public function testMigrationUsesSharedSchemaNormalization(): void
     {
         $store = new InMemoryOptionsStore([
             'Theme_Templates' => '{"post":"Post","tag":"Post","404":"NotFound"}',
             'Theme_Logo' => 'javascript:alert(1)',
             'Theme_Width' => '720',
-            '__schema_version_Theme' => '1',
         ]);
         $options = new Options($store, 'Theme');
 
@@ -146,21 +148,65 @@ PHP);
         );
         self::assertSame('', $options->get('Logo'));
         self::assertSame(720, $options->get('Width'));
-        self::assertSame(2, $options->schemaVersion());
     }
 
-    public function testLegacyUnprefixedRowsAreCopiedUnderTheActiveTheme(): void
+    public function testLegacyUnprefixedRowsAreCopiedIntoTheThemeDocument(): void
     {
         $store = new InMemoryOptionsStore([
-            'SubTitle' => 'Legacy title',
+            'SubTitle' => 'Global legacy title',
             'Theme_SubTitle' => 'Theme title',
-            '__schema_version_Theme' => '1',
         ]);
         $options = new Options($store, 'Theme');
 
         (new Migrator($options, $this->root))->run();
 
-        self::assertSame('"Theme title"', $store->get('Theme_SubTitle'));
-        self::assertSame('Legacy title', $store->get('SubTitle'));
+        self::assertSame('Theme title', $options->get('SubTitle'));
+        self::assertSame('Global legacy title', $store->get('SubTitle'));
+    }
+
+    public function testDeclaredAliasesAreMigratedUnderTheCurrentFieldName(): void
+    {
+        $store = new InMemoryOptionsStore([
+            'Theme_sloganText' => 'Renamed legacy value',
+            'Theme_Logo' => '12',
+        ]);
+        $options = new Options($store, 'Theme');
+
+        $result = (new Migrator($options, $this->root))->run();
+
+        self::assertSame('migrated', $result['status']);
+        self::assertSame('Renamed legacy value', $options->get('Slogan'));
+        self::assertNull($options->get('sloganText'));
+        self::assertSame('Renamed legacy value', $store->get('Theme_sloganText'));
+    }
+
+    public function testCurrentFieldNameWinsOverItsAlias(): void
+    {
+        $store = new InMemoryOptionsStore([
+            'Theme_sloganText' => 'Alias value',
+            'Theme_Slogan' => 'Current value',
+            'sloganText' => 'Unprefixed alias value',
+        ]);
+        $options = new Options($store, 'Theme');
+
+        (new Migrator($options, $this->root))->run();
+
+        self::assertSame('Current value', $options->get('Slogan'));
+    }
+
+    public function testAliasNamesAreNotPersistedAsKeys(): void
+    {
+        $store = new InMemoryOptionsStore([
+            'Theme_sloganText' => 'Alias value',
+        ]);
+        $options = new Options($store, 'Theme');
+
+        (new Migrator($options, $this->root))->run();
+
+        self::assertSame(
+            ['Slogan' => 'Alias value'],
+            json_decode((string) $store->get('Theme'), true, 512, JSON_THROW_ON_ERROR)
+        );
+        self::assertNull($options->get('sloganText'));
     }
 }

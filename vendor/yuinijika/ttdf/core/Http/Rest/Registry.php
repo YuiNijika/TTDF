@@ -35,6 +35,9 @@ final class Registry
         'admin/export',
         'admin/import',
         'admin/migrate',
+        'admin/backup',
+        'admin/backups',
+        'admin/restore',
         'admin/diagnostics',
         'admin/media',
     ];

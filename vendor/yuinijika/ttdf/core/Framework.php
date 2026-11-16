@@ -22,7 +22,7 @@ use TTDF\Theme\ThemeConfig;
 
 final class Framework
 {
-    public const VERSION = '5.0.0-next';
+    public const VERSION = '5.0.1-next';
 
     public const CORE_RELATIVE_PATH = 'vendor/yuinijika/ttdf/core';
 

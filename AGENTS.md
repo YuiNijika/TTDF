@@ -7,7 +7,7 @@
 - **ttdf-framework**：指本仓库 `D:\Codes\TTDF` 本身，负责框架核心、autoloader、配置、路由、Hook、REST、设置表、测试、文档与发布。
 - **typecho-theme**：指使用 TTDF v5 构建的独立 Typecho 主题工程，例如包含自己的 `functions.php`、`app/pages/` 页面模板、`app/config/`、`app/router/`、`app/components/` 和资源的主题。
 
-当前 `master` 是 v5 开发线，版本固定为 `5.0.0-next`；`v4` 分支已冻结，只用于旧主题与旧站点，不在 `master` 上恢复 v4 全局 API。
+当前 `master` 是 v5 开发线，版本固定为 `5.0.1-next`；`v4` 分支已冻结，只用于旧主题与旧站点，不在 `master` 上恢复 v4 全局 API。
 
 # 开发场景 Skill 读取
 
@@ -44,9 +44,9 @@ GET https://api.miomoe.cn/site/docs/page?path=ttdf/v5/index
 - 生产安装必须支持直接解压主题包运行，不要求站点安装 Composer；Composer 只用于开发、测试和静态分析。
 - 除 Typecho 必需的 `themeConfig()`、`themeFields()` 外，不新增全局函数或全局类。
 - 不新增 v4 兼容层；`Get`、`GetPost`、`GetUser`、`GetComment`、`GetSite`、`GetTheme`、`TTDF_*`、OPP 函数、全局 `config()` 已移除。
-- 主题设置保留自定义 `ttdf` 表，但只能通过 `TTDF\Theme\Options` 读写；值使用 JSON，字段必须来自 `app/config/theme.php` 白名单。
+- 主题设置保留自定义 `ttdf` 表，但只能通过 `TTDF\Theme\Options` 读写；每个主题只写一行，`name` 是主题名，`value` 是完整设置 JSON，字段必须来自 `app/config/theme.php` 白名单。不得把主题设置写入 Typecho 原生 `typecho_options` 表。
 - `app/config/app.php` 只公开 `debug`、`rest` 与 `router`。`version`、`assets`、`settings` 不得写入主题的公开配置：版本在根 `index.php`，资源 CDN 在主题设置 `Assets_CDN`。
-- `settings.table` / `settings.schema_version` 是框架内部的隐藏存储默认值，不定义设置项，也不要求在 `app/config/app.php` 出现；主题可按需隐藏覆盖，`TTDF_SETTINGS_TABLE` 环境变量仍可覆盖表名。schema 版本按主题保存为 `__schema_version_{theme}`，不得恢复整表共享的 `__schema_version`。
+- `settings.table` 是框架内部的隐藏存储默认值，不定义设置项，也不要求在 `app/config/app.php` 出现；`TTDF_SETTINGS_TABLE` 环境变量仍可覆盖表名。设置不再使用 `settings.schema_version` 或 `__schema_version_{theme}` 行。
 - `debug`、REST、CORS、Token 开关与 Token 环境变量通过 `TTDF\Theme\ThemeConfig` 合并静态默认值与主题设置；资源 CDN 只从主题设置 `Assets_CDN` 读取，静态 `assets.cdn` 已移除。
 - 页面模板入口固定在 `app/pages/`，并使用 Typecho 官方模板名（`index.php`、`post.php`、`page.php`、`archive.php`、`single.php`、`404.php`）；默认只保留 `index.php`、`archive.php`、`post.php`、`page.php`、`404.php`。页面主体映射使用 `TemplateMap` 字段与 `TTDF\Theme\Templates`，槽位只能是 `post`、`page`、`index`、`archive`、`category`、`tag`、`search`、`author`、`date`、`404`。
 - 评论渲染固定为 `app/components/Comments.php`，不得再创建 `app/pages/comments.php`；`post.php` / `page.php` 的内联回退与 `Post` / `Page` 组件都必须通过 `Components::render(..., 'Comments', ['archive' => $archive])` 加载。页头、页尾、侧栏同理固定在 `app/components/AppHeader.php`、`AppFooter.php`、`Sidebar.php`，入口模板只在最外层用 `Components::render()` 调用一次。
@@ -56,7 +56,9 @@ GET https://api.miomoe.cn/site/docs/page?path=ttdf/v5/index
 - `404` 只能映射到 `NotFound` 或显式留空；不要映射到 `Post` / `PostMeta`，Typecho 404 Archive 的 `type` 为 null，`permalink()` 会触发 TypeError。
 - `Templates::render()` 必须在独立输出缓冲中执行组件；组件抛错时丢弃已输出的半截 HTML。生产模式返回 `false` 让入口模板回退，调试模式重新抛出到全局错误页。
 - `Diagnostics\ErrorHandler` 必须清空半截输出并渲染完整独立 HTML 错误页，不得只 echo `TTDF error:` 文本；状态码沿用 Typecho 已设置的 4xx/5xx，否则回退 500，生产模式隐藏异常消息与堆栈，调试模式显示并转义详情。
-- `Options::all()` 只返回当前主题前缀下的值；`Options::get()` 不读取无前缀旧键。迁移只处理当前主题与 schema 字段，可将无前缀 v4 字段复制到当前主题键，但不得改写其他主题的行。
+- 每次修改设置时整份 JSON 一次写入；覆盖已有 JSON 前必须自动备份为 `{主题名}:backup_{Unix时间戳}`，备份与主记录都留在 `ttdf` 表。手动备份、备份列表与恢复只能由管理员接口触发，不得在普通前台请求中执行。
+- `Options::all()` 只返回当前主题那一行 JSON；`Options::get()` 不读取无前缀旧键。迁移是单向的：只在当前主题还没有有效 JSON 文档时，把 `{主题名}_{字段名}` 与无前缀 v4 字段转换为首次 JSON；已有 JSON 必须直接返回 `already-current`，不得覆盖、不得改写或删除旧行、其他主题行与备份行。
+- 字段改过名时在 `app/config/theme.php` 用 `aliases` 声明旧名字供迁移读取；取值优先级为 `{主题名}_{当前字段名}` > `{当前字段名}` > `{主题名}_{旧字段名}` > `{旧字段名}`，别名按当前字段类型归一化，且不得出现在设置表单、`Schema::fields()` / `names()` 或保存后的 JSON 中。
 - 禁止在每次请求中建表、写入默认值或执行迁移；建表与迁移只允许在后台设置页、保存动作或显式迁移命令中执行。
 - REST 公开接口只读，必须过滤未发布、私密、密码保护和未审核内容；匿名评论写入已移除。
 - 管理接口必须同时满足管理员登录 + Typecho nonce + 同源；CORS 只允许显式白名单，禁止反射任意 `Origin`。
@@ -123,10 +125,10 @@ GET https://api.miomoe.cn/site/docs/page?path=ttdf/v5/index
 
 1. 在 `app/config/theme.php` 增加字段，声明类型、默认值与说明
 2. 在 `TTDF\Theme\Settings::validate()` 补类型转换与白名单校验
-3. 如需迁移旧值，更新 `TTDF\Upgrade\Migrator`
+3. 如需迁移旧值，更新 `TTDF\Upgrade\Migrator`；字段改过名时在字段声明 `aliases`，不要改回字段名
 4. 设置页 JS 只通过 `/ttdf/v1/admin/*` 读写，并携带 `X-Typecho-Token`
 5. 不在前台请求中触发建表或迁移
-6. 设置页“保存设置”下拉菜单的“执行迁移”调用 `POST /admin/migrate`，保持幂等
+6. 设置页“更多操作”的“立即备份”“恢复备份”分别调用 `POST /admin/backup`、`GET /admin/backups` 与 `POST /admin/restore`；恢复后重新加载表单，“执行迁移”调用 `POST /admin/migrate`，旧格式才写入首次 JSON，已有 JSON 返回 `already-current`
 7. 新增或调整 Arco 字段控件时，同步更新 `static/options/options.js`、`options.css` 与 `tests/options/*.test.mjs`
 8. 设置页依赖通过 `Vue` / `ArcoVue` 全局构建延迟解析，测试中不得依赖加载顺序副作用
 9. `type => 'Media'`、`Text + media` 与 `Textarea + media` 字段由设置页媒体库对话框通过 `/ttdf/v1/admin/media*` 选择附件；`Media` 保存 `cid`，文本类字段保存图片地址（`Textarea` 每行一个，追加不覆盖），都不要保存临时 URL；`Text + media` / `Textarea + media` 必须保留可编辑控件与媒体库按钮
@@ -180,8 +182,8 @@ GET https://api.miomoe.cn/site/docs/page?path=ttdf/v5/index
 
 ## 发布
 
-- 版本号：`5.0.0-next`
-- 发布标签：`v5.0.0-next`
+- 版本号：`5.0.1-next`
+- 发布标签：`v5.0.1-next`
 - 发布前确认 `composer lint`、`composer analyse`、`composer test` 全绿
 - 发布包必须包含 `vendor/yuinijika/ttdf/core/` 与 `vendor/yuinijika/ttdf/static/`，并排除 `tests/`、`vendor/composer/`、`vendor/yuinijika/ttdf/node_modules/`、`.tmp/`、`logs/`
 - `v4` 分支不改动

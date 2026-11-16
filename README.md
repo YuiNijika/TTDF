@@ -2,7 +2,7 @@
 
 > The Intuitive Typecho Theme Framework.
 
-TTDF v5 是面向 Typecho 1.2.1+ / 1.3.x 的现代主题开发框架，要求 PHP 8.2+。当前版本为 `5.0.0-next`，与冻结的 `v4` 分支并行维护。
+TTDF v5 是面向 Typecho 1.2.1+ / 1.3.x 的现代主题开发框架，要求 PHP 8.2+。当前版本为 `5.0.1-next`，与冻结的 `v4` 分支并行维护。
 
 ## 特性
 
@@ -88,8 +88,10 @@ return [
   不再接受 `version`。
 - `debug`、REST 开关、CORS 白名单与 Token 环境变量可以在后台“运行配置”中覆盖。
 - 资源 CDN 只来自主题设置 `Assets_CDN`；`app/config/app.php` 不再接受 `assets`。
-- `settings.table` 与 `settings.schema_version` 是框架内部隐藏默认值，不在公开
-  配置中声明；必要时可由 `TTDF_SETTINGS_TABLE` 环境变量覆盖表名。
+- `settings.table` 是框架内部隐藏默认值，不在公开配置中声明；必要时可由
+  `TTDF_SETTINGS_TABLE` 环境变量覆盖表名。
+- 每个主题在 `ttdf` 表中只保留一行 JSON，`name` 是主题名；覆盖前自动备份为
+  `{主题名}:backup_{Unix时间戳}`，不会写入 Typecho 原生 `typecho_options` 表。
 
 ## 页面模板映射
 

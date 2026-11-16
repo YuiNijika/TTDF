@@ -225,6 +225,7 @@ final class Router
                 'form-data' => $controller->formData(),
                 'theme-info' => $controller->themeInfo(),
                 'export' => $controller->export(),
+                'backups' => $controller->backups(),
                 'diagnostics' => $controller->diagnostics(),
                 'media' => $mediaId > 0 ? $media->show($mediaId) : $media->index(),
                 default => Response::error('Endpoint not found', 404),
@@ -236,6 +237,8 @@ final class Router
                 'options' => $controller->optionsPost(),
                 'import' => $controller->import(),
                 'migrate' => $controller->migrate(),
+                'backup' => $controller->backup(),
+                'restore' => $controller->restore(),
                 'media' => $mediaId > 0 ? $media->rename($mediaId) : $media->upload(),
                 default => Response::error('Endpoint not found', 404),
             };

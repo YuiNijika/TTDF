@@ -6,6 +6,7 @@ namespace TTDF\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
 use TTDF\Config\Config;
+use TTDF\Theme\Options;
 use TTDF\Theme\Settings;
 
 final class SettingsTest extends TestCase
@@ -13,6 +14,11 @@ final class SettingsTest extends TestCase
     protected function setUp(): void
     {
         Config::load([]);
+    }
+
+    protected function tearDown(): void
+    {
+        Options::reset();
     }
 
     public function testValidationWhitelistsSchemaFields(): void
@@ -133,8 +139,35 @@ final class SettingsTest extends TestCase
     {
         $info = Settings::themeInfo();
 
-        self::assertSame('5.0.0-next', $info['themeVersion']);
-        self::assertSame('5.0.0-next', $info['ttdfVersion']);
+        self::assertSame('5.0.1-next', $info['themeVersion']);
+        self::assertSame('5.0.1-next', $info['ttdfVersion']);
         self::assertSame('1.3.0', $info['typechoVersion']);
+    }
+
+    public function testSaveWritesOneJsonDocumentAndCreatesBackups(): void
+    {
+        $store = new InMemoryOptionsStore();
+        $this->useOptions(new Options($store, 'Theme'));
+
+        self::assertSame(1, Settings::save(['SubTitle' => 'First']));
+        self::assertSame(1, Settings::save(['SubTitle' => 'Second']));
+
+        self::assertSame(
+            ['SubTitle' => 'Second'],
+            json_decode((string) $store->get('Theme'), true, 512, JSON_THROW_ON_ERROR)
+        );
+
+        $backups = Settings::backups();
+        self::assertCount(1, $backups);
+        self::assertSame(1, $backups[0]['count']);
+        self::assertMatchesRegularExpression('/^Theme:backup_\d{10}$/', $backups[0]['key']);
+        self::assertTrue(Settings::restore($backups[0]['key']));
+        self::assertSame('First', Options::instance()->get('SubTitle'));
+    }
+
+    private function useOptions(Options $options): void
+    {
+        $property = new \ReflectionProperty(Options::class, 'instance');
+        $property->setValue(null, $options);
     }
 }

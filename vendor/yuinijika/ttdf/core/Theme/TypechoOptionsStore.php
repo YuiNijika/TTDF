@@ -27,7 +27,10 @@ final class TypechoOptionsStore implements OptionsStore
     {
         try {
             $row = @$this->db->fetchRow(
-                $this->db->select('value')->from($this->table())->where('name = ?', $name)
+                $this->db->select('value')
+                    ->from($this->tableName())
+                    ->where('name = ?', $name)
+                    ->limit(1)
             );
         } catch (Throwable) {
             return null;
@@ -40,30 +43,40 @@ final class TypechoOptionsStore implements OptionsStore
     {
         if ($this->exists($name)) {
             $this->db->query(
-                $this->db->update($this->table())->rows(['value' => $value])->where('name = ?', $name)
+                $this->db->update($this->tableName())
+                    ->rows(['value' => $value])
+                    ->where('name = ?', $name)
             );
             return;
         }
 
-        $this->db->query($this->db->insert($this->table())->rows([
-            'name' => $name,
-            'value' => $value,
-        ]));
+        $this->db->query(
+            $this->db->insert($this->tableName())->rows([
+                'name' => $name,
+                'value' => $value,
+            ])
+        );
     }
 
     public function delete(string $name): void
     {
         try {
-            @$this->db->query($this->db->delete($this->table())->where('name = ?', $name));
+            @$this->db->query(
+                $this->db->delete($this->tableName())
+                    ->where('name = ?', $name)
+            );
         } catch (Throwable) {
-            // Deleting from a missing table is a no-op.
+            // Missing option rows are already absent.
         }
     }
 
     public function all(): array
     {
         try {
-            $rows = @$this->db->fetchAll($this->db->select()->from($this->table()));
+            $rows = @$this->db->fetchAll(
+                $this->db->select('name', 'value')
+                    ->from($this->tableName())
+            );
         } catch (Throwable) {
             return [];
         }
@@ -85,8 +98,7 @@ final class TypechoOptionsStore implements OptionsStore
 
     public function install(): void
     {
-        $prefix = $this->db->getPrefix();
-        $table = $prefix . $this->table;
+        $table = $this->db->getPrefix() . $this->table;
         $adapter = strtolower($this->db->getAdapterName());
 
         if (str_contains($adapter, 'sqlite')) {
@@ -109,7 +121,12 @@ final class TypechoOptionsStore implements OptionsStore
         $this->db->query($sql);
     }
 
-    private function table(): string
+    public function table(): string
+    {
+        return $this->table;
+    }
+
+    private function tableName(): string
     {
         return 'table.' . $this->table;
     }
