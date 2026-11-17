@@ -56,7 +56,7 @@ abstract class V2ApiTestCase extends TestCase
 
         Config::load([
             'rest' => [
-                'enabled' => false,
+                'enabled' => true,
                 'v1_prefix' => 'ttdf/v1',
                 'v2_enabled' => true,
                 'v2_prefix' => 'ttdf/v2',

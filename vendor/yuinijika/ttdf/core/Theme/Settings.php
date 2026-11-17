@@ -243,6 +243,7 @@ final class Settings
             'fields' => Schema::fields(self::root()),
             'templateSlots' => Templates::SLOTS,
             'components' => Templates::available(self::root()),
+            'categories' => self::categoryOptions(),
         ];
     }
 
@@ -267,6 +268,37 @@ final class Settings
             'components' => Templates::available(self::root()),
             'templateSlots' => Templates::SLOTS,
         ];
+    }
+
+    /**
+     * Category choices for the settings UI. The theme config stays declarative:
+     * a `Category` field is hydrated from Typecho at request time instead of
+     * storing a stale category list in PHP.
+     *
+     * @return array<string, string>
+     */
+    public static function categoryOptions(): array
+    {
+        if (!class_exists('Widget\\Metas\\Category\\Rows')) {
+            return [];
+        }
+
+        $items = [];
+        try {
+            $rows = \Widget\Metas\Category\Rows::alloc();
+            while ($rows->next()) {
+                $slug = trim((string) ($rows->slug ?? ''));
+                $name = trim((string) ($rows->name ?? ''));
+                if ($slug === '' || $name === '') {
+                    continue;
+                }
+                $items[$slug] = $name;
+            }
+        } catch (\Throwable $exception) {
+            error_log('TTDF settings category lookup failed: ' . $exception->getMessage());
+        }
+
+        return $items;
     }
 
     private static function root(): string
@@ -474,6 +506,14 @@ final class Settings
             return self::normalizeBlocks($value, $field);
         }
 
+        if ($type === 'Nav') {
+            return self::normalizeNav($value);
+        }
+
+        if ($type === 'Slides') {
+            return self::normalizeSlides($value);
+        }
+
         if (in_array($type, ['Checkbox', 'Tags', 'AddList', 'Cascader', 'Transfer'], true)) {
             if (is_string($value)) {
                 return array_values(array_filter(array_map('trim', explode(',', $value))));
@@ -506,5 +546,108 @@ final class Settings
         }
 
         return is_scalar($value) ? (string) $value : '';
+    }
+
+    /**
+     * @return list<array{label: string, url: string, children: list<array{label: string, url: string}>}>
+     */
+    private static function normalizeNav(mixed $value): array
+    {
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $items = [];
+        foreach (array_slice($value, 0, 12) as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $label = trim((string) ($item['label'] ?? ''));
+            $url = self::navUrl($item['url'] ?? '');
+            if ($label === '' || $url === '') {
+                continue;
+            }
+
+            $children = [];
+            $rawChildren = isset($item['children']) && is_array($item['children'])
+                ? $item['children']
+                : [];
+            foreach (array_slice($rawChildren, 0, 8) as $child) {
+                if (!is_array($child)) {
+                    continue;
+                }
+
+                $childLabel = trim((string) ($child['label'] ?? ''));
+                $childUrl = self::navUrl($child['url'] ?? '');
+                if ($childLabel === '' || $childUrl === '') {
+                    continue;
+                }
+
+                $children[] = ['label' => $childLabel, 'url' => $childUrl];
+            }
+
+            $items[] = ['label' => $label, 'url' => $url, 'children' => $children];
+        }
+
+        return $items;
+    }
+
+    /**
+     * @return list<array{image: string, title: string, description: string, url: string}>
+     */
+    private static function normalizeSlides(mixed $value): array
+    {
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $slides = [];
+        foreach (array_slice($value, 0, 12) as $slide) {
+            if (!is_array($slide)) {
+                continue;
+            }
+
+            $image = Media::normalizeUrl($slide['image'] ?? '');
+            $title = trim((string) ($slide['title'] ?? ''));
+            $description = trim((string) ($slide['description'] ?? ''));
+            $url = self::navUrl($slide['url'] ?? '');
+
+            if ($image === '' && $title === '' && $description === '') {
+                continue;
+            }
+
+            $slides[] = [
+                'image' => $image,
+                'title' => $title,
+                'description' => $description,
+                'url' => $url,
+            ];
+        }
+
+        return $slides;
+    }
+
+    private static function navUrl(mixed $value): string
+    {
+        if (!is_scalar($value)) {
+            return '';
+        }
+
+        $value = trim((string) $value);
+        if ($value === '') {
+            return '';
+        }
+
+        if (str_starts_with($value, '#') || str_starts_with($value, '/')) {
+            return str_contains($value, '..')
+                || str_contains($value, '\\')
+                || str_contains($value, "\0")
+                || preg_match('/[\x00-\x1F\x7F]/', $value) === 1
+                    ? ''
+                    : $value;
+        }
+
+        return preg_match('#^https?://#i', $value) === 1 ? $value : '';
     }
 }

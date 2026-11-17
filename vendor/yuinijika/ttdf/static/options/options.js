@@ -254,6 +254,10 @@
                 type: [Array, Object],
                 default: () => ({})
             },
+            categories: {
+                type: [Array, Object],
+                default: () => ({})
+            },
             index: {
                 type: Number,
                 default: 0
@@ -289,6 +293,7 @@
             const renamingId = ref(0);
             const renameValue = ref('');
             const uploadInput = ref(null);
+            const slideMediaIndex = ref(-1);
 
             const setValue = (value) => emit('update:modelValue', value);
             const testId = computed(() => fieldTestId(props.field, props.index));
@@ -305,6 +310,44 @@
                     ? props.modelValue
                     : {}
             ));
+            const categoryOptions = computed(() => {
+                const declared = props.field.options;
+                if (declared && typeof declared === 'object' && !Array.isArray(declared)) {
+                    return declared;
+                }
+
+                return props.categories && typeof props.categories === 'object' && !Array.isArray(props.categories)
+                    ? props.categories
+                    : {};
+            });
+            const navItems = computed(() => {
+                if (!Array.isArray(props.modelValue)) {
+                    return [];
+                }
+
+                return props.modelValue.map((item) => ({
+                    label: item && typeof item === 'object' ? String(item.label || '') : '',
+                    url: item && typeof item === 'object' ? String(item.url || '') : '',
+                    children: item && typeof item === 'object' && Array.isArray(item.children)
+                        ? item.children.map((child) => ({
+                            label: child && typeof child === 'object' ? String(child.label || '') : '',
+                            url: child && typeof child === 'object' ? String(child.url || '') : ''
+                        }))
+                        : []
+                }));
+            });
+            const slideItems = computed(() => {
+                if (!Array.isArray(props.modelValue)) {
+                    return [];
+                }
+
+                return props.modelValue.map((slide) => ({
+                    image: slide && typeof slide === 'object' ? String(slide.image || '') : '',
+                    title: slide && typeof slide === 'object' ? String(slide.title || '') : '',
+                    description: slide && typeof slide === 'object' ? String(slide.description || '') : '',
+                    url: slide && typeof slide === 'object' ? String(slide.url || '') : ''
+                }));
+            });
 
             const templateSlots = computed(() => {
                 const source = props.slots && Object.keys(props.slots).length > 0
@@ -470,6 +513,100 @@
                 const next = listItems.value.slice();
                 next.splice(index, 1);
                 setValue(next);
+            };
+
+            const commitNav = (items) => {
+                setValue(items.map((item) => ({
+                    label: String(item.label || '').trim(),
+                    url: String(item.url || '').trim(),
+                    children: Array.isArray(item.children)
+                        ? item.children.map((child) => ({
+                            label: String(child.label || '').trim(),
+                            url: String(child.url || '').trim()
+                        }))
+                        : []
+                })));
+            };
+
+            const addNavItem = () => {
+                commitNav([...navItems.value, { label: '', url: '', children: [] }]);
+            };
+
+            const updateNavItem = (index, key, value) => {
+                const next = navItems.value.slice();
+                if (!next[index]) {
+                    return;
+                }
+                next[index] = { ...next[index], [key]: value };
+                commitNav(next);
+            };
+
+            const removeNavItem = (index) => {
+                const next = navItems.value.slice();
+                next.splice(index, 1);
+                commitNav(next);
+            };
+
+            const addNavChild = (index) => {
+                const next = navItems.value.slice();
+                if (!next[index]) {
+                    return;
+                }
+                next[index] = {
+                    ...next[index],
+                    children: [...(next[index].children || []), { label: '', url: '' }]
+                };
+                commitNav(next);
+            };
+
+            const updateNavChild = (index, childIndex, key, value) => {
+                const next = navItems.value.slice();
+                if (!next[index] || !Array.isArray(next[index].children) || !next[index].children[childIndex]) {
+                    return;
+                }
+                const children = next[index].children.slice();
+                children[childIndex] = { ...children[childIndex], [key]: value };
+                next[index] = { ...next[index], children };
+                commitNav(next);
+            };
+
+            const removeNavChild = (index, childIndex) => {
+                const next = navItems.value.slice();
+                if (!next[index] || !Array.isArray(next[index].children)) {
+                    return;
+                }
+                const children = next[index].children.slice();
+                children.splice(childIndex, 1);
+                next[index] = { ...next[index], children };
+                commitNav(next);
+            };
+
+            const commitSlides = (slides) => {
+                setValue(slides.map((slide) => ({
+                    image: String(slide.image || '').trim(),
+                    title: String(slide.title || '').trim(),
+                    description: String(slide.description || '').trim(),
+                    url: String(slide.url || '').trim()
+                })));
+            };
+
+            const addSlide = () => {
+                commitSlides([...slideItems.value, { image: '', title: '', description: '', url: '' }]);
+            };
+
+            const updateSlide = (index, key, value) => {
+                const next = slideItems.value.slice();
+                if (!next[index]) {
+                    return;
+                }
+                next[index] = { ...next[index], [key]: value };
+                commitSlides(next);
+            };
+
+            const removeSlide = (index) => {
+                const next = slideItems.value.slice();
+                next.splice(index, 1);
+                commitSlides(next);
             };
 
             const normalizeVariants = (variants) => {
@@ -648,15 +785,17 @@
                     const meta = blockCatalogMap.value[entry.name];
                     counts[entry.name] = (counts[entry.name] || 0) + 1;
                     const key = entry.name + '-' + counts[entry.name];
+                    const variants = meta ? meta.variants : {};
+                    const firstVariant = Object.keys(variants)[0] || '';
 
                     return {
                         key,
                         name: entry.name,
-                        variant: entry.variant,
+                        variant: entry.variant || firstVariant,
                         data: entry.data,
                         label: meta ? meta.label : entry.name,
                         missing: meta === undefined,
-                        variants: meta ? meta.variants : {},
+                        variants,
                         fields: meta ? meta.fields : [],
                         open: openBlocks.value[key] === true
                     };
@@ -949,10 +1088,26 @@
             };
 
             const openMedia = () => {
+                slideMediaIndex.value = -1;
                 mediaOpen.value = true;
                 mediaSearch.value = '';
                 void loadMedia(1);
             };
+
+            const openSlideMedia = (index) => {
+                slideMediaIndex.value = index;
+                mediaOpen.value = true;
+                mediaSearch.value = '';
+                void loadMedia(1);
+            };
+
+            const mediaSelectionKey = computed(() => {
+                if (slideMediaIndex.value >= 0) {
+                    return String(slideItems.value[slideMediaIndex.value]?.image || '');
+                }
+
+                return String(props.modelValue ?? '');
+            });
 
             const chooseMedia = (item) => {
                 const picked = isMediaType.value
@@ -961,6 +1116,13 @@
 
                 if (picked === '') {
                     message('error', '该图片没有可用地址，请重新上传后再选择');
+                    return;
+                }
+
+                if (slideMediaIndex.value >= 0) {
+                    updateSlide(slideMediaIndex.value, 'image', picked);
+                    mediaOpen.value = false;
+                    message('success', '已选择图片：' + (item.title || item.name || ('#' + item.id)));
                     return;
                 }
 
@@ -1094,6 +1256,11 @@
             };
 
             watch(() => props.modelValue, (value) => {
+                if (!isMediaField.value) {
+                    mediaPreview.value = null;
+                    return;
+                }
+
                 void loadSelectedMedia(value);
             }, { immediate: true });
 
@@ -1116,8 +1283,12 @@
 
             return {
                 activeText,
+                addNavChild,
+                addNavItem,
+                addSlide,
                 addItem,
                 addTag,
+                categoryOptions,
                 componentOptions,
                 cascaderValue,
                 fieldComponents,
@@ -1140,6 +1311,7 @@
                 mediaPageSize,
                 mediaPreview,
                 mediaSearch,
+                mediaSelectionKey,
                 mediaSelectedLoading,
                 mediaSelectedSize,
                 mediaSelectedTitle,
@@ -1158,9 +1330,11 @@
                 newBlock,
                 newItem,
                 newTag,
+                navItems,
                 numberValue,
                 onBlockHandleKeydown,
                 openMedia,
+                openSlideMedia,
                 chooseMedia,
                 clearMedia,
                 cancelRename,
@@ -1168,6 +1342,9 @@
                 removeMedia,
                 removeBlock,
                 removeItem,
+                removeNavChild,
+                removeNavItem,
+                removeSlide,
                 removeTag,
                 renameValue,
                 renamingId,
@@ -1178,6 +1355,7 @@
                 submitRename,
                 setTemplate,
                 setValue,
+                slideItems,
                 slotPlaceholder,
                 tags,
                 templateMap,
@@ -1190,6 +1368,9 @@
                 transferData,
                 transferValue,
                 updateItem,
+                updateNavChild,
+                updateNavItem,
+                updateSlide,
                 uploadInput
             };
         },
@@ -1240,6 +1421,22 @@
                 >
                     <a-option
                         v-for="(label, value) in (field.options || {})"
+                        :key="value"
+                        :value="value"
+                    >{{ label }}</a-option>
+                </a-select>
+                <a-select
+                    v-else-if="field.type === 'Category'"
+                    :id="inputId"
+                    :aria-label="field.label || field.name || '分类设置'"
+                    :model-value="modelValue"
+                    :placeholder="field.placeholder || '全部分类'"
+                    allow-search
+                    allow-clear
+                    @update:model-value="setValue"
+                >
+                    <a-option
+                        v-for="(label, value) in categoryOptions"
                         :key="value"
                         :value="value"
                     >{{ label }}</a-option>
@@ -1447,158 +1644,16 @@
                         </div>
                     </template>
 
-                    <a-modal
-                        v-model:visible="mediaOpen"
-                        modal-class="ttdf-media-modal"
-                        :width="'min(960px, calc(100vw - 32px))'"
-                        :footer="false"
-                        unmount-on-close
-                    >
-                        <template #title>
-                            <div class="ttdf-media-modal-title">
-                                <span>媒体库</span>
-                                <small>{{ mediaTotal }} 张图片</small>
-                            </div>
-                        </template>
-
-                        <div class="ttdf-media-toolbar">
-                            <a-input
-                                v-model="mediaSearch"
-                                class="ttdf-media-search"
-                                placeholder="搜索图片名称…"
-                                aria-label="搜索媒体图片"
-                                allow-clear
-                                @press-enter="loadMedia(1)"
-                                @clear="loadMedia(1)"
-                            />
-                            <a-button html-type="button" @click="loadMedia(mediaPage)">刷新</a-button>
-                            <a-button
-                                type="primary"
-                                html-type="button"
-                                :loading="mediaUploading"
-                                @click="pickUpload"
-                            >上传图片</a-button>
-                            <input
-                                ref="uploadInput"
-                                class="ttdf-media-file"
-                                type="file"
-                                accept="image/jpeg,image/png,image/gif,image/webp,image/bmp"
-                                @change="handleUpload"
-                            />
-                        </div>
-                        <p class="ttdf-media-hint">支持 JPG、PNG、GIF、WebP、BMP，单张不超过 5 MB。上传后会保存为 Typecho 附件。</p>
-
-                        <div v-if="mediaError" class="ttdf-media-error" role="alert">{{ mediaError }}</div>
-
-                        <div v-if="mediaLoading" class="ttdf-media-grid" aria-busy="true" aria-label="正在加载媒体库">
-                            <div v-for="index in 6" :key="index" class="ttdf-media-card ttdf-media-card-skeleton" aria-hidden="true">
-                                <div class="ttdf-media-thumb"></div>
-                                <div class="ttdf-media-card-body">
-                                    <span class="ttdf-media-skeleton-line"></span>
-                                    <span class="ttdf-media-skeleton-line is-short"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <a-empty
-                            v-else-if="mediaItems.length === 0"
-                            class="ttdf-media-empty-state"
-                            description="媒体库还没有图片，先上传一张吧。"
-                        />
-                        <div v-else class="ttdf-media-grid">
-                            <article
-                                v-for="item in mediaItems"
-                                :key="item.id"
-                                class="ttdf-media-card"
-                                :class="{ 'is-selected': String(item.id) === String(modelValue) }"
-                                role="button"
-                                tabindex="0"
-                                :aria-pressed="String(item.id) === String(modelValue)"
-                                :aria-label="'选择图片 ' + item.title"
-                                @click="chooseMedia(item)"
-                                @keydown.enter.prevent="chooseMedia(item)"
-                                @keydown.space.prevent="chooseMedia(item)"
-                            >
-                                <div class="ttdf-media-thumb">
-                                    <img
-                                        v-if="!item.broken"
-                                        :src="item.url"
-                                        :alt="item.title"
-                                        loading="lazy"
-                                        decoding="async"
-                                        @error="item.broken = true"
-                                    />
-                                    <span v-else class="ttdf-media-thumb-fallback">无法预览</span>
-                                    <span
-                                        v-if="String(item.id) === String(modelValue)"
-                                        class="ttdf-media-check"
-                                        aria-hidden="true"
-                                    >✓</span>
-                                </div>
-                                <div class="ttdf-media-card-body">
-                                    <template v-if="renamingId === Number(item.id)">
-                                        <a-input
-                                            v-model="renameValue"
-                                            class="ttdf-media-rename-input"
-                                            size="small"
-                                            aria-label="新的图片名称"
-                                            @click.stop
-                                            @keydown.stop
-                                            @press-enter="submitRename(item)"
-                                        />
-                                        <div class="ttdf-media-card-actions">
-                                            <a-button html-type="button" size="mini" type="primary" @click.stop="submitRename(item)">保存</a-button>
-                                            <a-button html-type="button" size="mini" @click.stop="cancelRename">取消</a-button>
-                                        </div>
-                                    </template>
-                                    <template v-else>
-                                        <strong class="ttdf-media-card-title" :title="item.title">{{ item.title }}</strong>
-                                        <span class="ttdf-media-card-meta">{{ formatMediaSize(item.size) || item.type || '图片' }}</span>
-                                        <div class="ttdf-media-card-actions">
-                                            <a-button html-type="button" size="mini" @click.stop="startRename(item)">重命名</a-button>
-                                            <a-button html-type="button" size="mini" status="danger" @click.stop="removeMedia(item)">删除</a-button>
-                                        </div>
-                                    </template>
-                                </div>
-                            </article>
-                        </div>
-
-                        <div v-if="mediaTotal > mediaPageSize" class="ttdf-media-pagination">
-                            <span>第 {{ mediaPage }} / {{ Math.ceil(mediaTotal / mediaPageSize) }} 页</span>
-                            <a-pagination
-                                :current="mediaPage"
-                                :page-size="mediaPageSize"
-                                :total="mediaTotal"
-                                size="small"
-                                @change="loadMedia"
-                            />
-                        </div>
-                        <div class="ttdf-media-modal-footer">
-                            <a-button html-type="button" @click="mediaOpen = false">完成</a-button>
-                        </div>
-                    </a-modal>
                 </div>
                 <div v-else-if="field.type === 'TemplateMap'" class="ttdf-template-map">
-                    <div class="ttdf-template-map-overview">
-                        <div class="ttdf-template-map-overview-copy">
-                            <strong>入口映射</strong>
-                            <span>为每个 Typecho 页面入口选择要渲染的组件；未映射时使用入口模板回退。</span>
-                        </div>
-                        <div class="ttdf-template-map-stats" role="status" aria-live="polite">
-                            <span><b>{{ templateMappedCount }}</b> 已映射</span>
-                            <span><b>{{ templateFallbackCount }}</b> 回退</span>
-                        </div>
-                    </div>
                     <section
                         v-for="group in templateSlotGroups"
                         :key="group.key"
                         class="ttdf-template-map-group"
                     >
                         <header class="ttdf-template-map-group-header">
-                            <div>
-                                <h3>{{ group.label }}</h3>
-                                <p>{{ group.description }}</p>
-                            </div>
-                            <span>{{ group.slots.length }} 个入口</span>
+                            <h3>{{ group.label }}</h3>
+                            <p>{{ group.description }}</p>
                         </header>
                         <div class="ttdf-template-map-grid">
                             <div
@@ -1607,17 +1662,9 @@
                                 class="ttdf-template-map-row"
                                 :data-slot="slot.key"
                             >
-                                <div class="ttdf-template-map-row-header">
-                                    <div class="ttdf-template-map-label">
-                                        <span>{{ slot.label }}</span>
-                                        <code translate="no">{{ slot.key }}</code>
-                                    </div>
-                                    <span
-                                        class="ttdf-template-map-status"
-                                        :class="{ 'is-mapped': String(templateMap[slot.key] || '').trim() !== '' }"
-                                    >
-                                        {{ String(templateMap[slot.key] || '').trim() !== '' ? '已映射' : '回退' }}
-                                    </span>
+                                <div class="ttdf-template-map-label">
+                                    <span>{{ slot.label }}</span>
+                                    <code translate="no">{{ slot.key }}</code>
                                 </div>
                                 <a-select
                                     :model-value="templateMap[slot.key] || ''"
@@ -1643,6 +1690,136 @@
                     <p v-if="ignoredMappings > 0" class="ttdf-template-map-warning" role="status">
                         有 {{ ignoredMappings }} 个已保存映射不在白名单内，运行时已忽略；保存后会清除。
                     </p>
+                </div>
+                <div v-else-if="field.type === 'Nav'" class="ttdf-nav-editor">
+                    <article
+                        v-for="(item, index) in navItems"
+                        :key="index"
+                        class="ttdf-nav-item"
+                    >
+                        <div class="ttdf-nav-item-main">
+                            <a-input
+                                :model-value="item.label"
+                                :aria-label="'导航标题 ' + (index + 1)"
+                                placeholder="导航标题"
+                                @update:model-value="(value) => updateNavItem(index, 'label', value)"
+                            />
+                            <a-input
+                                :model-value="item.url"
+                                :aria-label="'导航链接 ' + (index + 1)"
+                                placeholder="/about 或 https://example.com"
+                                @update:model-value="(value) => updateNavItem(index, 'url', value)"
+                            />
+                            <a-button
+                                html-type="button"
+                                size="small"
+                                status="danger"
+                                @click="removeNavItem(index)"
+                            >删除</a-button>
+                        </div>
+                        <div v-if="item.children.length" class="ttdf-nav-children">
+                            <div
+                                v-for="(child, childIndex) in item.children"
+                                :key="childIndex"
+                                class="ttdf-nav-child"
+                            >
+                                <a-input
+                                    :model-value="child.label"
+                                    :aria-label="'二级导航标题 ' + (index + 1) + '-' + (childIndex + 1)"
+                                    placeholder="二级标题"
+                                    @update:model-value="(value) => updateNavChild(index, childIndex, 'label', value)"
+                                />
+                                <a-input
+                                    :model-value="child.url"
+                                    :aria-label="'二级导航链接 ' + (index + 1) + '-' + (childIndex + 1)"
+                                    placeholder="/archive"
+                                    @update:model-value="(value) => updateNavChild(index, childIndex, 'url', value)"
+                                />
+                                <a-button
+                                    html-type="button"
+                                    size="mini"
+                                    status="danger"
+                                    @click="removeNavChild(index, childIndex)"
+                                >移除</a-button>
+                            </div>
+                        </div>
+                        <a-button
+                            v-if="item.children.length < 8"
+                            html-type="button"
+                            size="mini"
+                            class="ttdf-nav-add-child"
+                            @click="addNavChild(index)"
+                        >添加二级导航</a-button>
+                    </article>
+                    <a-button
+                        v-if="navItems.length < 12"
+                        type="primary"
+                        html-type="button"
+                        size="small"
+                        @click="addNavItem"
+                    >添加导航项</a-button>
+                    <p v-if="navItems.length === 0" class="ttdf-field-description">
+                        留空时自动使用首页与 Typecho 独立页面作为导航。
+                    </p>
+                </div>
+                <div v-else-if="field.type === 'Slides'" class="ttdf-slides-editor">
+                    <article
+                        v-for="(slide, index) in slideItems"
+                        :key="index"
+                        class="ttdf-slide-item"
+                    >
+                        <header>
+                            <strong>轮播 {{ index + 1 }}</strong>
+                            <a-button
+                                html-type="button"
+                                size="mini"
+                                status="danger"
+                                @click="removeSlide(index)"
+                            >删除</a-button>
+                        </header>
+                        <div class="ttdf-text-media">
+                            <div v-if="slide.image" class="ttdf-text-media-thumb">
+                                <img :src="slide.image" alt="" loading="lazy" decoding="async" />
+                            </div>
+                            <a-input
+                                class="ttdf-text-media-input"
+                                :model-value="slide.image"
+                                :aria-label="'轮播图片地址 ' + (index + 1)"
+                                placeholder="输入图片地址，或从媒体库选择…"
+                                allow-clear
+                                @update:model-value="(value) => updateSlide(index, 'image', value)"
+                            />
+                            <a-button html-type="button" @click="openSlideMedia(index)">媒体库</a-button>
+                        </div>
+                        <div class="ttdf-slide-row">
+                            <a-input
+                                :model-value="slide.title"
+                                :aria-label="'轮播标题 ' + (index + 1)"
+                                placeholder="标题"
+                                @update:model-value="(value) => updateSlide(index, 'title', value)"
+                            />
+                            <a-input
+                                :model-value="slide.url"
+                                :aria-label="'轮播链接 ' + (index + 1)"
+                                placeholder="链接，可留空"
+                                @update:model-value="(value) => updateSlide(index, 'url', value)"
+                            />
+                        </div>
+                        <a-textarea
+                            :model-value="slide.description"
+                            :aria-label="'轮播说明 ' + (index + 1)"
+                            placeholder="说明文字，可留空"
+                            :auto-size="{ minRows: 2, maxRows: 4 }"
+                            @update:model-value="(value) => updateSlide(index, 'description', value)"
+                        />
+                    </article>
+                    <a-button
+                        v-if="slideItems.length < 12"
+                        type="primary"
+                        html-type="button"
+                        size="small"
+                        @click="addSlide"
+                    >添加轮播图</a-button>
                 </div>
                 <div v-else-if="field.type === 'Blocks'" class="ttdf-blocks">
                     <ul v-if="blockRows.length" class="ttdf-blocks-list">
@@ -1694,9 +1871,9 @@
                                     :aria-label="row.label + ' 展示样式'"
                                     @update:model-value="(value) => setBlockVariant(index, value)"
                                 >
-                                    <a-option value="">默认样式</a-option>
                                     <a-option v-for="(label, key) in row.variants" :key="key" :value="key">{{ label }}</a-option>
                                 </a-select>
+                                <span v-else class="ttdf-block-variant is-empty" aria-hidden="true"></span>
 
                                 <span class="ttdf-block-actions">
                                     <template v-if="blockMoveEnabled">
@@ -1757,6 +1934,7 @@
                                     :model-value="row.data[dataField.name]"
                                     :components="components"
                                     :slots="slots"
+                                    :categories="categories"
                                     :api-url="apiUrl"
                                     :nonce="nonce"
                                     @update:model-value="(value) => setBlockData(index, dataField.name, value)"
@@ -1807,6 +1985,135 @@
                     @update:model-value="setValue"
                 />
                 </div>
+                <a-modal
+                    v-model:visible="mediaOpen"
+                    modal-class="ttdf-media-modal"
+                    :width="'min(960px, calc(100vw - 32px))'"
+                    :footer="false"
+                    unmount-on-close
+                >
+                    <template #title>
+                        <div class="ttdf-media-modal-title">
+                            <span>媒体库</span>
+                            <small>{{ mediaTotal }} 张图片</small>
+                        </div>
+                    </template>
+
+                    <div class="ttdf-media-toolbar">
+                        <a-input
+                            v-model="mediaSearch"
+                            class="ttdf-media-search"
+                            placeholder="搜索图片名称…"
+                            aria-label="搜索媒体图片"
+                            allow-clear
+                            @press-enter="loadMedia(1)"
+                            @clear="loadMedia(1)"
+                        />
+                        <a-button html-type="button" @click="loadMedia(mediaPage)">刷新</a-button>
+                        <a-button
+                            type="primary"
+                            html-type="button"
+                            :loading="mediaUploading"
+                            @click="pickUpload"
+                        >上传图片</a-button>
+                        <input
+                            ref="uploadInput"
+                            class="ttdf-media-file"
+                            type="file"
+                            accept="image/jpeg,image/png,image/gif,image/webp,image/bmp"
+                            @change="handleUpload"
+                        />
+                    </div>
+                    <p class="ttdf-media-hint">支持 JPG、PNG、GIF、WebP、BMP，单张不超过 5 MB。上传后会保存为 Typecho 附件。</p>
+
+                    <div v-if="mediaError" class="ttdf-media-error" role="alert">{{ mediaError }}</div>
+
+                    <div v-if="mediaLoading" class="ttdf-media-grid" aria-busy="true" aria-label="正在加载媒体库">
+                        <div v-for="index in 6" :key="index" class="ttdf-media-card ttdf-media-card-skeleton" aria-hidden="true">
+                            <div class="ttdf-media-thumb"></div>
+                            <div class="ttdf-media-card-body">
+                                <span class="ttdf-media-skeleton-line"></span>
+                                <span class="ttdf-media-skeleton-line is-short"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <a-empty
+                        v-else-if="mediaItems.length === 0"
+                        class="ttdf-media-empty-state"
+                        description="媒体库还没有图片，先上传一张吧。"
+                    />
+                    <div v-else class="ttdf-media-grid">
+                        <article
+                            v-for="item in mediaItems"
+                            :key="item.id"
+                            class="ttdf-media-card"
+                            :class="{ 'is-selected': String(item.id) === mediaSelectionKey }"
+                            role="button"
+                            tabindex="0"
+                            :aria-pressed="String(item.id) === mediaSelectionKey"
+                            :aria-label="'选择图片 ' + item.title"
+                            @click="chooseMedia(item)"
+                            @keydown.enter.prevent="chooseMedia(item)"
+                            @keydown.space.prevent="chooseMedia(item)"
+                        >
+                            <div class="ttdf-media-thumb">
+                                <img
+                                    v-if="!item.broken"
+                                    :src="item.url"
+                                    :alt="item.title"
+                                    loading="lazy"
+                                    decoding="async"
+                                    @error="item.broken = true"
+                                />
+                                <span v-else class="ttdf-media-thumb-fallback">无法预览</span>
+                                <span
+                                    v-if="String(item.id) === mediaSelectionKey"
+                                    class="ttdf-media-check"
+                                    aria-hidden="true"
+                                >✓</span>
+                            </div>
+                            <div class="ttdf-media-card-body">
+                                <template v-if="renamingId === Number(item.id)">
+                                    <a-input
+                                        v-model="renameValue"
+                                        class="ttdf-media-rename-input"
+                                        size="small"
+                                        aria-label="新的图片名称"
+                                        @click.stop
+                                        @keydown.stop
+                                        @press-enter="submitRename(item)"
+                                    />
+                                    <div class="ttdf-media-card-actions">
+                                        <a-button html-type="button" size="mini" type="primary" @click.stop="submitRename(item)">保存</a-button>
+                                        <a-button html-type="button" size="mini" @click.stop="cancelRename">取消</a-button>
+                                    </div>
+                                </template>
+                                <template v-else>
+                                    <strong class="ttdf-media-card-title" :title="item.title">{{ item.title }}</strong>
+                                    <span class="ttdf-media-card-meta">{{ formatMediaSize(item.size) || item.type || '图片' }}</span>
+                                    <div class="ttdf-media-card-actions">
+                                        <a-button html-type="button" size="mini" @click.stop="startRename(item)">重命名</a-button>
+                                        <a-button html-type="button" size="mini" status="danger" @click.stop="removeMedia(item)">删除</a-button>
+                                    </div>
+                                </template>
+                            </div>
+                        </article>
+                    </div>
+
+                    <div v-if="mediaTotal > mediaPageSize" class="ttdf-media-pagination">
+                        <span>第 {{ mediaPage }} / {{ Math.ceil(mediaTotal / mediaPageSize) }} 页</span>
+                        <a-pagination
+                            :current="mediaPage"
+                            :page-size="mediaPageSize"
+                            :total="mediaTotal"
+                            size="small"
+                            @change="loadMedia"
+                        />
+                    </div>
+                    <div class="ttdf-media-modal-footer">
+                        <a-button html-type="button" @click="mediaOpen = false">完成</a-button>
+                    </div>
+                </a-modal>
                 <div v-if="field.description" class="ttdf-field-description" v-html="field.description"></div>
             </div>
         `
@@ -1826,7 +2133,8 @@
                     ttdfVersion: '',
                     tabs: {},
                     components: [],
-                    templateSlots: {}
+                    templateSlots: {},
+                    categories: {}
                 });
                 const formData = reactive({});
                 const activeTab = ref('');
@@ -2189,6 +2497,7 @@
                             ? configResult.data.components
                             : [];
                         config.templateSlots = (configResult.data && configResult.data.templateSlots) || {};
+                        config.categories = (configResult.data && configResult.data.categories) || {};
                         resetFormData();
                         initFormData((formResult.data && typeof formResult.data === 'object') ? formResult.data : {});
                         dirty.value = false;
@@ -2236,6 +2545,16 @@
                     || tabList.value[0]
                     || null
                 ));
+                const regularFields = computed(() => (
+                    currentTab.value
+                        ? currentTab.value.fields.filter((field) => field.group !== 'rest')
+                        : []
+                ));
+                const restFields = computed(() => (
+                    currentTab.value
+                        ? currentTab.value.fields.filter((field) => field.group === 'rest')
+                        : []
+                ));
 
                 onMounted(initConfig);
 
@@ -2265,6 +2584,8 @@
                     restoringKey,
                     runBackup,
                     runMigration,
+                    regularFields,
+                    restFields,
                     saveSettings,
                     saving,
                     switchTab,
@@ -2368,26 +2689,62 @@
                                         :html-content="block.content"
                                     />
                                     <a-form
-                                        v-if="currentTab.fields.length"
+                                        v-if="regularFields.length"
                                         :model="formData"
                                         layout="vertical"
                                         class="TTDF-form"
                                     >
                                         <FormField
-                                            v-for="(field, index) in currentTab.fields"
+                                            v-for="(field, index) in regularFields"
                                             :key="field.name || ('field-' + index)"
                                             :field="field"
                                             :index="index"
                                             :model-value="field.name ? formData[field.name] : undefined"
                                             :components="config.components"
                                             :slots="config.templateSlots"
+                                            :categories="config.categories"
                                             :api-url="apiUrl"
                                             :nonce="appInfoNonce"
                                             @update:model-value="(value) => field.name && updateField(field.name, value)"
                                         />
                                     </a-form>
+                                    <a-collapse
+                                        v-if="restFields.length"
+                                        class="TTDF-rest-settings"
+                                        :default-active-key="[]"
+                                    >
+                                        <a-collapse-item key="rest" header="REST API 配置">
+                                            <template #header>
+                                                <div class="TTDF-rest-settings-header">
+                                                    <span>REST API 配置</span>
+                                                    <small>
+                                                        {{ formData.RESTAPI_Switch ? '总开关已开启' : '总开关已关闭' }}
+                                                    </small>
+                                                </div>
+                                            </template>
+                                            <a-form
+                                                :model="formData"
+                                                layout="vertical"
+                                                class="TTDF-form"
+                                            >
+                                                <FormField
+                                                    v-for="(field, index) in restFields"
+                                                    :key="field.name || ('rest-field-' + index)"
+                                                    :field="field"
+                                                    :index="index"
+                                                    :model-value="field.name ? formData[field.name] : undefined"
+                                                    :components="config.components"
+                                                    :slots="config.templateSlots"
+                                                    :categories="config.categories"
+                                                    :api-url="apiUrl"
+                                                    :nonce="appInfoNonce"
+                                                    @update:model-value="(value) => field.name && updateField(field.name, value)"
+                                                />
+                                            </a-form>
+                                        </a-collapse-item>
+                                    </a-collapse>
                                     <a-empty
-                                        v-if="!currentTab.html.length && !currentTab.fields.length"
+                                        v-if="!currentTab.html.length && !regularFields.length && !restFields.length"
                                         description="当前选项卡暂无内容"
                                     />
                                 </div>

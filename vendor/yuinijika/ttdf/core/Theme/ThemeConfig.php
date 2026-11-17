@@ -46,15 +46,17 @@ final class ThemeConfig
     }
 
     /**
-     * The v2 API is a separate switch because it can write to the site; it is
-     * off unless the theme config or the theme settings enable it.
+     * The v2 API can write to the site, so it has its own child switch. The
+     * public REST switch is the master switch for both v1 and v2; turning it
+     * off must also unregister the write-capable v2 routes.
      */
     public static function restV2Enabled(): bool
     {
         $value = self::setting('RESTV2_Switch');
 
-        return (bool) Config::get('rest.v2_enabled', false)
-            || (self::isConfigured($value) && self::toBool($value));
+        return self::restEnabled()
+            && ((bool) Config::get('rest.v2_enabled', false)
+                || (self::isConfigured($value) && self::toBool($value)));
     }
 
     public static function restV2TokenTtl(): int

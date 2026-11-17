@@ -251,7 +251,7 @@ final class RestV2RouterTest extends V2ApiTestCase
     {
         Config::load([
             'rest' => [
-                'enabled' => false,
+                'enabled' => true,
                 'v1_prefix' => 'ttdf/v1',
                 'v2_enabled' => true,
                 'v2_prefix' => 'ttdf/v2',

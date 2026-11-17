@@ -20,9 +20,9 @@ use TTDF\Http\Rest\RouteMatch;
  *
  * v2 is a full API surface: sessions, front-end reads, comment writing and the
  * administration endpoints. It is mounted on its own prefix and has its own
- * switch, so a site can drive Typecho from an app without exposing the v1
- * read-only API. Built-in routes always win over extension routes so a theme
- * cannot shadow `auth/login` or `admin/options`.
+ * child switch, while the public REST switch remains the master switch for
+ * both API versions. Built-in routes always win over extension routes so a
+ * theme cannot shadow `auth/login` or `admin/options`.
  */
 final class Router
 {

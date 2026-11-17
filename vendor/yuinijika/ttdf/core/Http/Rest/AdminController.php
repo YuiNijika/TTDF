@@ -53,6 +53,7 @@ final class AdminController
             'frameworkVersion' => Framework::VERSION,
             'components' => Templates::available($this->root),
             'templateSlots' => Templates::SLOTS,
+            'categories' => Settings::categoryOptions(),
         ]);
     }
 

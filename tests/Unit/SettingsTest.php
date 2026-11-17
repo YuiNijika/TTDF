@@ -214,6 +214,73 @@ final class SettingsTest extends TestCase
         );
     }
 
+    public function testNavigationFieldOnlyKeepsTwoLevelsAndSafeUrls(): void
+    {
+        $result = Settings::normalizeValue(['type' => 'Nav'], [
+                [
+                    'label' => ' 首页 ',
+                    'url' => '/',
+                    'children' => [
+                        ['label' => '归档', 'url' => '/archive'],
+                        ['label' => '坏链接', 'url' => 'javascript:alert(1)'],
+                    ],
+                ],
+                [
+                    'label' => '外部',
+                    'url' => 'https://example.test/path',
+                    'children' => [['label' => '子项', 'url' => '/child']],
+                ],
+                ['label' => '无效', 'url' => 'mailto:test@example.test'],
+        ]);
+
+        self::assertSame([
+            [
+                'label' => '首页',
+                'url' => '/',
+                'children' => [['label' => '归档', 'url' => '/archive']],
+            ],
+            [
+                'label' => '外部',
+                'url' => 'https://example.test/path',
+                'children' => [['label' => '子项', 'url' => '/child']],
+            ],
+        ], $result);
+    }
+
+    public function testSlidesFieldDropsUnsafeImagesAndKeepsCopy(): void
+    {
+        $slides = Settings::normalizeValue(['type' => 'Slides'], [
+            [
+                'image' => 'https://cdn.test/cover.webp',
+                'title' => ' 第一张 ',
+                'description' => '说明',
+                'url' => '/post/1',
+            ],
+            [
+                'image' => 'javascript:alert(1)',
+                'title' => '只有标题',
+                'description' => '',
+                'url' => 'javascript:alert(1)',
+            ],
+            ['image' => '', 'title' => '', 'description' => ''],
+        ]);
+
+        self::assertSame([
+            [
+                'image' => 'https://cdn.test/cover.webp',
+                'title' => '第一张',
+                'description' => '说明',
+                'url' => '/post/1',
+            ],
+            [
+                'image' => '',
+                'title' => '只有标题',
+                'description' => '',
+                'url' => '',
+            ],
+        ], $slides);
+    }
+
     public function testSaveWritesOneJsonDocumentAndCreatesBackups(): void
     {
         $store = new InMemoryOptionsStore();

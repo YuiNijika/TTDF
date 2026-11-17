@@ -491,9 +491,10 @@ describe('Arco settings controls', () => {
         expect(wrapper.text()).toContain('内容页面');
         expect(wrapper.text()).toContain('归档与发现');
         expect(wrapper.text()).toContain('系统页面');
-        expect(wrapper.find('.ttdf-template-map-stats').text()).toContain('2 已映射');
-        expect(wrapper.find('.ttdf-template-map-stats').text()).toContain('8 回退');
-        expect(wrapper.findAll('.ttdf-template-map-status.is-mapped')).toHaveLength(2);
+        expect(wrapper.find('.ttdf-template-map-stats').exists()).toBe(false);
+        expect(wrapper.findAll('.ttdf-template-map-status')).toHaveLength(0);
+        expect(wrapper.findAll('.ttdf-template-map-row')).toHaveLength(10);
+        expect(wrapper.find('.ttdf-template-map-row[data-slot="post"] code').text()).toBe('post');
 
         wrapper.unmount();
     });
@@ -551,5 +552,49 @@ describe('Arco settings controls', () => {
 
         expect(wrapper.find('.ttdf-switch-text').text()).toBe('已启用');
         wrapper.unmount();
+    });
+
+    it('adds navigation rows with nested items', async () => {
+        const wrapper = mountField(field('Nav'), []);
+
+        await wrapper.findAll('button').find((button) => button.text() === '添加导航项').trigger('click');
+        await nextTick();
+
+        expect(wrapper.findAll('.ttdf-nav-item')).toHaveLength(1);
+        expect(lastEmitted(wrapper)?.[0]).toEqual([{ label: '', url: '', children: [] }]);
+
+        await wrapper.findAll('button').find((button) => button.text() === '添加二级导航').trigger('click');
+        await nextTick();
+
+        expect(wrapper.findAll('.ttdf-nav-child')).toHaveLength(1);
+        wrapper.unmount();
+    });
+
+    it('adds slides and picks images through the media library', async () => {
+        vi.stubGlobal('fetch', mediaFetchMock());
+        const wrapper = mountField(field('Slides'), [], {
+            apiUrl: 'https://example.test/ttdf/v1/admin',
+            nonce: 'nonce-value'
+        });
+
+        await wrapper.findAll('button').find((button) => button.text() === '添加轮播图').trigger('click');
+        await nextTick();
+
+        expect(wrapper.findAll('.ttdf-slide-item')).toHaveLength(1);
+        expect(wrapper.find('.ttdf-slide-item .ttdf-text-media input').exists()).toBe(true);
+
+        const formField = wrapper.findComponent(window.TTDFOptions.FormField);
+        formField.vm.openSlideMedia(0);
+        await flushPromises();
+
+        expect(formField.vm.mediaOpen).toBe(true);
+        expect(formField.vm.mediaItems).toHaveLength(1);
+
+        formField.vm.chooseMedia(formField.vm.mediaItems[0]);
+        await nextTick();
+
+        expect(lastEmitted(wrapper)?.[0]?.[0]?.image).toBe(mediaItem.url);
+        wrapper.unmount();
+        vi.unstubAllGlobals();
     });
 });

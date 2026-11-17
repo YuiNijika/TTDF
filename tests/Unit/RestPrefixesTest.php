@@ -96,7 +96,7 @@ final class RestPrefixesTest extends V2ApiTestCase
     /**
      * @param array<string, mixed> $extra
      */
-    private function loadPrefixes(array $extra, bool $v1Enabled = false): void
+    private function loadPrefixes(array $extra, bool $v1Enabled = true): void
     {
         Config::load([
             'rest' => [
