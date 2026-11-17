@@ -2,7 +2,7 @@
 
 > The Intuitive Typecho Theme Framework.
 
-TTDF v5 是面向 Typecho 1.2.1+ / 1.3.x 的现代主题开发框架，要求 PHP 8.2+。当前版本为 `5.0.2-next`，与冻结的 `v4` 分支并行维护。
+TTDF v5 是面向 Typecho 1.2.1+ / 1.3.x 的现代主题开发框架，要求 PHP 8.2+。当前版本为 `5.0.3-next`，与冻结的 `v4` 分支并行维护。
 
 ## 特性
 

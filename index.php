@@ -10,7 +10,7 @@ declare(strict_types=1);
  *
  * @package TTDF Next
  * @author yuinijika
- * @version 5.0.2-next
+ * @version 5.0.3-next
  * @link https://blog.miomoe.cn
  */
 
