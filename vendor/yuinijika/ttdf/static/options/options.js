@@ -236,6 +236,7 @@
     };
 
     const FormField = {
+        name: 'TtdfFormField',
         components: { DynamicHtmlRenderer },
         props: {
             field: {
@@ -271,6 +272,9 @@
             const { ref, computed, watch } = VueLib;
             const newTag = ref('');
             const newItem = ref('');
+            const newBlock = ref('');
+            const blockDragIndex = ref(-1);
+            const openBlocks = ref({});
             const mediaOpen = ref(false);
             const mediaLoading = ref(false);
             const mediaUploading = ref(false);
@@ -466,6 +470,328 @@
                 const next = listItems.value.slice();
                 next.splice(index, 1);
                 setValue(next);
+            };
+
+            const normalizeVariants = (variants) => {
+                const result = {};
+                if (!variants) {
+                    return result;
+                }
+
+                if (Array.isArray(variants)) {
+                    for (const item of variants) {
+                        if (item === undefined || item === null) {
+                            continue;
+                        }
+
+                        if (typeof item === 'string') {
+                            result[item] = item;
+                            continue;
+                        }
+
+                        const value = String(item.value === undefined ? '' : item.value);
+                        if (value === '') {
+                            continue;
+                        }
+
+                        result[value] = String(item.label || value);
+                    }
+                    return result;
+                }
+
+                if (typeof variants === 'object') {
+                    for (const [key, value] of Object.entries(variants)) {
+                        result[key] = String(value === undefined || value === null ? key : value);
+                    }
+                }
+
+                return result;
+            };
+
+            const blockReorder = computed(() => {
+                const raw = props.field ? props.field.reorder : undefined;
+                if (raw === undefined) {
+                    return ['drag'];
+                }
+                if (raw === false || raw === null) {
+                    return [];
+                }
+                if (typeof raw === 'string') {
+                    return [raw];
+                }
+                if (Array.isArray(raw)) {
+                    return raw.map((item) => String(item));
+                }
+                return ['drag'];
+            });
+
+            const blockDragEnabled = computed(() => blockReorder.value.includes('drag'));
+            const blockMoveEnabled = computed(() => blockReorder.value.includes('buttons'));
+
+            const normalizeBlockFields = (fields) => {
+                const result = [];
+                if (!Array.isArray(fields)) {
+                    return result;
+                }
+
+                for (const field of fields) {
+                    if (!field || typeof field !== 'object' || Array.isArray(field)) {
+                        continue;
+                    }
+
+                    const name = String(field.name || field.key || '');
+                    if (name === '' || field.type === 'Blocks') {
+                        continue;
+                    }
+
+                    result.push({ ...field, name });
+                }
+
+                return result;
+            };
+
+            const normalizeBlockEntry = (item) => {
+                if (typeof item === 'string') {
+                    const parts = item.split(':');
+                    return {
+                        name: String(parts[0] || '').trim(),
+                        variant: String(parts[1] || '').trim(),
+                        data: {}
+                    };
+                }
+
+                if (item && typeof item === 'object' && !Array.isArray(item)) {
+                    const data = item.data && typeof item.data === 'object' && !Array.isArray(item.data)
+                        ? { ...item.data }
+                        : {};
+
+                    return {
+                        name: String(item.name || item.block || '').trim(),
+                        variant: String(item.variant || '').trim(),
+                        data
+                    };
+                }
+
+                return null;
+            };
+
+            const blockItems = computed(() => (
+                Array.isArray(props.modelValue)
+                    ? props.modelValue
+                        .map(normalizeBlockEntry)
+                        .filter((entry) => entry && entry.name !== '')
+                    : []
+            ));
+
+            const blockCatalog = computed(() => {
+                const source = props.field ? props.field.options : null;
+                const entries = [];
+
+                if (Array.isArray(source)) {
+                    for (const item of source) {
+                        if (item === undefined || item === null) {
+                            continue;
+                        }
+
+                        if (typeof item === 'string') {
+                            entries.push({ value: item, label: item, variants: {}, fields: [] });
+                            continue;
+                        }
+
+                        const value = String(item.value === undefined ? '' : item.value);
+                        if (value === '') {
+                            continue;
+                        }
+
+                        entries.push({
+                            value,
+                            label: String(item.label || value),
+                            variants: normalizeVariants(item.variants),
+                            fields: normalizeBlockFields(item.fields)
+                        });
+                    }
+                    return entries;
+                }
+
+                if (source && typeof source === 'object') {
+                    for (const [key, value] of Object.entries(source)) {
+                        if (typeof value === 'string') {
+                            entries.push({ value: key, label: value, variants: {}, fields: [] });
+                        } else if (value && typeof value === 'object') {
+                            entries.push({
+                                value: key,
+                                label: String(value.label || key),
+                                variants: normalizeVariants(value.variants),
+                                fields: normalizeBlockFields(value.fields)
+                            });
+                        } else {
+                            entries.push({ value: key, label: key, variants: {}, fields: [] });
+                        }
+                    }
+                }
+
+                return entries;
+            });
+
+            const blockCatalogMap = computed(() => {
+                const map = {};
+                for (const item of blockCatalog.value) {
+                    map[item.value] = item;
+                }
+                return map;
+            });
+
+            const blockRows = computed(() => {
+                const counts = {};
+
+                return blockItems.value.map((entry) => {
+                    const meta = blockCatalogMap.value[entry.name];
+                    counts[entry.name] = (counts[entry.name] || 0) + 1;
+                    const key = entry.name + '-' + counts[entry.name];
+
+                    return {
+                        key,
+                        name: entry.name,
+                        variant: entry.variant,
+                        data: entry.data,
+                        label: meta ? meta.label : entry.name,
+                        missing: meta === undefined,
+                        variants: meta ? meta.variants : {},
+                        fields: meta ? meta.fields : [],
+                        open: openBlocks.value[key] === true
+                    };
+                });
+            });
+
+            const serializeBlock = (entry) => {
+                const block = { name: entry.name };
+                if (entry.variant) {
+                    block.variant = entry.variant;
+                }
+                if (entry.data && Object.keys(entry.data).length > 0) {
+                    block.data = entry.data;
+                }
+
+                return block;
+            };
+
+            const commitBlocks = (entries) => setValue(entries.map(serializeBlock));
+
+            const addBlock = () => {
+                const value = String(newBlock.value || '').trim();
+                if (value === '') {
+                    return;
+                }
+
+                const meta = blockCatalogMap.value[value];
+                const data = {};
+                if (meta) {
+                    for (const field of meta.fields) {
+                        if (field.value !== undefined && field.value !== '' && field.value !== null) {
+                            data[field.name] = field.value;
+                        }
+                    }
+                }
+
+                const occurrence = blockItems.value.filter((entry) => entry.name === value).length + 1;
+                commitBlocks([...blockItems.value, { name: value, variant: '', data }]);
+                if (meta && meta.fields.length > 0) {
+                    openBlocks.value = { ...openBlocks.value, [value + '-' + occurrence]: true };
+                }
+                newBlock.value = '';
+            };
+
+            const removeBlock = (index) => {
+                const next = blockItems.value.slice();
+                next.splice(index, 1);
+                commitBlocks(next);
+            };
+
+            const moveBlock = (index, offset) => {
+                const target = index + offset;
+                if (target < 0 || target >= blockItems.value.length) {
+                    return;
+                }
+
+                const next = blockItems.value.slice();
+                const [item] = next.splice(index, 1);
+                next.splice(target, 0, item);
+                commitBlocks(next);
+            };
+
+            const setBlockVariant = (index, variant) => {
+                const next = blockItems.value.slice();
+                if (!next[index]) {
+                    return;
+                }
+
+                next[index] = { ...next[index], variant: String(variant || '') };
+                commitBlocks(next);
+            };
+
+            const setBlockData = (index, name, value) => {
+                const next = blockItems.value.slice();
+                if (!next[index]) {
+                    return;
+                }
+
+                next[index] = { ...next[index], data: { ...next[index].data, [name]: value } };
+                commitBlocks(next);
+            };
+
+            const toggleBlock = (index) => {
+                const row = blockRows.value[index];
+                if (!row) {
+                    return;
+                }
+
+                openBlocks.value = { ...openBlocks.value, [row.key]: !row.open };
+            };
+
+            const startBlockDrag = (event, index) => {
+                if (!blockDragEnabled.value) {
+                    return;
+                }
+
+                blockDragIndex.value = index;
+                if (event && event.dataTransfer) {
+                    event.dataTransfer.effectAllowed = 'move';
+                    try {
+                        event.dataTransfer.setData('text/plain', String(index));
+                    } catch (error) {
+                        // Older engines may reject the payload; the index is already tracked.
+                    }
+                }
+            };
+
+            const dropBlock = (index) => {
+                const from = blockDragIndex.value;
+                blockDragIndex.value = -1;
+                if (from < 0 || from === index) {
+                    return;
+                }
+
+                const next = blockItems.value.slice();
+                const [item] = next.splice(from, 1);
+                next.splice(index, 0, item);
+                commitBlocks(next);
+            };
+
+            const endBlockDrag = () => {
+                blockDragIndex.value = -1;
+            };
+
+            const onBlockHandleKeydown = (event, index) => {
+                if (event.key === 'ArrowUp') {
+                    event.preventDefault();
+                    moveBlock(index, -1);
+                    return;
+                }
+
+                if (event.key === 'ArrowDown') {
+                    event.preventDefault();
+                    moveBlock(index, 1);
+                }
             };
 
             const setTemplate = (slot, value) => {
@@ -819,19 +1145,35 @@
                 mediaSelectedTitle,
                 mediaTotal,
                 mediaUploading,
+                addBlock,
+                blockCatalog,
+                blockDragIndex,
+                blockDragEnabled,
+                blockItems,
+                blockMoveEnabled,
+                blockRows,
+                dropBlock,
+                endBlockDrag,
+                moveBlock,
+                newBlock,
                 newItem,
                 newTag,
                 numberValue,
+                onBlockHandleKeydown,
                 openMedia,
                 chooseMedia,
                 clearMedia,
                 cancelRename,
                 pickUpload,
                 removeMedia,
+                removeBlock,
                 removeItem,
                 removeTag,
                 renameValue,
                 renamingId,
+                setBlockData,
+                setBlockVariant,
+                startBlockDrag,
                 startRename,
                 submitRename,
                 setTemplate,
@@ -844,6 +1186,7 @@
                 templateSlotGroups,
                 templateSlots,
                 testId,
+                toggleBlock,
                 transferData,
                 transferValue,
                 updateItem,
@@ -1300,6 +1643,140 @@
                     <p v-if="ignoredMappings > 0" class="ttdf-template-map-warning" role="status">
                         有 {{ ignoredMappings }} 个已保存映射不在白名单内，运行时已忽略；保存后会清除。
                     </p>
+                </div>
+                <div v-else-if="field.type === 'Blocks'" class="ttdf-blocks">
+                    <ul v-if="blockRows.length" class="ttdf-blocks-list">
+                        <li
+                            v-for="(row, index) in blockRows"
+                            :key="row.key"
+                            class="ttdf-block"
+                            :class="{ 'is-missing': row.missing, 'is-open': row.open, 'is-dragging': blockDragIndex === index }"
+                            :data-block="row.name"
+                            :draggable="blockDragEnabled"
+                            @dragstart="startBlockDrag($event, index)"
+                            @dragover.prevent
+                            @drop="dropBlock(index)"
+                            @dragend="endBlockDrag"
+                        >
+                            <div class="ttdf-block-main">
+                                <button
+                                    v-if="blockDragEnabled"
+                                    type="button"
+                                    class="ttdf-block-grip"
+                                    :aria-label="'拖动 ' + row.label + '，或用上下方向键调整顺序'"
+                                    title="拖动排序，方向键也可"
+                                    @keydown="onBlockHandleKeydown($event, index)"
+                                >
+                                    <svg viewBox="0 0 16 16" aria-hidden="true">
+                                        <circle cx="6" cy="4" r="1.1" />
+                                        <circle cx="10" cy="4" r="1.1" />
+                                        <circle cx="6" cy="8" r="1.1" />
+                                        <circle cx="10" cy="8" r="1.1" />
+                                        <circle cx="6" cy="12" r="1.1" />
+                                        <circle cx="10" cy="12" r="1.1" />
+                                    </svg>
+                                </button>
+                                <span v-else class="ttdf-block-order" aria-hidden="true">{{ index + 1 }}</span>
+
+                                <span class="ttdf-block-title">
+                                    <span class="ttdf-block-name">{{ row.label }}</span>
+                                    <span v-if="row.missing" class="ttdf-block-missing">未知名</span>
+                                    <span v-else-if="row.fields.length" class="ttdf-block-hint">
+                                        {{ Object.keys(row.data).length > 0 ? '已自定义' : '可自定义' }}
+                                    </span>
+                                </span>
+
+                                <a-select
+                                    v-if="Object.keys(row.variants).length > 0"
+                                    class="ttdf-block-variant"
+                                    size="small"
+                                    :model-value="row.variant"
+                                    :aria-label="row.label + ' 展示样式'"
+                                    @update:model-value="(value) => setBlockVariant(index, value)"
+                                >
+                                    <a-option value="">默认样式</a-option>
+                                    <a-option v-for="(label, key) in row.variants" :key="key" :value="key">{{ label }}</a-option>
+                                </a-select>
+
+                                <span class="ttdf-block-actions">
+                                    <template v-if="blockMoveEnabled">
+                                        <a-button
+                                            size="mini"
+                                            shape="circle"
+                                            class="ttdf-block-action"
+                                            :disabled="index === 0"
+                                            :aria-label="'上移 ' + row.label"
+                                            title="上移"
+                                            @click="moveBlock(index, -1)"
+                                        >
+                                            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 12.5V3.5M4 7.5 8 3.5l4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                        </a-button>
+                                        <a-button
+                                            size="mini"
+                                            shape="circle"
+                                            class="ttdf-block-action"
+                                            :disabled="index === blockRows.length - 1"
+                                            :aria-label="'下移 ' + row.label"
+                                            title="下移"
+                                            @click="moveBlock(index, 1)"
+                                        >
+                                            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3.5v9M4 8.5 8 12.5l4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                        </a-button>
+                                    </template>
+                                    <a-button
+                                        v-if="row.fields.length > 0"
+                                        size="mini"
+                                        shape="circle"
+                                        class="ttdf-block-action"
+                                        :aria-expanded="row.open"
+                                        :aria-label="(row.open ? '收起 ' : '展开 ') + row.label + ' 的自定义内容'"
+                                        :title="row.open ? '收起自定义内容' : '展开自定义内容'"
+                                        @click="toggleBlock(index)"
+                                    >
+                                        <svg viewBox="0 0 16 16" aria-hidden="true" :class="{ 'is-open': row.open }"><path d="M3.5 6 8 10.5 12.5 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    </a-button>
+                                    <a-button
+                                        size="mini"
+                                        shape="circle"
+                                        class="ttdf-block-action is-danger"
+                                        :aria-label="'移除 ' + row.label"
+                                        title="移除"
+                                        @click="removeBlock(index)"
+                                    >
+                                        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                                    </a-button>
+                                </span>
+                            </div>
+
+                            <div v-if="row.open && row.fields.length > 0" class="ttdf-block-data">
+                                <TtdfFormField
+                                    v-for="(dataField, dataIndex) in row.fields"
+                                    :key="dataField.name"
+                                    :field="dataField"
+                                    :index="dataIndex"
+                                    :model-value="row.data[dataField.name]"
+                                    :components="components"
+                                    :slots="slots"
+                                    :api-url="apiUrl"
+                                    :nonce="nonce"
+                                    @update:model-value="(value) => setBlockData(index, dataField.name, value)"
+                                />
+                            </div>
+                        </li>
+                    </ul>
+                    <p v-else class="ttdf-blocks-empty">还没有区块。先在下面添加一个，再按需调整顺序与内容。</p>
+                    <div class="ttdf-block-add">
+                        <a-select
+                            v-model="newBlock"
+                            :aria-label="(field.label || '区块') + '：选择要添加的区块'"
+                            placeholder="选择区块…"
+                        >
+                            <a-option v-for="item in blockCatalog" :key="item.value" :value="item.value">
+                                {{ item.label }}
+                            </a-option>
+                        </a-select>
+                        <a-button type="primary" size="small" html-type="button" @click="addBlock">添加</a-button>
+                    </div>
                 </div>
                 <div v-else-if="field.type === 'AddList'" class="ttdf-add-list">
                     <div v-for="(item, index) in listItems" :key="index" class="ttdf-add-list-item">

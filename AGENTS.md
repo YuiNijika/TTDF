@@ -40,9 +40,13 @@ GET https://api.miomoe.cn/site/docs/page?path=ttdf/v5/index
 - `router.pages_dir` 是相对 `app/` 的路径，默认 `router`；不要写 `app/router`，也不要把路由页面放到主题根目录。
 - `app/router/` 只承载 TTDF 自定义 URL 路由；Typecho 已判定的首页、文章、独立页面、归档、分类、标签、搜索、作者、日期与 404 视图统一放在 `app/pages/`。框架通过 `TTDF\Theme\PageTemplates` 在 `themeInit` 阶段改写 `Archive::$themeDir`，不得自行解析 URL 复刻 Typecho 的归档判断。
 - 框架静态资源托管在 `vendor/yuinijika/ttdf/static/`，属于只读依赖区；不得再向 `core/` 放置 Vue、Arco Design Vue、设置页脚本或样式。
-- Vite 与 webpack 都是可选能力，默认关闭，同一时间只允许启用一种；框架只负责开发模式注入与生产 manifest 资源解析，不得生成 Vue/React/Svelte 专用入口，也不得把前端组件编译成静态 PHP。前端挂载契约统一为 `data-ttdf-component="Name"`，具体框架由主题自选。
-- `TTDF\Theme\Vite` 只输出 `<script type="module">`、`<link rel="stylesheet">` 与 `<link rel="modulepreload">`；`TTDF\Theme\Webpack` 只输出 `<script defer>` 与 `<link rel="stylesheet">`。两者由 `TTDF\Theme\FrontendAssets` 注册到 `theme.head` 钩子，主题只触发钩子，不得在 `AppHeader` 或页面模板里直接调用 `printHead()`。开发模式只接受 `http(s)://host[:port]` 形式的 `origin`，生产模式只读取各自 `out_dir/manifest`，并通过 `TTDF\Theme\BuildManifest` 对路径做相对路径与 `realpath` 边界校验。manifest 缺失或损坏时生产页面静默降级，调试模式只写 `logs/error.log`，不得输出半截错误 HTML。
+- Vite 与 webpack 都是可选能力，默认关闭，同一时间只允许启用一种；框架只负责开发模式注入与生产 manifest 资源解析，不得生成 Vue/React/Svelte 专用入口，也不得把前端组件编译成静态 PHP。前端挂载契约有两种，主题按需选择：小岛式主题在挂载点写 `data-ttdf-component="Name"`，整站 React/Vue 主题在 `<head>` 输出 `<script type="application/json" id="ttdf-app-data">` 数据与 `<div id="ttdf-app" data-ttdf-app>` 容器，由前端读取 JSON 后渲染 `<header>` / `<main id="main">` / `<footer>`。整站前端主题允许在容器内输出一份服务端 SEO 兜底 HTML（semantic 标题、链接、正文），React 首次渲染前必须用 `replaceChildren()` 清空它；除这份兜底外，PHP 不得输出可见页面骨架。
+- 整站前端主题的视觉基线是“浅灰底 + 白色卡片 + 12px 圆角 + 轻阴影”的模块化积木布局，所有色值、圆角、阴影、字体栈只在 `assets/style.css` 的 `:root` / `[data-theme="dark"]` 里定义一次，Tailwind 侧 `@theme inline` 只做 `--color-*` / `--radius-*` / `--shadow-*` 映射，不得在 `app.css` 或组件里重复写死色值；组件统一复用 `container-page`、`shell-grid`、`surface-card`、`card-pad`、`chip`、`rail-btn`、`section-label` 这些 utility，不新造近义 utility 或内联配色。
+- 整站前端主题的页面骨架固定为四处：`SiteHeader` 白色吸顶导航、`App` 的 `shell-grid` 两栏容器（正文列 + `SiteSidebar`）、`SiteFooter` 深色多列页脚、`ActionRail` 右侧悬浮操作栏。侧栏由 `Show_Sidebar` 主题设置控制，只在 `home` / `archive` / `post` / `page` 显示，数据来自 `PageData::widgets()`（`recent`、`categories`、`tags`、`stats`）；正文目录由 `vite/src/lib/article.ts` 的 `parseArticle()` 解析后交给侧栏渲染，`ProseBlock` 不再自己输出目录列。
+- 横幅（hero）使用 `--hero-from` / `--hero-to` 双色深色渐变 + 白色文字与白色主按钮，禁止直接用 `--accent` 铺满大色块或依赖 `--accent-contrast` 决定横幅文字色；列表缩略图取自正文第一张 `<img>`（`PageData::thumbnail()`，相对路径按站点地址补全），缺图时回退到品牌色占位块，不引入附件字段、上传目录或第三方图床；列表元信息只使用 Typecho 已有字段（日期、评论数、分类），不得伪造浏览量或点赞数。
+- `TTDF\Theme\Vite` 只输出 `<script type="module">`、`<link rel="stylesheet">` 与 `<link rel="modulepreload">`；`TTDF\Theme\Webpack` 只输出 `<script defer>` 与 `<link rel="stylesheet">`。两者由 `TTDF\Theme\FrontendAssets` 注册到 `theme.head` 钩子，主题只触发钩子，不得在 `AppHeader` 或页面模板里直接调用 `printHead()`。开发模式只接受 `http(s)://host[:port]` 形式的 `origin`，生产模式只读取各自 `out_dir/manifest`，并通过 `TTDF\Theme\BuildManifest` 对路径做相对路径与 `realpath` 边界校验。manifest 缺失或损坏时生产页面静默降级，调试模式只写 `logs/error.log`，不得输出半截错误 HTML。`vite.dev_preamble` 可放开发期需要先于 entry 执行的内联 module 脚本（`{{origin}}` 会替换为配置的 dev origin，只接受 `<script type="module">…</script>`），React Refresh 等工具链引导脚本必须写在配置里，不得硬编码进主题模板。
 - `vendor/yuinijika/ttdf/static/options/options.js` 与 `options.css` 是手写源码；`static/vue/*`、`static/arco/*` 只通过 `pnpm add vue@latest @arco-design/web-vue@latest` 与 `pnpm sync:static` 同步，不手工编辑 dist 文件。
+- 整站前端主题的 UI 组件只能通过官方 CLI 拉取，不得手写：shadcn/ui 用 `pnpm dlx shadcn@latest add <component> --yes` 生成到 `vite/src/components/ui/`，图标固定 `lucide-react`（`components.json` 的 `iconLibrary` 必须是 `lucide`），`vite/src/lib/utils.ts` 之类手写 `cn` 也不再需要（CLI 输出直接 `import { cn } from "cn"`）。主题自有组件放 `vite/src/components/{layout,blocks,content}/`，不得在 `ui/` 下新建、改写或“补丁式”覆盖 CLI 产物。
 - 设置页 UI 固定使用 Arco Design Vue，不得重新引入 Element Plus、`el-*` 标签或 Element Plus CSS 选择器。Arco 组件交互回归使用 `pnpm test:ui`（Vitest + jsdom + `@vue/test-utils`）。
 - 设置页分类使用语义化 `<nav>` + 单内容面板，不使用 Arco Tabs 的滑动内容容器；首次加载使用骨架屏而非 spinner；保持中性色板，不添加蓝色标题条、蓝色焦点框或导航强调条；placeholder 不回填字段 `description`。
 - `vendor/yuinijika/ttdf/package.json` 与 `pnpm-lock.yaml` 必须保留以复现静态资源，只忽略 `node_modules/`；不要在主题包中分发 `node_modules/`。
@@ -54,12 +58,12 @@ GET https://api.miomoe.cn/site/docs/page?path=ttdf/v5/index
 - 主题设置只能通过 `TTDF\Theme\Options` 读写；每个主题只写一行，`value` 是完整设置 JSON，字段必须来自 `app/config/theme.php` 白名单。默认落在自定义 `ttdf` 表，`name` 是主题名。
 - Typecho `config.inc.php` 未定义 `__TTDF_DATABASE_TABLE__`，或定义为真时使用 `ttdf` 表；显式定义为 `false` 时改存 Typecho 原生 `typecho_options`，主记录名 `ttdf:{主题名}`、`user = 0`，备份名 `ttdf:{主题名}:backup_{Unix时间戳}`。原生模式不得建表、不得读写用户级 options，也不得覆盖 `theme`、`theme:{主题名}`、`siteUrl` 等 Typecho 自有选项。
 - `typecho_options.name` 是 `varchar(32)`：主记录放不下时禁止保存并给出明确异常；备份名超出 32 字符时改用紧凑标记 `ttdf:{主题名}:b_{Unix时间戳}`，`backups()` 与 `restore()` 必须同时识别 `:backup_` 与 `:b_` 两种形式。
-- `app/config/app.php` 只公开 `debug`、`rest`、`router`、可选的 `vite` 与 `webpack`。`version`、`assets`、`settings` 不得写入主题的公开配置：版本在根 `index.php`，资源 CDN 在主题设置 `Assets_CDN`。`vite` 字段为 `enabled`、`dev`、`origin`、`root`、`entry`、`out_dir`、`manifest`；`webpack` 额外有 `entry_name`。两者默认产物都是 `assets/dist/`，manifest 分别为 `assets/dist/.vite/manifest.json` 与 `assets/dist/manifest.json`。
+- `app/config/app.php` 只公开 `debug`、`rest`、`router`、可选的 `vite` 与 `webpack`。`version`、`assets`、`settings` 不得写入主题的公开配置：版本在根 `index.php`，资源 CDN 在主题设置 `Assets_CDN`。`vite` 字段为 `enabled`、`dev`、`origin`、`root`、`entry`、`out_dir`、`manifest`，以及可选的 `dev_preamble`；`webpack` 额外有 `entry_name`。两者默认产物都是 `assets/dist/`，manifest 分别为 `assets/dist/.vite/manifest.json` 与 `assets/dist/manifest.json`。
 - `settings.table` 是框架内部的隐藏存储默认值，不定义设置项，也不要求在 `app/config/app.php` 出现；`TTDF_SETTINGS_TABLE` 环境变量仍可覆盖表名。设置不再使用 `settings.schema_version` 或 `__schema_version_{theme}` 行。
 - `debug`、REST、CORS、Token 开关与 Token 环境变量通过 `TTDF\Theme\ThemeConfig` 合并静态默认值与主题设置；资源 CDN 只从主题设置 `Assets_CDN` 读取，静态 `assets.cdn` 已移除。
 - 页面模板入口固定在 `app/pages/`，并使用 Typecho 官方模板名（`index.php`、`post.php`、`page.php`、`archive.php`、`single.php`、`404.php`）；默认只保留 `index.php`、`archive.php`、`post.php`、`page.php`、`404.php`。页面主体映射使用 `TemplateMap` 字段与 `TTDF\Theme\Templates`，槽位只能是 `post`、`page`、`index`、`archive`、`category`、`tag`、`search`、`author`、`date`、`404`。
 - 评论渲染固定为 `app/components/content/Comments.php`，不得再创建 `app/pages/comments.php`；`post.php` / `page.php` 的内联回退与 `Post` / `Page` 组件都必须通过 `Components::render(..., 'content/Comments', ['archive' => $archive])` 加载。页头、页尾、侧栏同理固定在 `app/components/layout/AppHeader.php`、`AppFooter.php`、`Sidebar.php`，入口模板只在最外层用 `Components::render()` 调用一次。
-- 评论列表 HTML 必须由全局 `threadedComments()` 回调重写，回调定义在 `content/Comments.php` 内并用 `function_exists()` 守卫；用 `$comments->listComments(['before' => '<ol class="comment-list">', 'after' => '</ol>'])` 包裹。禁止靠 CSS 覆盖 Typecho 默认的 `.comment-body` / `.comment-author` / `.comment-meta` / `.comment-content` / `.comment-reply` 结构。
+- 评论列表 HTML 必须由全局 `threadedComments()` 回调重写，回调定义在 `content/Comments.php` 内并用 `function_exists()` 守卫；用 `$comments->listComments(['before' => '<ol class="comment-list">', 'after' => '</ol>'])` 包裹。禁止靠 CSS 覆盖 Typecho 默认的 `.comment-body` / `.comment-author` / `.comment-meta` / `.comment-content` / `.comment-reply` 结构。回调输出使用主题自己的类名（`comment-list`、`comment-item`、`comment-inner`、`comment-head`、`comment-author`、`comment-role`、`comment-time`、`comment-status`、`comment-content`、`comment-reply`、`comment-children`），样式统一写在 `assets/style.css`，不要在 PHP 里拼 Tailwind 类名。
 - 评论组件内不能访问 `$archive->user` / `$archive->options`（Typecho 受保护成员）；登录用户与站点配置分别使用 `Widget\User::alloc()` 与 `Widget\Options::alloc()`。
 - `TemplateMap` 的组件值只允许 `[A-Za-z0-9_/-]`，不得包含 `..`；`Templates::render()` 必须通过 `Components::exists()` 校验后再 include，组件缺失时返回 `false` 并保留入口模板回退。
 - `TemplateMap` 字段必须声明 `components` 白名单（如 `['content/Post', 'content/Page', 'content/Archive', 'content/NotFound']`），只列可独立渲染页面主体的组件；`content/PostMeta`、`content/Comments`、`layout/AppHeader` 等片段不得进入白名单。`Settings::validate()` 与 `Templates::mapping()` 都必须按白名单过滤，运行时过滤用于兼容旧版本保存的非法映射。
@@ -102,6 +106,7 @@ GET https://api.miomoe.cn/site/docs/page?path=ttdf/v5/index
 - v2 的媒体与诊断接口复用 v1 的 `MediaController` 与 `AdminController::diagnostics()`，不要再写一份；`GET admin/site` 只返回版本、计数与站点摘要。
 - v2 的公开读接口委托 v1 `PublicController`，不得因为 v1 开关关闭而不可用；v1 关闭只影响 `/ttdf/v1`。
 - 媒体库支持三种声明：`type => 'Media'` 直接渲染媒体选择器并保存 Typecho 图片附件 `cid` 数字字符串；`type => 'Text'` / `type => 'Textarea'` 且 `media => true`（或 `media => ['enabled' => true]`）时保留可编辑控件并在旁边提供媒体库按钮，保存的是图片地址而不是 `cid`。`Settings::mediaMode()` 返回 `reference`（`Media`）或 `url`（文本类字段），`Settings::isMediaField()` 保持 `mediaMode() !== null` 语义；`Media::normalizeUrl()` 只接受 `http(s)` 绝对 URL、`/` 开头的站点根路径与遗留 `cid`，`Media::normalizeUrlList()` 对 `Textarea` 逐行清洗并把非法行丢弃。前端选择图片后 `Text` 写入地址、`Textarea` 追加为新行；不得再手工拼接上传目录或读取附件路径。
+- `type => 'Blocks'` 是页面区块字段：规范值是有序对象数组，每项为 `{name, variant?, data?}`；旧版 `name` / `name:variant` 字符串数组仍可读取并归一化。字段用 `options` 声明可选区块（`'hero' => ['label' => '首屏介绍', 'variants' => ['default' => '标准'], 'fields' => [...]]`），`fields` 是该区块的自定义数据白名单，结构与普通设置字段一致。`Settings::normalizeValue()` 只保留合法 `name` / `variant`，按 `data` 中声明的字段递归归一化，未知数据键丢弃；完全相同的条目去重，同名区块可因 variant 或 data 不同而重复出现。`reorder` 控制排序交互：省略或 `['drag']` 只显示拖拽手柄，`['buttons']` 只显示图标式上移/下移，`['drag','buttons']` 同时显示，`[]` 完全禁用；拖拽手柄必须支持上下方向键。`.ttdf-blocks` / `.ttdf-block` 是固定测试钩子。
 - 媒体库接口只允许管理员登录 + Typecho nonce + 同源访问；只暴露 `type=attachment`、`status=publish` 的图片附件，不得返回其他附件类型。
 - 媒体上传只接受 `$_FILES['file']`，单张上限 5 MiB，必须同时校验 `getimagesize()` MIME 与 JPG/PNG/GIF/WebP/BMP 扩展名；上传文件写入 Typecho 原生上传目录并建立附件记录。
 - 媒体删除必须限定在 Typecho 上传目录内并校验真实路径；上传目录优先读取 `__TYPECHO_UPLOAD_DIR__`，否则读取 `Widget\Upload::UPLOAD_DIR`；上传根目录使用 `__TYPECHO_UPLOAD_ROOT_DIR__`（缺失时回退 `__TYPECHO_ROOT_DIR__`），上传 URL 使用 `__TYPECHO_UPLOAD_URL__`（缺失时回退站点地址）；只有检测不到 Typecho 常量时才使用默认 `usr/uploads/`，不得在业务代码中硬编码。禁止通过损坏的附件路径删除任意文件；重命名只允许修改附件 `title`，不得改文件路径或扩展名。
@@ -136,7 +141,7 @@ GET https://api.miomoe.cn/site/docs/page?path=ttdf/v5/index
 
 ## 修改框架核心
 
-1. 先浏览 `https://blog.miomoe.cn/docs/skill/ttdf-dev.mdx`
+1. 先按「开发场景 Skill 读取」通过 Docs Agent API 读取线上 `skill/ttdf-dev` 与 `ttdf/v5/*`，不要用浏览器页面或 `.mdx` 后缀抓取
 2. 修改 `vendor/yuinijika/ttdf/core/` 或 `app/`，保持 PSR-4 与命名空间边界；核心改动必须同时更新线上 `ttdf-dev` Skill 的路径说明
 3. 补对应单元测试，安全相关改动补回归用例
 4. 运行 `composer lint`、`composer analyse`、`composer test`；修改设置页时另运行 `pnpm check:static` 与 `pnpm test:ui`
@@ -157,17 +162,28 @@ GET https://api.miomoe.cn/site/docs/page?path=ttdf/v5/index
 9. `type => 'Media'`、`Text + media` 与 `Textarea + media` 字段由设置页媒体库对话框通过 `/ttdf/v1/admin/media*` 选择附件；`Media` 保存 `cid`，文本类字段保存图片地址（`Textarea` 每行一个，追加不覆盖），都不要保存临时 URL；`Text + media` / `Textarea + media` 必须保留可编辑控件与媒体库按钮
 10. 媒体库改动至少补主题输出、列表过滤、分页/搜索、上传校验、重命名与删除边界测试
 11. `ColorPicker` 字段改动补 `ColorTest` 与 `SettingsTest` 的归一化 / 注入用例，并同步线上 `ttdf/v5/configuration/theme`、`ttdf/v5/configuration/panel`、`ttdf/v5/api/settings`、`ttdf/v5/api/support` 与两个 Skill
+12. `Blocks` 字段改动补 `SettingsTest` 的归一化用例与 `tests/options/fields.test.mjs` 的添加、排序、变体、自定义数据与 `reorder` 开关用例；新增区块类型时同步线上 `ttdf/v5/configuration/theme` 与 `ttdf/v5/configuration/panel`
 
 ## 接入或调整前端构建（Vite / Webpack）
 
 1. `app/config/app.php` 的 `vite` / `webpack` 段保持默认关闭；开发时用 `php vendor/yuinijika/ttdf/bin/ttdf dev --vite` 或 `--webpack` 只开启一种，生产构建后用 `dev --off` 把 `dev` 设回 `false`，可用 `--status` / `--dry-run` 先确认结果
 2. Vite 工程独立在 `vite/`：源码 `vite/src/`、配置 `vite/vite.config.ts`、依赖 `vite/package.json`；webpack 工程独立在 `webpack/`：源码 `webpack/src/`、配置 `webpack/webpack.config.cjs`、依赖 `webpack/package.json`
 3. Vite 必须开启 `build.manifest`，`build.outDir` 设为 `../assets/dist`；webpack 必须启用 `webpack-assets-manifest` 并输出 `assets/dist/manifest.json`，`output.path` 设为 `../assets/dist`，开发用 `style-loader` 注入样式，生产用 `mini-css-extract-plugin` 输出独立 CSS
-4. 前端挂载点统一写 `data-ttdf-component="Name"`，主题入口自行选择 Vue、React、Svelte 或原生 TypeScript；框架只负责资源注入
+4. 小岛式主题把挂载点写成 `data-ttdf-component="Name"`，整站前端主题写 `#ttdf-app-data` 数据脚本 + `#ttdf-app` 容器；容器内可放 SEO 兜底 HTML，前端首次渲染前必须清空。主题入口自行选择 Vue、React、Svelte 或原生 TypeScript，框架只负责资源注入
 5. `TTDF\Theme\FrontendAssets` 在框架启动时把 `Vite::printHead()` 与 `Webpack::printHead()` 注册到 `theme.head`；主题只在 `app/components/layout/AppHeader.php` 触发一次 `Hooks::doAction('theme.head', $archive)`，不要自行拼接 dev server 地址、读取 manifest 或直接调用 `printHead()`
 6. React Fast Refresh 的 preamble 通过 `theme.head` Hook 在开发模式追加；不要把它写进框架核心
 7. 生产环境不要求 Node.js，也不分发 `node_modules/`；主题包必须包含已构建的 `assets/dist/` 与对应 manifest
 8. 修改后补 `ViteTest` / `WebpackTest` / `FrontendAssetsTest`，至少覆盖默认关闭、开发注入、生产 manifest、缺失或损坏 manifest、非法 origin、路径穿越、配置校验与 `theme.head` 注入；同时覆盖两者互斥
+
+## 开发整站 React 主题（SunkenBoat 参考实现）
+
+1. 新增 UI 组件前先确认 CLI 已有产物：`cd vite && pnpm dlx shadcn@latest add <component> --yes`，禁止手写 `ui/` 下的组件或自建 `cn` 帮助函数
+2. 视觉改动先改 `assets/style.css` 的 token，再改组件类名；不要为了单个组件新增色值、圆角或阴影常量
+3. 页面结构改动限定在 `vite/src/components/{layout,blocks,content}/` 与 `App.tsx`：骨架（`SiteHeader` / `SiteSidebar` / `SiteFooter` / `ActionRail`）放 `layout/`，区块放 `blocks/`，列表卡片与元信息放 `content/`
+4. 需要新数据时先扩 `app/Support/PageData.php` 的 JSON 契约（例如 `widgets`），再在 `src/types.ts` 补类型；PHP 只输出数据，不输出可见骨架，也不要为了取数另建全局函数
+5. 缩略图、评论数、目录等派生信息只从 Typecho 已有字段推导；需要新字段时在 `app/config/theme.php` 声明并同步 `ttdf/v5/configuration/theme` 文档
+6. 改完至少跑 `pnpm --dir vite run build`（含 `tsc --noEmit`），再用无头浏览器跑一遍首页 / 文章 / 归档 / 404 / 移动端，确认 `overflow: false` 且控制台无 error；暗色、搜索弹层、回到顶部、评论表单必须复查
+7. 参考实现是 `D:\Codes\Typecho\usr\themes\SunkenBoat`；框架仓库不提交主题目录，只提交框架改动与文档
 
 ## 新增 REST 接口
 
@@ -185,7 +201,7 @@ GET https://api.miomoe.cn/site/docs/page?path=ttdf/v5/index
 3. 请求体一律通过 `Payload` 读取，必填字段先用 `Payload::require()`，失败返回 422 + `errors`；不要在控制器里 `json_decode` 或直接访问 `$_POST`
 4. 新增路由必须在 `handle()` 里沿用 `enterScope()`/`leaveScope()`，scope 取 `v2.public` 或 `v2.admin`，这样 `rest.response` 过滤器对两个版本同时生效
 5. 补测试：至少覆盖开关关闭 404、内置路由优先于扩展路由、未认证 401、非管理员 403、Cookie 写操作缺 `Origin` 403、token 轮换后 401、越权删除 403，以及新接口自身的 422 分支；`tests/Unit/V2FakeDb.php` 提供可读写的内存库，`tests/Unit/V2ApiTestCase.php` 提供共享夹具
-6. 文档只在线上维护：`ttdf/v5/rest-api/*` 增加页面，并同步 `ttdf/v5/configuration/security`、`ttdf/v5/security.mdx` 与两个 Skill 中的接口清单
+6. 文档只在线上维护：`ttdf/v5/rest-api/*` 增加页面，并同步 `ttdf/v5/configuration/security`、`ttdf/v5/security` 与两个 Skill 中的接口清单
 
 ## 新增 AJAX 动作
 
@@ -223,6 +239,7 @@ GET https://api.miomoe.cn/site/docs/page?path=ttdf/v5/index
 7. 不在仓库内保存完整文档或 Skill 镜像；API Key 只从本机受控环境读取，禁止写入仓库、命令行历史或提交记录
 8. `ttdf/v4/*` 只做归档修订，不新增功能文档；新内容写入 `ttdf/v5/*`
 9. 修改页面模板目录、启动流程、公共 API 或安全边界时，必须同步更新受影响的 v5 文档与两个 Skill
+10. 每个 v5/v4 页面统一以 `# 标题` 开头，紧跟一行 `> 摘要`（取自页面 description），标题必须与 H1 完全一致；接口页按「请求 → 响应 → 字段/参数 → 说明」组织，跨页引用只写站内路径 `/docs/...`，不要引用已删除的 `ttdf/v5/theme-settings`、`ttdf/v5/api-*` 等旧地址
 
 ## 发布
 

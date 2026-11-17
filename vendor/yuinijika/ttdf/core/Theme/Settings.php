@@ -277,6 +277,171 @@ final class Settings
     }
 
     /**
+     * Normalize a page-block list.
+     *
+     * The canonical value is an ordered list of `{name, variant?, data?}`
+     * objects. The legacy `name` / `name:variant` string form is still
+     * accepted so themes can upgrade without rewriting stored settings.
+     * Identical entries are collapsed; the same block may appear more than
+     * once as long as its variant or custom data differs.
+     *
+     * @param array<string, mixed> $field
+     * @return list<array<string, mixed>>
+     */
+    private static function normalizeBlocks(mixed $value, array $field): array
+    {
+        $items = is_string($value)
+            ? preg_split('/[\r\n,]+/', $value)
+            : (is_array($value) ? $value : []);
+
+        if (!is_array($items)) {
+            return [];
+        }
+
+        $catalog = self::blockCatalog($field);
+        $blocks = [];
+        $seen = [];
+
+        foreach ($items as $item) {
+            $block = self::normalizeBlockEntry($item, $catalog);
+            if ($block === null) {
+                continue;
+            }
+
+            $fingerprint = json_encode($block, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            if (is_string($fingerprint)) {
+                if (isset($seen[$fingerprint])) {
+                    continue;
+                }
+
+                $seen[$fingerprint] = true;
+            }
+
+            $blocks[] = $block;
+        }
+
+        return $blocks;
+    }
+
+    /**
+     * Declared blocks for one Blocks field, keyed by block name.
+     *
+     * @param array<string, mixed> $field
+     * @return array<string, array<string, mixed>>
+     */
+    private static function blockCatalog(array $field): array
+    {
+        $options = $field['options'] ?? [];
+        if (!is_array($options)) {
+            return [];
+        }
+
+        $catalog = [];
+        foreach ($options as $name => $definition) {
+            $name = (string) $name;
+            if (preg_match('/^[a-z][a-z0-9-]*$/', $name) !== 1) {
+                continue;
+            }
+
+            $catalog[$name] = is_array($definition) ? $definition : ['label' => (string) $definition];
+        }
+
+        return $catalog;
+    }
+
+    /**
+     * @param array<string, array<string, mixed>> $catalog
+     * @return array<string, mixed>|null
+     */
+    private static function normalizeBlockEntry(mixed $item, array $catalog): ?array
+    {
+        $values = [];
+
+        if (is_string($item)) {
+            $parts = explode(':', trim($item), 2);
+            $name = trim($parts[0]);
+            $variant = isset($parts[1]) ? trim($parts[1]) : '';
+        } elseif (is_array($item)) {
+            $name = trim((string) ($item['name'] ?? ($item['block'] ?? '')));
+            $variant = trim((string) ($item['variant'] ?? ''));
+            $values = isset($item['data']) && is_array($item['data']) ? $item['data'] : [];
+        } else {
+            return null;
+        }
+
+        if (preg_match('/^[a-z][a-z0-9-]*$/', $name) !== 1) {
+            return null;
+        }
+
+        if ($variant !== '' && preg_match('/^[a-z][a-z0-9-]*$/', $variant) !== 1) {
+            return null;
+        }
+
+        $entry = ['name' => $name];
+        if ($variant !== '') {
+            $entry['variant'] = $variant;
+        }
+
+        $data = self::normalizeBlockData($catalog[$name]['fields'] ?? [], $values);
+        if ($data !== []) {
+            $entry['data'] = $data;
+        }
+
+        return $entry;
+    }
+
+    /**
+     * Keep only declared custom-data keys and normalize each value with the
+     * same rules as a top-level theme field.
+     *
+     * @param mixed $declared
+     * @param array<string, mixed> $values
+     * @return array<string, mixed>
+     */
+    private static function normalizeBlockData(mixed $declared, array $values): array
+    {
+        if (!is_array($declared) || $values === []) {
+            return [];
+        }
+
+        $data = [];
+        $used = [];
+
+        foreach ($declared as $index => $field) {
+            if (!is_array($field)) {
+                continue;
+            }
+
+            $name = (string) ($field['name'] ?? ('field-' . $index));
+            if (preg_match('/^[A-Za-z0-9_]{1,100}$/', $name) !== 1 || isset($used[$name])) {
+                continue;
+            }
+            $used[$name] = true;
+
+            if (!array_key_exists($name, $values)) {
+                continue;
+            }
+
+            $type = (string) ($field['type'] ?? 'Text');
+            if (in_array($type, ['Blocks', 'Html'], true)) {
+                continue;
+            }
+
+            $normalized = self::normalizeValue($field, $values[$name]);
+            if (is_string($normalized)) {
+                $normalized = trim($normalized);
+            }
+            if ($normalized === '' || $normalized === [] || $normalized === null) {
+                continue;
+            }
+
+            $data[$name] = $normalized;
+        }
+
+        return $data;
+    }
+
+    /**
      * Normalize one schema value for both persisted reads and writes.
      *
      * @param array<string, mixed> $field
@@ -303,6 +468,10 @@ final class Settings
                 Templates::normalizeMap(is_array($value) ? $value : []),
                 Templates::allowedComponents($field)
             );
+        }
+
+        if ($type === 'Blocks') {
+            return self::normalizeBlocks($value, $field);
         }
 
         if (in_array($type, ['Checkbox', 'Tags', 'AddList', 'Cascader', 'Transfer'], true)) {

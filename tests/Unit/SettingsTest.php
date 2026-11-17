@@ -155,6 +155,65 @@ final class SettingsTest extends TestCase
         self::assertSame('1.3.0', $info['typechoVersion']);
     }
 
+    public function testBlockListsKeepOrderAndDropInvalidEntries(): void
+    {
+        $field = ['type' => 'Blocks', 'name' => 'Home_Blocks'];
+
+        self::assertSame(
+            [
+                ['name' => 'hero'],
+                ['name' => 'post-list', 'variant' => 'grid'],
+                ['name' => 'categories'],
+            ],
+            Settings::normalizeValue($field, [
+                'hero',
+                ' post-list:grid ',
+                'categories',
+                'hero',
+                '../bad',
+                'Bad Name',
+                5,
+                '',
+            ])
+        );
+        self::assertSame(
+            [['name' => 'a'], ['name' => 'b']],
+            Settings::normalizeValue($field, "a\nb")
+        );
+        self::assertSame([], Settings::normalizeValue($field, ''));
+        self::assertSame([], Settings::normalizeValue($field, [['nested']]));
+    }
+
+    public function testBlockCustomDataFollowsTheDeclaredFields(): void
+    {
+        $field = [
+            'type' => 'Blocks',
+            'name' => 'Home_Blocks',
+            'options' => [
+                'hero' => [
+                    'label' => '首屏',
+                    'fields' => [
+                        ['type' => 'Text', 'name' => 'title'],
+                        ['type' => 'Textarea', 'name' => 'lead'],
+                        ['type' => 'Switch', 'name' => 'showCta'],
+                    ],
+                ],
+            ],
+        ];
+
+        self::assertSame(
+            [
+                ['name' => 'hero', 'data' => ['title' => '深海', 'showCta' => false]],
+                ['name' => 'hero', 'data' => ['title' => '另一块']],
+            ],
+            Settings::normalizeValue($field, [
+                ['name' => 'hero', 'data' => ['title' => ' 深海 ', 'lead' => '', 'showCta' => false, 'unknown' => 'x']],
+                ['name' => 'hero', 'data' => ['title' => '另一块']],
+                ['name' => 'hero', 'data' => ['title' => ' 深海 ', 'showCta' => false]],
+            ])
+        );
+    }
+
     public function testSaveWritesOneJsonDocumentAndCreatesBackups(): void
     {
         $store = new InMemoryOptionsStore();

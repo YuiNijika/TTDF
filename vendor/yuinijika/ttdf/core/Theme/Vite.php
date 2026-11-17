@@ -63,6 +63,40 @@ final class Vite
     }
 
     /**
+     * Development-only inline modules requested by the theme.
+     *
+     * Some frontend plugins need a global preamble before the entry module
+     * loads. Keeping it in config avoids hard-coding stack details in the
+     * theme header while still letting the theme choose its own tooling.
+     */
+    public static function devPreamble(): string
+    {
+        $configured = Config::get('vite.dev_preamble', '');
+        $entries = is_array($configured) ? $configured : [$configured];
+        $origin = self::origin();
+        if ($origin === null) {
+            return '';
+        }
+
+        $html = '';
+        foreach ($entries as $entry) {
+            if (!is_string($entry)) {
+                continue;
+            }
+
+            $entry = trim(str_replace('{{origin}}', $origin, $entry));
+            if ($entry === '' || preg_match('#^<script type="module">.*</script>$#s', $entry) !== 1) {
+                self::report('invalid vite.dev_preamble; expected an inline module script');
+                continue;
+            }
+
+            $html .= $entry . PHP_EOL;
+        }
+
+        return $html;
+    }
+
+    /**
      * Tags for `<head>`. Development emits the Vite client and entry module;
      * production emits styles, modulepreload links and the entry script.
      */
@@ -101,7 +135,8 @@ final class Vite
         $client = $origin . '/@vite/client';
         $entry = $origin . '/' . self::entry();
 
-        return '<script type="module" src="' . Escaper::url($client) . '"></script>' . PHP_EOL
+        return self::devPreamble()
+            . '<script type="module" src="' . Escaper::url($client) . '"></script>' . PHP_EOL
             . '<script type="module" src="' . Escaper::url($entry) . '"></script>' . PHP_EOL;
     }
 

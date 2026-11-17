@@ -77,6 +77,47 @@ final class ViteTest extends TestCase
         self::assertSame('', Vite::head());
     }
 
+    public function testDevPreambleRunsBeforeClientAndEntry(): void
+    {
+        Config::load([
+            'vite' => [
+                'enabled' => true,
+                'dev' => true,
+                'origin' => 'http://localhost:5173',
+                'entry' => 'src/main.tsx',
+                'dev_preamble' => '<script type="module">import Refresh from "{{origin}}/@react-refresh";</script>',
+            ],
+        ]);
+
+        $html = Vite::head();
+        $preamble = strpos($html, 'import Refresh from "http://localhost:5173/@react-refresh"');
+        $client = strpos($html, 'http://localhost:5173/@vite/client');
+        $entry = strpos($html, 'http://localhost:5173/src/main.tsx');
+
+        self::assertNotFalse($preamble);
+        self::assertNotFalse($client);
+        self::assertNotFalse($entry);
+        self::assertTrue($preamble < $client);
+        self::assertTrue($client < $entry);
+    }
+
+    public function testInvalidDevPreambleIsIgnored(): void
+    {
+        Config::load([
+            'vite' => [
+                'enabled' => true,
+                'dev' => true,
+                'origin' => 'http://localhost:5173',
+                'dev_preamble' => '<script>window.bad = true;</script>',
+            ],
+        ]);
+
+        $html = Vite::head();
+
+        self::assertStringNotContainsString('window.bad', $html);
+        self::assertStringContainsString('http://localhost:5173/@vite/client', $html);
+    }
+
     public function testProductionReadsManifestAndEmitsHashedAssets(): void
     {
         $this->root = $this->makeThemeRoot([

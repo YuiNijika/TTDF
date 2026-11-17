@@ -67,6 +67,7 @@ describe('Arco settings controls', () => {
             field('Media'),
             field('TemplateMap'),
             field('AddList'),
+            field('Blocks', { options: { hero: '首屏' } }),
             field('Html', { content: '<a-tag>说明</a-tag>' }),
             field('Unsupported')
         ];
@@ -179,6 +180,97 @@ describe('Arco settings controls', () => {
 
         await wrapper.findAll('button').find((button) => button.text() === '删除').trigger('click');
         expect(lastEmitted(wrapper)?.[0]).toEqual(['second']);
+        wrapper.unmount();
+    });
+
+    it('composes, reorders, and removes page blocks', async () => {
+        const wrapper = mountField(
+            field('Blocks', {
+                reorder: ['buttons'],
+                options: {
+                    hero: {
+                        label: '首屏',
+                        variants: { default: '默认', compact: '紧凑' },
+                        fields: [{ type: 'Text', name: 'title', label: '标题' }]
+                    },
+                    'post-list': { label: '文章列表', variants: { grid: '卡片网格', list: '分隔列表' } }
+                }
+            }),
+            [{ name: 'hero', data: { title: '旧标题' } }]
+        );
+
+        expect(wrapper.findAll('.ttdf-block')).toHaveLength(1);
+        expect(wrapper.find('.ttdf-block[data-block="hero"]').exists()).toBe(true);
+        expect(wrapper.find('.ttdf-block').attributes('draggable')).toBe('false');
+
+        const addSelect = wrapper.find('.ttdf-block-add').findComponent({ name: 'Select' });
+        addSelect.vm.$emit('update:modelValue', 'post-list');
+        await nextTick();
+        await wrapper.find('.ttdf-block-add').find('button').trigger('click');
+        expect(lastEmitted(wrapper)?.[0]).toEqual([
+            { name: 'hero', data: { title: '旧标题' } },
+            { name: 'post-list' }
+        ]);
+        expect(wrapper.findAll('.ttdf-block')[1].attributes('data-block')).toBe('post-list');
+
+        const formField = wrapper.findComponent(window.TTDFOptions.FormField);
+        formField.vm.toggleBlock(0);
+        await nextTick();
+        const dataInput = wrapper.find('.ttdf-block[data-block="hero"] .ttdf-block-data input');
+        expect(dataInput.exists()).toBe(true);
+        await dataInput.setValue('新标题');
+        expect(lastEmitted(wrapper)?.[0]).toEqual([
+            { name: 'hero', data: { title: '新标题' } },
+            { name: 'post-list' }
+        ]);
+
+        const action = (label) => wrapper
+            .findAll('.ttdf-block-action')
+            .find((button) => button.attributes('aria-label') === label);
+
+        await action('上移 文章列表').trigger('click');
+        expect(lastEmitted(wrapper)?.[0]).toEqual([
+            { name: 'post-list' },
+            { name: 'hero', data: { title: '新标题' } }
+        ]);
+
+        const variantSelect = wrapper
+            .find('.ttdf-block[data-block="post-list"]')
+            .findComponent({ name: 'Select' });
+        variantSelect.vm.$emit('update:modelValue', 'grid');
+        await nextTick();
+        expect(lastEmitted(wrapper)?.[0]).toEqual([
+            { name: 'post-list', variant: 'grid' },
+            { name: 'hero', data: { title: '新标题' } }
+        ]);
+
+        await action('移除 文章列表').trigger('click');
+        expect(lastEmitted(wrapper)?.[0]).toEqual([{ name: 'hero', data: { title: '新标题' } }]);
+
+        wrapper.unmount();
+    });
+
+    it('uses a drag handle plus keyboard reordering by default', async () => {
+        const wrapper = mountField(
+            field('Blocks', {
+                options: {
+                    hero: { label: '首屏' },
+                    'post-list': { label: '文章列表' }
+                }
+            }),
+            [{ name: 'post-list' }, { name: 'hero' }]
+        );
+
+        expect(wrapper.find('.ttdf-block').attributes('draggable')).toBe('true');
+        expect(wrapper.find('.ttdf-block-grip').exists()).toBe(true);
+        expect(wrapper.findAll('.ttdf-block-actions button')).toHaveLength(2);
+
+        await wrapper.find('.ttdf-block-grip').trigger('keydown', { key: 'ArrowDown' });
+        expect(lastEmitted(wrapper)?.[0]).toEqual([{ name: 'hero' }, { name: 'post-list' }]);
+
+        await wrapper.findAll('.ttdf-block-grip')[1].trigger('keydown', { key: 'ArrowUp' });
+        expect(lastEmitted(wrapper)?.[0]).toEqual([{ name: 'post-list' }, { name: 'hero' }]);
+
         wrapper.unmount();
     });
 
