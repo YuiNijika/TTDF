@@ -18,6 +18,7 @@ use TTDF\Http\Rest\V2\Auth as RestV2Auth;
 use TTDF\Http\Rest\V2\Router as RestV2Router;
 use TTDF\Routing\AutoRouter;
 use TTDF\Theme\ArchiveLayout;
+use TTDF\Theme\FrontendAssets;
 use TTDF\Theme\Options;
 use TTDF\Theme\Schema;
 use TTDF\Theme\ThemeConfig;
@@ -52,6 +53,7 @@ final class Framework
 
         TypechoBridge::register();
         ArchiveLayout::register();
+        FrontendAssets::register();
         RuntimeConsole::register();
         AjaxEndpoint::registerRoutes();
         Hooks::doAction('framework.boot');
@@ -95,6 +97,7 @@ final class Framework
         self::$root = '';
         AjaxEndpoint::reset();
         ArchiveLayout::reset();
+        FrontendAssets::reset();
         RuntimeConsole::reset();
         Hooks::reset();
         TypechoBridge::reset();

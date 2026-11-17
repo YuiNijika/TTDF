@@ -6,10 +6,7 @@ namespace TTDF\Theme;
 
 use TTDF\Config\Config;
 use TTDF\Config\ConfigLoader;
-use TTDF\Diagnostics\Logger;
-use TTDF\Framework;
 use TTDF\Support\Escaper;
-use TTDF\Support\Path;
 
 /**
  * Optional Vite bridge.
@@ -30,16 +27,14 @@ final class Vite
 
     private const DEFAULT_MANIFEST = '.vite/manifest.json';
 
-    private const MAX_MANIFEST_BYTES = 2_097_152;
-
     public static function enabled(): bool
     {
-        return self::toBool(Config::get('vite.enabled', false));
+        return BuildManifest::toBool(Config::get('vite.enabled', false));
     }
 
     public static function dev(): bool
     {
-        return self::enabled() && self::toBool(Config::get('vite.dev', false));
+        return self::enabled() && BuildManifest::toBool(Config::get('vite.dev', false));
     }
 
     public static function origin(): ?string
@@ -53,8 +48,8 @@ final class Vite
     {
         $root = Config::get('vite.root', self::DEFAULT_ROOT);
 
-        return is_string($root) && self::isSafeRelativePath($root)
-            ? self::normalizeRelative($root)
+        return is_string($root) && BuildManifest::isSafePath($root)
+            ? BuildManifest::normalize($root)
             : self::DEFAULT_ROOT;
     }
 
@@ -62,8 +57,8 @@ final class Vite
     {
         $entry = Config::get('vite.entry', self::DEFAULT_ENTRY);
 
-        return is_string($entry) && self::isSafeRelativePath($entry)
-            ? self::normalizeRelative($entry)
+        return is_string($entry) && BuildManifest::isSafePath($entry)
+            ? BuildManifest::normalize($entry)
             : self::DEFAULT_ENTRY;
     }
 
@@ -90,56 +85,9 @@ final class Vite
      */
     public static function manifest(): array
     {
-        $themeRoot = Framework::root();
-        if ($themeRoot === '') {
-            return [];
-        }
+        $fallback = self::manifestFile() === self::DEFAULT_MANIFEST ? 'manifest.json' : '';
 
-        $root = realpath($themeRoot);
-        if ($root === false) {
-            return [];
-        }
-
-        $relative = Path::join(self::outDir(), self::manifestFile());
-        $file = Path::join($themeRoot, $relative);
-
-        if (!is_file($file) && self::manifestFile() === self::DEFAULT_MANIFEST) {
-            // Vite 4 wrote manifest.json at the output root.
-            $relative = Path::join(self::outDir(), 'manifest.json');
-            $file = Path::join($themeRoot, $relative);
-        }
-
-        $real = is_file($file) ? realpath($file) : false;
-        if ($real === false || !Path::contains($themeRoot, $real)) {
-            self::report('manifest not found at ' . $relative);
-            return [];
-        }
-
-        $size = @filesize($real);
-        if ($size === false || $size > self::MAX_MANIFEST_BYTES) {
-            self::report('manifest is empty or larger than 2 MiB');
-            return [];
-        }
-
-        $json = @file_get_contents($real);
-        if ($json === false) {
-            self::report('manifest could not be read');
-            return [];
-        }
-
-        try {
-            $manifest = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
-        } catch (\Throwable) {
-            self::report('manifest is not valid JSON');
-            return [];
-        }
-
-        if (!is_array($manifest)) {
-            self::report('manifest must decode to an object');
-            return [];
-        }
-
-        return $manifest;
+        return BuildManifest::read(self::outDir(), self::manifestFile(), $fallback, 'Vite');
     }
 
     private static function devHead(): string
@@ -197,14 +145,14 @@ final class Vite
             // Imported styles come first so the entry stylesheet can override
             // shared component styles in the cascade.
             foreach (self::stringList($chunk['css'] ?? null) as $css) {
-                if (self::isSafeRelativePath($css)) {
-                    $styles[] = self::normalizeRelative($css);
+                if (BuildManifest::isSafePath($css)) {
+                    $styles[] = BuildManifest::normalize($css);
                 }
             }
 
             if (!$isEntry && isset($chunk['file']) && is_string($chunk['file'])) {
-                if (self::isSafeRelativePath($chunk['file'])) {
-                    $preloads[] = self::normalizeRelative($chunk['file']);
+                if (BuildManifest::isSafePath($chunk['file'])) {
+                    $preloads[] = BuildManifest::normalize($chunk['file']);
                 }
             }
         };
@@ -212,9 +160,9 @@ final class Vite
 
         $entryChunk = $manifest[$entryKey];
         $entryFile = isset($entryChunk['file']) && is_string($entryChunk['file'])
-            ? self::normalizeRelative($entryChunk['file'])
+            ? BuildManifest::normalize($entryChunk['file'])
             : '';
-        if ($entryFile === '' || !self::isSafeRelativePath($entryFile)) {
+        if ($entryFile === '' || !BuildManifest::isSafePath($entryFile)) {
             self::report('entry chunk has no valid file');
             return '';
         }
@@ -253,9 +201,9 @@ final class Vite
      */
     private static function findEntryKey(array $manifest): ?string
     {
-        $entry = self::normalizeRelative(self::entry());
+        $entry = BuildManifest::normalize(self::entry());
         foreach (array_keys($manifest) as $key) {
-            $normalized = self::normalizeRelative($key);
+            $normalized = BuildManifest::normalize($key);
             if ($normalized === $entry || str_ends_with($normalized, '/' . $entry)) {
                 return $key;
             }
@@ -266,34 +214,27 @@ final class Vite
 
     private static function assetUrl(string $file): ?string
     {
-        if (!self::isSafeRelativePath($file)) {
-            return null;
-        }
-
-        return Assets::url(
-            Path::join(self::outDir(), self::normalizeRelative($file)),
-            ''
-        );
+        return BuildManifest::assetUrl(self::outDir(), $file);
     }
 
     private static function outDir(): string
     {
         $dir = Config::get('vite.out_dir', self::DEFAULT_OUT_DIR);
-        if (!is_string($dir) || !self::isSafeRelativePath($dir)) {
+        if (!is_string($dir) || !BuildManifest::isSafePath($dir)) {
             return self::DEFAULT_OUT_DIR;
         }
 
-        return self::normalizeRelative($dir);
+        return BuildManifest::normalize($dir);
     }
 
     private static function manifestFile(): string
     {
         $manifest = Config::get('vite.manifest', self::DEFAULT_MANIFEST);
-        if (!is_string($manifest) || !self::isSafeRelativePath($manifest)) {
+        if (!is_string($manifest) || !BuildManifest::isSafePath($manifest)) {
             return self::DEFAULT_MANIFEST;
         }
 
-        return self::normalizeRelative($manifest);
+        return BuildManifest::normalize($manifest);
     }
 
     /**
@@ -308,61 +249,8 @@ final class Vite
         return array_values(array_filter($value, 'is_string'));
     }
 
-    private static function isSafeRelativePath(string $path): bool
-    {
-        $path = self::normalizeRelative($path);
-        if ($path === '' || str_starts_with($path, '/') || preg_match('#^[A-Za-z]:#', $path) === 1) {
-            return false;
-        }
-
-        foreach (explode('/', $path) as $segment) {
-            if ($segment === '' || $segment === '.' || $segment === '..') {
-                return false;
-            }
-
-            if (preg_match('/^[A-Za-z0-9_.-]+$/', $segment) !== 1) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private static function normalizeRelative(string $path): string
-    {
-        return trim(str_replace('\\', '/', trim($path)), '/');
-    }
-
-    private static function toBool(mixed $value): bool
-    {
-        if (is_bool($value)) {
-            return $value;
-        }
-
-        if (is_int($value) || is_float($value)) {
-            return $value != 0;
-        }
-
-        return is_string($value)
-            && in_array(strtolower(trim($value)), ['1', 'true', 'yes', 'on'], true);
-    }
-
     private static function report(string $message): void
     {
-        if (!ThemeConfig::debug()) {
-            return;
-        }
-
-        $root = Framework::root();
-        if ($root === '') {
-            return;
-        }
-
-        try {
-            (new Logger($root . '/logs/error.log'))
-                ->write('warning', 'Vite: ' . $message);
-        } catch (\Throwable) {
-            // Diagnostics must never break the page.
-        }
+        BuildManifest::report('Vite', $message);
     }
 }

@@ -41,4 +41,15 @@ return [
         'manifest' => '.vite/manifest.json',
     ],
 
+    'webpack' => [
+        'enabled' => false,
+        'dev' => false,
+        'origin' => 'http://localhost:8090',
+        'root' => 'webpack',
+        'entry' => 'src/main.ts',
+        'entry_name' => 'main',
+        'out_dir' => 'assets/dist',
+        'manifest' => 'manifest.json',
+    ],
+
 ];

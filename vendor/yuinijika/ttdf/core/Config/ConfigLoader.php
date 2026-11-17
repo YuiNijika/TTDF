@@ -38,6 +38,16 @@ final class ConfigLoader
             'out_dir' => 'assets/dist',
             'manifest' => '.vite/manifest.json',
         ],
+        'webpack' => [
+            'enabled' => false,
+            'dev' => false,
+            'origin' => 'http://localhost:8090',
+            'root' => 'webpack',
+            'entry' => 'src/main.ts',
+            'entry_name' => 'main',
+            'out_dir' => 'assets/dist',
+            'manifest' => 'manifest.json',
+        ],
         // Internal storage default. Themes may override the table name, but
         // app/config/app.php does not advertise it as a public option.
         'settings' => [
@@ -75,7 +85,7 @@ final class ConfigLoader
      */
     private static function validateShape(array $config): void
     {
-        foreach (['rest', 'router', 'settings', 'vite'] as $section) {
+        foreach (['rest', 'router', 'settings', 'vite', 'webpack'] as $section) {
             if (!is_array($config[$section] ?? null)) {
                 throw new RuntimeException('TTDF configuration section must be an array: ' . $section);
             }
@@ -165,7 +175,12 @@ final class ConfigLoader
             throw new RuntimeException('CORS allowed_origins must be an array');
         }
 
-        $config['vite']['origin'] = self::validateVite($config['vite']);
+        $config['vite']['origin'] = self::validateBundler('vite', $config['vite']);
+        $config['webpack']['origin'] = self::validateBundler('webpack', $config['webpack']);
+
+        if ($config['vite']['enabled'] && $config['webpack']['enabled']) {
+            throw new RuntimeException('Only one frontend bundler can be enabled: vite or webpack');
+        }
     }
 
     /**
@@ -179,6 +194,8 @@ final class ConfigLoader
         $config['router']['enabled'] = self::toBool($config['router']['enabled'] ?? true);
         $config['vite']['enabled'] = self::toBool($config['vite']['enabled'] ?? false);
         $config['vite']['dev'] = self::toBool($config['vite']['dev'] ?? false);
+        $config['webpack']['enabled'] = self::toBool($config['webpack']['enabled'] ?? false);
+        $config['webpack']['dev'] = self::toBool($config['webpack']['dev'] ?? false);
         $ttl = $config['rest']['v2_token_ttl'] ?? 0;
         $config['rest']['v2_token_ttl'] = is_numeric($ttl) ? (int) $ttl : 0;
     }
@@ -201,49 +218,69 @@ final class ConfigLoader
     }
 
     /**
-     * @param array<string, mixed> $vite
+     * @param array<string, mixed> $bundle
      */
-    private static function validateVite(array $vite): string
+    private static function validateBundler(string $section, array $bundle): string
     {
         foreach (['root', 'entry', 'out_dir', 'manifest'] as $key) {
-            $value = $vite[$key] ?? null;
+            $value = $bundle[$key] ?? null;
             if (!is_string($value) || !self::isSafeRelativePath($value)) {
-                throw new RuntimeException('Invalid vite.' . $key . '; expected a relative path');
+                throw new RuntimeException('Invalid ' . $section . '.' . $key . '; expected a relative path');
             }
         }
 
-        $root = self::normalizeRelative((string) $vite['root']);
+        $root = self::normalizeRelative((string) $bundle['root']);
         foreach (['app', 'vendor', 'logs'] as $protected) {
             if ($root === $protected || str_starts_with($root, $protected . '/')) {
-                throw new RuntimeException('Invalid vite.root; source cannot live in a framework directory');
+                throw new RuntimeException(
+                    'Invalid ' . $section . '.root; source cannot live in a framework directory'
+                );
             }
         }
 
-        $outDir = self::normalizeRelative((string) $vite['out_dir']);
+        $outDir = self::normalizeRelative((string) $bundle['out_dir']);
         if ($outDir === $root || str_starts_with($outDir, $root . '/')) {
-            throw new RuntimeException('Invalid vite.out_dir; the build output cannot live inside vite.root');
+            throw new RuntimeException(
+                'Invalid ' . $section . '.out_dir; the build output cannot live inside ' . $section . '.root'
+            );
         }
 
         if (str_starts_with($root, $outDir . '/')) {
-            throw new RuntimeException('Invalid vite.out_dir; vite.root cannot live inside the build output');
+            throw new RuntimeException(
+                'Invalid ' . $section . '.out_dir; ' . $section . '.root cannot live inside the build output'
+            );
         }
 
-        foreach (['app', 'vendor', 'logs', 'vite'] as $protected) {
+        foreach (['app', 'vendor', 'logs', 'vite', 'webpack'] as $protected) {
             if ($outDir === $protected || str_starts_with($outDir, $protected . '/')) {
-                throw new RuntimeException('Invalid vite.out_dir; the build output cannot replace a framework directory');
+                throw new RuntimeException(
+                    'Invalid ' . $section . '.out_dir; the build output cannot replace a framework directory'
+                );
             }
         }
 
-        // `assets/` itself contains style.css and img/; building into it would
-        // make Vite's emptyOutDir remove those source assets.
+        // `assets/` itself contains style.css and img/; a bundler cleaning its
+        // output directory there would remove those source assets.
         if ($outDir === 'assets') {
-            throw new RuntimeException('Invalid vite.out_dir; choose a build subdirectory such as assets/dist');
+            throw new RuntimeException(
+                'Invalid ' . $section . '.out_dir; choose a build subdirectory such as assets/dist'
+            );
         }
 
-        $origin = $vite['origin'] ?? null;
+        if ($section === 'webpack') {
+            $entryName = $bundle['entry_name'] ?? null;
+            if (!is_string($entryName) || preg_match('/^[A-Za-z0-9_-]+$/', $entryName) !== 1) {
+                throw new RuntimeException('Invalid webpack.entry_name; use letters, digits, _ or -');
+            }
+        }
+
+        $origin = $bundle['origin'] ?? null;
         $normalized = is_string($origin) ? self::normalizeOrigin($origin) : null;
         if ($normalized === null) {
-            throw new RuntimeException('Invalid vite.origin; expected an http(s) origin such as http://localhost:5173');
+            $sample = $section === 'webpack' ? 'http://localhost:8090' : 'http://localhost:5173';
+            throw new RuntimeException(
+                'Invalid ' . $section . '.origin; expected an http(s) origin such as ' . $sample
+            );
         }
 
         return $normalized;

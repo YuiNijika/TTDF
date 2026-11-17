@@ -12,6 +12,7 @@ vendor/*
 !vendor/yuinijika/ttdf/**
 vendor/yuinijika/ttdf/node_modules/
 vite/node_modules/
+webpack/node_modules/
 .phpunit.cache/
 .idea/
 .trae/
