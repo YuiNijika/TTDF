@@ -9,9 +9,9 @@ declare(strict_types=1);
  * rendering is redirected to app/pages by the framework.
  *
  * @package TTDF Next
- * @author yuinijika
+ * @author Yuinijika
  * @version 5.0.3-next
- * @link https://blog.miomoe.cn
+ * @link https://github.com/YuiNijika/TTDF
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) {
