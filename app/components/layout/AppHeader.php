@@ -13,6 +13,7 @@ use TTDF\Theme\Assets;
 use TTDF\Theme\Media;
 use TTDF\Theme\Options;
 use TTDF\Theme\Settings;
+use TTDF\Theme\Vite;
 
 $archive = $viewData['archive'] ?? null;
 $options = Typecho::options();
@@ -70,6 +71,7 @@ $documentTitle = $pageTitle !== '' && $pageTitle !== $siteTitle
             }
         })();
     </script>
+    <?php Vite::printHead(); ?>
     <link rel="icon" href="<?php echo Escaper::url(Assets::url('img/favicon.svg')); ?>" type="image/svg+xml">
     <link rel="stylesheet" href="<?php echo Escaper::url(Assets::url('style.css')); ?>">
     <?php \TTDF\View\Components::render(\TTDF\Framework::root(), 'layout/ThemeColors'); ?>

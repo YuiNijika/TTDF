@@ -14,16 +14,29 @@ final class ConfigLoader
         'debug' => false,
         'rest' => [
             'enabled' => false,
-            'prefix' => 'ttdf/v1',
+            'v1_prefix' => 'ttdf/v1',
+            'prefix' => [],
             'cors' => [
                 'allowed_origins' => [],
             ],
             'token_enabled' => false,
             'token_env' => 'TTDF_REST_TOKEN',
+            'v2_enabled' => false,
+            'v2_prefix' => 'ttdf/v2',
+            'v2_token_ttl' => 0,
         ],
         'router' => [
             'enabled' => true,
             'pages_dir' => 'router',
+        ],
+        'vite' => [
+            'enabled' => false,
+            'dev' => false,
+            'origin' => 'http://localhost:5173',
+            'root' => 'vite',
+            'entry' => 'src/main.ts',
+            'out_dir' => 'assets/dist',
+            'manifest' => '.vite/manifest.json',
         ],
         // Internal storage default. Themes may override the table name, but
         // app/config/app.php does not advertise it as a public option.
@@ -62,7 +75,7 @@ final class ConfigLoader
      */
     private static function validateShape(array $config): void
     {
-        foreach (['rest', 'router', 'settings'] as $section) {
+        foreach (['rest', 'router', 'settings', 'vite'] as $section) {
             if (!is_array($config[$section] ?? null)) {
                 throw new RuntimeException('TTDF configuration section must be an array: ' . $section);
             }
@@ -110,10 +123,23 @@ final class ConfigLoader
     /**
      * @param array<string, mixed> $config
      */
-    private static function validate(array $config): void
+    private static function validate(array &$config): void
     {
-        $prefix = (string) ($config['rest']['prefix'] ?? '');
-        if ($prefix === '' || preg_match('/^[A-Za-z0-9_\-\/]+$/', $prefix) !== 1) {
+        foreach (['v1_prefix', 'v2_prefix'] as $key) {
+            $prefix = $config['rest'][$key] ?? null;
+            if ($prefix !== null && !is_string($prefix)) {
+                throw new RuntimeException('Invalid REST prefix: ' . $key);
+            }
+
+            self::validatePrefix($prefix, 'Invalid REST prefix: ' . $key);
+        }
+
+        // `rest.prefix` is still accepted as the legacy v1 string, but the
+        // current schema uses it as a map of extra mounts.
+        $legacyPrefix = $config['rest']['prefix'] ?? null;
+        if (is_string($legacyPrefix)) {
+            self::validatePrefix($legacyPrefix, 'Invalid REST prefix');
+        } elseif (!is_array($legacyPrefix)) {
             throw new RuntimeException('Invalid REST prefix');
         }
 
@@ -138,6 +164,8 @@ final class ConfigLoader
         if (!is_array($origins)) {
             throw new RuntimeException('CORS allowed_origins must be an array');
         }
+
+        $config['vite']['origin'] = self::validateVite($config['vite']);
     }
 
     /**
@@ -149,6 +177,139 @@ final class ConfigLoader
         $config['rest']['enabled'] = self::toBool($config['rest']['enabled'] ?? false);
         $config['rest']['token_enabled'] = self::toBool($config['rest']['token_enabled'] ?? false);
         $config['router']['enabled'] = self::toBool($config['router']['enabled'] ?? true);
+        $config['vite']['enabled'] = self::toBool($config['vite']['enabled'] ?? false);
+        $config['vite']['dev'] = self::toBool($config['vite']['dev'] ?? false);
+        $ttl = $config['rest']['v2_token_ttl'] ?? 0;
+        $config['rest']['v2_token_ttl'] = is_numeric($ttl) ? (int) $ttl : 0;
+    }
+
+    private static function validatePrefix(?string $prefix, string $message): void
+    {
+        if ($prefix === null) {
+            return;
+        }
+
+        $prefix = trim($prefix);
+        if (
+            $prefix === ''
+            || str_contains($prefix, '..')
+            || str_contains($prefix, '\\')
+            || preg_match('#^[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*$#', trim($prefix, '/')) !== 1
+        ) {
+            throw new RuntimeException($message);
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $vite
+     */
+    private static function validateVite(array $vite): string
+    {
+        foreach (['root', 'entry', 'out_dir', 'manifest'] as $key) {
+            $value = $vite[$key] ?? null;
+            if (!is_string($value) || !self::isSafeRelativePath($value)) {
+                throw new RuntimeException('Invalid vite.' . $key . '; expected a relative path');
+            }
+        }
+
+        $root = self::normalizeRelative((string) $vite['root']);
+        foreach (['app', 'vendor', 'logs'] as $protected) {
+            if ($root === $protected || str_starts_with($root, $protected . '/')) {
+                throw new RuntimeException('Invalid vite.root; source cannot live in a framework directory');
+            }
+        }
+
+        $outDir = self::normalizeRelative((string) $vite['out_dir']);
+        if ($outDir === $root || str_starts_with($outDir, $root . '/')) {
+            throw new RuntimeException('Invalid vite.out_dir; the build output cannot live inside vite.root');
+        }
+
+        if (str_starts_with($root, $outDir . '/')) {
+            throw new RuntimeException('Invalid vite.out_dir; vite.root cannot live inside the build output');
+        }
+
+        foreach (['app', 'vendor', 'logs', 'vite'] as $protected) {
+            if ($outDir === $protected || str_starts_with($outDir, $protected . '/')) {
+                throw new RuntimeException('Invalid vite.out_dir; the build output cannot replace a framework directory');
+            }
+        }
+
+        // `assets/` itself contains style.css and img/; building into it would
+        // make Vite's emptyOutDir remove those source assets.
+        if ($outDir === 'assets') {
+            throw new RuntimeException('Invalid vite.out_dir; choose a build subdirectory such as assets/dist');
+        }
+
+        $origin = $vite['origin'] ?? null;
+        $normalized = is_string($origin) ? self::normalizeOrigin($origin) : null;
+        if ($normalized === null) {
+            throw new RuntimeException('Invalid vite.origin; expected an http(s) origin such as http://localhost:5173');
+        }
+
+        return $normalized;
+    }
+
+    private static function isSafeRelativePath(string $path): bool
+    {
+        $path = self::normalizeRelative($path);
+        if ($path === '' || str_starts_with($path, '/') || preg_match('#^[A-Za-z]:#', $path) === 1) {
+            return false;
+        }
+
+        foreach (explode('/', $path) as $segment) {
+            if ($segment === '' || $segment === '.' || $segment === '..') {
+                return false;
+            }
+
+            if (preg_match('/^[A-Za-z0-9_.-]+$/', $segment) !== 1) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static function normalizeRelative(string $path): string
+    {
+        return trim(str_replace('\\', '/', trim($path)), '/');
+    }
+
+    /**
+     * Dev-server addresses are origins only. A path, query, fragment or
+     * userinfo would turn the generated asset URL into something else.
+     */
+    public static function normalizeOrigin(string $origin): ?string
+    {
+        $origin = trim($origin);
+        if ($origin === '' || str_contains($origin, '\\') || preg_match('/[\x00-\x20]/', $origin) === 1) {
+            return null;
+        }
+
+        $parts = parse_url($origin);
+        if (!is_array($parts)) {
+            return null;
+        }
+
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        $host = (string) ($parts['host'] ?? '');
+        if (!in_array($scheme, ['http', 'https'], true) || $host === '') {
+            return null;
+        }
+
+        foreach (['user', 'pass', 'query', 'fragment'] as $key) {
+            if (isset($parts[$key]) && $parts[$key] !== '') {
+                return null;
+            }
+        }
+
+        if (isset($parts['path']) && $parts['path'] !== '' && $parts['path'] !== '/') {
+            return null;
+        }
+
+        $port = isset($parts['port']) ? ':' . (int) $parts['port'] : '';
+        $host = str_contains($host, ':') ? '[' . trim($host, '[]') . ']' : $host;
+
+        return $scheme . '://' . $host . $port;
     }
 
     private static function toBool(mixed $value): bool

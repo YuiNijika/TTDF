@@ -31,4 +31,14 @@ return [
         'pages_dir' => 'router',
     ],
 
+    'vite' => [
+        'enabled' => false,
+        'dev' => false,
+        'origin' => 'http://localhost:5173',
+        'root' => 'vite',
+        'entry' => 'src/main.ts',
+        'out_dir' => 'assets/dist',
+        'manifest' => '.vite/manifest.json',
+    ],
+
 ];
