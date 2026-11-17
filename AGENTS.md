@@ -219,7 +219,7 @@ GET https://api.miomoe.cn/site/docs/page?path=ttdf/v5/index
 3. 新建页面使用文档系统的 create 流程；已有页面使用修订接口，不要用修订接口创建新页面
 4. 修订提交后进入待审队列，取返回的 `uuid`，用 `POST /agent/token` 换取 JWT，再以 `Cookie: access_token=<jwt>` 调用 `POST /admin/site/docs/revisions/{uuid}/approve`
 5. 分区目录与排序通过 `PUT /admin/site/docs/metas` 维护，同样需要 JWT Cookie
-6. 文档路径：v5 文档 `ttdf/v5/*`，v4 归档 `ttdf/v4/*`，Skill `skill/ttdf-dev` 与 `skill/typecho-theme-dev`；REST 文档按版本拆分为 `ttdf/v5/rest-api/v1/*`（只读）与 `ttdf/v5/rest-api/v2/*`（默认推荐），入口页 `ttdf/v5/rest-api/index` 只负责推荐与导航，旧路径迁移提示统一放在 `ttdf/v5/rest-api/legacy/*`，不要再引用旧的 `ttdf/v5/rest-api/{site,posts,...}` 与 `ttdf/v5/rest-api/v2-*` 地址；配置文档同样拆分到 `ttdf/v5/configuration/*`（`index`、`app`、`storage`、`theme`、`panel`、`fields`、`security`、`cli`、`migration`），不要再把完整配置集中在单页
+6. 文档路径：v5 文档 `ttdf/v5/*`，v4 归档 `ttdf/v4/*`，Skill `skill/ttdf-dev` 与 `skill/typecho-theme-dev`；REST 文档按版本拆分为 `ttdf/v5/rest-api/v1/*`（只读）与 `ttdf/v5/rest-api/v2/*`（默认推荐），入口页 `ttdf/v5/rest-api/index` 只负责推荐与导航，旧路径迁移提示统一放在 `ttdf/v5/rest-api/legacy/*`，不要再引用旧的 `ttdf/v5/rest-api/{site,posts,...}` 与 `ttdf/v5/rest-api/v2-*` 地址；配置文档拆分到 `ttdf/v5/configuration/*`（`index`、`app`、`storage`、`theme`、`panel`、`fields`、`security`、`migration`），开发模式 CLI 是独立页面 `ttdf/v5/cli`，不要放回配置分组
 7. 不在仓库内保存完整文档或 Skill 镜像；API Key 只从本机受控环境读取，禁止写入仓库、命令行历史或提交记录
 8. `ttdf/v4/*` 只做归档修订，不新增功能文档；新内容写入 `ttdf/v5/*`
 9. 修改页面模板目录、启动流程、公共 API 或安全边界时，必须同步更新受影响的 v5 文档与两个 Skill
