@@ -26,12 +26,23 @@ const config = {
         },
         templates: {
             title: '页面模板',
-            fields: [
+            sections: [
                 {
-                    type: 'TemplateMap',
-                    name: 'Templates',
-                    value: { post: 'Post' },
-                    label: '模板映射'
+                    id: 'mapping',
+                    title: '模板映射',
+                    fields: [
+                        {
+                            type: 'TemplateMap',
+                            name: 'Templates',
+                            value: { post: 'Post' },
+                            label: '模板映射'
+                        }
+                    ]
+                },
+                {
+                    id: 'layout',
+                    title: '布局',
+                    fields: []
                 }
             ]
         },
@@ -57,7 +68,7 @@ const config = {
 const themeInfo = {
     themeName: 'TTDF Theme',
     themeVersion: '2.1.0',
-    ttdfVersion: '5.0.3-next',
+    ttdfVersion: '5.0.4-next',
     components: config.components,
     templateSlots: config.templateSlots
 };
@@ -168,6 +179,26 @@ describe('TTDF settings application', () => {
 
         expect(new URL(window.location.href).searchParams.get('tab')).toBe('runtime');
         expect(wrapper.find('.arco-switch').exists()).toBe(true);
+        wrapper.unmount();
+    });
+
+    it('switches nested sections and keeps the section in the URL', async () => {
+        const wrapper = mountApp();
+        await flushPromises();
+
+        await wrapper.findAll('.TTDF-nav-item')[1].trigger('click');
+        await flushPromises();
+
+        const sections = wrapper.findAll('.TTDF-subnav-item');
+        expect(sections.length).toBe(2);
+        expect(sections[0].text()).toBe('模板映射');
+
+        await sections[1].trigger('click');
+        await flushPromises();
+
+        expect(new URL(window.location.href).searchParams.get('section')).toBe('layout');
+        expect(wrapper.find('.TTDF-subnav-item.is-active').text()).toBe('布局');
+        expect(wrapper.find('.ttdf-template-map').exists()).toBe(false);
         wrapper.unmount();
     });
 

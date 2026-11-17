@@ -12,8 +12,7 @@
     },
     "autoload": {
         "psr-4": {
-            "TTDF\\": "vendor/yuinijika/ttdf/core/",
-            "TTDF\\App\\": "app/"
+            "TTDF\\": "vendor/yuinijika/ttdf/core/"
         }
     },
     "autoload-dev": {

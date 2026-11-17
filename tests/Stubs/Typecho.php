@@ -103,6 +103,19 @@ namespace Typecho {
             return strip_tags((string) $html, $allowableTags ?? '');
         }
 
+        public static function gravatarUrl(
+            ?string $mail,
+            int $size,
+            ?string $rating = null,
+            ?string $default = null,
+            bool $isSecure = true
+        ): string {
+            $hash = $mail === null || trim($mail) === '' ? '' : md5(strtolower(trim($mail)));
+            $host = $isSecure ? 'https://secure.gravatar.com' : 'http://www.gravatar.com';
+
+            return $host . '/avatar/' . $hash . '?s=' . $size;
+        }
+
         public static function hash(?string $string, ?string $salt = null): string
         {
             if (!isset($string)) {

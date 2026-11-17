@@ -19,6 +19,21 @@ final class OptionsUiTest extends TestCase
         self::assertStringContainsString('id="ttdf-panel-settings"', $script);
     }
 
+    public function testSettingsPanelRendersNestedTopTabs(): void
+    {
+        $script = $this->asset('options.js');
+        $css = $this->asset('options.css');
+
+        self::assertStringContainsString('const activeSection = ref', $script);
+        self::assertStringContainsString('const sectionsForTab', $script);
+        self::assertStringContainsString('class="TTDF-subnav"', $script);
+        self::assertStringContainsString('class="TTDF-subnav-item"', $script);
+        self::assertStringContainsString('@click="switchSection(section.id)"', $script);
+        self::assertStringContainsString('aria-label="设置子分类"', $script);
+        self::assertStringContainsString('.TTDF-subnav-item.is-active', $css);
+        self::assertStringContainsString('.TTDF-subnav-item:focus-visible', $css);
+    }
+
     public function testSettingsPanelHeightScalesWithTheViewport(): void
     {
         $css = $this->asset('options.css');

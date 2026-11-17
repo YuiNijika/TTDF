@@ -38,14 +38,14 @@ final class Assets
 
         return self::buildUrl(
             $relative . '/' . ltrim(str_replace('\\', '/', $path), '/'),
-            self::themeVersion()
+            Framework::VERSION
         );
     }
 
     /**
-     * Cache-busting version. The theme's own `@version` drives both theme
-     * assets and the vendored framework statics, so updating a theme (without
-     * upgrading the framework) still invalidates browser caches.
+     * Theme assets follow the theme's own `@version`. Framework statics use
+     * `Framework::VERSION` so upgrading either layer invalidates its own
+     * browser cache without forcing the other layer to change.
      */
     private static function themeVersion(): string
     {

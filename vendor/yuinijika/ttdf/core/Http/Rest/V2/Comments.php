@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace TTDF\Http\Rest\V2;
 
 use TTDF\Compat\Typecho;
+use TTDF\Hooks\Hooks;
 use TTDF\Http\Request;
 use TTDF\Http\Response;
 use Typecho\Db;
@@ -49,6 +50,11 @@ final class Comments
 
         $this->assertCommentable($content);
 
+        $allowed = Hooks::applyFilters('rest.v2.comment.can_create', true, $content, $input, $identity);
+        if ($allowed !== true) {
+            Response::error('Comments are not allowed', 403);
+        }
+
         $text = is_scalar($input['text'] ?? null) ? trim((string) $input['text']) : '';
         if ($text === '') {
             Response::error('Invalid request body', 422, ['text' => 'is required']);
@@ -70,8 +76,10 @@ final class Comments
         ];
 
         $parent = (int) ($input['parent'] ?? 0);
+        $resolvedParent = 0;
         if ($parent > 0) {
-            $comment['parent'] = $this->resolveParent($parent, $cid);
+            $resolvedParent = $this->resolveParent($parent, $cid);
+            $comment['parent'] = $resolvedParent;
         }
 
         if ($identity !== null) {
@@ -90,14 +98,40 @@ final class Comments
         }
 
         $this->assertInterval();
-        $comment['status'] = $this->moderatedStatus($content, $comment, $identity);
+
+        $payload = Hooks::applyFilters('rest.v2.comment.payload', $comment, $content, $identity);
+        if (is_array($payload)) {
+            $comment = $payload;
+        }
+
+        // Theme hooks may enrich the payload, but the target content and the
+        // comment type stay pinned to the validated request.
+        $comment['cid'] = $cid;
+        $comment['type'] = 'comment';
+        $comment['parent'] = $resolvedParent;
+        $comment['ownerId'] = (int) ($content['authorId'] ?? 0);
+
+        $defaultStatus = $this->moderatedStatus($content, $comment, $identity);
+        $status = (string) Hooks::applyFilters(
+            'rest.v2.comment.status',
+            $defaultStatus,
+            $content,
+            $comment,
+            $identity
+        );
+        $comment['status'] = in_array($status, self::STATUSES, true) ? $status : $defaultStatus;
+
+        Hooks::doAction('rest.v2.comment.before_create', $comment, $content, $identity);
 
         $coid = $this->insert($comment);
         if ($coid <= 0) {
             Response::error('Unable to save the comment', 500);
         }
 
-        return (array) $this->find($coid, false);
+        $created = (array) $this->find($coid, false);
+        Hooks::doAction('rest.v2.comment.created', $created, $content, $identity);
+
+        return $created;
     }
 
     /**
@@ -269,6 +303,12 @@ final class Comments
     {
         $text = (string) ($row['text'] ?? '');
         $status = (string) ($row['status'] ?? 'approved');
+        $mail = (string) ($row['mail'] ?? '');
+        $avatar = '';
+
+        if ($mail !== '') {
+            $avatar = Typecho::gravatarUrl($mail, 90);
+        }
 
         $result = [
             'coid' => (int) ($row['coid'] ?? 0),
@@ -276,7 +316,8 @@ final class Comments
             'author' => (string) ($row['author'] ?? ''),
             'authorId' => (int) ($row['authorId'] ?? 0),
             'ownerId' => (int) ($row['ownerId'] ?? 0),
-            'mail' => (string) ($row['mail'] ?? ''),
+            'avatar' => $avatar,
+            'mail' => $mail,
             'url' => $this->safeUrl((string) ($row['url'] ?? '')),
             'ip' => (string) ($row['ip'] ?? ''),
             'agent' => (string) ($row['agent'] ?? ''),
@@ -376,26 +417,24 @@ final class Comments
             Response::error('Parent comment not found', 422, ['parent' => '父级评论不存在']);
         }
 
-        $levels = (int) $this->options('commentsMaxNestingLevels', 5);
-        if ($levels > 0) {
-            $depth = 0;
-            $cursor = $row;
-            while ((int) ($cursor['parent'] ?? 0) > 0 && $depth <= $levels) {
-                $depth++;
-                $next = $this->row($this->db->select('coid', 'parent')->from('table.comments')
-                    ->where('coid = ?', (int) $cursor['parent'])->limit(1));
-                if ($next === null) {
-                    break;
-                }
-                $cursor = $next;
+        // The theme renders exactly two levels. Replies to a reply are
+        // attached to the same root comment so new data never grows deeper.
+        $root = $parent;
+        $cursor = $row;
+        $guard = 0;
+        while ((int) ($cursor['parent'] ?? 0) > 0 && $guard < 100) {
+            $next = $this->row($this->db->select('coid', 'parent')->from('table.comments')
+                ->where('coid = ?', (int) $cursor['parent'])->limit(1));
+            if ($next === null) {
+                break;
             }
 
-            if ($depth >= $levels) {
-                Response::error('Comment nesting limit reached', 422, ['parent' => '超过最大嵌套层级']);
-            }
+            $cursor = $next;
+            $root = (int) ($cursor['coid'] ?? $root);
+            $guard++;
         }
 
-        return $parent;
+        return $root;
     }
 
     private function validateAuthor(string $author): string

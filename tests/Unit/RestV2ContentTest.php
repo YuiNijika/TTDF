@@ -46,6 +46,61 @@ final class RestV2ContentTest extends V2ApiTestCase
         self::assertSame([], $payload['data']['items']);
     }
 
+    public function testCreatingAPostLinksImagesInsertedThroughTheApi(): void
+    {
+        $this->signInWithCookie(1);
+
+        $tables = $this->tables();
+        $tables['table.contents'][] = $this->attachmentRow(30, 1, '/usr/uploads/cover.png');
+        $tables['table.contents'][] = $this->attachmentRow(31, 2, '/usr/uploads/other.png');
+        V2FakeDb::install($tables);
+
+        $payload = $this->dispatch(
+            'admin/posts',
+            'POST',
+            [
+                'title' => 'Linked media',
+                'text' => '<p><img src="https://example.test/usr/uploads/cover.png" alt="cover"></p>',
+            ],
+            ['Origin' => 'https://example.test']
+        )->payload();
+
+        $this->assertSuccess(201, $payload);
+        self::assertSame(
+            (int) $payload['data']['cid'],
+            (int) V2FakeDb::row('table.contents', 30)['parent']
+        );
+        self::assertSame(0, (int) V2FakeDb::row('table.contents', 31)['parent']);
+    }
+
+    public function testCreatingAPostLinksImagesReferencedByCustomFields(): void
+    {
+        $this->signInWithCookie(1);
+
+        $tables = $this->tables();
+        $tables['table.contents'][] = $this->attachmentRow(30, 1, '/usr/uploads/cover.png');
+        V2FakeDb::install($tables);
+
+        $payload = $this->dispatch(
+            'admin/posts',
+            'POST',
+            [
+                'title' => 'Field media',
+                'text' => 'Body without an image',
+                'fields' => [
+                    'TTDF_Fields_Text' => 'https://example.test/usr/uploads/cover.png',
+                ],
+            ],
+            ['Origin' => 'https://example.test']
+        )->payload();
+
+        $this->assertSuccess(201, $payload);
+        self::assertSame(
+            (int) $payload['data']['cid'],
+            (int) V2FakeDb::row('table.contents', 30)['parent']
+        );
+    }
+
     public function testCreatingAPostStoresTermsAndReturnsTheDetail(): void
     {
         $this->signInWithCookie(1);
@@ -85,6 +140,38 @@ final class RestV2ContentTest extends V2ApiTestCase
         sort($expected);
 
         self::assertSame($expected, $linked);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function attachmentRow(int $cid, int $authorId, string $path): array
+    {
+        return [
+            'cid' => $cid,
+            'title' => basename($path),
+            'slug' => 'media-' . $cid,
+            'type' => 'attachment',
+            'status' => 'publish',
+            'created' => 1_700_003_000,
+            'modified' => 1_700_003_000,
+            'text' => json_encode([
+                'name' => basename($path),
+                'path' => $path,
+                'size' => 128,
+                'type' => 'png',
+                'mime' => 'image/png',
+            ], JSON_THROW_ON_ERROR),
+            'authorId' => $authorId,
+            'commentsNum' => 0,
+            'password' => '',
+            'template' => '',
+            'order' => 0,
+            'allowComment' => 0,
+            'allowPing' => 0,
+            'allowFeed' => 0,
+            'parent' => 0,
+        ];
     }
 
     public function testCreatingAPostRequiresATitle(): void

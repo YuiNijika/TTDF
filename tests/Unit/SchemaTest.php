@@ -79,6 +79,80 @@ PHP);
         self::assertSame(['Valid_Name'], array_keys(Schema::fields($this->root)));
     }
 
+    public function testNestedTabsAreExposedAsSectionsAndFieldsAreFlattened(): void
+    {
+        file_put_contents($this->root . '/app/config/theme.php', <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+return [
+    'General' => [
+        'title' => '基础设置',
+        'tabs' => [
+            'general' => [
+                'title' => '一般设置',
+                'description' => '站点标识。',
+                'fields' => [
+                    ['type' => 'Text', 'name' => 'SubTitle'],
+                ],
+            ],
+            'colors' => [
+                'title' => '颜色设置',
+                'fields' => [
+                    ['type' => 'ColorPicker', 'name' => 'Color_Accent'],
+                ],
+            ],
+        ],
+    ],
+];
+PHP);
+
+        Schema::reset();
+
+        $tab = Schema::tabs($this->root)['General'];
+        self::assertSame(['general', 'colors'], array_column($tab['sections'], 'id'));
+        self::assertSame(['SubTitle', 'Color_Accent'], array_keys(Schema::fields($this->root)));
+        self::assertSame(['SubTitle', 'Color_Accent'], Schema::names($this->root));
+    }
+
+    public function testNestedTabSectionIdsAreUnique(): void
+    {
+        file_put_contents($this->root . '/app/config/theme.php', <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+return [
+    'General' => [
+        'title' => '基础设置',
+        'tabs' => [
+            'first' => [
+                'id' => 'general',
+                'title' => '一般设置',
+                'fields' => [
+                    ['type' => 'Text', 'name' => 'SubTitle'],
+                ],
+            ],
+            'second' => [
+                'id' => 'general',
+                'title' => '重复分组',
+                'fields' => [
+                    ['type' => 'Text', 'name' => 'FooterText'],
+                ],
+            ],
+        ],
+    ],
+];
+PHP);
+
+        Schema::reset();
+
+        $sections = Schema::tabs($this->root)['General']['sections'];
+        self::assertSame(['general', 'general-2'], array_column($sections, 'id'));
+        self::assertSame(['SubTitle', 'FooterText'], array_keys(Schema::fields($this->root)));
+    }
+
     public function testAliasesMapLegacyNamesToTheCurrentFieldAndAreValidated(): void
     {
         file_put_contents($this->root . '/app/config/theme.php', <<<'PHP'

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace TTDF\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use TTDF\Config\Config;
+use TTDF\Hooks\Hooks;
 use TTDF\Routing\AutoRouter;
 
 final class AutoRouterTest extends TestCase
@@ -21,6 +23,7 @@ final class AutoRouterTest extends TestCase
         file_put_contents($this->root . '/blog/post.php', '<?php');
         file_put_contents($this->root . '/blog/[slug].php', '<?php');
         file_put_contents($this->root . '/docs/[[page]].php', '<?php');
+        file_put_contents($this->root . '/sitemap.php', '<?php');
         file_put_contents($this->root . '/team/[member]/index.php', '<?php');
         file_put_contents($this->root . '/team/[member]/[post].php', '<?php');
         file_put_contents($this->root . '/[[page]].php', '<?php');
@@ -33,6 +36,7 @@ final class AutoRouterTest extends TestCase
             'blog/post.php',
             'blog/[slug].php',
             'docs/[[page]].php',
+            'sitemap.php',
             'team/[member]/index.php',
             'team/[member]/[post].php',
             '[[page]].php',
@@ -44,6 +48,8 @@ final class AutoRouterTest extends TestCase
         @rmdir($this->root . '/blog');
         @rmdir($this->root . '/docs');
         @rmdir($this->root);
+        Config::reset();
+        Hooks::reset();
     }
 
     public function testExactAndDynamicRoutesResolve(): void
@@ -125,5 +131,98 @@ final class AutoRouterTest extends TestCase
         self::assertTrue($method->invoke(null, 'ttdf/v1/posts'));
         self::assertTrue($method->invoke(null, 'usr/themes/classic/app.css'));
         self::assertFalse($method->invoke(null, 'about'));
+    }
+
+    public function testStaticLookingPathsCanUseRouterAliases(): void
+    {
+        Config::load([
+            'router' => [
+                'aliases' => [
+                    'sitemap.xml' => 'sitemap',
+                ],
+            ],
+        ]);
+
+        $alias = new \ReflectionMethod(AutoRouter::class, 'aliasTarget');
+        self::assertSame('sitemap', $alias->invoke(null, 'sitemap.xml'));
+        self::assertNull($alias->invoke(null, 'sitemap.xml/extra'));
+
+        $match = AutoRouter::resolve($this->root, 'sitemap');
+        self::assertNotNull($match);
+        self::assertStringEndsWith('/sitemap.php', $match['file']);
+    }
+
+    public function testRouterAliasesRejectUnsafeTargets(): void
+    {
+        Config::load([
+            'router' => [
+                'aliases' => [
+                    'sitemap.xml' => '../secret',
+                    'feed.xml' => 'feed',
+                ],
+            ],
+        ]);
+
+        $alias = new \ReflectionMethod(AutoRouter::class, 'aliasTarget');
+        self::assertNull($alias->invoke(null, 'sitemap.xml'));
+        self::assertSame('feed', $alias->invoke(null, 'feed.xml'));
+    }
+
+    public function testRouterMatchHookCanResolveServerRoute(): void
+    {
+        $called = null;
+
+        Hooks::addFilter('router.match', static function (mixed $match, string $path) use (&$called): mixed {
+            if ($match !== null || $path !== 'ttdf/sunken/sidebar') {
+                return $match;
+            }
+
+            return [
+                'handler' => static function (array $params) use (&$called): void {
+                    $called = $params;
+                },
+                'params' => ['endpoint' => 'sidebar'],
+            ];
+        });
+
+        $route = AutoRouter::resolveHook('ttdf/sunken/sidebar');
+        self::assertNotNull($route);
+        self::assertSame(['endpoint' => 'sidebar'], $route['params']);
+        ($route['handler'])($route['params']);
+        self::assertSame(['endpoint' => 'sidebar'], $called);
+        self::assertNull(AutoRouter::resolveHook('ttdf/sunken/unknown'));
+    }
+
+    public function testRouterMatchHookRejectsInvalidPayloads(): void
+    {
+        Hooks::addFilter('router.match', static fn (): array => [
+            'handler' => 'not-callable',
+            'params' => [],
+        ]);
+        self::assertNull(AutoRouter::resolveHook('ttdf/sunken'));
+
+        Hooks::reset();
+        Hooks::addFilter('router.match', static fn (): array => [
+            'handler' => static function (): void {
+            },
+            'params' => ['bad-key' => 'value'],
+        ]);
+        self::assertNull(AutoRouter::resolveHook('ttdf/sunken'));
+
+        Hooks::reset();
+        Hooks::addFilter('router.match', static fn (): array => [
+            'handler' => static function (): void {
+            },
+            'params' => ['endpoint' => ['not-a-string']],
+        ]);
+        self::assertNull(AutoRouter::resolveHook('ttdf/sunken'));
+
+        Hooks::reset();
+        Hooks::addFilter('router.match', static fn (): array => [
+            'handler' => static function (): void {
+            },
+            'params' => 'not-an-array',
+        ]);
+        self::assertNull(AutoRouter::resolveHook('ttdf/sunken'));
     }
 }

@@ -135,6 +135,7 @@ final class Router
             V1Router::enterScope($scope);
 
             Hooks::doAction('rest.request', $method, $path, $scope);
+            Hooks::doAction('rest.v2.request', $method, $path, $scope);
 
             if ($method === 'OPTIONS') {
                 \TTDF\Http\Rest\Cors::preflight();
@@ -192,7 +193,7 @@ final class Router
             Response::error('Endpoint not found', 404);
         }
 
-        self::invoke($match, $isAdmin);
+        self::invoke($match, $isAdmin, $method, $path);
     }
 
     /**
@@ -211,17 +212,24 @@ final class Router
             Auth::assertTrustedOrigin($method);
         }
 
+        Hooks::doAction('rest.v2.auth', $identity, $route['tier'], $path, $method);
+
         unset($segments);
 
         $handler = $route['handler'];
         $handler($route['params'], $identity);
     }
 
-    private static function invoke(RouteMatch $match, bool $isAdmin): never
+    private static function invoke(RouteMatch $match, bool $isAdmin, string $method, string $path): never
     {
-        if ($isAdmin) {
-            Auth::requireTier(Auth::TIER_ADMIN);
-        }
+        $identity = $isAdmin ? Auth::requireTier(Auth::TIER_ADMIN) : (Auth::identity() ?? []);
+        Hooks::doAction(
+            'rest.v2.auth',
+            $identity,
+            $isAdmin ? Auth::TIER_ADMIN : Auth::TIER_PUBLIC,
+            $path,
+            $method
+        );
 
         V1Router::dispatchCustom($match);
     }

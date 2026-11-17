@@ -67,14 +67,22 @@ final class Response
 
         self::$filtering = true;
         try {
+            $scope = RestRouter::scope();
             $filtered = Hooks::applyFilters(
                 'rest.response',
                 $payload,
                 $status,
-                RestRouter::scope()
+                $scope
             );
 
-            return is_array($filtered) ? $filtered : $payload;
+            $payload = is_array($filtered) ? $filtered : $payload;
+
+            if (str_starts_with($scope, 'v2.')) {
+                $filtered = Hooks::applyFilters('rest.v2.response', $payload, $status, $scope);
+                $payload = is_array($filtered) ? $filtered : $payload;
+            }
+
+            return $payload;
         } catch (Throwable $exception) {
             error_log('TTDF REST response filter error: ' . $exception->getMessage());
             return $payload;

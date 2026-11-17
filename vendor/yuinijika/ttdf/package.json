@@ -1,6 +1,6 @@
 {
   "name": "@yuinijika/ttdf-static",
-  "version": "5.0.3-next",
+  "version": "5.0.4-next",
   "private": true,
   "type": "module",
   "description": "Build tooling that syncs Vue and Arco Design Vue distributions into the TTDF framework static directory.",

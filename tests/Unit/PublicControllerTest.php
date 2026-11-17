@@ -251,6 +251,7 @@ final class PublicControllerTest extends TestCase
         self::assertSame('', $comment['url']);
         self::assertStringNotContainsString('<script', $comment['text']);
         self::assertStringContainsString('Hi', $comment['text']);
+        self::assertArrayHasKey('avatar', $comment);
         self::assertArrayNotHasKey('mail', $comment);
         self::assertArrayNotHasKey('ip', $comment);
         self::assertArrayNotHasKey('agent', $comment);
@@ -259,7 +260,7 @@ final class PublicControllerTest extends TestCase
         self::assertCondition($query, 'cid = ?', [5]);
         self::assertCondition($query, 'status = ?', ['approved']);
         self::assertSame('DESC', $query->orders[0]['order']);
-        self::assertNotContains('mail', $query->fields);
+        self::assertContains('mail', $query->fields);
         self::assertNotContains('ip', $query->fields);
         self::assertNotContains('agent', $query->fields);
     }

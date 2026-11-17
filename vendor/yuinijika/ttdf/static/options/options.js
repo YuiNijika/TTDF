@@ -97,6 +97,47 @@
         return 'field-' + name.replace(/[^A-Za-z0-9_-]/g, '-');
     };
 
+    const fieldMatches = (field, values) => {
+        const rule = field && field.show_when;
+        if (!rule || typeof rule !== 'object' || Array.isArray(rule)) {
+            return true;
+        }
+
+        return Object.entries(rule).every(([key, expected]) => {
+            const actual = values ? values[key] : undefined;
+            if (Array.isArray(expected)) {
+                return Array.isArray(actual) && expected.every((item) => actual.includes(item));
+            }
+
+            return actual === expected;
+        });
+    };
+
+    const groupFields = (fields, values) => {
+        const groups = [];
+        let row = null;
+
+        (Array.isArray(fields) ? fields : []).forEach((field) => {
+            if (!field || !fieldMatches(field, values)) {
+                return;
+            }
+
+            if (field.inline === true) {
+                if (row === null) {
+                    row = { type: 'row', fields: [] };
+                    groups.push(row);
+                }
+                row.fields.push(field);
+                return;
+            }
+
+            row = null;
+            groups.push({ type: 'field', field });
+        });
+
+        return groups;
+    };
+
     const message = (type, content) => {
         try {
             if (ArcoLib && ArcoLib.Message && typeof ArcoLib.Message[type] === 'function') {
@@ -289,6 +330,7 @@
             const mediaSearch = ref('');
             const mediaError = ref('');
             const mediaPreview = ref(null);
+            const mediaPicked = ref([]);
             const mediaSelectedLoading = ref(false);
             const renamingId = ref(0);
             const renameValue = ref('');
@@ -301,6 +343,7 @@
             const isMediaField = computed(() => mediaEnabled(props.field));
             const isMediaType = computed(() => props.field.type === 'Media');
             const isMediaList = computed(() => props.field.type === 'Textarea');
+            const mediaMultiSelect = computed(() => isMediaList.value && slideMediaIndex.value < 0);
             const tags = computed(() => asArray(props.modelValue));
             const listItems = computed(() => asArray(props.modelValue));
             const cascaderValue = computed(() => asArray(props.modelValue));
@@ -1089,6 +1132,7 @@
 
             const openMedia = () => {
                 slideMediaIndex.value = -1;
+                mediaPicked.value = [];
                 mediaOpen.value = true;
                 mediaSearch.value = '';
                 void loadMedia(1);
@@ -1096,6 +1140,7 @@
 
             const openSlideMedia = (index) => {
                 slideMediaIndex.value = index;
+                mediaPicked.value = [];
                 mediaOpen.value = true;
                 mediaSearch.value = '';
                 void loadMedia(1);
@@ -1108,6 +1153,33 @@
 
                 return String(props.modelValue ?? '');
             });
+
+            const mediaPickedIds = computed(() => mediaPicked.value.map((item) => String(item.id)));
+            const mediaPickedCount = computed(() => mediaPicked.value.length);
+            const isMediaSelected = (item) => {
+                const id = String(item.id);
+
+                return mediaMultiSelect.value
+                    ? mediaPickedIds.value.includes(id)
+                    : id === mediaSelectionKey.value;
+            };
+
+            const toggleMediaPick = (item) => {
+                const id = String(item.id);
+                const exists = mediaPicked.value.some((candidate) => String(candidate.id) === id);
+                mediaPicked.value = exists
+                    ? mediaPicked.value.filter((candidate) => String(candidate.id) !== id)
+                    : [...mediaPicked.value, item];
+            };
+
+            const handleMediaClick = (item) => {
+                if (mediaMultiSelect.value) {
+                    toggleMediaPick(item);
+                    return;
+                }
+
+                chooseMedia(item);
+            };
 
             const chooseMedia = (item) => {
                 const picked = isMediaType.value
@@ -1136,6 +1208,39 @@
                 mediaPreview.value = item;
                 mediaOpen.value = false;
                 message('success', '已选择图片：' + (item.title || item.name || ('#' + item.id)));
+            };
+
+            const confirmMediaSelection = () => {
+                if (!mediaMultiSelect.value) {
+                    mediaOpen.value = false;
+                    return;
+                }
+
+                const picked = mediaPicked.value
+                    .map((item) => String(item.url || '').trim())
+                    .filter((url) => url !== '');
+                if (picked.length === 0) {
+                    return;
+                }
+
+                const current = String(props.modelValue || '').trim();
+                const existing = current === ''
+                    ? []
+                    : current.split(/\r?\n/).map((line) => line.trim()).filter((line) => line !== '');
+                const known = new Set(existing);
+                const additions = picked.filter((url) => !known.has(url));
+
+                if (additions.length === 0) {
+                    mediaOpen.value = false;
+                    mediaPicked.value = [];
+                    message('info', '所选图片已在列表中');
+                    return;
+                }
+
+                setValue([...existing, ...additions].join('\n'));
+                mediaOpen.value = false;
+                mediaPicked.value = [];
+                message('success', '已添加 ' + additions.length + ' 张图片');
             };
 
             const clearMedia = () => {
@@ -1184,9 +1289,24 @@
                         mediaItems.value = [item, ...mediaItems.value];
                     }
                     mediaTotal.value += 1;
-                    setValue(String(item.id));
-                    mediaPreview.value = item;
-                    message('success', '已上传并选择：' + (item.title || item.name || ('#' + item.id)));
+                    const label = item.title || item.name || ('#' + item.id);
+
+                    if (slideMediaIndex.value >= 0) {
+                        updateSlide(slideMediaIndex.value, 'image', String(item.url || ''));
+                        mediaOpen.value = false;
+                        message('success', '已上传并选择：' + label);
+                    } else if (isMediaType.value) {
+                        setValue(String(item.id));
+                        mediaPreview.value = item;
+                        message('success', '已上传并选择：' + label);
+                    } else if (isMediaList.value) {
+                        toggleMediaPick(item);
+                        message('success', '已上传并加入所选：' + label);
+                    } else {
+                        setValue(String(item.url || ''));
+                        mediaPreview.value = item;
+                        message('success', '已上传并选择：' + label);
+                    }
                 } catch (error) {
                     mediaError.value = error.message;
                     message('error', '上传失败：' + error.message);
@@ -1293,6 +1413,7 @@
                 cascaderValue,
                 fieldComponents,
                 formatMediaSize,
+                handleMediaClick,
                 handleUpload,
                 hasMediaValue,
                 ignoredMappings,
@@ -1301,14 +1422,18 @@
                 isMediaField,
                 isMediaType,
                 isMediaList,
+                isMediaSelected,
                 listItems,
                 loadMedia,
                 mediaError,
                 mediaItems,
                 mediaLoading,
+                mediaMultiSelect,
                 mediaOpen,
                 mediaPage,
                 mediaPageSize,
+                mediaPicked,
+                mediaPickedCount,
                 mediaPreview,
                 mediaSearch,
                 mediaSelectionKey,
@@ -1335,6 +1460,7 @@
                 onBlockHandleKeydown,
                 openMedia,
                 openSlideMedia,
+                confirmMediaSelection,
                 chooseMedia,
                 clearMedia,
                 cancelRename,
@@ -2047,14 +2173,14 @@
                             v-for="item in mediaItems"
                             :key="item.id"
                             class="ttdf-media-card"
-                            :class="{ 'is-selected': String(item.id) === mediaSelectionKey }"
+                            :class="{ 'is-selected': isMediaSelected(item) }"
                             role="button"
                             tabindex="0"
-                            :aria-pressed="String(item.id) === mediaSelectionKey"
+                            :aria-pressed="isMediaSelected(item)"
                             :aria-label="'选择图片 ' + item.title"
-                            @click="chooseMedia(item)"
-                            @keydown.enter.prevent="chooseMedia(item)"
-                            @keydown.space.prevent="chooseMedia(item)"
+                            @click="handleMediaClick(item)"
+                            @keydown.enter.prevent="handleMediaClick(item)"
+                            @keydown.space.prevent="handleMediaClick(item)"
                         >
                             <div class="ttdf-media-thumb">
                                 <img
@@ -2067,7 +2193,7 @@
                                 />
                                 <span v-else class="ttdf-media-thumb-fallback">无法预览</span>
                                 <span
-                                    v-if="String(item.id) === mediaSelectionKey"
+                                    v-if="isMediaSelected(item)"
                                     class="ttdf-media-check"
                                     aria-hidden="true"
                                 >✓</span>
@@ -2111,6 +2237,16 @@
                         />
                     </div>
                     <div class="ttdf-media-modal-footer">
+                        <span v-if="mediaMultiSelect" class="ttdf-media-selection-count">
+                            已选 {{ mediaPickedCount }} 张
+                        </span>
+                        <a-button
+                            v-if="mediaMultiSelect"
+                            type="primary"
+                            html-type="button"
+                            :disabled="mediaPickedCount === 0"
+                            @click="confirmMediaSelection"
+                        >添加所选</a-button>
                         <a-button html-type="button" @click="mediaOpen = false">完成</a-button>
                     </div>
                 </a-modal>
@@ -2138,6 +2274,7 @@
                 });
                 const formData = reactive({});
                 const activeTab = ref('');
+                const activeSection = ref('');
                 const loading = ref(true);
                 const saving = ref(false);
                 const backupBusy = ref(false);
@@ -2195,7 +2332,15 @@
 
                 const initFormData = (savedValues = {}) => {
                     Object.values(config.tabs || {}).forEach((tab) => {
-                        (tab.fields || []).forEach((field) => {
+                        const fields = Array.isArray(tab.fields) && tab.fields.length > 0
+                            ? tab.fields
+                            : (Array.isArray(tab.sections)
+                                ? tab.sections.flatMap((section) => (
+                                    section && Array.isArray(section.fields) ? section.fields : []
+                                ))
+                                : []);
+
+                        fields.forEach((field) => {
                             if (!field.name || field.type === 'Html') {
                                 return;
                             }
@@ -2214,10 +2359,56 @@
                     dirty.value = true;
                 };
 
+                const sectionsForTab = (tab) => {
+                    const source = tab && Array.isArray(tab.sections) ? tab.sections : [];
+                    if (source.length > 0) {
+                        return source.map((section, index) => ({
+                            id: String(section.id || ('section-' + (index + 1))),
+                            title: String(section.title || section.id || ('分组 ' + (index + 1))),
+                            description: String(section.description || ''),
+                            html: Array.isArray(section.html) ? section.html : [],
+                            fields: Array.isArray(section.fields) ? section.fields : []
+                        }));
+                    }
+
+                    return [{
+                        id: 'main',
+                        title: String(tab && tab.title ? tab.title : '设置'),
+                        description: '',
+                        html: Array.isArray(tab && tab.html) ? tab.html : [],
+                        fields: Array.isArray(tab && tab.fields) ? tab.fields : []
+                    }];
+                };
+
+                const firstSectionId = (tabId) => {
+                    const tab = config.tabs && config.tabs[tabId] ? config.tabs[tabId] : null;
+                    const sections = sectionsForTab(tab);
+
+                    return sections[0] ? sections[0].id : '';
+                };
+
                 const switchTab = (tabId) => {
                     activeTab.value = String(tabId);
+                    activeSection.value = firstSectionId(activeTab.value);
                     const url = new URL(window.location.href);
                     url.searchParams.set('tab', activeTab.value);
+                    if (activeSection.value !== 'main') {
+                        url.searchParams.set('section', activeSection.value);
+                    } else {
+                        url.searchParams.delete('section');
+                    }
+                    window.history.replaceState({}, '', url);
+                };
+
+                const switchSection = (sectionId) => {
+                    activeSection.value = String(sectionId);
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('tab', activeTab.value);
+                    if (activeSection.value !== 'main') {
+                        url.searchParams.set('section', activeSection.value);
+                    } else {
+                        url.searchParams.delete('section');
+                    }
                     window.history.replaceState({}, '', url);
                 };
 
@@ -2505,6 +2696,11 @@
                         const tabIds = Object.keys(config.tabs);
                         const requested = new URLSearchParams(window.location.search).get('tab');
                         activeTab.value = requested && tabIds.includes(requested) ? requested : (tabIds[0] || '');
+                        const requestedSection = new URLSearchParams(window.location.search).get('section');
+                        const sectionIds = sectionsForTab(config.tabs[activeTab.value]).map((section) => section.id);
+                        activeSection.value = requestedSection && sectionIds.includes(requestedSection)
+                            ? requestedSection
+                            : firstSectionId(activeTab.value);
 
                         try {
                             const themeResult = await request('/theme-info');
@@ -2531,12 +2727,14 @@
 
                 const tabList = computed(() => Object.keys(config.tabs || {}).map((id) => {
                     const tab = config.tabs[id] || {};
+                    const sections = sectionsForTab(tab);
 
                     return {
                         id,
                         title: tab.title || id,
                         html: Array.isArray(tab.html) ? tab.html : [],
-                        fields: Array.isArray(tab.fields) ? tab.fields : []
+                        fields: Array.isArray(tab.fields) ? tab.fields : [],
+                        sections
                     };
                 }));
 
@@ -2545,14 +2743,38 @@
                     || tabList.value[0]
                     || null
                 ));
+                const currentSection = computed(() => {
+                    if (!currentTab.value) {
+                        return null;
+                    }
+
+                    return currentTab.value.sections.find((section) => section.id === activeSection.value)
+                        || currentTab.value.sections[0]
+                        || null;
+                });
                 const regularFields = computed(() => (
-                    currentTab.value
-                        ? currentTab.value.fields.filter((field) => field.group !== 'rest')
+                    currentSection.value
+                        ? currentSection.value.fields.filter((field) => field.group !== 'rest')
                         : []
                 ));
                 const restFields = computed(() => (
-                    currentTab.value
-                        ? currentTab.value.fields.filter((field) => field.group === 'rest')
+                    currentSection.value
+                        ? currentSection.value.fields.filter((field) => field.group === 'rest')
+                        : []
+                ));
+                const regularFieldGroups = computed(() => groupFields(regularFields.value, formData));
+                const restFieldGroups = computed(() => groupFields(restFields.value, formData));
+                const visibleFieldCount = computed(() => {
+                    const count = (groups) => groups.reduce(
+                        (total, group) => total + (group.type === 'row' ? group.fields.length : 1),
+                        0
+                    );
+
+                    return count(regularFieldGroups.value) + count(restFieldGroups.value);
+                });
+                const sectionHtml = computed(() => (
+                    currentSection.value && Array.isArray(currentSection.value.html)
+                        ? currentSection.value.html
                         : []
                 ));
 
@@ -2560,6 +2782,7 @@
 
                 return {
                     activeTab,
+                    activeSection,
                     apiUrl,
                     appInfoNonce,
                     backupBusy,
@@ -2568,6 +2791,7 @@
                     backupsLoading,
                     backupsOpen,
                     config,
+                    currentSection,
                     currentTab,
                     dirty,
                     error,
@@ -2585,12 +2809,17 @@
                     runBackup,
                     runMigration,
                     regularFields,
+                    regularFieldGroups,
                     restFields,
+                    restFieldGroups,
                     saveSettings,
                     saving,
+                    sectionHtml,
+                    switchSection,
                     switchTab,
                     tabList,
-                    updateField
+                    updateField,
+                    visibleFieldCount
                 };
             },
             template: `
@@ -2678,13 +2907,37 @@
                             >
                                 <header class="TTDF-content-header">
                                     <h2 class="TTDF-panel-title">{{ currentTab.title }}</h2>
-                                    <span v-if="currentTab.fields.length" class="TTDF-panel-meta">
-                                        {{ currentTab.fields.length }} 项设置
+                                    <span v-if="visibleFieldCount" class="TTDF-panel-meta">
+                                        {{ visibleFieldCount }} 项设置
                                     </span>
                                 </header>
+                                <nav
+                                    v-if="currentTab.sections.length > 1"
+                                    class="TTDF-subnav"
+                                    aria-label="设置子分类"
+                                    role="tablist"
+                                >
+                                    <button
+                                        v-for="section in currentTab.sections"
+                                        :id="'ttdf-section-' + currentTab.id + '-' + section.id"
+                                        :key="section.id"
+                                        type="button"
+                                        class="TTDF-subnav-item"
+                                        role="tab"
+                                        :class="{ 'is-active': activeSection === section.id }"
+                                        :aria-selected="activeSection === section.id"
+                                        :aria-current="activeSection === section.id ? 'page' : undefined"
+                                        :aria-controls="'ttdf-panel-settings'"
+                                        @click="switchSection(section.id)"
+                                    >{{ section.title }}</button>
+                                </nav>
+                                <p
+                                    v-if="currentSection && currentSection.description"
+                                    class="TTDF-section-description"
+                                >{{ currentSection.description }}</p>
                                 <div class="TTDF-content-card">
                                     <DynamicHtmlRenderer
-                                        v-for="(block, index) in currentTab.html"
+                                        v-for="(block, index) in sectionHtml"
                                         :key="index"
                                         :html-content="block.content"
                                     />
@@ -2694,19 +2947,38 @@
                                         layout="vertical"
                                         class="TTDF-form"
                                     >
-                                        <FormField
-                                            v-for="(field, index) in regularFields"
-                                            :key="field.name || ('field-' + index)"
-                                            :field="field"
-                                            :index="index"
-                                            :model-value="field.name ? formData[field.name] : undefined"
-                                            :components="config.components"
-                                            :slots="config.templateSlots"
-                                            :categories="config.categories"
-                                            :api-url="apiUrl"
-                                            :nonce="appInfoNonce"
-                                            @update:model-value="(value) => field.name && updateField(field.name, value)"
-                                        />
+                                        <template
+                                            v-for="(group, index) in regularFieldGroups"
+                                            :key="group.type === 'row' ? ('row-' + index) : (group.field.name || ('field-' + index))"
+                                        >
+                                            <div v-if="group.type === 'row'" class="ttdf-field-row">
+                                                <FormField
+                                                    v-for="(field, fieldIndex) in group.fields"
+                                                    :key="field.name || ('field-' + fieldIndex)"
+                                                    :field="field"
+                                                    :index="fieldIndex"
+                                                    :model-value="field.name ? formData[field.name] : undefined"
+                                                    :components="config.components"
+                                                    :slots="config.templateSlots"
+                                                    :categories="config.categories"
+                                                    :api-url="apiUrl"
+                                                    :nonce="appInfoNonce"
+                                                    @update:model-value="(value) => field.name && updateField(field.name, value)"
+                                                />
+                                            </div>
+                                            <FormField
+                                                v-else
+                                                :field="group.field"
+                                                :index="index"
+                                                :model-value="group.field.name ? formData[group.field.name] : undefined"
+                                                :components="config.components"
+                                                :slots="config.templateSlots"
+                                                :categories="config.categories"
+                                                :api-url="apiUrl"
+                                                :nonce="appInfoNonce"
+                                                @update:model-value="(value) => group.field.name && updateField(group.field.name, value)"
+                                            />
+                                        </template>
                                     </a-form>
                                     <a-collapse
                                         v-if="restFields.length"
@@ -2719,6 +2991,9 @@
                                                     <span>REST API 配置</span>
                                                     <small>
                                                         {{ formData.RESTAPI_Switch ? '总开关已开启' : '总开关已关闭' }}
+                                                        <template v-if="formData.RESTAPI_Switch">
+                                                            · v2 {{ formData.RESTV2_Switch ? '已开启' : '已关闭' }}
+                                                        </template>
                                                     </small>
                                                 </div>
                                             </template>
@@ -2727,24 +3002,43 @@
                                                 layout="vertical"
                                                 class="TTDF-form"
                                             >
-                                                <FormField
-                                                    v-for="(field, index) in restFields"
-                                                    :key="field.name || ('rest-field-' + index)"
-                                                    :field="field"
-                                                    :index="index"
-                                                    :model-value="field.name ? formData[field.name] : undefined"
-                                                    :components="config.components"
-                                                    :slots="config.templateSlots"
-                                                    :categories="config.categories"
-                                                    :api-url="apiUrl"
-                                                    :nonce="appInfoNonce"
-                                                    @update:model-value="(value) => field.name && updateField(field.name, value)"
-                                                />
+                                                <template
+                                                    v-for="(group, index) in restFieldGroups"
+                                                    :key="group.type === 'row' ? ('rest-row-' + index) : (group.field.name || ('rest-field-' + index))"
+                                                >
+                                                    <div v-if="group.type === 'row'" class="ttdf-field-row">
+                                                        <FormField
+                                                            v-for="(field, fieldIndex) in group.fields"
+                                                            :key="field.name || ('rest-field-' + fieldIndex)"
+                                                            :field="field"
+                                                            :index="fieldIndex"
+                                                            :model-value="field.name ? formData[field.name] : undefined"
+                                                            :components="config.components"
+                                                            :slots="config.templateSlots"
+                                                            :categories="config.categories"
+                                                            :api-url="apiUrl"
+                                                            :nonce="appInfoNonce"
+                                                            @update:model-value="(value) => field.name && updateField(field.name, value)"
+                                                        />
+                                                    </div>
+                                                    <FormField
+                                                        v-else
+                                                        :field="group.field"
+                                                        :index="index"
+                                                        :model-value="group.field.name ? formData[group.field.name] : undefined"
+                                                        :components="config.components"
+                                                        :slots="config.templateSlots"
+                                                        :categories="config.categories"
+                                                        :api-url="apiUrl"
+                                                        :nonce="appInfoNonce"
+                                                        @update:model-value="(value) => group.field.name && updateField(group.field.name, value)"
+                                                    />
+                                                </template>
                                             </a-form>
                                         </a-collapse-item>
                                     </a-collapse>
                                     <a-empty
-                                        v-if="!currentTab.html.length && !regularFields.length && !restFields.length"
+                                        v-if="!sectionHtml.length && !regularFields.length && !restFields.length"
                                         description="当前选项卡暂无内容"
                                     />
                                 </div>

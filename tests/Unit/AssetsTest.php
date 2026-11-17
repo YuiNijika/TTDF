@@ -29,7 +29,7 @@ final class AssetsTest extends TestCase
     public function testThemeUrlIncludesVersionQuery(): void
     {
         self::assertSame(
-            'https://example.test/usr/themes/ttdf/assets/app.css?v=5.0.3-next',
+            'https://example.test/usr/themes/ttdf/assets/app.css?v=5.0.4-next',
             Assets::url('assets/app.css')
         );
     }
@@ -39,7 +39,7 @@ final class AssetsTest extends TestCase
         $this->useThemeCdn('https://cdn.example.test/base/');
 
         self::assertSame(
-            'https://cdn.example.test/base/assets/app.css?v=5.0.3-next',
+            'https://cdn.example.test/base/assets/app.css?v=5.0.4-next',
             Assets::url('/assets/app.css')
         );
     }
@@ -49,7 +49,7 @@ final class AssetsTest extends TestCase
         $this->useThemeCdn('javascript:alert(1)');
 
         self::assertSame(
-            'https://example.test/usr/themes/ttdf/assets/app.css?v=5.0.3-next',
+            'https://example.test/usr/themes/ttdf/assets/app.css?v=5.0.4-next',
             Assets::url('assets/app.css')
         );
     }
@@ -59,7 +59,7 @@ final class AssetsTest extends TestCase
         Config::load(['assets' => ['cdn' => 'https://ignored.example.test/base/']]);
 
         self::assertSame(
-            'https://example.test/usr/themes/ttdf/assets/app.css?v=5.0.3-next',
+            'https://example.test/usr/themes/ttdf/assets/app.css?v=5.0.4-next',
             Assets::url('assets/app.css')
         );
     }
@@ -67,7 +67,7 @@ final class AssetsTest extends TestCase
     public function testExistingQueryAndFragmentArePreserved(): void
     {
         self::assertSame(
-            'https://example.test/usr/themes/ttdf/assets/app.css?theme=dark&amp;v=5.0.3-next#main',
+            'https://example.test/usr/themes/ttdf/assets/app.css?theme=dark&amp;v=5.0.4-next#main',
             Assets::url('assets/app.css?theme=dark#main')
         );
     }
@@ -75,7 +75,7 @@ final class AssetsTest extends TestCase
     public function testStaticUrlPointsAtVendoredFrameworkAssets(): void
     {
         self::assertSame(
-            'https://example.test/usr/themes/ttdf/vendor/yuinijika/ttdf/static/options/options.css?v=5.0.3-next',
+            'https://example.test/usr/themes/ttdf/vendor/yuinijika/ttdf/static/options/options.css?v=5.0.4-next',
             Assets::staticUrl('options/options.css')
         );
     }
@@ -88,16 +88,16 @@ final class AssetsTest extends TestCase
         $html = (string) ob_get_clean();
 
         self::assertStringContainsString(
-            '<link rel="stylesheet" href="https://example.test/usr/themes/ttdf/assets/app.css?v=5.0.3-next">',
+            '<link rel="stylesheet" href="https://example.test/usr/themes/ttdf/assets/app.css?v=5.0.4-next">',
             $html
         );
         self::assertStringContainsString(
-            '<script src="https://example.test/usr/themes/ttdf/assets/main.js?v=5.0.3-next"></script>',
+            '<script src="https://example.test/usr/themes/ttdf/assets/main.js?v=5.0.4-next"></script>',
             $html
         );
     }
 
-    public function testAssetVersionComesFromTheThemeAndCoversFrameworkStatics(): void
+    public function testThemeAndFrameworkAssetsUseTheirOwnVersions(): void
     {
         $root = sys_get_temp_dir() . '/ttdf-assets-' . uniqid('', true);
         mkdir($root, 0777, true);
@@ -113,10 +113,10 @@ final class AssetsTest extends TestCase
             );
             self::assertSame(
                 'https://example.test/usr/themes/ttdf/vendor/yuinijika/ttdf/static/options/options.css'
-                . '?v=9.9.9-theme',
+                . '?v=5.0.4-next',
                 Assets::staticUrl('options/options.css')
             );
-            self::assertStringNotContainsString('5.0.3-next', Assets::staticUrl('options/options.css'));
+            self::assertStringNotContainsString('9.9.9-theme', Assets::staticUrl('options/options.css'));
         } finally {
             $property->setValue(null, '');
             @unlink($root . '/index.php');
@@ -127,19 +127,19 @@ final class AssetsTest extends TestCase
     public function testUrlAppliesTheDefaultAssetsBase(): void
     {
         self::assertSame(
-            'https://example.test/usr/themes/ttdf/assets/css/theme.css?v=5.0.3-next',
+            'https://example.test/usr/themes/ttdf/assets/css/theme.css?v=5.0.4-next',
             Assets::url('css/theme.css')
         );
         self::assertSame(
-            'https://example.test/usr/themes/ttdf/assets/css/theme.css?v=5.0.3-next',
+            'https://example.test/usr/themes/ttdf/assets/css/theme.css?v=5.0.4-next',
             Assets::url('css/theme.css', 'assets')
         );
         self::assertSame(
-            'https://example.test/usr/themes/ttdf/assets/app.css?theme=dark&amp;v=5.0.3-next#main',
+            'https://example.test/usr/themes/ttdf/assets/app.css?theme=dark&amp;v=5.0.4-next#main',
             Assets::url('assets/app.css?theme=dark#main')
         );
         self::assertSame(
-            'https://example.test/usr/themes/ttdf/assets/css/theme.css?theme=dark&amp;v=5.0.3-next#main',
+            'https://example.test/usr/themes/ttdf/assets/css/theme.css?theme=dark&amp;v=5.0.4-next#main',
             Assets::url('theme.css?theme=dark#main', 'assets/css')
         );
     }
@@ -147,15 +147,15 @@ final class AssetsTest extends TestCase
     public function testUrlAcceptsACustomBaseWithoutDoublePrefixing(): void
     {
         self::assertSame(
-            'https://example.test/usr/themes/ttdf/vendor/lib/app.js?v=5.0.3-next',
+            'https://example.test/usr/themes/ttdf/vendor/lib/app.js?v=5.0.4-next',
             Assets::url('lib/app.js', 'vendor')
         );
         self::assertSame(
-            'https://example.test/usr/themes/ttdf/assets/app.css?v=5.0.3-next',
+            'https://example.test/usr/themes/ttdf/assets/app.css?v=5.0.4-next',
             Assets::url('assets/app.css')
         );
         self::assertSame(
-            'https://example.test/usr/themes/ttdf/assets/app.css?v=5.0.3-next',
+            'https://example.test/usr/themes/ttdf/assets/app.css?v=5.0.4-next',
             Assets::url('/assets/app.css', 'assets/')
         );
     }
@@ -163,11 +163,11 @@ final class AssetsTest extends TestCase
     public function testUnsafeBaseDirectoryIsIgnored(): void
     {
         self::assertSame(
-            'https://example.test/usr/themes/ttdf/css/theme.css?v=5.0.3-next',
+            'https://example.test/usr/themes/ttdf/css/theme.css?v=5.0.4-next',
             Assets::url('css/theme.css', '../assets')
         );
         self::assertSame(
-            'https://example.test/usr/themes/ttdf/css/theme.css?v=5.0.3-next',
+            'https://example.test/usr/themes/ttdf/css/theme.css?v=5.0.4-next',
             Assets::url('css/theme.css', '')
         );
     }
@@ -181,11 +181,11 @@ final class AssetsTest extends TestCase
 
         self::assertStringContainsString(
             '<link rel="stylesheet" href="https://example.test/usr/themes/ttdf/assets/css/theme.css'
-            . '?v=5.0.3-next">',
+            . '?v=5.0.4-next">',
             $html
         );
         self::assertStringContainsString(
-            '<script src="https://example.test/usr/themes/ttdf/vendor/js/main.js?v=5.0.3-next"></script>',
+            '<script src="https://example.test/usr/themes/ttdf/vendor/js/main.js?v=5.0.4-next"></script>',
             $html
         );
     }

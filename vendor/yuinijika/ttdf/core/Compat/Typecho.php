@@ -359,6 +359,31 @@ final class Typecho
         return strip_tags($html, $allowedTags);
     }
 
+    /**
+     * Typecho exposes gravatarUrl() in 1.2+, but test doubles and older
+     * runtimes may not. Return an empty string instead of breaking the API.
+     */
+    public static function gravatarUrl(?string $mail, int $size = 90): string
+    {
+        if (!class_exists('Typecho\\Common')) {
+            return '';
+        }
+
+        try {
+            $url = \Typecho\Common::gravatarUrl(
+                $mail,
+                $size,
+                null,
+                null,
+                true
+            );
+
+            return str_replace('&amp;', '&', $url);
+        } catch (\Throwable) {
+            return '';
+        }
+    }
+
     private static function firstDocblock(string $file): ?string
     {
         $tokens = @token_get_all((string) @file_get_contents($file));

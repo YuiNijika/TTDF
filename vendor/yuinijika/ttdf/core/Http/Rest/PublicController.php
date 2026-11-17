@@ -118,6 +118,7 @@ final class PublicController
             'coid',
             'cid',
             'author',
+            'mail',
             'url',
             'text',
             'status',
@@ -133,10 +134,12 @@ final class PublicController
 
         $comments = [];
         foreach ($this->rows($select) as $row) {
+            $mail = (string) ($row['mail'] ?? '');
             $comments[] = [
                 'coid' => (int) ($row['coid'] ?? 0),
                 'cid' => (int) ($row['cid'] ?? 0),
                 'author' => (string) ($row['author'] ?? ''),
+                'avatar' => $mail !== '' ? Typecho::gravatarUrl($mail, 90) : '',
                 'url' => $this->safeUrl((string) ($row['url'] ?? '')),
                 'text' => Typecho::commentHtml(Typecho::markdown((string) ($row['text'] ?? ''))),
                 'parent' => (int) ($row['parent'] ?? 0),

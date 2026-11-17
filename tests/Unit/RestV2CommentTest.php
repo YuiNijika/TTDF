@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace TTDF\Tests\Unit;
 
+use TTDF\Hooks\Hooks;
+
 require_once __DIR__ . '/V2ApiTestCase.php';
 
 final class RestV2CommentTest extends V2ApiTestCase
@@ -256,22 +258,65 @@ final class RestV2CommentTest extends V2ApiTestCase
         self::assertSame(0, $payload['data']['parent']);
     }
 
-    public function testNestingLimitIsEnforced(): void
+    public function testRepliesToRepliesAreFlattenedToTheRoot(): void
     {
-        $this->overrideSiteOptions(['commentsThreaded' => true, 'commentsMaxNestingLevels' => 1]);
+        $this->overrideSiteOptions(['commentsThreaded' => true, 'commentsMaxNestingLevels' => 5]);
         $this->seedComment(91, 0);
         $this->seedComment(90, 91);
 
         $payload = $this->dispatch('comments', 'POST', [
             'cid' => 10,
-            'text' => 'Too deep',
+            'text' => 'Nested reply',
             'author' => 'Guest',
             'mail' => 'guest@example.test',
             'parent' => 90,
         ])->payload();
 
-        self::assertSame(422, $payload['code']);
-        self::assertSame('Comment nesting limit reached', $payload['message']);
+        $this->assertSuccess(201, $payload);
+        self::assertSame(91, $payload['data']['parent']);
+    }
+
+    public function testCommentHooksCanRejectAndEnrichWithoutChangingTheTargetParent(): void
+    {
+        Hooks::addFilter(
+            'rest.v2.comment.can_create',
+            static fn (bool $allowed, array $content, array $input): bool =>
+                ($input['author'] ?? '') === 'Blocked' ? false : $allowed
+        );
+
+        $blocked = $this->dispatch('comments', 'POST', [
+            'cid' => 10,
+            'text' => 'Blocked by a theme hook',
+            'author' => 'Blocked',
+            'mail' => 'blocked@example.test',
+        ])->payload();
+
+        self::assertSame(403, $blocked['code']);
+
+        Hooks::reset();
+        $this->overrideSiteOptions(['commentsThreaded' => true]);
+        $this->seedComment(91, 0);
+        $this->seedComment(90, 91);
+
+        Hooks::addFilter('rest.v2.comment.payload', static function (array $comment): array {
+            $comment['parent'] = 0;
+            $comment['theme_field'] = 'kept for trusted hooks';
+
+            return $comment;
+        });
+        Hooks::addFilter('rest.v2.comment.status', static fn (): string => 'waiting');
+
+        $enriched = $this->dispatch('comments', 'POST', [
+            'cid' => 10,
+            'text' => 'Enriched by a theme hook',
+            'author' => 'Guest',
+            'mail' => 'guest@example.test',
+            'parent' => 90,
+        ])->payload();
+
+        $this->assertSuccess(201, $enriched);
+        self::assertSame(91, $enriched['data']['parent']);
+        self::assertSame('waiting', $enriched['data']['status']);
     }
 
     public function testReplyInsideTheLimitIsAccepted(): void

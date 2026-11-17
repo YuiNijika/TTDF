@@ -492,6 +492,74 @@ form[action*="themes-edit"] .typecho-option-submit {
   border-bottom: 1px solid var(--ttdf-line);
 }
 
+.TTDF-subnav {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  margin-top: 12px;
+  max-height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-bottom: 1px solid var(--ttdf-line);
+  scrollbar-width: thin;
+}
+
+.TTDF-subnav-item {
+  position: relative;
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 6px 6px 0 0;
+  background: transparent;
+  color: var(--ttdf-muted);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    background-color 0.16s ease,
+    color 0.16s ease;
+}
+
+.TTDF-subnav-item:hover {
+  background: var(--ttdf-surface-hover);
+  color: var(--ttdf-ink);
+}
+
+.TTDF-subnav-item.is-active {
+  background: var(--ttdf-surface-muted);
+  color: var(--ttdf-ink);
+  font-weight: 600;
+}
+
+.TTDF-subnav-item.is-active::after {
+  position: absolute;
+  right: 10px;
+  bottom: -1px;
+  left: 10px;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: var(--ttdf-ink);
+  content: "";
+}
+
+.TTDF-subnav-item:focus-visible {
+  outline: 2px solid var(--ttdf-focus-ring);
+  outline-offset: -2px;
+}
+
+.TTDF-section-description {
+  max-width: 68ch;
+  margin: 12px 0 0;
+  color: var(--ttdf-muted);
+  font-size: 12.5px;
+  line-height: 1.65;
+}
+
 .TTDF-panel-title {
   margin: 0;
   color: var(--ttdf-ink);
@@ -655,6 +723,54 @@ form[action*="themes-edit"] .typecho-option-submit {
 
 .TTDF-form {
   display: block;
+}
+
+.ttdf-field-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  margin: 0 0 18px;
+}
+
+.ttdf-field-row > .ttdf-field {
+  grid-template-areas:
+    "label"
+    "description"
+    "control";
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--ttdf-line);
+  border-bottom: 1px solid var(--ttdf-line);
+  border-radius: 8px;
+  background: var(--ttdf-surface-muted);
+}
+
+.ttdf-field-row > .ttdf-field:last-child {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ttdf-line);
+}
+
+.ttdf-field-row > .ttdf-field .ttdf-field-label {
+  padding-top: 0;
+  font-weight: 500;
+}
+
+.ttdf-field-row > .ttdf-field[data-field-type="Switch"] {
+  grid-template-areas:
+    "label control"
+    "description description";
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.ttdf-field-row > .ttdf-field[data-field-type="Switch"] .ttdf-field-control {
+  width: auto;
+  padding-top: 0;
+}
+
+.ttdf-field-row > .ttdf-field[data-field-type="Switch"] .ttdf-field-description {
+  margin-top: 2px;
 }
 
 .ttdf-field {
@@ -1611,8 +1727,16 @@ form[action*="themes-edit"] .typecho-option-submit {
 
 .ttdf-media-modal-footer {
   display: flex;
+  align-items: center;
+  gap: 8px;
   justify-content: flex-end;
   margin-top: 14px;
+}
+
+.ttdf-media-selection-count {
+  margin-right: auto;
+  color: var(--ttdf-muted);
+  font-size: 12px;
 }
 
 .TTDF-container h2,
@@ -1730,6 +1854,10 @@ form[action*="themes-edit"] .typecho-option-submit {
 }
 
 @media (max-width: 760px) {
+  .ttdf-field-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .TTDF-container {
     margin: 10px;
     border-radius: 12px;

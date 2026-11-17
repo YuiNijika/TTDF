@@ -7,6 +7,7 @@ namespace TTDF\Http\Rest\V2;
 use TTDF\Compat\Typecho;
 use TTDF\Framework;
 use TTDF\Http\Response;
+use TTDF\Http\Rest\AttachmentLinker;
 use TTDF\Theme\Fields;
 use Typecho\Db;
 use Typecho\Db\Query;
@@ -136,6 +137,7 @@ final class Contents
 
         if (!$draft) {
             $this->syncTerms($cid, $input['categories'] ?? [], $input['tags'] ?? []);
+            $this->linkAttachments($cid, (int) $rows['authorId'], (string) $rows['text']);
         }
 
         return (array) $this->find($cid);
@@ -237,6 +239,14 @@ final class Contents
         if ($isPublished !== $wasPublished) {
             $this->refreshCounts($this->relatedMids($cid, 'category'), 'category');
             $this->refreshCounts($this->relatedMids($cid, 'tag'), 'tag');
+        }
+
+        if ($isPublished) {
+            $this->linkAttachments(
+                $cid,
+                (int) ($rows['authorId'] ?? $current['authorId']),
+                (string) ($rows['text'] ?? $current['text'])
+            );
         }
 
         return (array) $this->find($cid);
@@ -445,6 +455,15 @@ final class Contents
 
         foreach (array_keys($existing) as $name) {
             $this->db->query($this->db->delete('table.fields')->where('cid = ? AND name = ?', $cid, $name));
+        }
+    }
+
+    private function linkAttachments(int $cid, int $authorId, string $text): void
+    {
+        try {
+            (new AttachmentLinker($this->db))->link($cid, $authorId, $text);
+        } catch (\Throwable $exception) {
+            error_log('TTDF attachment linking failed: ' . $exception->getMessage());
         }
     }
 

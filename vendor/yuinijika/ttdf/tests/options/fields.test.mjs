@@ -435,6 +435,80 @@ describe('Arco settings controls', () => {
         vi.unstubAllGlobals();
     });
 
+    it('batch appends multiple media urls for Textarea fields with media enabled', async () => {
+        const items = [
+            {
+                id: 21,
+                title: 'First',
+                name: 'first.png',
+                url: 'https://example.test/usr/uploads/first.png',
+                size: 1024,
+                type: 'png'
+            },
+            {
+                id: 22,
+                title: 'Second',
+                name: 'second.png',
+                url: 'https://example.test/usr/uploads/second.png',
+                size: 1024,
+                type: 'png'
+            }
+        ];
+        vi.stubGlobal('fetch', vi.fn(async (url) => {
+            const path = new URL(url).pathname;
+            if (path.endsWith('/media')) {
+                return jsonResponse({
+                    items,
+                    page: 1,
+                    pageSize: 40,
+                    total: items.length,
+                    lastPage: 1
+                });
+            }
+
+            return jsonResponse(null, 404);
+        }));
+
+        const existing = 'https://example.test/usr/uploads/existing.png';
+        const wrapper = mountField(
+            field('Textarea', { media: true }),
+            existing,
+            {
+                apiUrl: 'https://example.test/ttdf/v1/admin',
+                nonce: 'nonce-value'
+            }
+        );
+        await flushPromises();
+
+        const formField = wrapper.findComponent(window.TTDFOptions.FormField);
+        expect(formField.vm.mediaMultiSelect).toBe(true);
+        await formField.vm.loadMedia(1);
+
+        formField.vm.handleMediaClick(formField.vm.mediaItems[0]);
+        formField.vm.handleMediaClick(formField.vm.mediaItems[1]);
+        expect(formField.vm.mediaPickedCount).toBe(2);
+
+        formField.vm.confirmMediaSelection();
+        expect(lastEmitted(wrapper)?.[0]).toBe([
+            existing,
+            items[0].url,
+            items[1].url
+        ].join('\n'));
+        expect(formField.vm.mediaPickedCount).toBe(0);
+
+        formField.vm.handleMediaClick(formField.vm.mediaItems[0]);
+        formField.vm.handleMediaClick(formField.vm.mediaItems[1]);
+        formField.vm.confirmMediaSelection();
+        expect(lastEmitted(wrapper)?.[0]).toBe([
+            existing,
+            items[0].url,
+            items[1].url
+        ].join('\n'));
+
+        wrapper.unmount();
+        vi.unstubAllGlobals();
+    });
+
     it('filters TemplateMap options through the field component allowlist', async () => {
         const wrapper = mountField(
             field('TemplateMap', {

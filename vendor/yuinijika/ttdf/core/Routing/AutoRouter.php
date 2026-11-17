@@ -6,6 +6,7 @@ namespace TTDF\Routing;
 
 use TTDF\Compat\Typecho;
 use TTDF\Config\Config;
+use TTDF\Hooks\Hooks;
 use TTDF\Http\Rest\Prefixes;
 use TTDF\Support\Path;
 use TTDF\Theme\Paths;
@@ -16,6 +17,27 @@ final class AutoRouter
     {
         if (!(bool) Config::get('router.enabled', true)) {
             return;
+        }
+
+        $requestPath = self::requestPath();
+        if ($requestPath === '') {
+            return;
+        }
+
+        $routePath = self::aliasTarget($requestPath);
+        if ($routePath === null) {
+            if (self::shouldSkip($requestPath)) {
+                return;
+            }
+
+            $hookRoute = self::resolveHook($requestPath);
+            if ($hookRoute !== null) {
+                self::setStatus(200);
+                ($hookRoute['handler'])($hookRoute['params']);
+                exit;
+            }
+
+            $routePath = $requestPath;
         }
 
         $appDir = Paths::app($root);
@@ -29,12 +51,7 @@ final class AutoRouter
             return;
         }
 
-        $requestPath = self::requestPath();
-        if ($requestPath === '' || self::shouldSkip($requestPath)) {
-            return;
-        }
-
-        $match = self::resolve($pagesDir, $requestPath);
+        $match = self::resolve($pagesDir, $routePath);
         if ($match === null) {
             return;
         }
@@ -45,17 +62,62 @@ final class AutoRouter
             'file' => str_replace(str_replace('\\', '/', $pagesDir), '', str_replace('\\', '/', $match['file'])),
         ];
 
-        if (class_exists('Typecho\\Response')) {
-            \Typecho\Response::getInstance()->setStatus(200);
-        } else {
-            http_response_code(200);
-        }
+        self::setStatus(200);
 
         Path::safeInclude($pagesDir, $match['file'], [
             'route' => $route,
             'params' => $match['params'],
         ]);
         exit;
+    }
+
+    /**
+     * Resolve a server-side route registered through the `router.match` filter.
+     * Hooks may only return a callable handler and scalar string parameters;
+     * invalid payloads are ignored so a broken extension cannot capture a
+     * request or include arbitrary files.
+     *
+     * @return array{handler: callable, params: array<string, string>}|null
+     */
+    public static function resolveHook(string $requestPath): ?array
+    {
+        $match = Hooks::applyFilters('router.match', null, trim($requestPath, '/'));
+        if ($match === null) {
+            return null;
+        }
+
+        if (!is_array($match) || !isset($match['handler']) || !is_callable($match['handler'])) {
+            error_log('TTDF router.match returned an invalid handler for: ' . $requestPath);
+
+            return null;
+        }
+
+        $params = $match['params'] ?? [];
+        if (!is_array($params)) {
+            error_log('TTDF router.match returned invalid params for: ' . $requestPath);
+
+            return null;
+        }
+
+        $normalized = [];
+        foreach ($params as $key => $value) {
+            if (
+                !is_string($key)
+                || preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $key) !== 1
+                || !is_string($value)
+            ) {
+                error_log('TTDF router.match returned an invalid parameter for: ' . $requestPath);
+
+                return null;
+            }
+
+            $normalized[$key] = $value;
+        }
+
+        return [
+            'handler' => $match['handler'],
+            'params' => $normalized,
+        ];
     }
 
     /**
@@ -110,6 +172,15 @@ final class AutoRouter
             : $trimmed;
     }
 
+    private static function setStatus(int $status): void
+    {
+        if (class_exists('Typecho\\Response')) {
+            \Typecho\Response::getInstance()->setStatus($status);
+        } else {
+            http_response_code($status);
+        }
+    }
+
     private static function shouldSkip(string $path): bool
     {
         $first = strtolower(explode('/', $path)[0]);
@@ -127,6 +198,46 @@ final class AutoRouter
             ['admin', 'feed', 'assets', 'usr', 'favicon.ico', 'robots.txt', 'sitemap.xml'],
             true
         ) || $restRequest || $ajaxRequest;
+    }
+
+    /**
+     * Resolve a URL alias such as `sitemap.xml` to a router path such as
+     * `sitemap`. Aliases are exact matches and targets must stay inside the
+     * router directory.
+     */
+    private static function aliasTarget(string $path): ?string
+    {
+        $aliases = Config::get('router.aliases', []);
+        if (!is_array($aliases) || $aliases === []) {
+            return null;
+        }
+
+        $requested = trim($path, '/');
+        foreach ($aliases as $alias => $target) {
+            if (!is_string($alias) || !is_string($target) || trim($alias, '/') !== $requested) {
+                continue;
+            }
+
+            $target = trim($target, '/');
+            if ($target === '' || str_contains($target, '\\') || str_contains($target, "\0")) {
+                return null;
+            }
+
+            foreach (explode('/', $target) as $segment) {
+                if (
+                    $segment === ''
+                    || $segment === '.'
+                    || $segment === '..'
+                    || preg_match('/^[A-Za-z0-9_-]+$/', $segment) !== 1
+                ) {
+                    return null;
+                }
+            }
+
+            return $target;
+        }
+
+        return null;
     }
 
     /**

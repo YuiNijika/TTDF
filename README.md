@@ -2,7 +2,7 @@
 
 > The Intuitive Typecho Theme Framework.
 
-TTDF v5 是面向 Typecho 1.2.1+ / 1.3.x 的现代主题开发框架，要求 PHP 8.2+。当前版本为 `5.0.3-next`，与冻结的 `v4` 分支并行维护。
+TTDF v5 是面向 Typecho 1.2.1+ / 1.3.x 的现代主题开发框架，要求 PHP 8.2+。当前版本为 `5.0.4-next`，与冻结的 `v4` 分支并行维护。
 
 ## 特性
 
@@ -53,15 +53,20 @@ app/                                  主题代码区
   router/                             自动路由页面，router.pages_dir 默认指向这里
   pages/                              仅 Typecho 页面类型模板
   components/                         可复用组件与模板映射目标
+  support/                            主题自有 PHP 类，目录小写，命名空间为主题名
 assets/                              主题自有静态资源
 ```
 
-`functions.php` 只负责加载自动加载器并调用 `TTDF\Framework::boot()`。Typecho
+`functions.php` 只负责加载自动加载器、注册主题命名空间（如
+`Autoloader::register(__DIR__, 'MyTheme')`）并调用 `TTDF\Framework::boot()`。Typecho
 需要的 `themeConfig()` 与 `themeFields()` 由框架核心统一注册，主题不需要再写
 这两个函数，也不要在主题根目录新增其他 PHP 入口。页面模板固定放在
 `app/pages/`，由框架在 `themeInit` 阶段接管 Typecho 的模板目录。`header.php`、
 `footer.php`、`sidebar.php`、`comments.php` 不属于页面类型，必须分别写成
-`app/components/AppHeader.php`、`AppFooter.php`、`Sidebar.php`、`Comments.php`。
+`app/components/layout/AppHeader.php`、`layout/AppFooter.php`、`layout/Sidebar.php`、
+`content/Comments.php`。主题自有类放在 `app/support/`，例如
+`app/support/PageData.php` 声明 `namespace MyTheme\Support;`；不要使用
+`TTDF\App\`，也不要占用 `TTDF\` 命名空间。
 
 ## 主题配置
 
