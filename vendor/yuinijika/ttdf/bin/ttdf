@@ -1,0 +1,15 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+$autoloader = __DIR__ . '/../core/Autoloader.php';
+if (!is_file($autoloader)) {
+    fwrite(STDERR, 'TTDF core is missing. Restore vendor/yuinijika/ttdf/ from the release package.' . PHP_EOL);
+    exit(1);
+}
+
+require_once $autoloader;
+\TTDF\Autoloader::register(dirname(__DIR__, 4));
+
+exit(\TTDF\Cli\Application::run($argv));

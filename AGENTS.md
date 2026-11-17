@@ -48,6 +48,7 @@ GET https://api.miomoe.cn/site/docs/page?path=ttdf/v5/index
 - `vendor/yuinijika/ttdf/package.json` 与 `pnpm-lock.yaml` 必须保留以复现静态资源，只忽略 `node_modules/`；不要在主题包中分发 `node_modules/`。
 - `vendor/yuinijika/ttdf/core/` 与 `vendor/yuinijika/ttdf/static/` 必须随主题包分发，生产环境不依赖 Composer 或 Node.js；`vendor/` 下的 Composer 依赖与 `vendor/composer/` 仍不提交。
 - 生产安装必须支持直接解压主题包运行，不要求站点安装 Composer；Composer 只用于开发、测试和静态分析。
+- `vendor/yuinijika/ttdf/bin/ttdf` 是本地开发工具，入口固定为 `php vendor/yuinijika/ttdf/bin/ttdf <command>`，当前只提供 `dev` 子命令：`--vite` / `--webpack` / `--off` / `--status` / `--dry-run` / `--root=PATH`。命令只改写 `app/config/app.php` 的 `enabled` 与 `dev` 字段，不启动 Node 进程、不执行主题配置、不读数据库；生产运行与主题渲染不得依赖它。
 - 除 Typecho 必需的 `themeConfig()`、`themeFields()` 外，不新增全局函数或全局类。
 - 不新增 v4 兼容层；`Get`、`GetPost`、`GetUser`、`GetComment`、`GetSite`、`GetTheme`、`TTDF_*`、OPP 函数、全局 `config()` 已移除。
 - 主题设置只能通过 `TTDF\Theme\Options` 读写；每个主题只写一行，`value` 是完整设置 JSON，字段必须来自 `app/config/theme.php` 白名单。默认落在自定义 `ttdf` 表，`name` 是主题名。
@@ -155,11 +156,11 @@ GET https://api.miomoe.cn/site/docs/page?path=ttdf/v5/index
 8. 设置页依赖通过 `Vue` / `ArcoVue` 全局构建延迟解析，测试中不得依赖加载顺序副作用
 9. `type => 'Media'`、`Text + media` 与 `Textarea + media` 字段由设置页媒体库对话框通过 `/ttdf/v1/admin/media*` 选择附件；`Media` 保存 `cid`，文本类字段保存图片地址（`Textarea` 每行一个，追加不覆盖），都不要保存临时 URL；`Text + media` / `Textarea + media` 必须保留可编辑控件与媒体库按钮
 10. 媒体库改动至少补主题输出、列表过滤、分页/搜索、上传校验、重命名与删除边界测试
-11. `ColorPicker` 字段改动补 `ColorTest` 与 `SettingsTest` 的归一化 / 注入用例，并同步线上 `ttdf/v5/configuration`、`ttdf/v5/api/settings`、`ttdf/v5/api/support` 与两个 Skill
+11. `ColorPicker` 字段改动补 `ColorTest` 与 `SettingsTest` 的归一化 / 注入用例，并同步线上 `ttdf/v5/configuration/theme`、`ttdf/v5/configuration/panel`、`ttdf/v5/api/settings`、`ttdf/v5/api/support` 与两个 Skill
 
 ## 接入或调整前端构建（Vite / Webpack）
 
-1. `app/config/app.php` 的 `vite` / `webpack` 段保持默认关闭；开发时只开启其中一种，把对应 `enabled` 与 `dev` 设为 `true`，生产构建后把 `dev` 设回 `false`
+1. `app/config/app.php` 的 `vite` / `webpack` 段保持默认关闭；开发时用 `php vendor/yuinijika/ttdf/bin/ttdf dev --vite` 或 `--webpack` 只开启一种，生产构建后用 `dev --off` 把 `dev` 设回 `false`，可用 `--status` / `--dry-run` 先确认结果
 2. Vite 工程独立在 `vite/`：源码 `vite/src/`、配置 `vite/vite.config.ts`、依赖 `vite/package.json`；webpack 工程独立在 `webpack/`：源码 `webpack/src/`、配置 `webpack/webpack.config.cjs`、依赖 `webpack/package.json`
 3. Vite 必须开启 `build.manifest`，`build.outDir` 设为 `../assets/dist`；webpack 必须启用 `webpack-assets-manifest` 并输出 `assets/dist/manifest.json`，`output.path` 设为 `../assets/dist`，开发用 `style-loader` 注入样式，生产用 `mini-css-extract-plugin` 输出独立 CSS
 4. 前端挂载点统一写 `data-ttdf-component="Name"`，主题入口自行选择 Vue、React、Svelte 或原生 TypeScript；框架只负责资源注入
@@ -184,7 +185,7 @@ GET https://api.miomoe.cn/site/docs/page?path=ttdf/v5/index
 3. 请求体一律通过 `Payload` 读取，必填字段先用 `Payload::require()`，失败返回 422 + `errors`；不要在控制器里 `json_decode` 或直接访问 `$_POST`
 4. 新增路由必须在 `handle()` 里沿用 `enterScope()`/`leaveScope()`，scope 取 `v2.public` 或 `v2.admin`，这样 `rest.response` 过滤器对两个版本同时生效
 5. 补测试：至少覆盖开关关闭 404、内置路由优先于扩展路由、未认证 401、非管理员 403、Cookie 写操作缺 `Origin` 403、token 轮换后 401、越权删除 403，以及新接口自身的 422 分支；`tests/Unit/V2FakeDb.php` 提供可读写的内存库，`tests/Unit/V2ApiTestCase.php` 提供共享夹具
-6. 文档只在线上维护：`ttdf/v5/rest-api/*` 增加页面，并同步 `ttdf/v5/configuration.mdx`、`ttdf/v5/security.mdx` 与两个 Skill 中的接口清单
+6. 文档只在线上维护：`ttdf/v5/rest-api/*` 增加页面，并同步 `ttdf/v5/configuration/security`、`ttdf/v5/security.mdx` 与两个 Skill 中的接口清单
 
 ## 新增 AJAX 动作
 
@@ -218,7 +219,7 @@ GET https://api.miomoe.cn/site/docs/page?path=ttdf/v5/index
 3. 新建页面使用文档系统的 create 流程；已有页面使用修订接口，不要用修订接口创建新页面
 4. 修订提交后进入待审队列，取返回的 `uuid`，用 `POST /agent/token` 换取 JWT，再以 `Cookie: access_token=<jwt>` 调用 `POST /admin/site/docs/revisions/{uuid}/approve`
 5. 分区目录与排序通过 `PUT /admin/site/docs/metas` 维护，同样需要 JWT Cookie
-6. 文档路径：v5 文档 `ttdf/v5/*`，v4 归档 `ttdf/v4/*`，Skill `skill/ttdf-dev` 与 `skill/typecho-theme-dev`；REST 文档按版本拆分为 `ttdf/v5/rest-api/v1/*`（只读）与 `ttdf/v5/rest-api/v2/*`（默认推荐），入口页 `ttdf/v5/rest-api/index` 只负责推荐与导航，旧路径迁移提示统一放在 `ttdf/v5/rest-api/legacy/*`，不要再引用旧的 `ttdf/v5/rest-api/{site,posts,...}` 与 `ttdf/v5/rest-api/v2-*` 地址
+6. 文档路径：v5 文档 `ttdf/v5/*`，v4 归档 `ttdf/v4/*`，Skill `skill/ttdf-dev` 与 `skill/typecho-theme-dev`；REST 文档按版本拆分为 `ttdf/v5/rest-api/v1/*`（只读）与 `ttdf/v5/rest-api/v2/*`（默认推荐），入口页 `ttdf/v5/rest-api/index` 只负责推荐与导航，旧路径迁移提示统一放在 `ttdf/v5/rest-api/legacy/*`，不要再引用旧的 `ttdf/v5/rest-api/{site,posts,...}` 与 `ttdf/v5/rest-api/v2-*` 地址；配置文档同样拆分到 `ttdf/v5/configuration/*`（`index`、`app`、`storage`、`theme`、`panel`、`fields`、`security`、`cli`、`migration`），不要再把完整配置集中在单页
 7. 不在仓库内保存完整文档或 Skill 镜像；API Key 只从本机受控环境读取，禁止写入仓库、命令行历史或提交记录
 8. `ttdf/v4/*` 只做归档修订，不新增功能文档；新内容写入 `ttdf/v5/*`
 9. 修改页面模板目录、启动流程、公共 API 或安全边界时，必须同步更新受影响的 v5 文档与两个 Skill
@@ -228,7 +229,7 @@ GET https://api.miomoe.cn/site/docs/page?path=ttdf/v5/index
 - 版本号：`5.0.3-next`
 - 发布标签：`v5.0.3-next`
 - 发布前确认 `composer lint`、`composer analyse`、`composer test` 全绿
-- 发布包必须包含 `vendor/yuinijika/ttdf/core/` 与 `vendor/yuinijika/ttdf/static/`，并排除 `tests/`、`vendor/composer/`、`vendor/yuinijika/ttdf/node_modules/`、`vite/node_modules/`、`webpack/node_modules/`、`.tmp/`、`logs/`
+- 发布包必须包含 `vendor/yuinijika/ttdf/core/`、`vendor/yuinijika/ttdf/static/` 与 `vendor/yuinijika/ttdf/bin/`，并排除 `tests/`、`vendor/composer/`、`vendor/yuinijika/ttdf/node_modules/`、`vite/node_modules/`、`webpack/node_modules/`、`.tmp/`、`logs/`
 - `v4` 分支不改动
 
 # 前端 UI 规范
