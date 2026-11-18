@@ -116,6 +116,7 @@
     const groupFields = (fields, values) => {
         const groups = [];
         let row = null;
+        let rowGroup = null;
 
         (Array.isArray(fields) ? fields : []).forEach((field) => {
             if (!field || !fieldMatches(field, values)) {
@@ -123,8 +124,14 @@
             }
 
             if (field.inline === true) {
-                if (row === null) {
+                const group =
+                    typeof field.inline_group === 'string' && field.inline_group.trim() !== ''
+                        ? field.inline_group.trim()
+                        : '__default';
+
+                if (row === null || rowGroup !== group) {
                     row = { type: 'row', fields: [] };
+                    rowGroup = group;
                     groups.push(row);
                 }
                 row.fields.push(field);
@@ -132,6 +139,7 @@
             }
 
             row = null;
+            rowGroup = null;
             groups.push({ type: 'field', field });
         });
 

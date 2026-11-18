@@ -174,6 +174,14 @@ final class OptionsUiTest extends TestCase
         self::assertStringNotContainsString('input:not(.arco-input):focus-visible', $css);
     }
 
+    public function testInlineFieldsCanDeclareIndependentRows(): void
+    {
+        $script = $this->asset('options.js');
+
+        self::assertStringContainsString('field.inline_group', $script);
+        self::assertStringContainsString('rowGroup !== group', $script);
+    }
+
     private function asset(string $name): string
     {
         $path = dirname(__DIR__, 2) . '/vendor/yuinijika/ttdf/static/options/' . $name;
