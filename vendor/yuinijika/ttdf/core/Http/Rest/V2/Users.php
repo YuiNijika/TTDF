@@ -77,6 +77,36 @@ final class Users
     }
 
     /**
+     * @return array<string, mixed>|null
+     */
+    public function findByMail(string $mail): ?array
+    {
+        $mail = trim($mail);
+        if ($mail === '') {
+            return null;
+        }
+
+        return $this->row(
+            $this->db->select('*')->from('table.users')->where('mail = ?', $mail)->limit(1)
+        );
+    }
+
+    public function mailExists(string $mail, int $exceptUid = 0): bool
+    {
+        $mail = trim($mail);
+        if ($mail === '') {
+            return false;
+        }
+
+        $select = $this->db->select('uid')->from('table.users')->where('mail = ?', $mail);
+        if ($exceptUid > 0) {
+            $select->where('uid <> ?', $exceptUid);
+        }
+
+        return $this->row($select->limit(1)) !== null;
+    }
+
+    /**
      * @return list<array<string, mixed>>
      */
     public function all(int $page, int $pageSize, string $search = ''): array
@@ -168,6 +198,76 @@ final class Users
         }
 
         return $this->profile((array) $this->find($uid));
+    }
+
+    /**
+     * Create a self-registered subscriber.
+     *
+     * Mirrors Typecho's registration checks (2-32 character name, XSS-safe
+     * characters, unique name and mail, 6-18 character password) but keeps the
+     * password chosen by the visitor instead of generating a random one.
+     *
+     * @param array<string, mixed> $input
+     * @return array<string, mixed>
+     */
+    public function register(array $input): array
+    {
+        $name = trim((string) ($input['name'] ?? ''));
+        $mail = trim((string) ($input['mail'] ?? ''));
+        $password = (string) ($input['password'] ?? '');
+
+        if (!$this->isValidName($name)) {
+            Response::error(
+                'Invalid user name',
+                422,
+                ['name' => '用户名需为 2–32 个字符，且不能包含括号、引号、尖括号或控制字符']
+            );
+        }
+
+        $sanitizedMail = filter_var($mail, FILTER_SANITIZE_EMAIL);
+        $mailLength = function_exists('mb_strlen') ? mb_strlen($mail, 'UTF-8') : strlen($mail);
+        if (
+            $mail === ''
+            || $mailLength > 64
+            || !is_string($sanitizedMail)
+            || $sanitizedMail !== $mail
+            || filter_var($mail, FILTER_VALIDATE_EMAIL) === false
+        ) {
+            Response::error('Invalid email address', 422, ['mail' => '电子邮箱格式错误']);
+        }
+
+        $passwordLength = function_exists('mb_strlen') ? mb_strlen($password, 'UTF-8') : strlen($password);
+        if ($passwordLength < 6 || $passwordLength > 18) {
+            Response::error('Invalid password', 422, ['password' => '密码长度需为 6–18 个字符']);
+        }
+
+        $this->assertUnique('name', $name, 0);
+        $this->assertUnique('mail', $mail, 0);
+
+        $hash = Typecho::hash($password);
+        if ($hash === '') {
+            Response::error('Unable to create the user', 500);
+        }
+
+        $uid = (int) $this->db->query($this->db->insert('table.users')->rows([
+            'name' => $name,
+            'password' => $hash,
+            'mail' => $mail,
+            'url' => '',
+            'screenName' => $name,
+            'created' => time(),
+            'activated' => 0,
+            'logged' => 0,
+            'group' => 'subscriber',
+            'authCode' => Typecho::random(32),
+        ]));
+
+        $user = $uid > 0 ? $this->find($uid) : null;
+        if ($user === null) {
+            Response::error('Unable to create the user', 500);
+        }
+
+        return $user;
     }
 
     /**
@@ -308,6 +408,18 @@ final class Users
         if (!array_key_exists($group, self::GROUPS)) {
             Response::error('Invalid user group', 422, ['group' => '未知的用户组']);
         }
+    }
+
+    private function isValidName(string $name): bool
+    {
+        $length = function_exists('mb_strlen') ? mb_strlen($name, 'UTF-8') : strlen($name);
+        if ($length < 2 || $length > 32) {
+            return false;
+        }
+
+        $decoded = html_entity_decode($name, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        return preg_match('/[()\\\\"<>]|[\x00-\x08\x0b\x0c\x0e-\x1f]|[\r\n\t]/u', $decoded) !== 1;
     }
 
     private function assertUnique(string $column, string $value, int $exceptUid): void

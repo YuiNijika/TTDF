@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace TTDF\Http\Rest\V2;
 
 use TTDF\Compat\Typecho;
+use TTDF\Hooks\Hooks;
 use TTDF\Http\Request;
 use TTDF\Http\Response;
+use TTDF\Http\ResponseException;
 use TTDF\Http\Rest\PublicController;
 
 /**
@@ -138,6 +140,231 @@ final class FrontController
     }
 
     /**
+     * Self-service registration for the theme's login dialog.
+     *
+     * Typecho's own registration screen creates a random password, which does
+     * not fit an API caller that supplies its own password. The account is
+     * still created with Typecho's schema and hashing rules; the site owner
+     * controls availability with the native `allowRegister` option.
+     */
+    public function register(): never
+    {
+        if (!self::allowRegister()) {
+            Response::error('Registration is disabled', 403);
+        }
+
+        $body = Payload::body();
+        Payload::require($body, 'name', 'mail', 'password');
+
+        $name = Payload::string($body, 'name', '', 32);
+        $mail = Payload::string($body, 'mail', '', 64);
+        $password = $body['password'] ?? '';
+        if (!is_string($password)) {
+            Response::error('Invalid request body', 422, ['password' => '密码必须是字符串']);
+        }
+
+        $input = [
+            'name' => $name,
+            'mail' => $mail,
+            'password' => $password,
+            'code' => Payload::string($body, 'code', '', 12),
+        ];
+
+        $allowed = Hooks::applyFilters('rest.v2.register.can_register', true, $input);
+        if ($allowed !== true) {
+            Response::error('Registration is disabled', 403);
+        }
+
+        $verified = Hooks::applyFilters('rest.v2.register.validate', true, $input);
+        if ($verified !== true) {
+            Response::error('Registration verification failed', 422);
+        }
+
+        Hooks::doAction('rest.v2.register.before_create', $input);
+        $user = $this->users->register($input);
+        Hooks::doAction('rest.v2.register.created', $user, $input);
+
+        $ttl = Router::defaultTokenTtl();
+        $token = Token::issue((int) $user['uid'], (string) $user['authCode'], $ttl);
+        Auth::startCookieSession($user, $ttl);
+
+        Response::success([
+            'token' => $token['token'],
+            'tokenType' => 'Bearer',
+            'expiresAt' => date('c', $token['expiresAt']),
+            'expiresIn' => $token['expiresAt'] - time(),
+            'user' => $this->users->profile($user),
+            'source' => 'token',
+        ], [], 201);
+    }
+
+    /**
+     * Issue a short-lived verification code for registration, password reset
+     * or e-mail changes. Delivery is delegated to a server-trusted theme hook;
+     * the API never returns the code itself.
+     */
+    public function emailCode(): never
+    {
+        $body = Payload::body();
+        Payload::require($body, 'mail', 'purpose');
+
+        $mail = Payload::string($body, 'mail', '', 64);
+        $purpose = strtolower(Payload::string($body, 'purpose', '', 16));
+
+        if (!self::validMail($mail)) {
+            Response::error('Invalid email address', 422, ['mail' => '电子邮箱格式错误']);
+        }
+
+        if (!in_array($purpose, ['register', 'reset', 'email'], true)) {
+            Response::error('Invalid request body', 422, ['purpose' => '未知的验证码用途']);
+        }
+
+        $identity = Auth::identity() ?? [];
+        $ttl = max(60, min(3600, (int) Hooks::applyFilters('rest.v2.email_code.ttl', 600, $mail, $purpose)));
+        $interval = max(
+            10,
+            min(600, (int) Hooks::applyFilters('rest.v2.email_code.interval', 60, $mail, $purpose))
+        );
+
+        if ($purpose === 'register') {
+            if (!self::allowRegister()) {
+                Response::error('Registration is disabled', 403);
+            }
+
+            if ($this->users->mailExists($mail)) {
+                Response::error('Invalid email address', 422, ['mail' => '该邮箱已被注册']);
+            }
+        }
+
+        if ($purpose === 'email') {
+            $identity = Auth::requireTier(Auth::TIER_USER);
+            if (strcasecmp((string) $identity['mail'], $mail) === 0) {
+                Response::error('Invalid email address', 422, ['mail' => '新邮箱不能与当前邮箱相同']);
+            }
+
+            if ($this->users->mailExists($mail, (int) $identity['uid'])) {
+                Response::error('Invalid email address', 422, ['mail' => '该邮箱已被占用']);
+            }
+        }
+
+        $allowed = Hooks::applyFilters(
+            'rest.v2.email_code.can_send',
+            true,
+            $mail,
+            $purpose,
+            $identity
+        );
+
+        if ($allowed !== true || !Hooks::hasAction('rest.v2.email_code.send')) {
+            Response::error('Email delivery is unavailable', 503);
+        }
+
+        if ($purpose === 'reset' && $this->users->findByMail($mail) === null) {
+            // Do not reveal whether an address belongs to an account.
+            Response::success([
+                'sent' => true,
+                'purpose' => $purpose,
+                'expiresIn' => $ttl,
+                'cooldown' => $interval,
+            ]);
+        }
+
+        try {
+            $issued = VerificationCodes::issue($mail, $purpose, $ttl, $interval);
+            Hooks::doAction(
+                'rest.v2.email_code.send',
+                $mail,
+                $purpose,
+                $issued['code'],
+                $issued['expiresAt'],
+                $identity
+            );
+            Hooks::doAction(
+                'rest.v2.email_code.sent',
+                $mail,
+                $purpose,
+                $issued['expiresAt'],
+                $identity
+            );
+        } catch (ResponseException $exception) {
+            throw $exception;
+        } catch (RateLimitException $exception) {
+            Response::error(
+                'Please wait before requesting another code',
+                429,
+                ['mail' => $exception->retryAfter() . ' 秒后可重新发送']
+            );
+        } catch (\Throwable $exception) {
+            VerificationCodes::clear($mail, $purpose);
+            error_log('TTDF REST v2 verification mail failed');
+            Response::error('Unable to send verification email', 503);
+        }
+
+        Response::success([
+            'sent' => true,
+            'purpose' => $purpose,
+            'expiresIn' => max(0, $issued['expiresAt'] - time()),
+            'cooldown' => $interval,
+        ]);
+    }
+
+    /**
+     * Reset a forgotten password after proving control of the account mailbox.
+     */
+    public function resetPassword(): never
+    {
+        $body = Payload::body();
+        Payload::require($body, 'mail', 'code', 'password');
+
+        $mail = Payload::string($body, 'mail', '', 64);
+        $code = Payload::string($body, 'code', '', 12);
+        $password = self::passwordValue($body, 'password');
+
+        if (!self::validMail($mail)) {
+            Response::error('Invalid verification code', 422, ['code' => '验证码无效或已过期']);
+        }
+
+        $allowed = Hooks::applyFilters('rest.v2.password.reset.can_reset', true, $mail);
+        if ($allowed !== true || !Hooks::hasAction('rest.v2.email_code.send')) {
+            Response::error('Password reset is disabled', 403);
+        }
+
+        if (!VerificationCodes::verify($mail, 'reset', $code)) {
+            Response::error('Invalid verification code', 422, ['code' => '验证码无效或已过期']);
+        }
+
+        $verified = Hooks::applyFilters('rest.v2.password.reset.verify', true, $mail, $code);
+        if ($verified !== true) {
+            Response::error('Invalid verification code', 422, ['code' => '验证码无效或已过期']);
+        }
+
+        $user = $this->users->findByMail($mail);
+        if ($user === null) {
+            Response::error('Invalid verification code', 422, ['code' => '验证码无效或已过期']);
+        }
+
+        Hooks::doAction('rest.v2.password.reset.before', $user, $mail);
+        $updated = $this->users->update((int) $user['uid'], ['password' => $password]);
+        Hooks::doAction('rest.v2.password.reset.after', $updated, $mail);
+
+        Response::success(['reset' => true]);
+    }
+
+    private static function allowRegister(): bool
+    {
+        $options = Typecho::options();
+        if ($options === null) {
+            return false;
+        }
+
+        if (!property_exists($options, 'allowRegister') && !method_exists($options, '__get')) {
+            return false;
+        }
+
+        return (bool) ($options->{'allowRegister'} ?? false);
+    }
+
+    /**
      * @param array<string, mixed> $identity
      */
     public function logout(array $identity): never
@@ -190,10 +417,20 @@ final class FrontController
     {
         $body = Payload::body();
         $input = [];
+        $current = $this->users->find((int) $identity['uid']);
+        if ($current === null) {
+            Response::error('User not found', 404);
+        }
 
         foreach (['name', 'screenName', 'mail', 'url'] as $key) {
             if (Payload::has($body, $key)) {
-                $input[$key] = Payload::string($body, $key, '', $key === 'url' ? 255 : 150);
+                $limit = match ($key) {
+                    'url' => 255,
+                    'mail' => 64,
+                    'name' => 32,
+                    default => 150,
+                };
+                $input[$key] = Payload::string($body, $key, '', $limit);
             }
         }
 
@@ -201,11 +438,38 @@ final class FrontController
             Response::error('Invalid request body', 422, ['url' => '个人主页地址格式错误']);
         }
 
+        $mailChanged = false;
+        if (isset($input['mail']) && strcasecmp($input['mail'], (string) $current['mail']) !== 0) {
+            if (!self::validMail($input['mail'])) {
+                Response::error('Invalid email address', 422, ['mail' => '电子邮箱格式错误']);
+            }
+
+            $allowed = Hooks::applyFilters(
+                'rest.v2.account.email.verify',
+                true,
+                (string) $current['mail'],
+                $input['mail'],
+                Payload::string($body, 'emailCode', '', 12)
+            );
+
+            if ($allowed !== true) {
+                Response::error('Invalid verification code', 422, ['emailCode' => '验证码无效或已过期']);
+            }
+
+            Hooks::doAction('rest.v2.account.email.before_update', $current, $input['mail']);
+            $mailChanged = true;
+        }
+
         if ($input === []) {
             Response::error('Invalid request body', 422, ['body' => '没有需要更新的字段']);
         }
 
-        Response::success($this->users->update((int) $identity['uid'], $input));
+        $updated = $this->users->update((int) $identity['uid'], $input);
+        if ($mailChanged) {
+            Hooks::doAction('rest.v2.account.email.updated', $updated, (string) $current['mail']);
+        }
+
+        Response::success($updated);
     }
 
     /**
@@ -216,26 +480,32 @@ final class FrontController
         $body = Payload::body();
         Payload::require($body, 'currentPassword', 'password');
 
-        $current = (string) $body['currentPassword'];
-        $password = (string) $body['password'];
+        $currentPassword = Payload::string($body, 'currentPassword', '', 200);
+        $password = self::passwordValue($body, 'password');
         $user = $this->users->find((int) $identity['uid']);
 
-        if ($user === null || !Typecho::hashValidate($current, (string) $user['password'])) {
+        if ($user === null || !Typecho::hashValidate($currentPassword, (string) $user['password'])) {
             self::throttleFailedLogin();
             Response::error('Invalid credentials', 401);
         }
 
-        $updated = $this->users->update((int) $identity['uid'], ['password' => $password]);
-        $token = Token::issue(
-            (int) $updated['uid'],
-            (string) ($this->users->find((int) $updated['uid'])['authCode'] ?? ''),
-            Router::defaultTokenTtl()
-        );
+        Hooks::doAction('rest.v2.password.change.before', $user);
+        $this->users->update((int) $identity['uid'], ['password' => $password]);
+        $updated = $this->users->find((int) $identity['uid']);
+        if ($updated === null) {
+            Response::error('User not found', 404);
+        }
+
+        $ttl = Router::defaultTokenTtl();
+        $token = Token::issue((int) $updated['uid'], (string) $updated['authCode'], $ttl);
+        Auth::startCookieSession($updated, $ttl);
+        Hooks::doAction('rest.v2.password.change.after', $this->users->profile($updated));
 
         Response::success([
             'updated' => true,
             'token' => $token['token'],
             'expiresAt' => date('c', $token['expiresAt']),
+            'user' => $this->users->profile($updated),
         ]);
     }
 
@@ -299,6 +569,36 @@ final class FrontController
             // of the pair was wrong.
             sleep(1);
         }
+    }
+
+    /**
+     * @param array<string, mixed> $body
+     */
+    private static function passwordValue(array $body, string $key): string
+    {
+        $value = $body[$key] ?? '';
+        if (!is_string($value)) {
+            Response::error('Invalid request body', 422, [$key => '密码必须是字符串']);
+        }
+
+        $length = function_exists('mb_strlen') ? mb_strlen($value, 'UTF-8') : strlen($value);
+        if ($length < 6 || $length > 18) {
+            Response::error('Invalid password', 422, [$key => '密码长度需为 6–18 个字符']);
+        }
+
+        return $value;
+    }
+
+    private static function validMail(string $mail): bool
+    {
+        $sanitized = filter_var($mail, FILTER_SANITIZE_EMAIL);
+        $length = function_exists('mb_strlen') ? mb_strlen($mail, 'UTF-8') : strlen($mail);
+
+        return $mail !== ''
+            && $length <= 64
+            && is_string($sanitized)
+            && $sanitized === $mail
+            && filter_var($mail, FILTER_VALIDATE_EMAIL) !== false;
     }
 
     /**

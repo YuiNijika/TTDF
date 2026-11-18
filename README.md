@@ -15,6 +15,7 @@ TTDF v5 是面向 Typecho 1.2.1+ / 1.3.x 的现代主题开发框架，要求 PH
 - 首页、归档、文章、页面与评论模板，使用 Typecho 原生 Widget
 - 确定性 Hook / Filter 系统
 - 只读公开 REST API 与 nonce 保护的后台接口
+- 可选 REST v2 写入 API、账号自助与邮箱验证码扩展钩子
 - 自定义设置表、JSON 值与一次性迁移
 - PHPUnit、PHPStan 与 GitHub Actions
 
@@ -110,6 +111,46 @@ return [
 与 `NotFound`；入口模板通过 `TTDF\Theme\Templates::render()` 渲染配置组件，
 组件缺失时继续执行模板内置内容。
 
+## REST v2 与账号
+
+REST v2 默认关闭，通过 `rest.v2_enabled` / 主题设置 `RESTV2_Switch` 开启，前缀为
+`ttdf/v2`。公开读取接口委托 v1，写入接口统一经过 `TTDF\Http\Rest\V2\Auth` 的身份与
+权限校验。
+
+账号相关内置接口：
+
+- `POST auth/register`：受 Typecho `allowRegister` 控制。
+- `POST auth/email-code`：签发 `register`、`reset`、`email` 验证码，只通过钩子投递。
+- `POST auth/reset-password`：消费一次性验证码并轮换用户 `authCode`。
+- `POST auth/password`：登录用户校验当前密码后修改密码。
+- `PATCH me`：更新资料；邮箱变更可由 `emailCode` 验证。
+
+注册、验证码、找回密码、邮箱变更与密码修改提供以下扩展点：
+
+```text
+rest.v2.register.can_register
+rest.v2.register.validate
+rest.v2.register.before_create
+rest.v2.register.created
+rest.v2.email_code.can_send
+rest.v2.email_code.ttl
+rest.v2.email_code.interval
+rest.v2.email_code.send
+rest.v2.email_code.sent
+rest.v2.password.reset.can_reset
+rest.v2.password.reset.verify
+rest.v2.password.reset.before
+rest.v2.password.reset.after
+rest.v2.account.email.verify
+rest.v2.account.email.before_update
+rest.v2.account.email.updated
+rest.v2.password.change.before
+rest.v2.password.change.after
+```
+
+验证码只保存哈希，默认 600 秒有效、60 秒发送间隔、最多尝试 5 次。API 响应不会返回
+验证码明文，邮件投递失败时只返回通用错误，不把邮箱或验证码写入日志。
+
 ## 文档
 
 - v5 文档：<https://blog.miomoe.cn/docs/ttdf/v5/index>
@@ -152,7 +193,7 @@ Tab URL 同步、导出、导入和迁移流程。
 
 ## 安全说明
 
-- 公开 REST 接口只读，默认关闭。
+- v1 公开 REST 接口只读且默认关闭；v2 写入接口默认关闭，开启后仍需身份与权限校验。
 - 管理接口要求管理员登录、Typecho nonce（仅请求头）与同源。
 - JSON 请求体上限 1 MiB，超限返回 413。
 - 不提供匿名评论写入；评论走 Typecho 原生流程。
