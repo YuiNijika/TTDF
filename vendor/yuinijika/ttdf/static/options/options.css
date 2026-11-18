@@ -728,8 +728,9 @@ form[action*="themes-edit"] .typecho-option-submit {
 .ttdf-field-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 10px;
-  margin: 0 0 18px;
+  gap: 12px;
+  margin: 14px 0 0;
+  padding-bottom: 0;
 }
 
 .ttdf-field-row > .ttdf-field {
@@ -739,15 +740,14 @@ form[action*="themes-edit"] .typecho-option-submit {
     "control";
   grid-template-columns: minmax(0, 1fr);
   gap: 4px;
-  padding: 12px 14px;
+  padding: 14px;
   border: 1px solid var(--ttdf-line);
-  border-bottom: 1px solid var(--ttdf-line);
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--ttdf-surface-muted);
 }
 
 .ttdf-field-row > .ttdf-field:last-child {
-  padding-bottom: 12px;
+  padding-bottom: 14px;
   border-bottom: 1px solid var(--ttdf-line);
 }
 
