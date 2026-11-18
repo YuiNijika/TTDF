@@ -1049,6 +1049,21 @@ form[action*="themes-edit"] .typecho-option-submit {
   border-bottom: 1px solid var(--ttdf-line);
 }
 
+.ttdf-block-main.is-expandable {
+  cursor: pointer;
+}
+
+.ttdf-block-main.is-expandable button,
+.ttdf-block-main.is-expandable a,
+.ttdf-block-main.is-expandable input,
+.ttdf-block-main.is-expandable textarea,
+.ttdf-block-main.is-expandable select,
+.ttdf-block-main.is-expandable label,
+.ttdf-block-main.is-expandable .arco-select,
+.ttdf-block-main.is-expandable .arco-btn {
+  cursor: auto;
+}
+
 .ttdf-block-grip {
   display: inline-flex;
   flex: none;

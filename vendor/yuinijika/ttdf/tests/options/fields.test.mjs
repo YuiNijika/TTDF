@@ -213,11 +213,21 @@ describe('Arco settings controls', () => {
         ]);
         expect(wrapper.findAll('.ttdf-block')[1].attributes('data-block')).toBe('post-list');
 
-        const formField = wrapper.findComponent(window.TTDFOptions.FormField);
-        formField.vm.toggleBlock(0);
+        const blockTitle = () => wrapper.find('.ttdf-block[data-block="hero"] .ttdf-block-title');
+        const expandButton = () => wrapper.find('.ttdf-block[data-block="hero"] .ttdf-block-action[aria-expanded]');
+
+        await blockTitle().trigger('click');
         await nextTick();
+        expect(wrapper.find('.ttdf-block[data-block="hero"] .ttdf-block-data input').exists()).toBe(true);
+
+        await expandButton().trigger('click');
+        await nextTick();
+        expect(wrapper.find('.ttdf-block[data-block="hero"] .ttdf-block-data').exists()).toBe(false);
+        await blockTitle().trigger('click');
+        await nextTick();
+        expect(wrapper.find('.ttdf-block[data-block="hero"] .ttdf-block-data input').exists()).toBe(true);
+
         const dataInput = wrapper.find('.ttdf-block[data-block="hero"] .ttdf-block-data input');
-        expect(dataInput.exists()).toBe(true);
         await dataInput.setValue('新标题');
         expect(lastEmitted(wrapper)?.[0]).toEqual([
             { name: 'hero', data: { title: '新标题' } },

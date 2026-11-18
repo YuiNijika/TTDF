@@ -938,6 +938,28 @@
                 openBlocks.value = { ...openBlocks.value, [row.key]: !row.open };
             };
 
+            const onBlockCardClick = (event, index) => {
+                const row = blockRows.value[index];
+                if (!row || row.fields.length === 0 || blockDragIndex.value === index) {
+                    return;
+                }
+
+                const target = event.target;
+                if (!(target instanceof Element)) {
+                    return;
+                }
+
+                if (
+                    target.closest(
+                        'button, a, input, textarea, select, label, .arco-select, .arco-btn, .ttdf-block-grip, .ttdf-block-actions'
+                    )
+                ) {
+                    return;
+                }
+
+                toggleBlock(index);
+            };
+
             const startBlockDrag = (event, index) => {
                 if (!blockDragEnabled.value) {
                     return;
@@ -1466,6 +1488,7 @@
                 navItems,
                 numberValue,
                 onBlockHandleKeydown,
+                onBlockCardClick,
                 openMedia,
                 openSlideMedia,
                 confirmMediaSelection,
@@ -1969,7 +1992,11 @@
                             @drop="dropBlock(index)"
                             @dragend="endBlockDrag"
                         >
-                            <div class="ttdf-block-main">
+                            <div
+                                class="ttdf-block-main"
+                                :class="{ 'is-expandable': row.fields.length > 0 }"
+                                @click="onBlockCardClick($event, index)"
+                            >
                                 <button
                                     v-if="blockDragEnabled"
                                     type="button"
