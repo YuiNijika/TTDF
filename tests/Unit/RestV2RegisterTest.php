@@ -37,6 +37,7 @@ final class RestV2RegisterTest extends V2ApiTestCase
         $this->assertSuccess(201, $payload);
         self::assertSame('subscriber', $payload['data']['user']['group']);
         self::assertSame('newbie', $payload['data']['user']['name']);
+        self::assertStringContainsString('gravatar.com/avatar/', $payload['data']['user']['avatar']);
         self::assertNotEmpty($payload['data']['token']);
         self::assertArrayNotHasKey('password', $payload['data']['user']);
         self::assertArrayNotHasKey('authCode', $payload['data']['user']);

@@ -365,16 +365,19 @@ final class Users
      */
     public function profile(array $row): array
     {
+        $mail = (string) ($row['mail'] ?? '');
+
         return [
             'uid' => (int) ($row['uid'] ?? 0),
             'name' => (string) ($row['name'] ?? ''),
             'screenName' => (string) ($row['screenName'] ?? ''),
-            'mail' => (string) ($row['mail'] ?? ''),
+            'mail' => $mail,
             'url' => (string) ($row['url'] ?? ''),
             'group' => (string) ($row['group'] ?? ''),
             'created' => $this->date($row['created'] ?? null),
             'activated' => $this->date($row['activated'] ?? null),
             'logged' => $this->date($row['logged'] ?? null),
+            'avatar' => $this->avatar($mail),
         ];
     }
 
@@ -420,6 +423,15 @@ final class Users
         $decoded = html_entity_decode($name, ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
         return preg_match('/[()\\\\"<>]|[\x00-\x08\x0b\x0c\x0e-\x1f]|[\r\n\t]/u', $decoded) !== 1;
+    }
+
+    private function avatar(string $mail): string
+    {
+        $mail = strtolower(trim($mail));
+
+        return $mail === ''
+            ? ''
+            : 'https://gravatar.com/avatar/' . md5($mail) . '?s=160&d=mm&r=X';
     }
 
     private function assertUnique(string $column, string $value, int $exceptUid): void
