@@ -14,6 +14,10 @@ use TTDF\Support\Escaper;
  * The framework only injects the dev client or the built manifest assets. It
  * does not generate Vue/React/Svelte entry files, so a theme can use any
  * frontend stack as long as the build writes a standard Vite manifest.
+ *
+ * Builds should set `build.assetsDir` to an empty string so hashed files land
+ * directly in `assets/dist/`; manifest paths are always resolved relative to
+ * `vite.out_dir`, so the framework does not add another `assets/` segment.
  */
 final class Vite
 {

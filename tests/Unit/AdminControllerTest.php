@@ -147,9 +147,9 @@ final class AdminControllerTest extends TestCase
         self::assertArrayHasKey('General', $schema['data']['tabs']);
         self::assertArrayHasKey('SubTitle', $schema['data']['fields']);
         self::assertArrayHasKey('General', $config['data']['tabs']);
-        self::assertSame('5.0.4-next', $config['data']['frameworkVersion']);
+        self::assertSame('5.0.5-next', $config['data']['frameworkVersion']);
         self::assertSame('Theme', $info['data']['themeName']);
-        self::assertSame('5.0.4-next', $info['data']['ttdfVersion']);
+        self::assertSame('5.0.5-next', $info['data']['ttdfVersion']);
     }
 
     public function testExportIncludesThemeMetadataAndValues(): void
@@ -157,7 +157,7 @@ final class AdminControllerTest extends TestCase
         $payload = $this->capture(fn () => (new AdminController($this->root))->export())->payload();
 
         self::assertSame('Theme', $payload['data']['meta']['theme']);
-        self::assertSame('5.0.4-next', $payload['data']['meta']['frameworkVersion']);
+        self::assertSame('5.0.5-next', $payload['data']['meta']['frameworkVersion']);
         self::assertSame('Hello', $payload['data']['settings']['SubTitle']);
     }
 

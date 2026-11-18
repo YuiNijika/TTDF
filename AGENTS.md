@@ -7,7 +7,7 @@
 - **ttdf-framework**：指本仓库 `D:\Codes\TTDF` 本身，负责框架核心、autoloader、配置、路由、Hook、REST、设置表、测试、文档与发布。
 - **typecho-theme**：指使用 TTDF v5 构建的独立 Typecho 主题工程，例如包含自己的 `functions.php`、`app/pages/` 页面模板、`app/config/`、`app/router/`、`app/components/`、`app/support/` 和资源的主题。
 
-当前 `master` 是 v5 开发线，版本固定为 `5.0.4-next`；`v4` 分支已冻结，只用于旧主题与旧站点，不在 `master` 上恢复 v4 全局 API。
+当前 `master` 是 v5 开发线，版本固定为 `5.0.5-next`；`v4` 分支已冻结，只用于旧主题与旧站点，不在 `master` 上恢复 v4 全局 API。
 
 # 开发场景 Skill 读取
 
@@ -173,7 +173,7 @@ GET https://api.miomoe.cn/site/docs/page?path=ttdf/v5/index
 
 1. `app/config/app.php` 的 `vite` / `webpack` 段保持默认关闭；开发时用 `php vendor/yuinijika/ttdf/bin/ttdf dev --vite` 或 `--webpack` 只开启一种，生产构建后用 `dev --off` 把 `dev` 设回 `false`，可用 `--status` / `--dry-run` 先确认结果
 2. Vite 工程独立在 `vite/`：源码 `vite/src/`、配置 `vite/vite.config.ts`、依赖 `vite/package.json`；webpack 工程独立在 `webpack/`：源码 `webpack/src/`、配置 `webpack/webpack.config.cjs`、依赖 `webpack/package.json`
-3. Vite 必须开启 `build.manifest`，`build.outDir` 设为 `../assets/dist`；webpack 必须启用 `webpack-assets-manifest` 并输出 `assets/dist/manifest.json`，`output.path` 设为 `../assets/dist`，开发用 `style-loader` 注入样式，生产用 `mini-css-extract-plugin` 输出独立 CSS
+3. Vite 必须开启 `build.manifest`，`build.outDir` 设为 `../assets/dist`，并设置 `build.assetsDir: ''`，让 JS/CSS 直接落在 `assets/dist/` 而不是再嵌套一层 `assets/dist/assets/`；webpack 必须启用 `webpack-assets-manifest` 并输出 `assets/dist/manifest.json`，`output.path` 设为 `../assets/dist`，开发用 `style-loader` 注入样式，生产用 `mini-css-extract-plugin` 输出独立 CSS
 4. 小岛式主题把挂载点写成 `data-ttdf-component="Name"`，整站前端主题写 `#ttdf-app-data` 数据脚本 + `#ttdf-app` 容器；容器内可放 SEO 兜底 HTML，前端首次渲染前必须清空。主题入口自行选择 Vue、React、Svelte 或原生 TypeScript，框架只负责资源注入
 5. `TTDF\Theme\FrontendAssets` 在框架启动时把 `Vite::printHead()` 与 `Webpack::printHead()` 注册到 `theme.head`；主题只在 `app/components/layout/AppHeader.php` 触发一次 `Hooks::doAction('theme.head', $archive)`，不要自行拼接 dev server 地址、读取 manifest 或直接调用 `printHead()`
 6. React Fast Refresh 的 preamble 通过 `theme.head` Hook 在开发模式追加；不要把它写进框架核心
@@ -248,8 +248,8 @@ GET https://api.miomoe.cn/site/docs/page?path=ttdf/v5/index
 
 ## 发布
 
-- 版本号：`5.0.4-next`
-- 发布标签：`v5.0.4-next`
+- 版本号：`5.0.5-next`
+- 发布标签：`v5.0.5-next`
 - 发布前确认 `composer lint`、`composer analyse`、`composer test` 全绿
 - 发布包必须包含 `vendor/yuinijika/ttdf/core/`、`vendor/yuinijika/ttdf/static/` 与 `vendor/yuinijika/ttdf/bin/`，并排除 `tests/`、`vendor/composer/`、`vendor/yuinijika/ttdf/node_modules/`、`vite/node_modules/`、`webpack/node_modules/`、`.tmp/`、`logs/`
 - `v4` 分支不改动

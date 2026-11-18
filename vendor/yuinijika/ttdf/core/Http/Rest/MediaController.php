@@ -37,7 +37,7 @@ final class MediaController
 
     private readonly Db $db;
 
-    public function __construct(?Db $db = null)
+    public function __construct(?Db $db = null, private readonly ?int $ownerId = null)
     {
         $this->db = $db ?? Db::get();
     }
@@ -52,10 +52,20 @@ final class MediaController
         $search = trim(Request::queryString('search'));
 
         [$imageCondition, $imageParams] = self::imageCondition();
-        $applyFilters = static function (Query $query) use ($search, $imageCondition, $imageParams): Query {
+        $ownerId = $this->ownerId;
+        $applyFilters = static function (Query $query) use (
+            $search,
+            $imageCondition,
+            $imageParams,
+            $ownerId
+        ): Query {
             $query->where('table.contents.type = ?', 'attachment')
                 ->where('table.contents.status = ?', 'publish')
                 ->where($imageCondition, ...$imageParams);
+
+            if ($ownerId !== null) {
+                $query->where('table.contents.authorId = ?', $ownerId);
+            }
 
             if ($search !== '') {
                 $query->where('table.contents.title LIKE ?', '%' . $search . '%');
@@ -184,7 +194,7 @@ final class MediaController
             'modified' => $now,
             'text' => Json::encode($uploaded),
             'order' => 0,
-            'authorId' => self::currentUserId(),
+            'authorId' => $this->ownerId ?? self::currentUserId(),
             'template' => null,
             'type' => 'attachment',
             'status' => 'publish',
@@ -382,13 +392,16 @@ final class MediaController
     private function findRow(int $id): ?array
     {
         try {
-            $row = $this->db->fetchRow(
-                $this->db->select('cid', 'title', 'text', 'created', 'modified', 'authorId')
-                    ->from('table.contents')
-                    ->where('table.contents.cid = ?', $id)
-                    ->where('table.contents.type = ?', 'attachment')
-                    ->limit(1)
-            );
+            $select = $this->db->select('cid', 'title', 'text', 'created', 'modified', 'authorId')
+                ->from('table.contents')
+                ->where('table.contents.cid = ?', $id)
+                ->where('table.contents.type = ?', 'attachment');
+
+            if ($this->ownerId !== null) {
+                $select->where('table.contents.authorId = ?', $this->ownerId);
+            }
+
+            $row = $this->db->fetchRow($select->limit(1));
         } catch (Throwable) {
             return null;
         }

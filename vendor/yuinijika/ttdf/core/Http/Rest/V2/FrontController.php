@@ -9,6 +9,7 @@ use TTDF\Hooks\Hooks;
 use TTDF\Http\Request;
 use TTDF\Http\Response;
 use TTDF\Http\ResponseException;
+use TTDF\Http\Rest\MediaController;
 use TTDF\Http\Rest\PublicController;
 
 /**
@@ -84,6 +85,49 @@ final class FrontController
         $this->public->attachments((int) $identity['uid']);
     }
 
+    /**
+     * The editor media library is scoped to the signed-in writer so an editor
+     * cannot browse, rename or delete another user's uploads.
+     *
+     * @param array<string, mixed> $identity
+     */
+    public function mediaList(array $identity): never
+    {
+        $this->media($identity)->index();
+    }
+
+    /**
+     * @param array<string, mixed> $identity
+     */
+    public function mediaShow(array $identity, int $id): never
+    {
+        $this->media($identity)->show($id);
+    }
+
+    /**
+     * @param array<string, mixed> $identity
+     */
+    public function mediaUpload(array $identity): never
+    {
+        $this->media($identity)->upload();
+    }
+
+    /**
+     * @param array<string, mixed> $identity
+     */
+    public function mediaRename(array $identity, int $id): never
+    {
+        $this->media($identity)->rename($id);
+    }
+
+    /**
+     * @param array<string, mixed> $identity
+     */
+    public function mediaDelete(array $identity, int $id): never
+    {
+        $this->media($identity)->delete($id);
+    }
+
     public function search(): never
     {
         $this->public->search();
@@ -97,6 +141,14 @@ final class FrontController
         }
 
         Response::success($this->users->publicProfile($user));
+    }
+
+    /**
+     * @param array<string, mixed> $identity
+     */
+    private function media(array $identity): MediaController
+    {
+        return new MediaController(null, (int) $identity['uid']);
     }
 
     public function login(): never

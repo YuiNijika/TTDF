@@ -176,6 +176,22 @@ final class MediaTest extends TestCase
         self::assertSame('https://example.test/usr/uploads/photo.jpg', $item['url']);
     }
 
+    public function testOwnerScopedMediaQueriesOnlyReturnTheCurrentUsersUploads(): void
+    {
+        Db::$fetcher = static function (Query $query): array {
+            if (in_array('COUNT(*) AS num', $query->fields, true)) {
+                return [['num' => 0]];
+            }
+
+            return [];
+        };
+
+        $this->capture(static fn () => (new MediaController(null, 7))->index());
+
+        $query = $this->findMediaQuery();
+        self::assertCondition($query, 'table.contents.authorId = ?', [7]);
+    }
+
     public function testMediaTitleAndExtensionAreNormalized(): void
     {
         self::assertSame('Brand logo', MediaController::normalizeTitle("  Brand\n logo  "));

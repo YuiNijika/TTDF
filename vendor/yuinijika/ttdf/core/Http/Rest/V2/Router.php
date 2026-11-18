@@ -318,6 +318,36 @@ final class Router
                 Auth::TIER_USER,
                 static fn (array $p, array $i) => $controller()->attachments($i)
             ),
+            self::route(
+                'GET',
+                'media',
+                Auth::TIER_WRITER,
+                static fn (array $p, array $i) => $controller()->mediaList($i)
+            ),
+            self::route(
+                'GET',
+                'media/{id}',
+                Auth::TIER_WRITER,
+                static fn (array $p, array $i) => $controller()->mediaShow($i, (int) $p['id'])
+            ),
+            self::route(
+                'POST',
+                'media',
+                Auth::TIER_WRITER,
+                static fn (array $p, array $i) => $controller()->mediaUpload($i)
+            ),
+            self::route(
+                'POST',
+                'media/{id}',
+                Auth::TIER_WRITER,
+                static fn (array $p, array $i) => $controller()->mediaRename($i, (int) $p['id'])
+            ),
+            self::route(
+                'DELETE',
+                'media/{id}',
+                Auth::TIER_WRITER,
+                static fn (array $p, array $i) => $controller()->mediaDelete($i, (int) $p['id'])
+            ),
             self::route('GET', 'search', Auth::TIER_PUBLIC, static fn () => $controller()->search()),
             self::route('GET', 'users/{uid}', Auth::TIER_PUBLIC, static fn (array $p) => $controller()->author((int) $p['uid'])),
 

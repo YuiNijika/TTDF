@@ -2,7 +2,7 @@
 
 > The Intuitive Typecho Theme Framework.
 
-TTDF v5 是面向 Typecho 1.2.1+ / 1.3.x 的现代主题开发框架，要求 PHP 8.2+。当前版本为 `5.0.4-next`，与冻结的 `v4` 分支并行维护。
+TTDF v5 是面向 Typecho 1.2.1+ / 1.3.x 的现代主题开发框架，要求 PHP 8.2+。当前版本为 `5.0.5-next`，与冻结的 `v4` 分支并行维护。
 
 ## 特性
 
@@ -16,6 +16,7 @@ TTDF v5 是面向 Typecho 1.2.1+ / 1.3.x 的现代主题开发框架，要求 PH
 - 确定性 Hook / Filter 系统
 - 只读公开 REST API 与 nonce 保护的后台接口
 - 可选 REST v2 写入 API、账号自助与邮箱验证码扩展钩子
+- v2 前台编辑器媒体库（`writer` 权限、按上传者隔离）与扁平化 Vite 产物
 - 自定义设置表、JSON 值与一次性迁移
 - PHPUnit、PHPStan 与 GitHub Actions
 
@@ -124,6 +125,7 @@ REST v2 默认关闭，通过 `rest.v2_enabled` / 主题设置 `RESTV2_Switch` �
 - `POST auth/reset-password`：消费一次性验证码并轮换用户 `authCode`。
 - `POST auth/password`：登录用户校验当前密码后修改密码。
 - `PATCH me`：更新资料；邮箱变更可由 `emailCode` 验证。
+- `GET|POST|DELETE media*`：前台编辑器媒体库，`writer` 权限，只返回当前用户上传的图片。
 
 注册、验证码、找回密码、邮箱变更与密码修改提供以下扩展点：
 

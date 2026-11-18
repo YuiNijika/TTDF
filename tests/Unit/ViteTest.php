@@ -123,15 +123,15 @@ final class ViteTest extends TestCase
         $this->root = $this->makeThemeRoot([
             'assets/dist/.vite/manifest.json' => json_encode([
                 'src/main.ts' => [
-                    'file' => 'assets/main-abc.js',
+                    'file' => 'main-abc.js',
                     'src' => 'src/main.ts',
                     'isEntry' => true,
-                    'css' => ['assets/main-def.css'],
+                    'css' => ['main-def.css'],
                     'imports' => ['_shared-xyz.js'],
                 ],
                 '_shared-xyz.js' => [
-                    'file' => 'assets/shared-xyz.js',
-                    'css' => ['assets/shared-def.css'],
+                    'file' => 'shared-xyz.js',
+                    'css' => ['shared-def.css'],
                 ],
             ], JSON_THROW_ON_ERROR),
         ]);
@@ -149,23 +149,23 @@ final class ViteTest extends TestCase
         $html = Vite::head();
 
         self::assertStringContainsString(
-            '<link rel="stylesheet" href="https://example.test/usr/themes/ttdf/assets/dist/assets/main-def.css'
-            . '?v=5.0.4-next">',
+            '<link rel="stylesheet" href="https://example.test/usr/themes/ttdf/assets/dist/main-def.css'
+            . '?v=5.0.5-next">',
             $html
         );
         self::assertStringContainsString(
-            '<link rel="stylesheet" href="https://example.test/usr/themes/ttdf/assets/dist/assets/shared-def.css'
-            . '?v=5.0.4-next">',
+            '<link rel="stylesheet" href="https://example.test/usr/themes/ttdf/assets/dist/shared-def.css'
+            . '?v=5.0.5-next">',
             $html
         );
         self::assertStringContainsString(
-            '<link rel="modulepreload" href="https://example.test/usr/themes/ttdf/assets/dist/assets/shared-xyz.js'
-            . '?v=5.0.4-next" crossorigin>',
+            '<link rel="modulepreload" href="https://example.test/usr/themes/ttdf/assets/dist/shared-xyz.js'
+            . '?v=5.0.5-next" crossorigin>',
             $html
         );
         self::assertStringContainsString(
             '<script type="module" crossorigin '
-            . 'src="https://example.test/usr/themes/ttdf/assets/dist/assets/main-abc.js?v=5.0.4-next"></script>',
+            . 'src="https://example.test/usr/themes/ttdf/assets/dist/main-abc.js?v=5.0.5-next"></script>',
             $html
         );
     }
@@ -201,7 +201,7 @@ final class ViteTest extends TestCase
         $this->root = $this->makeThemeRoot([
             'assets/dist/manifest.json' => json_encode([
                 'src/main.ts' => [
-                    'file' => 'assets/main-legacy.js',
+                    'file' => 'main-legacy.js',
                     'isEntry' => true,
                 ],
             ], JSON_THROW_ON_ERROR),
@@ -212,7 +212,7 @@ final class ViteTest extends TestCase
             ],
         ]);
 
-        self::assertStringContainsString('assets/dist/assets/main-legacy.js', Vite::head());
+        self::assertStringContainsString('assets/dist/main-legacy.js', Vite::head());
     }
 
     public function testManifestCannotEscapeThemeRoot(): void
@@ -323,7 +323,7 @@ PHP);
         $root = sys_get_temp_dir() . '/ttdf-vite-' . uniqid('', true);
         mkdir($root, 0777, true);
         $files = array_replace([
-            'index.php' => "<?php\n/**\n * @version 5.0.4-next\n */\n",
+            'index.php' => "<?php\n/**\n * @version 5.0.5-next\n */\n",
         ], $files);
 
         foreach ($files as $path => $contents) {

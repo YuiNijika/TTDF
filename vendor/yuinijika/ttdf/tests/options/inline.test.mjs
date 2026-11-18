@@ -62,7 +62,7 @@ const config = {
 const themeInfo = {
     themeName: 'Inline Theme',
     themeVersion: '1.0.0',
-    ttdfVersion: '5.0.4-next',
+    ttdfVersion: '5.0.5-next',
     components: [],
     templateSlots: {}
 };

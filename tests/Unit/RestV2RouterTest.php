@@ -82,6 +82,54 @@ final class RestV2RouterTest extends V2ApiTestCase
         self::assertArrayNotHasKey('path', $payload['data'][0]);
     }
 
+    public function testWritersCanUseTheEditorMediaLibraryForTheirOwnUploads(): void
+    {
+        $this->seedRows('table.contents', [
+            [
+                'cid' => 40,
+                'title' => 'editor.png',
+                'text' => '{"name":"editor.png","path":"/usr/uploads/editor.png","size":128,'
+                    . '"type":"png","mime":"image/png"}',
+                'type' => 'attachment',
+                'status' => 'publish',
+                'created' => 1_700_000_000,
+                'modified' => 1_700_000_000,
+                'authorId' => 2,
+                'parent' => 0,
+            ],
+            [
+                'cid' => 41,
+                'title' => 'admin.png',
+                'text' => '{"name":"admin.png","path":"/usr/uploads/admin.png","size":256,'
+                    . '"type":"png","mime":"image/png"}',
+                'type' => 'attachment',
+                'status' => 'publish',
+                'created' => 1_700_000_000,
+                'modified' => 1_700_000_000,
+                'authorId' => 1,
+                'parent' => 0,
+            ],
+        ]);
+
+        $this->signInWithCookie(2);
+        $payload = $this->dispatch('media')->payload();
+
+        $this->assertSuccess(200, $payload);
+        self::assertSame(1, $payload['data']['total']);
+        self::assertSame(40, $payload['data']['items'][0]['id']);
+        self::assertSame(2, $payload['data']['items'][0]['authorId']);
+    }
+
+    public function testSubscribersCannotOpenTheEditorMediaLibrary(): void
+    {
+        $this->signInWithCookie(3);
+
+        $payload = $this->dispatch('media')->payload();
+
+        self::assertSame(403, $payload['code']);
+        self::assertSame('Insufficient permissions', $payload['message']);
+    }
+
     public function testDisabledRouterStaysSilentWhenTypechoDrivesTheRequest(): void
     {
         $this->disableV2();

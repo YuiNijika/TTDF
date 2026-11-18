@@ -95,7 +95,7 @@ export const mountApp = (appInfo = {}) => mount(window.TTDFOptions.createAppComp
     nonce: 'nonce-value',
     themeName: 'Theme',
     themeVersion: '1.2.3',
-    ttdfVersion: '5.0.4-next',
+    ttdfVersion: '5.0.5-next',
     ...appInfo
 }), {
     attachTo: document.body,
