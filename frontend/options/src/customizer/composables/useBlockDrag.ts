@@ -1,7 +1,14 @@
 import { computed, nextTick, ref, watch } from 'vue';
 import type { SettingsField } from '../../lib/fields';
 import { usePreviewBridge } from './usePreviewBridge';
-import { PAGE_BLOCK_KINDS, blockLabelMap, dragEnabled, pageBlocksField } from '../lib/blocks';
+import type { PreviewBlockRect } from './usePreviewBridge';
+import {
+    PAGE_BLOCK_KINDS,
+    blockCatalog,
+    blockLabelMap,
+    dragEnabled,
+    pageBlocksField,
+} from '../lib/blocks';
 
 interface BlockDragOptions {
     getFields: () => SettingsField[];
@@ -9,11 +16,14 @@ interface BlockDragOptions {
     previewOpen: () => boolean;
     reloadPreview: () => void;
     reorder: (name: string, from: number, to: number) => Promise<void>;
+    edit: (index: number, name: string, rect: PreviewBlockRect) => void;
+    dismissEditor: () => void;
 }
 
 export function useBlockDrag(options: BlockDragOptions) {
     const hint = ref('');
     const field = computed<SettingsField | null>(() => pageBlocksField(options.getFields()));
+    const catalog = computed(() => blockCatalog(field.value));
     const expectedKind = computed(() => (
         field.value?.name ? PAGE_BLOCK_KINDS[field.value.name] ?? '' : ''
     ));
@@ -35,6 +45,11 @@ export function useBlockDrag(options: BlockDragOptions) {
         getFieldName: () => String(field.value?.name || ''),
         getExpectedKind: () => expectedKind.value,
         getLabels: () => labels.value,
+        hasEditor: (name) => {
+            const meta = catalog.value[name];
+
+            return Boolean(meta && (meta.fields.length > 0 || Object.keys(meta.variants).length > 0));
+        },
         onReorder: (from, to) => {
             const name = field.value?.name;
             if (!name || !enabled.value) {
@@ -44,6 +59,8 @@ export function useBlockDrag(options: BlockDragOptions) {
             hint.value = '顺序已更新，正在同步预览…';
             void options.reorder(name, from, to);
         },
+        onEdit: options.edit,
+        onDismiss: options.dismissEditor,
         onUnavailable: (message) => {
             hint.value = message;
         },
@@ -78,10 +95,12 @@ export function useBlockDrag(options: BlockDragOptions) {
     return {
         hint,
         field,
+        catalog,
         status,
         requestRefresh,
         onFrameLoad,
         install: bridge.install,
+        markEditing: bridge.markEditing,
         cleanup: bridge.cleanup,
     };
 }

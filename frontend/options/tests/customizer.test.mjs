@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeBlockEntries, reorderBlockEntries } from '../src/customizer/lib/blocks';
+import {
+    blockCatalog,
+    normalizeBlockEntries,
+    reorderBlockEntries,
+    setBlockData,
+    setBlockVariant,
+} from '../src/customizer/lib/blocks';
 
 describe('TTDF customizer block ordering', () => {
     it('normalizes object and legacy string entries', () => {
@@ -31,5 +37,49 @@ describe('TTDF customizer block ordering', () => {
             .toEqual(['hero', 'carousel']);
         expect(reorderBlockEntries(value, -1, 0).map((entry) => entry.name))
             .toEqual(['hero', 'carousel']);
+    });
+
+    it('reads block metadata from field options', () => {
+        const catalog = blockCatalog({
+            options: {
+                hero: {
+                    label: '首屏介绍',
+                    variants: { default: '标准', compact: '紧凑' },
+                    fields: [
+                        { type: 'Text', name: 'title', label: '标题' },
+                        { type: 'Text', key: 'subtitle', label: '副标题' },
+                        { type: 'Blocks', name: 'nested' },
+                    ],
+                },
+                cta: '按钮组',
+            },
+        });
+
+        expect(catalog.hero.label).toBe('首屏介绍');
+        expect(catalog.hero.variants).toEqual({ default: '标准', compact: '紧凑' });
+        expect(catalog.hero.fields.map((field) => field.name)).toEqual(['title', 'subtitle']);
+        expect(catalog.cta).toEqual({ name: 'cta', label: '按钮组', variants: {}, fields: [] });
+    });
+
+    it('writes block data without touching other entries', () => {
+        const next = setBlockData(
+            [{ name: 'hero', data: { width: 'half' } }, { name: 'cta' }],
+            0,
+            'title',
+            '新标题'
+        );
+
+        expect(next[0]).toEqual({ name: 'hero', data: { width: 'half', title: '新标题' } });
+        expect(next[1]).toEqual({ name: 'cta' });
+        expect(setBlockData([{ name: 'hero' }], 3, 'title', 'x')).toHaveLength(1);
+    });
+
+    it('sets and clears a block variant', () => {
+        expect(setBlockVariant([{ name: 'hero' }], 0, 'compact')).toEqual([
+            { name: 'hero', variant: 'compact' },
+        ]);
+        expect(setBlockVariant([{ name: 'hero', variant: 'compact' }], 0, '')).toEqual([
+            { name: 'hero' },
+        ]);
     });
 });

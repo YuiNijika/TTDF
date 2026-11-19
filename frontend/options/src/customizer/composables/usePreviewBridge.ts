@@ -1,11 +1,21 @@
 import { onBeforeUnmount, onMounted } from 'vue';
 
+export interface PreviewBlockRect {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+}
+
 interface PreviewBridgeOptions {
     getFrame: () => HTMLIFrameElement | null;
     getFieldName: () => string;
     getExpectedKind: () => string;
     getLabels: () => Record<string, string>;
+    hasEditor: (name: string) => boolean;
     onReorder: (from: number, to: number) => void;
+    onEdit: (index: number, name: string, rect: PreviewBlockRect) => void;
+    onDismiss?: () => void;
     onUnavailable?: (message: string) => void;
 }
 
@@ -16,7 +26,9 @@ interface PreviewEditingResult {
 }
 
 const STYLE_ID = 'ttdf-preview-editing-style';
+const TOOLBAR_CLASS = 'ttdf-preview-tools';
 const HANDLE_CLASS = 'ttdf-preview-handle';
+const EDIT_CLASS = 'ttdf-preview-edit';
 
 const HANDLE_SVG = [
     '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">',
@@ -26,6 +38,15 @@ const HANDLE_SVG = [
     '<circle cx="10" cy="8" r="1.1"></circle>',
     '<circle cx="6" cy="12" r="1.1"></circle>',
     '<circle cx="10" cy="12" r="1.1"></circle>',
+    '</svg>',
+].join('');
+
+const EDIT_SVG = [
+    '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">',
+    '<path d="M10.8 2.6a1.6 1.6 0 0 1 2.3 0l.3.3a1.6 1.6 0 0 1 0 2.3l-7 7-3 .7.7-3 6.7-7.3Z"',
+    ' fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"></path>',
+    '<path d="m9.7 3.7 2.6 2.6" fill="none" stroke="currentColor"',
+    ' stroke-width="1.4" stroke-linecap="round"></path>',
     '</svg>',
 ].join('');
 
@@ -39,12 +60,15 @@ function injectStyle(doc: Document): void {
     style.textContent = `
 [data-block].ttdf-editable-block {
     position: relative;
-    outline: 1px dashed transparent;
+    outline: 1px dashed rgba(24, 24, 27, 0.16);
     outline-offset: -1px;
     transition: outline-color 140ms ease, opacity 140ms ease;
 }
 [data-block].ttdf-editable-block:hover {
-    outline-color: rgba(24, 24, 27, 0.32);
+    outline-color: rgba(24, 24, 27, 0.5);
+}
+[data-block].ttdf-editable-block.ttdf-editing {
+    outline: 2px solid #18181b;
 }
 [data-block].ttdf-editable-block.ttdf-drop-target {
     outline: 2px solid #18181b;
@@ -52,11 +76,23 @@ function injectStyle(doc: Document): void {
 [data-block].ttdf-editable-block.ttdf-dragging {
     opacity: 0.5;
 }
-.${HANDLE_CLASS} {
+.${TOOLBAR_CLASS} {
     position: absolute;
     top: 8px;
     left: 8px;
     z-index: 60;
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 140ms ease;
+}
+[data-block].ttdf-editable-block:hover > .${TOOLBAR_CLASS},
+.${TOOLBAR_CLASS}:focus-within,
+[data-block].ttdf-editable-block.ttdf-editing > .${TOOLBAR_CLASS} {
+    opacity: 1;
+}
+.${HANDLE_CLASS},
+.${EDIT_CLASS} {
     display: grid;
     place-items: center;
     width: 30px;
@@ -67,29 +103,32 @@ function injectStyle(doc: Document): void {
     background: rgba(255, 255, 255, 0.94);
     color: #52525b;
     box-shadow: 0 6px 18px -12px rgba(0, 0, 0, 0.55);
+    cursor: pointer;
+    transition: border-color 140ms ease, color 140ms ease;
+}
+.${HANDLE_CLASS} {
     cursor: grab;
-    opacity: 0;
-    transition: opacity 140ms ease, border-color 140ms ease, color 140ms ease;
-}
-[data-block].ttdf-editable-block:hover > .${HANDLE_CLASS},
-.${HANDLE_CLASS}:focus-visible {
-    opacity: 1;
-}
-.${HANDLE_CLASS}:hover {
-    border-color: #18181b;
-    color: #18181b;
 }
 .${HANDLE_CLASS}:active {
     cursor: grabbing;
+}
+.${HANDLE_CLASS}:hover,
+.${EDIT_CLASS}:hover {
+    border-color: #18181b;
+    color: #18181b;
 }
 .${HANDLE_CLASS} svg {
     width: 15px;
     height: 15px;
     fill: currentColor;
 }
+.${EDIT_CLASS} svg {
+    width: 16px;
+    height: 16px;
+}
 @media (prefers-reduced-motion: reduce) {
     [data-block].ttdf-editable-block,
-    .${HANDLE_CLASS} {
+    .${TOOLBAR_CLASS} {
         transition: none;
     }
 }
@@ -101,13 +140,16 @@ function installPreviewEditing(
     frame: HTMLIFrameElement,
     expectedKind: string,
     labels: Record<string, string>,
-    onReorder: (from: number, to: number) => void
+    hasEditor: (name: string) => boolean,
+    onReorder: (from: number, to: number) => void,
+    onEdit: (index: number, name: string, rect: PreviewBlockRect) => void,
+    onDismiss?: () => void
 ): PreviewEditingResult {
     let doc: Document | null = null;
     try {
         doc = frame.contentDocument;
     } catch {
-        return { cleanup: () => {}, count: 0, reason: '预览页与后台不同源，无法启用拖拽排序。' };
+        return { cleanup: () => {}, count: 0, reason: '预览页与后台不同源，无法启用编辑。' };
     }
 
     if (!doc) {
@@ -119,7 +161,7 @@ function installPreviewEditing(
         return {
             cleanup: () => {},
             count: 0,
-            reason: '当前预览页与所选分组不一致，切换分组后再拖动。',
+            reason: '当前预览页与所选分组不一致，切换分组后再编辑。',
         };
     }
 
@@ -128,20 +170,34 @@ function installPreviewEditing(
     const blocks = Array.from(doc.querySelectorAll<HTMLElement>('[data-block]'))
         .filter((element) => element.closest('[data-block]') === element);
     if (blocks.length === 0) {
-        return { cleanup: () => {}, count: 0, reason: '当前预览页没有可排序区块。' };
+        return { cleanup: () => {}, count: 0, reason: '当前预览页没有可编辑区块。' };
     }
 
     const cleanup: Array<() => void> = [];
     let dragFrom: number | null = null;
 
+    const onDocumentClick = (event: Event) => {
+        const target = event.target;
+        if (target instanceof Element && target.closest(`.${EDIT_CLASS}, .${HANDLE_CLASS}`)) {
+            return;
+        }
+        onDismiss?.();
+    };
+    doc.addEventListener('click', onDocumentClick, true);
+    cleanup.push(() => doc?.removeEventListener('click', onDocumentClick, true));
+
     blocks.forEach((block, position) => {
         const index = Number(block.dataset.blockIndex ?? position);
-        const label = labels[block.dataset.block ?? ''] ?? block.dataset.block ?? '区块';
+        const name = block.dataset.block ?? '';
+        const label = labels[name] ?? name ?? '区块';
         block.classList.add('ttdf-editable-block');
         block.dataset.ttdfOrder = String(index);
         block.dataset.ttdfLabel = label;
 
-        block.querySelectorAll(`:scope > .${HANDLE_CLASS}`).forEach((node) => node.remove());
+        block.querySelectorAll(`:scope > .${TOOLBAR_CLASS}`).forEach((node) => node.remove());
+
+        const toolbar = doc.createElement('div');
+        toolbar.className = TOOLBAR_CLASS;
 
         const handle = doc.createElement('button');
         handle.type = 'button';
@@ -150,7 +206,35 @@ function installPreviewEditing(
         handle.title = `拖动「${label}」调整顺序`;
         handle.setAttribute('aria-label', `拖动「${label}」调整顺序`);
         handle.innerHTML = HANDLE_SVG;
-        block.prepend(handle);
+        toolbar.append(handle);
+
+        let edit: HTMLButtonElement | null = null;
+        if (hasEditor(name)) {
+            edit = doc.createElement('button');
+            edit.type = 'button';
+            edit.className = EDIT_CLASS;
+            edit.draggable = false;
+            edit.title = `编辑「${label}」内容`;
+            edit.setAttribute('aria-label', `编辑「${label}」内容`);
+            edit.innerHTML = EDIT_SVG;
+            toolbar.append(edit);
+        }
+
+        block.prepend(toolbar);
+
+        const onEditClick = (event: MouseEvent) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const rect = block.getBoundingClientRect();
+            onEdit(index, name, {
+                left: rect.left,
+                top: rect.top,
+                width: rect.width,
+                height: rect.height,
+            });
+        };
+
+        edit?.addEventListener('click', onEditClick);
 
         const clearDropState = () => {
             blocks.forEach((item) => item.classList.remove('ttdf-drop-target'));
@@ -205,11 +289,12 @@ function installPreviewEditing(
         cleanup.push(() => {
             handle.removeEventListener('dragstart', onDragStart);
             handle.removeEventListener('dragend', onDragEnd);
+            edit?.removeEventListener('click', onEditClick);
             block.removeEventListener('dragover', onDragOver);
             block.removeEventListener('dragleave', onDragLeave);
             block.removeEventListener('drop', onDrop);
-            handle.remove();
-            block.classList.remove('ttdf-editable-block', 'ttdf-dragging', 'ttdf-drop-target');
+            toolbar.remove();
+            block.classList.remove('ttdf-editable-block', 'ttdf-dragging', 'ttdf-drop-target', 'ttdf-editing');
             delete block.dataset.ttdfOrder;
             delete block.dataset.ttdfLabel;
         });
@@ -223,11 +308,13 @@ function installPreviewEditing(
 
 export function usePreviewBridge(options: PreviewBridgeOptions) {
     let cleanupEditing: (() => void) | null = null;
+    let activeBlock: HTMLElement | null = null;
     const pending = new Map<string, (ok: boolean) => void>();
 
     const install = (): number => {
         cleanupEditing?.();
         cleanupEditing = null;
+        activeBlock = null;
 
         const frame = options.getFrame();
         if (!frame || options.getFieldName() === '' || options.getExpectedKind() === '') {
@@ -238,7 +325,10 @@ export function usePreviewBridge(options: PreviewBridgeOptions) {
             frame,
             options.getExpectedKind(),
             options.getLabels(),
-            options.onReorder
+            options.hasEditor,
+            options.onReorder,
+            options.onEdit,
+            options.onDismiss
         );
         cleanupEditing = result.cleanup;
         if (result.count === 0 && result.reason) {
@@ -246,6 +336,31 @@ export function usePreviewBridge(options: PreviewBridgeOptions) {
         }
 
         return result.count;
+    };
+
+    const markEditing = (index: number | null) => {
+        const frame = options.getFrame();
+        const doc = frame?.contentDocument;
+        if (!doc) {
+            return;
+        }
+
+        if (activeBlock) {
+            activeBlock.classList.remove('ttdf-editing');
+            activeBlock = null;
+        }
+
+        if (index === null) {
+            return;
+        }
+
+        const target = Array.from(doc.querySelectorAll<HTMLElement>('[data-block]'))
+            .filter((element) => element.closest('[data-block]') === element)
+            .find((element) => Number(element.dataset.blockIndex) === index);
+        if (target) {
+            target.classList.add('ttdf-editing');
+            activeBlock = target;
+        }
     };
 
     const settle = (id: string, ok: boolean) => {
@@ -314,6 +429,7 @@ export function usePreviewBridge(options: PreviewBridgeOptions) {
     return {
         install,
         requestRefresh,
+        markEditing,
         cleanup: () => cleanupEditing?.(),
     };
 }

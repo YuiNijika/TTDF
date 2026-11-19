@@ -28,6 +28,7 @@ defineExpose({ getFrame });
                 :title="props.title || '站点预览'"
                 @load="emit('load')"
             ></iframe>
+            <slot name="overlay"></slot>
         </div>
     </main>
 </template>
@@ -53,6 +54,7 @@ defineExpose({ getFrame });
     font-size: 12px;
 }
 .cz-frame {
+    position: relative;
     width: var(--preview-width, 100%);
     max-width: calc(100% - 32px);
     height: calc(100% - 32px);

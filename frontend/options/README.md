@@ -12,7 +12,7 @@ Vite 构建产物直接写入 `../../vendor/yuinijika/ttdf/static/`，不再生�
 - `src/components/fields/`：按字段类型拆分的独立 Vue 组件。
 - `src/customizer/`：`/admin/ttdf-custom-theme/` 全屏定制器。
   - `Customizer.vue` 只负责组合与保存流程。
-  - `components/`：顶栏、分类导航、预览舞台、右侧字段面板。
+  - `components/`：顶栏、分类导航、预览舞台、区块浮层编辑器、右侧字段面板。
   - `composables/useSettingsSchema.ts`：拉取 `/config` 与 `/form-data`，维护字段值与分组。
   - `composables/useBlockDrag.ts`：把拖拽手柄注入同源预览 iframe，排序后自动保存。
   - `composables/usePreviewBridge.ts`：iframe 消息通道与手柄注入实现。
@@ -20,10 +20,14 @@ Vite 构建产物直接写入 `../../vendor/yuinijika/ttdf/static/`，不再生�
 - `src/styles/global.css`：仅保留一份全局样式，负责 Typecho 布局与 Arco 浮层覆盖。
 - `tests/`：Vitest + jsdom + `@vue/test-utils`。
 
-定制器的拖拽只对页面级区块字段生效（`Home_Blocks`、`Archive_Blocks`、`Post_Blocks`、
+定制器只对页面级区块字段启用预览编辑（`Home_Blocks`、`Archive_Blocks`、`Post_Blocks`、
 `Page_Blocks`、`NotFound_Blocks`）。预览 iframe 通过 `[data-kind]` 校验页面类型，
-拖动结束后先保存设置，再向 iframe 发送 `ttdf:preview:refresh` 热刷新数据；
-消息失败时回退为重新加载 iframe。
+每个区块左侧显示拖拽手柄，声明了字段或样式的区块额外显示铅笔按钮。
+
+拖动结束后先保存设置，再向 iframe 发送 `ttdf:preview:refresh` 热刷新数据；消息失败时
+回退为重新加载 iframe。铅笔按钮把区块定位发送回定制器，浮层复用 `FormField` 渲染该区块
+声明的字段，修改会防抖保存并刷新预览。区块在预览中始终带虚线描边，悬停加深，正在编辑时
+改为实线描边；点击预览其他位置或按 `Esc` 会关闭编辑浮层。
 
 ## Recommended IDE Setup
 

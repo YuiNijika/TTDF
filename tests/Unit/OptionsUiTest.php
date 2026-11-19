@@ -26,6 +26,7 @@ final class OptionsUiTest extends TestCase
             '/src/customizer/Customizer.vue',
             '/src/customizer/components/CustomizerTopBar.vue',
             '/src/customizer/components/CustomizerNav.vue',
+            '/src/customizer/components/BlockEditor.vue',
             '/src/customizer/components/PreviewStage.vue',
             '/src/customizer/components/SettingsPanel.vue',
             '/src/customizer/composables/useBlockDrag.ts',

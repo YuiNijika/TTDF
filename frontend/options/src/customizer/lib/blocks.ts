@@ -14,6 +14,13 @@ export interface BlockEntry {
     data?: Record<string, unknown>;
 }
 
+export interface BlockMeta {
+    name: string;
+    label: string;
+    variants: Record<string, string>;
+    fields: SettingsField[];
+}
+
 export function normalizeBlockEntries(value: unknown): BlockEntry[] {
     if (!Array.isArray(value)) {
         return [];
@@ -135,4 +142,129 @@ export function dragEnabled(field: SettingsField | null): boolean {
     }
 
     return Array.isArray(reorder) && reorder.includes('drag');
+}
+
+function normalizeVariants(raw: unknown): Record<string, string> {
+    const variants: Record<string, string> = {};
+    if (!raw) {
+        return variants;
+    }
+    if (Array.isArray(raw)) {
+        raw.forEach((item) => {
+            if (typeof item === 'string') {
+                variants[item] = item;
+                return;
+            }
+            if (item && typeof item === 'object') {
+                const value = String((item as Record<string, unknown>).value ?? '');
+                if (value !== '') {
+                    variants[value] = String((item as Record<string, unknown>).label || value);
+                }
+            }
+        });
+
+        return variants;
+    }
+    if (typeof raw === 'object') {
+        Object.entries(raw as Record<string, unknown>).forEach(([key, value]) => {
+            variants[key] = typeof value === 'string'
+                ? value
+                : String((value as Record<string, unknown> | null)?.label || key);
+        });
+    }
+
+    return variants;
+}
+
+function normalizeBlockFields(raw: unknown): SettingsField[] {
+    if (!Array.isArray(raw)) {
+        return [];
+    }
+
+    return raw
+        .filter((item) => item && typeof item === 'object' && (item as SettingsField).type !== 'Blocks')
+        .map((item) => ({
+            ...(item as SettingsField),
+            name: String((item as SettingsField).name ?? (item as Record<string, unknown>).key ?? ''),
+        }))
+        .filter((item) => item.name !== '');
+}
+
+export function blockCatalog(field: SettingsField | null): Record<string, BlockMeta> {
+    const source = field?.options;
+    const catalog: Record<string, BlockMeta> = {};
+
+    if (Array.isArray(source)) {
+        source.forEach((item) => {
+            if (typeof item === 'string') {
+                catalog[item] = { name: item, label: item, variants: {}, fields: [] };
+                return;
+            }
+            if (!item || typeof item !== 'object') {
+                return;
+            }
+            const record = item as Record<string, unknown>;
+            const name = String(record.value ?? '');
+            if (name === '') {
+                return;
+            }
+            catalog[name] = {
+                name,
+                label: String(record.label || name),
+                variants: normalizeVariants(record.variants),
+                fields: normalizeBlockFields(record.fields),
+            };
+        });
+
+        return catalog;
+    }
+
+    if (source && typeof source === 'object') {
+        Object.entries(source as Record<string, unknown>).forEach(([name, value]) => {
+            const record = typeof value === 'object' && value !== null
+                ? value as Record<string, unknown>
+                : null;
+            catalog[name] = {
+                name,
+                label: typeof value === 'string' ? value : String(record?.label || name),
+                variants: normalizeVariants(record?.variants),
+                fields: normalizeBlockFields(record?.fields),
+            };
+        });
+    }
+
+    return catalog;
+}
+
+export function setBlockData(
+    value: unknown,
+    index: number,
+    name: string,
+    next: unknown
+): BlockEntry[] {
+    const entries = normalizeBlockEntries(value);
+    const entry = entries[index];
+    if (!entry) {
+        return entries;
+    }
+
+    entries[index] = { ...entry, data: { ...(entry.data ?? {}), [name]: next } };
+
+    return entries;
+}
+
+export function setBlockVariant(value: unknown, index: number, variant: string): BlockEntry[] {
+    const entries = normalizeBlockEntries(value);
+    const entry = entries[index];
+    if (!entry) {
+        return entries;
+    }
+
+    if (variant === '') {
+        delete entry.variant;
+    } else {
+        entry.variant = variant;
+    }
+
+    return entries;
 }
