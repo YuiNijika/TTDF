@@ -28,6 +28,7 @@ export interface CustomizerPayload {
     ttdfVersion?: string;
     siteUrl?: string;
     previewUrls?: Record<string, string>;
+    blockFields?: Record<string, { kind?: string; slot?: string }>;
     backUrl?: string;
     optionsUrl?: string;
 }

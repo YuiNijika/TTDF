@@ -23,6 +23,7 @@ const props = defineProps<{
 const emit = defineEmits<{
     (event: 'select-section', id: string): void;
     (event: 'update-value', name: string, value: unknown): void;
+    (event: 'focus-field', name: string): void;
 }>();
 
 const fieldValue = (field: SettingsField): unknown => props.values[String(field.name || '')];
@@ -78,6 +79,7 @@ const fieldValue = (field: SettingsField): unknown => props.values[String(field.
                             :api-url="props.apiUrl"
                             :nonce="props.nonce"
                             @update:model-value="emit('update-value', String(field.name), $event)"
+                            @focus-field="emit('focus-field', $event)"
                         />
                     </div>
                     <FormField
@@ -91,6 +93,7 @@ const fieldValue = (field: SettingsField): unknown => props.values[String(field.
                         :api-url="props.apiUrl"
                         :nonce="props.nonce"
                         @update:model-value="emit('update-value', String(group.field.name), $event)"
+                        @focus-field="emit('focus-field', $event)"
                     />
                 </template>
             </div>

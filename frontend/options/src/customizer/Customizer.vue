@@ -12,10 +12,12 @@ import type { PreviewBlockRect } from './composables/usePreviewBridge';
 import { useSettingsSchema } from './composables/useSettingsSchema';
 import {
     normalizeBlockEntries,
+    normalizeBlockTargets,
     reorderBlockEntries,
     setBlockData,
     setBlockVariant,
 } from './lib/blocks';
+import type { BlockFieldMap } from './lib/blocks';
 import type { CustomizerPayload, PreviewDevice } from './types';
 
 const payload: CustomizerPayload = (
@@ -56,18 +58,13 @@ const previewKey = ref(0);
 const device = ref<PreviewDevice>('desktop');
 const previewStage = ref<{ getFrame: () => HTMLIFrameElement | null } | null>(null);
 const editing = ref<{ index: number; name: string; rect: PreviewBlockRect } | null>(null);
+const activeBlockField = ref('');
 
 const previewWidth = computed(() => (
     device.value === 'mobile' ? '390px' : device.value === 'tablet' ? '834px' : '100%'
 ));
 const dragField = computed(() => drag.field.value);
-const PAGE_PREVIEW_KIND: Record<string, string> = {
-    Home_Blocks: 'home',
-    Archive_Blocks: 'archive',
-    Post_Blocks: 'post',
-    Page_Blocks: 'page',
-    NotFound_Blocks: 'notfound',
-};
+const blockFields = computed<BlockFieldMap>(() => normalizeBlockTargets(payload.blockFields));
 // Resolve every preview target against the admin origin. A `siteUrl` on a
 // different host/port would make the iframe cross-origin, `contentDocument`
 // null, and the bridge could not inject the drag/edit toolbar at all.
@@ -80,12 +77,13 @@ const resolvePreview = (raw: string): string => {
         return '/';
     }
 };
-// Each page group must preview its own page type: the bridge only injects
-// handles when the iframe's `data-kind` matches the active block field.
+// Each block field can target a different page type and column. The customizer
+// previews the field the user just clicked, so several `Blocks` fields can
+// share one settings section without fighting over the preview.
 const previewUrl = computed(() => {
     const previews = payload.previewUrls ?? {};
-    const field = dragField.value?.name ?? '';
-    const kind = PAGE_PREVIEW_KIND[field] ?? 'home';
+    const field = dragField.value?.name ?? activeBlockField.value;
+    const kind = blockFields.value[field]?.kind ?? 'home';
     const raw = String(previews[kind] || previews.home || payload.siteUrl || '/');
 
     return resolvePreview(raw);
@@ -127,6 +125,8 @@ const editingMaxHeight = computed(() => {
 
 const drag = useBlockDrag({
     getFields: () => currentSection.value?.fields ?? [],
+    getBlockFields: () => blockFields.value,
+    getActiveFieldName: () => activeBlockField.value,
     getFrame: () => previewStage.value?.getFrame() ?? null,
     previewOpen: () => previewOpen.value,
     reloadPreview: () => {
@@ -154,6 +154,13 @@ const dragHint = drag.hint;
 const openMenu = () => {
     drawerTab.value = 'nav';
     drawerOpen.value = true;
+};
+const focusBlockField = (name: string) => {
+    if (blockFields.value[name] === undefined || name === activeBlockField.value) {
+        return;
+    }
+    closeEditor(false);
+    activeBlockField.value = name;
 };
 const selectDrawerTab = (id: string) => {
     selectTab(id);
@@ -314,7 +321,10 @@ watch(previewOpen, (open) => {
     }
 });
 
-watch(activeSection, () => closeEditor(false));
+watch(activeSection, () => {
+    closeEditor(false);
+    activeBlockField.value = '';
+});
 
 const onKeydown = (event: KeyboardEvent) => {
     if (event.key === 'Escape' && editing.value) {
@@ -430,6 +440,7 @@ onBeforeUnmount(() => {
                 :nonce="payload.nonce"
                 @select-section="selectSection"
                 @update-value="updateValue"
+                @focus-field="focusBlockField"
             />
         </div>
 
@@ -493,6 +504,7 @@ onBeforeUnmount(() => {
                     embedded
                     @select-section="selectSection"
                     @update-value="updateValue"
+                    @focus-field="focusBlockField"
                 />
             </div>
         </a-drawer>

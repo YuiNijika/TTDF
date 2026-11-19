@@ -11,6 +11,7 @@ interface PreviewBridgeOptions {
     getFrame: () => HTMLIFrameElement | null;
     getFieldName: () => string;
     getExpectedKind: () => string;
+    getExpectedSlot?: () => string;
     getLabels: () => Record<string, string>;
     hasEditor: (name: string) => boolean;
     onReorder: (from: number, to: number) => void;
@@ -171,9 +172,14 @@ function blockElements(doc: Document): HTMLElement[] {
         .filter((element) => element.closest('[data-block]') === element);
 }
 
+function blockSlot(block: HTMLElement): string {
+    return block.closest('[data-block-slot]')?.getAttribute('data-block-slot') ?? '';
+}
+
 function installPreviewEditing(
     frame: HTMLIFrameElement,
     expectedKind: string,
+    expectedSlot: string,
     labels: Record<string, string>,
     hasEditor: (name: string) => boolean,
     onReorder: (from: number, to: number) => void,
@@ -230,6 +236,15 @@ function installPreviewEditing(
         const currentKind = doc?.querySelector('[data-kind]')?.getAttribute('data-kind') ?? '';
 
         return expectedKind === '' || currentKind === expectedKind;
+    };
+
+    const slotMatches = (block: HTMLElement): boolean => {
+        if (expectedSlot === '') {
+            return true;
+        }
+        const slot = blockSlot(block);
+
+        return expectedSlot === 'main' ? slot === '' || slot === 'main' : slot === expectedSlot;
     };
 
     const mount = (block: HTMLElement, position: number): Mounted | null => {
@@ -384,7 +399,7 @@ function installPreviewEditing(
             return;
         }
 
-        const blocks = blockElements(doc as Document);
+        const blocks = blockElements(doc as Document).filter(slotMatches);
         const alive = new Set(blocks);
         mounted.forEach((item, block) => {
             if (!alive.has(block)) {
@@ -489,6 +504,7 @@ export function usePreviewBridge(options: PreviewBridgeOptions) {
         const result = installPreviewEditing(
             frame,
             options.getExpectedKind(),
+            options.getExpectedSlot?.() ?? '',
             options.getLabels(),
             options.hasEditor,
             options.onReorder,

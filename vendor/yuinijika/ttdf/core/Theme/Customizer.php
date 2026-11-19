@@ -6,6 +6,7 @@ namespace TTDF\Theme;
 
 use TTDF\Compat\Typecho;
 use TTDF\Framework;
+use TTDF\Hooks\Hooks;
 use TTDF\Http\Rest\Prefixes;
 use TTDF\Support\Escaper;
 
@@ -116,7 +117,7 @@ final class Customizer
     }
 
     /**
-     * @return array<string, string|array<string, string>>
+     * @return array<string, string|array<string, string>|array<string, array{kind: string, slot: string}>>
      */
     private static function payload(): array
     {
@@ -142,6 +143,7 @@ final class Customizer
             'ttdfVersion' => Framework::VERSION,
             'siteUrl' => $siteUrl,
             'previewUrls' => self::previewUrls($siteUrl, $indexUrl),
+            'blockFields' => self::blockFields(),
             'backUrl' => $adminUrl,
             'optionsUrl' => $optionsUrl,
             'bridgeUrl' => self::bridgeUrl(),
@@ -177,7 +179,61 @@ final class Customizer
             }
         }
 
-        return $urls;
+        $filtered = Hooks::applyFilters('customizer.preview_urls', $urls, $siteUrl, $indexUrl);
+        if (!is_array($filtered)) {
+            return $urls;
+        }
+
+        $result = [];
+        foreach ($filtered as $kind => $url) {
+            if (!is_string($kind) || !is_string($url) || trim($url) === '') {
+                continue;
+            }
+            $result[$kind] = $url;
+        }
+
+        return $result === [] ? $urls : $result;
+    }
+
+    /**
+     * Maps a `Blocks` settings field to the preview page kind and the slot
+     * (`main` / `left` / `right`) it renders into. Themes can add their own
+     * page types, such as forum circles, without patching the customizer UI.
+     *
+     * @return array<string, array{kind: string, slot: string}>
+     */
+    private static function blockFields(): array
+    {
+        $defaults = [
+            'Home_Blocks' => ['kind' => 'home', 'slot' => 'main'],
+            'Archive_Blocks' => ['kind' => 'archive', 'slot' => 'main'],
+            'Post_Blocks' => ['kind' => 'post', 'slot' => 'main'],
+            'Page_Blocks' => ['kind' => 'page', 'slot' => 'main'],
+            'NotFound_Blocks' => ['kind' => 'notfound', 'slot' => 'main'],
+        ];
+
+        $filtered = Hooks::applyFilters('customizer.block_fields', $defaults);
+        if (!is_array($filtered)) {
+            return $defaults;
+        }
+
+        $result = [];
+        foreach ($filtered as $name => $meta) {
+            if (!is_string($name) || preg_match('/^[A-Za-z0-9_]+$/', $name) !== 1 || !is_array($meta)) {
+                continue;
+            }
+            $kind = trim((string) ($meta['kind'] ?? ''));
+            if ($kind === '') {
+                continue;
+            }
+            $slot = trim((string) ($meta['slot'] ?? 'main'));
+            $result[$name] = [
+                'kind' => $kind,
+                'slot' => $slot === '' ? 'main' : $slot,
+            ];
+        }
+
+        return $result === [] ? $defaults : $result;
     }
 
     /**

@@ -1,12 +1,55 @@
 import type { SettingsField } from '../../lib/fields';
 
-export const PAGE_BLOCK_KINDS: Record<string, string> = {
-    Home_Blocks: 'home',
-    Archive_Blocks: 'archive',
-    Post_Blocks: 'post',
-    Page_Blocks: 'page',
-    NotFound_Blocks: '404',
+export interface BlockTarget {
+    kind: string;
+    slot: string;
+}
+
+export type BlockFieldMap = Record<string, BlockTarget>;
+
+export const DEFAULT_BLOCK_FIELDS: BlockFieldMap = {
+    Home_Blocks: { kind: 'home', slot: 'main' },
+    Archive_Blocks: { kind: 'archive', slot: 'main' },
+    Post_Blocks: { kind: 'post', slot: 'main' },
+    Page_Blocks: { kind: 'page', slot: 'main' },
+    NotFound_Blocks: { kind: 'notfound', slot: 'main' },
 };
+
+/**
+ * Theme-provided targets are additive: unknown or malformed entries are
+ * dropped so a typo in a theme config cannot point the customizer at an
+ * arbitrary URL or preview slot.
+ */
+export function normalizeBlockTargets(raw: unknown): BlockFieldMap {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+        return { ...DEFAULT_BLOCK_FIELDS };
+    }
+
+    const result: BlockFieldMap = { ...DEFAULT_BLOCK_FIELDS };
+    Object.entries(raw as Record<string, unknown>).forEach(([name, value]) => {
+        if (!/^[A-Za-z0-9_]+$/.test(name) || !value || typeof value !== 'object' || Array.isArray(value)) {
+            return;
+        }
+        const record = value as Record<string, unknown>;
+        const kind = String(record.kind || '').trim();
+        if (kind === '') {
+            return;
+        }
+        const slot = String(record.slot || 'main').trim();
+        result[name] = { kind, slot: slot === '' ? 'main' : slot };
+    });
+
+    return result;
+}
+
+export function blockTarget(
+    map: BlockFieldMap,
+    field: SettingsField | null | undefined
+): BlockTarget | null {
+    const name = String(field?.name || '');
+
+    return name !== '' ? map[name] ?? null : null;
+}
 
 export interface BlockEntry {
     name: string;
@@ -121,9 +164,12 @@ export function blockLabelMap(field: SettingsField | null): Record<string, strin
     return labels;
 }
 
-export function pageBlocksField(fields: SettingsField[] | undefined): SettingsField | null {
+export function pageBlocksField(
+    fields: SettingsField[] | undefined,
+    map: BlockFieldMap = DEFAULT_BLOCK_FIELDS
+): SettingsField | null {
     const field = (Array.isArray(fields) ? fields : []).find(
-        (item) => item.type === 'Blocks' && item.name && PAGE_BLOCK_KINDS[item.name] !== undefined
+        (item) => item.type === 'Blocks' && item.name && map[item.name] !== undefined
     );
 
     return field ?? null;

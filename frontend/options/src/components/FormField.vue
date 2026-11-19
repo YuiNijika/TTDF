@@ -31,7 +31,10 @@ const props = withDefaults(
     }
 );
 
-const emit = defineEmits<{ (event: 'update:modelValue', value: unknown): void }>();
+const emit = defineEmits<{
+    (event: 'update:modelValue', value: unknown): void;
+    (event: 'focus-field', name: string): void;
+}>();
 
 const type = computed(() => String(props.field.type || 'Text'));
 const isMedia = computed(() => mediaEnabled(props.field));
@@ -56,11 +59,23 @@ const numberValue = computed(() => {
 const activeText = computed(() => String(props.field.activeText || props.field.active_text || '开启'));
 const inactiveText = computed(() => String(props.field.inactiveText || props.field.inactive_text || '关闭'));
 const update = (value: unknown) => emit('update:modelValue', value);
+const focus = () => {
+    const name = String(props.field.name || '');
+    if (name !== '') {
+        emit('focus-field', name);
+    }
+};
 </script>
 
 <template>
     <div v-if="type === 'Html'" class="html-block" v-html="field.content || ''"></div>
-    <div v-else class="ttdf-field" :data-testid="testId" :data-field-type="type">
+    <div
+        v-else
+        class="ttdf-field"
+        :data-testid="testId"
+        :data-field-type="type"
+        @click="focus"
+    >
         <label v-if="field.label" class="ttdf-field-label" :for="inputId">{{ field.label }}</label>
         <div class="ttdf-field-control">
             <a-input

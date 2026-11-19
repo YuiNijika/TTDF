@@ -203,6 +203,11 @@ Tab URL 同步、导出、导入和迁移流程。
 `config.inc.php` 与主题 `functions.php`，权限与 nonce 仍由后台自身校验。
 `options-theme.php?panel=ttdf-custom-theme` 保留为后台目录不可写时的回退入口。
 
+主题可以把额外的 `Blocks` 字段挂到预览里：用 `customizer.block_fields` 声明
+`字段名 => ['kind' => '页面类型', 'slot' => 'main|left|right']`，再用
+`customizer.preview_urls` 提供 `页面类型 => URL`。定制器会在点击字段时切换到
+对应预览页，并且只给该栏位的区块挂上拖拽与编辑按钮。
+
 ## 安全说明
 
 - v1 公开 REST 接口只读且默认关闭；v2 写入接口默认关闭，开启后仍需身份与权限校验。

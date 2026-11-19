@@ -3,15 +3,19 @@ import type { SettingsField } from '../../lib/fields';
 import { usePreviewBridge } from './usePreviewBridge';
 import type { PreviewBlockRect } from './usePreviewBridge';
 import {
-    PAGE_BLOCK_KINDS,
+    DEFAULT_BLOCK_FIELDS,
+    blockTarget,
     blockCatalog,
     blockLabelMap,
     dragEnabled,
     pageBlocksField,
 } from '../lib/blocks';
+import type { BlockFieldMap } from '../lib/blocks';
 
 interface BlockDragOptions {
     getFields: () => SettingsField[];
+    getBlockFields?: () => BlockFieldMap;
+    getActiveFieldName?: () => string;
     getFrame: () => HTMLIFrameElement | null;
     previewOpen: () => boolean;
     reloadPreview: () => void;
@@ -22,14 +26,25 @@ interface BlockDragOptions {
 
 export function useBlockDrag(options: BlockDragOptions) {
     const hint = ref('');
-    const field = computed<SettingsField | null>(() => pageBlocksField(options.getFields()));
+    const blockFields = computed<BlockFieldMap>(() => (
+        options.getBlockFields?.() ?? DEFAULT_BLOCK_FIELDS
+    ));
+    const mappedFields = computed(() => options.getFields().filter(
+        (item) => item.type === 'Blocks' && item.name && blockFields.value[item.name] !== undefined
+    ));
+    const field = computed<SettingsField | null>(() => {
+        const active = options.getActiveFieldName?.() ?? '';
+        const selected = mappedFields.value.find((item) => item.name === active);
+
+        return selected ?? pageBlocksField(options.getFields(), blockFields.value);
+    });
     const otherBlocks = computed<SettingsField | null>(() => (
         options.getFields().find((item) => item.type === 'Blocks' && item !== field.value) ?? null
     ));
     const catalog = computed(() => blockCatalog(field.value));
-    const expectedKind = computed(() => (
-        field.value?.name ? PAGE_BLOCK_KINDS[field.value.name] ?? '' : ''
-    ));
+    const target = computed(() => blockTarget(blockFields.value, field.value));
+    const expectedKind = computed(() => target.value?.kind ?? '');
+    const expectedSlot = computed(() => target.value?.slot ?? '');
     const labels = computed(() => blockLabelMap(field.value));
     const enabled = computed(() => dragEnabled(field.value));
     const status = computed(() => {
@@ -49,6 +64,7 @@ export function useBlockDrag(options: BlockDragOptions) {
         getFrame: options.getFrame,
         getFieldName: () => String(field.value?.name || ''),
         getExpectedKind: () => expectedKind.value,
+        getExpectedSlot: () => expectedSlot.value,
         getLabels: () => labels.value,
         hasEditor: (name) => {
             const meta = catalog.value[name];

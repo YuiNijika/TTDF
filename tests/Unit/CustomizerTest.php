@@ -70,12 +70,24 @@ final class CustomizerTest extends TestCase
     public function testCustomizerPreviewFollowsTheActiveBlockGroup(): void
     {
         $component = $this->source('frontend/options/src/customizer/Customizer.vue');
+        $panel = $this->source('frontend/options/src/customizer/components/SettingsPanel.vue');
+        $drag = $this->source('frontend/options/src/customizer/composables/useBlockDrag.ts');
+        $bridge = $this->source('frontend/options/src/customizer/composables/usePreviewBridge.ts');
         $types = $this->source('frontend/options/src/customizer/types.ts');
+        $blocks = $this->source('frontend/options/src/customizer/lib/blocks.ts');
+        $customizer = $this->source('vendor/yuinijika/ttdf/core/Theme/Customizer.php');
 
-        self::assertStringContainsString('PAGE_PREVIEW_KIND', $component);
-        self::assertStringContainsString("Archive_Blocks: 'archive'", $component);
+        self::assertStringContainsString('blockFields', $component);
+        self::assertStringContainsString('activeBlockField', $component);
+        self::assertStringContainsString('focus-field', $panel);
+        self::assertStringContainsString('getActiveFieldName', $drag);
+        self::assertStringContainsString('data-block-slot', $bridge);
+        self::assertStringContainsString("Archive_Blocks: { kind: 'archive', slot: 'main' }", $blocks);
         self::assertStringContainsString('payload.previewUrls', $component);
         self::assertStringContainsString('previewUrls?: Record<string, string>', $types);
+        self::assertStringContainsString("'customizer.block_fields'", $customizer);
+        self::assertStringContainsString("'customizer.preview_urls'", $customizer);
+        self::assertStringContainsString("'blockFields' => self::blockFields()", $customizer);
     }
 
     private function source(string $relative): string
