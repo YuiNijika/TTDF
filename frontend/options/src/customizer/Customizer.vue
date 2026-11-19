@@ -78,11 +78,18 @@ const editingAnchor = computed(() => {
     const width = frame.clientWidth || 0;
     const height = frame.clientHeight || 0;
     const panel = 320;
+    const minHeight = 300;
 
     return {
         left: Math.min(Math.max(12, rect.left), Math.max(12, width - panel - 12)),
-        top: Math.min(Math.max(12, rect.top), Math.max(12, height - 220)),
+        top: Math.min(Math.max(12, rect.top), Math.max(12, height - minHeight - 12)),
     };
+});
+const editingMaxHeight = computed(() => {
+    const frame = previewStage.value?.getFrame();
+    const height = frame?.clientHeight ?? 560;
+
+    return Math.max(220, Math.min(560, height - editingAnchor.value.top - 12));
 });
 
 const drag = useBlockDrag({
@@ -93,13 +100,14 @@ const drag = useBlockDrag({
         previewKey.value += 1;
     },
     reorder: async (name, from, to) => {
-        closeEditor();
+        closeEditor(false);
         updateValue(name, reorderBlockEntries(values[name], from, to));
         await save(true);
     },
     edit: (index, name, rect) => {
         editing.value = { index, name, rect };
         drag.markEditing(index);
+        bindPreviewViewport();
     },
     dismissEditor: () => {
         if (editing.value) {
@@ -109,7 +117,6 @@ const drag = useBlockDrag({
 });
 const dragStatus = drag.status;
 const dragHint = drag.hint;
-const installDragHandles = drag.onFrameLoad;
 
 let editTimer: number | null = null;
 const queueEditSave = () => {
@@ -118,13 +125,68 @@ const queueEditSave = () => {
     }
     editTimer = window.setTimeout(() => {
         editTimer = null;
-        void save(true);
+        void save(true, true);
     }, 700);
 };
 
-const closeEditor = () => {
+const closeEditor = (flush = true) => {
+    if (editTimer !== null) {
+        window.clearTimeout(editTimer);
+        editTimer = null;
+        if (flush) {
+            void save(true, true);
+        }
+    }
     editing.value = null;
     drag.markEditing(null);
+};
+
+const repositionEditor = () => {
+    const current = editing.value;
+    if (!current) {
+        return;
+    }
+
+    const rect = drag.blockRect(current.index);
+    if (!rect) {
+        closeEditor(false);
+
+        return;
+    }
+    if (
+        rect.left === current.rect.left
+        && rect.top === current.rect.top
+        && rect.width === current.rect.width
+        && rect.height === current.rect.height
+    ) {
+        return;
+    }
+
+    editing.value = { ...current, rect };
+};
+
+let boundWindow: Window | null = null;
+const onPreviewViewportChange = () => repositionEditor();
+const bindPreviewViewport = () => {
+    const win = previewStage.value?.getFrame()?.contentWindow ?? null;
+    if (boundWindow === win) {
+        return;
+    }
+    if (boundWindow) {
+        boundWindow.removeEventListener('scroll', onPreviewViewportChange);
+        boundWindow.removeEventListener('resize', onPreviewViewportChange);
+    }
+    boundWindow = win;
+    if (win) {
+        win.addEventListener('scroll', onPreviewViewportChange, { passive: true });
+        win.addEventListener('resize', onPreviewViewportChange);
+    }
+};
+
+const onPreviewLoad = () => {
+    drag.onFrameLoad();
+    bindPreviewViewport();
+    window.setTimeout(repositionEditor, 0);
 };
 
 const updateEditingData = (name: string, value: unknown) => {
@@ -151,32 +213,39 @@ const updateEditingVariant = (variant: string) => {
     queueEditSave();
 };
 
-const save = async (reloadPreview = true) => {
-    if (saving.value) {
-        return false;
-    }
-
-    saving.value = true;
-    try {
-        await request('/options', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...values }),
-        });
-        markSaved();
-        dragHint.value = '已保存';
-        if (reloadPreview) {
-            await drag.requestRefresh();
-            drag.markEditing(editing.value?.index ?? null);
+let saveChain: Promise<boolean> = Promise.resolve(true);
+const save = (reloadPreview = true, silent = false): Promise<boolean> => {
+    const task = async () => {
+        saving.value = true;
+        try {
+            await request('/options', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...values }),
+            });
+            markSaved();
+            dragHint.value = '已保存';
+            if (reloadPreview) {
+                await drag.requestRefresh();
+                drag.markEditing(editing.value?.index ?? null);
+                repositionEditor();
+            }
+            if (!silent) {
+                Message.success('设置已保存');
+            }
+            return true;
+        } catch (reason) {
+            if (!silent) {
+                Message.error(reason instanceof Error ? reason.message : '保存失败');
+            }
+            return false;
+        } finally {
+            saving.value = false;
         }
-        Message.success('设置已保存');
-        return true;
-    } catch (reason) {
-        Message.error(reason instanceof Error ? reason.message : '保存失败');
-        return false;
-    } finally {
-        saving.value = false;
-    }
+    };
+    saveChain = saveChain.then(task, task);
+
+    return saveChain;
 };
 
 const refreshPreview = async () => {
@@ -199,7 +268,7 @@ watch(previewOpen, (open) => {
     }
 });
 
-watch(activeSection, () => closeEditor());
+watch(activeSection, () => closeEditor(false));
 
 const onKeydown = (event: KeyboardEvent) => {
     if (event.key === 'Escape' && editing.value) {
@@ -218,11 +287,18 @@ onMounted(() => {
     void load();
     window.addEventListener('beforeunload', beforeUnload);
     window.addEventListener('keydown', onKeydown);
+    window.addEventListener('resize', onPreviewViewportChange);
 });
 
 onBeforeUnmount(() => {
     window.removeEventListener('beforeunload', beforeUnload);
     window.removeEventListener('keydown', onKeydown);
+    window.removeEventListener('resize', onPreviewViewportChange);
+    if (boundWindow) {
+        boundWindow.removeEventListener('scroll', onPreviewViewportChange);
+        boundWindow.removeEventListener('resize', onPreviewViewportChange);
+        boundWindow = null;
+    }
     if (editTimer !== null) {
         window.clearTimeout(editTimer);
     }
@@ -256,7 +332,7 @@ onBeforeUnmount(() => {
                 :key="previewKey"
                 :url="previewUrl"
                 :width="previewWidth"
-                @load="installDragHandles"
+                @load="onPreviewLoad"
             >
                 <template #toolbar>
                     <span class="cz-drag-status">{{ dragStatus }}</span>
@@ -269,6 +345,7 @@ onBeforeUnmount(() => {
                         :block-name="editingMeta.name"
                         :left="editingAnchor.left"
                         :top="editingAnchor.top"
+                        :max-height="editingMaxHeight"
                         :variants="editingMeta.variants"
                         :variant="editingEntry.variant ?? ''"
                         :fields="editingMeta.fields"

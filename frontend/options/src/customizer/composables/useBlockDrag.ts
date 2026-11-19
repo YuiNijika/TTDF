@@ -101,6 +101,7 @@ export function useBlockDrag(options: BlockDragOptions) {
         onFrameLoad,
         install: bridge.install,
         markEditing: bridge.markEditing,
+        blockRect: bridge.blockRect,
         cleanup: bridge.cleanup,
     };
 }

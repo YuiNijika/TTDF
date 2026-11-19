@@ -7,6 +7,7 @@ const props = defineProps<{
     blockName: string;
     left: number;
     top: number;
+    maxHeight: number;
     variants: Record<string, string>;
     variant: string;
     fields: SettingsField[];
@@ -28,7 +29,11 @@ const emit = defineEmits<{
 <template>
     <section
         class="cz-block-editor"
-        :style="{ left: props.left + 'px', top: props.top + 'px' }"
+        :style="{
+            left: props.left + 'px',
+            top: props.top + 'px',
+            maxHeight: props.maxHeight + 'px',
+        }"
         role="dialog"
         aria-modal="false"
         :aria-label="'编辑「' + props.label + '」'"
@@ -89,7 +94,7 @@ const emit = defineEmits<{
     display: flex;
     flex-direction: column;
     width: 320px;
-    max-height: min(70%, 560px);
+    max-height: 560px;
     border: 1px solid rgba(24, 24, 27, 0.12);
     border-radius: 10px;
     background: #fff;
