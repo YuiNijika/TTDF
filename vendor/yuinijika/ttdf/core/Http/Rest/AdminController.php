@@ -11,6 +11,7 @@ use TTDF\Http\Response;
 use TTDF\Theme\Options;
 use TTDF\Theme\Settings;
 use TTDF\Theme\Templates;
+use TTDF\Theme\Customizer;
 use TTDF\Upgrade\Migrator;
 
 final class AdminController
@@ -139,6 +140,24 @@ final class AdminController
             'settingsTable' => Options::storageTable(),
             'logWritable' => is_dir(dirname($logFile)) ? is_writable(dirname($logFile)) : is_writable($this->root),
             'logFile' => $logFile,
+        ]);
+    }
+
+    /**
+     * Create the optional `/admin/ttdf-custom-theme/` shim. The canonical
+     * customizer entry stays `options-theme.php?panel=ttdf-custom-theme`.
+     */
+    public function customizerBridge(): never
+    {
+        $result = Customizer::installBridge();
+        if (!$result['ok']) {
+            Response::error($result['message'], 422);
+        }
+
+        Response::success([
+            'installed' => Customizer::bridgeInstalled(),
+            'url' => Customizer::bridgeUrl(),
+            'message' => $result['message'],
         ]);
     }
 }

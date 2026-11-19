@@ -174,24 +174,31 @@ composer test
 
 本机 Composer 若受 CA 链限制，可使用 `.tmp/phpunit-12.phar` 与 `.tmp/phpstan.phar` 执行同等检查。
 
-### 更新框架静态资源
+### 后台界面构建
 
-`vendor/yuinijika/ttdf/static/` 中的 Vue、Arco Design Vue 发行文件由 pnpm 同步，
-设置页的 `options/options.js` 与 `options/options.css` 为手写源码：
+设置页与可视化定制器的源码在 `frontend/options`，由 Vite 直接打包到
+`vendor/yuinijika/ttdf/static/`；`static/` 下不再放 `assets/`、Vue/Arco 的全局发行文件或手写后台脚本。
 
 ```bash
-cd vendor/yuinijika/ttdf
+cd frontend/options
 pnpm install
-pnpm add vue@latest @arco-design/web-vue@latest
-pnpm sync:static
-pnpm check:static
+pnpm build
 pnpm test:ui
 ```
 
-`package.json` 与 `pnpm-lock.yaml` 用于复现构建，必须保留；只忽略 `node_modules/`。
+产物是 `static/options.js`、`static/custom-theme.js`、`static/app.css` 与 `static/chunks/`。
+Typecho 后台布局覆盖与 Arco 浮层样式统一写在 `frontend/options/src/styles/global.css`。
+`package.json` 与 `pnpm-lock.yaml` 用于复现构建；只忽略 `node_modules/`。
 
 `pnpm test:ui` 使用 Vitest + jsdom 覆盖全部设置字段控件，以及保存、错误提示、
 Tab URL 同步、导出、导入和迁移流程。
+
+### 可视化定制器
+
+管理员入口是 `/admin/ttdf-custom-theme/`，左侧为设置分类、中间为实时预览 iframe、
+右侧复用设置字段控件。设置页会自动写入该薄壳；薄壳引导 Typecho 的
+`config.inc.php` 与主题 `functions.php`，权限与 nonce 仍由后台自身校验。
+`options-theme.php?panel=ttdf-custom-theme` 保留为后台目录不可写时的回退入口。
 
 ## 安全说明
 

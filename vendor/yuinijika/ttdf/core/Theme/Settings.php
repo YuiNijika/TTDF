@@ -19,6 +19,14 @@ final class Settings
      */
     public static function config(object $form): void
     {
+        if (Customizer::isRequested()) {
+            Customizer::render();
+
+            return;
+        }
+
+        Customizer::ensureBridge();
+
         $options = Options::instance();
         $initializationError = '';
         try {
@@ -43,22 +51,14 @@ final class Settings
             'themeVersion' => Typecho::themeVersion(),
             'ttdfVersion' => Framework::VERSION,
             'initError' => $initializationError,
+            'customizerUrl' => Customizer::url(),
         ];
 
         echo '<div id="options-app"></div>' . PHP_EOL;
         echo '<script>window.ttdfOptionsInfo = ' . Escaper::js($payload) . ';</script>' . PHP_EOL;
 
-        Assets::printStaticStyles([
-            'arco/index.css',
-            'options/options.css',
-        ]);
-
-        Assets::printStaticScripts([
-            'vue/vue.global.prod.js',
-            'arco/arco-vue.min.js',
-            'arco/arco-vue-icon.min.js',
-            'options/options.js',
-        ]);
+        Assets::printStaticStyles(['app.css']);
+        Assets::printStaticModules(['options.js']);
     }
 
     /**

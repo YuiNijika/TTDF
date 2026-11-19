@@ -536,6 +536,9 @@ namespace {
             $options->description = 'Example site';
             $options->version = '1.3.0';
             $options->routingTable = [0 => []];
+            $options->adminUrl = static function (?string $path = null): string {
+                return 'https://example.test/admin/' . ltrim((string) $path, '/');
+            };
 
             return $options;
         }

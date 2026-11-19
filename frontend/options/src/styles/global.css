@@ -1,0 +1,259 @@
+/**
+ * Admin integration layer.
+ *
+ * This is the one global stylesheet in the Vue project. It has two jobs:
+ * override Typecho's admin shell around the mount point, and normalise Arco
+ * controls that are teleported outside the component tree.
+ */
+
+#options-app,
+#ttdf-custom-theme {
+    width: 100%;
+    min-width: 0;
+}
+
+.typecho-page-main > .ttdf-options-column {
+    flex: 0 0 100%;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin-left: 0;
+}
+
+.ttdf-options-form .typecho-option-submit,
+form[action*="themes-edit"] .typecho-option-submit {
+    display: none !important;
+}
+
+.ttdf-options-form .typecho-option,
+.ttdf-options-form .typecho-option-submit {
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.settings-app,
+.customizer {
+    --primary-1: 245, 245, 246;
+    --primary-2: 228, 228, 231;
+    --primary-3: 212, 212, 216;
+    --primary-4: 161, 161, 170;
+    --primary-5: 63, 63, 70;
+    --primary-6: 24, 24, 27;
+    --primary-7: 9, 9, 11;
+    --color-text-1: 24, 24, 27;
+    --color-text-2: 63, 63, 70;
+    --color-text-3: 113, 113, 122;
+    --color-border-1: 244, 244, 245;
+    --color-border-2: 228, 228, 231;
+    --color-border-3: 212, 212, 216;
+    --color-fill-1: 250, 250, 250;
+    --color-fill-2: 244, 244, 245;
+    --color-fill-3: 228, 228, 231;
+}
+
+.settings-app .arco-form-item,
+.customizer .arco-form-item {
+    margin-bottom: 0;
+}
+
+.settings-app .arco-form-item-content,
+.customizer .arco-form-item-content {
+    line-height: 1.4;
+}
+
+.settings-app .arco-select,
+.settings-app .arco-cascader,
+.settings-app .arco-input-number,
+.settings-app .arco-picker,
+.settings-app .arco-color-picker,
+.customizer .arco-select,
+.customizer .arco-cascader,
+.customizer .arco-input-number,
+.customizer .arco-picker,
+.customizer .arco-color-picker {
+    width: 100%;
+}
+
+.settings-app .arco-input-wrapper,
+.settings-app .arco-textarea-wrapper,
+.settings-app .arco-select-view,
+.settings-app .arco-cascader-view,
+.settings-app .arco-picker,
+.settings-app .arco-input-number,
+.settings-app .arco-color-picker,
+.customizer .arco-input-wrapper,
+.customizer .arco-textarea-wrapper,
+.customizer .arco-select-view,
+.customizer .arco-cascader-view,
+.customizer .arco-picker,
+.customizer .arco-input-number,
+.customizer .arco-color-picker {
+    border: 1px solid #d4d4d8;
+    border-radius: 8px;
+    background: #fff;
+    transition: border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
+}
+
+.settings-app .arco-input-wrapper:hover,
+.settings-app .arco-textarea-wrapper:hover,
+.settings-app .arco-select-view:hover,
+.settings-app .arco-cascader-view:hover,
+.settings-app .arco-picker:hover,
+.settings-app .arco-input-number:hover,
+.customizer .arco-input-wrapper:hover,
+.customizer .arco-textarea-wrapper:hover,
+.customizer .arco-select-view:hover,
+.customizer .arco-cascader-view:hover,
+.customizer .arco-picker:hover,
+.customizer .arco-input-number:hover {
+    border-color: #a1a1aa;
+}
+
+.settings-app .arco-input-wrapper:focus-within,
+.settings-app .arco-textarea-wrapper:focus-within,
+.settings-app .arco-select-view:focus-within,
+.settings-app .arco-cascader-view:focus-within,
+.settings-app .arco-picker:focus-within,
+.settings-app .arco-input-number:focus-within,
+.settings-app .arco-color-picker:focus-within,
+.customizer .arco-input-wrapper:focus-within,
+.customizer .arco-textarea-wrapper:focus-within,
+.customizer .arco-select-view:focus-within,
+.customizer .arco-cascader-view:focus-within,
+.customizer .arco-picker:focus-within,
+.customizer .arco-input-number:focus-within,
+.customizer .arco-color-picker:focus-within {
+    border-color: #18181b !important;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(24, 24, 27, 0.12) !important;
+}
+
+.settings-app .arco-input-wrapper.arco-input-disabled,
+.settings-app .arco-textarea-wrapper.arco-textarea-disabled,
+.settings-app .arco-select-view-disabled,
+.settings-app .arco-cascader-view-disabled,
+.settings-app .arco-picker-disabled,
+.settings-app .arco-input-number-disabled,
+.settings-app .arco-color-picker-disabled,
+.customizer .arco-input-wrapper.arco-input-disabled,
+.customizer .arco-textarea-wrapper.arco-textarea-disabled,
+.customizer .arco-select-view-disabled,
+.customizer .arco-cascader-view-disabled,
+.customizer .arco-picker-disabled,
+.customizer .arco-input-number-disabled,
+.customizer .arco-color-picker-disabled {
+    border-color: #e4e4e7;
+    background: #f7f7f8;
+}
+
+.settings-app .arco-select-view-value,
+.settings-app .arco-select-view-input,
+.customizer .arco-select-view-value,
+.customizer .arco-select-view-input {
+    min-width: 0;
+    overflow: hidden;
+    color: #18181b;
+    text-overflow: ellipsis;
+}
+
+.settings-app .arco-select-view-input::placeholder,
+.settings-app .arco-input::placeholder,
+.settings-app .arco-textarea::placeholder,
+.customizer .arco-select-view-input::placeholder,
+.customizer .arco-input::placeholder,
+.customizer .arco-textarea::placeholder {
+    color: #a1a1aa;
+}
+
+.settings-app button:focus-visible,
+.settings-app a:focus-visible,
+.customizer button:focus-visible,
+.customizer a:focus-visible {
+    outline: 2px solid #18181b;
+    outline-offset: 2px;
+}
+
+.settings-app .arco-input:focus-visible,
+.settings-app .arco-textarea:focus-visible,
+.settings-app .arco-input-wrapper input:focus-visible,
+.settings-app .arco-textarea-wrapper textarea:focus-visible,
+.settings-app .arco-select-view input:focus-visible,
+.settings-app .arco-cascader-view input:focus-visible,
+.settings-app .arco-picker input:focus-visible,
+.settings-app .arco-input-number input:focus-visible,
+.settings-app .arco-color-picker input:focus-visible,
+.settings-app .arco-radio input:focus-visible,
+.settings-app .arco-checkbox input:focus-visible,
+.settings-app .arco-switch input:focus-visible,
+.settings-app .arco-slider input:focus-visible,
+.customizer .arco-input:focus-visible,
+.customizer .arco-textarea:focus-visible,
+.customizer .arco-input-wrapper input:focus-visible,
+.customizer .arco-textarea-wrapper textarea:focus-visible,
+.customizer .arco-select-view input:focus-visible,
+.customizer .arco-cascader-view input:focus-visible,
+.customizer .arco-picker input:focus-visible,
+.customizer .arco-input-number input:focus-visible,
+.customizer .arco-color-picker input:focus-visible,
+.customizer .arco-radio input:focus-visible,
+.customizer .arco-checkbox input:focus-visible,
+.customizer .arco-switch input:focus-visible,
+.customizer .arco-slider input:focus-visible {
+    outline: none;
+}
+
+/* Arco overlays are teleported to <body>, so they cannot be scoped. */
+body .arco-dropdown-menu {
+    --color-text-1: 24, 24, 27;
+    --color-text-2: 63, 63, 70;
+    --color-border-2: 228, 228, 231;
+    --color-fill-2: 244, 244, 245;
+    border: 1px solid #e4e4e7;
+    border-radius: 9px;
+    box-shadow: 0 10px 28px rgba(16, 24, 40, 0.12);
+}
+
+body .arco-modal {
+    --color-text-1: 24, 24, 27;
+    --color-text-2: 63, 63, 70;
+    --color-border-2: 228, 228, 231;
+    --color-fill-2: 244, 244, 245;
+    border-radius: 12px;
+}
+
+.ttdf-media-modal .arco-modal-header,
+.ttdf-backup-modal .arco-modal-header {
+    border-bottom: 1px solid #e4e4e7;
+}
+
+.ttdf-media-modal .arco-modal-content,
+.ttdf-backup-modal .arco-modal-content {
+    padding-top: 14px;
+}
+
+@media (max-width: 900px) {
+    .settings-app {
+        border-radius: 0;
+    }
+}
+
+@media (max-width: 760px) {
+    .settings-app {
+        border-right: 0;
+        border-left: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .settings-app *,
+    .settings-app *::before,
+    .settings-app *::after,
+    .customizer *,
+    .customizer *::before,
+    .customizer *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

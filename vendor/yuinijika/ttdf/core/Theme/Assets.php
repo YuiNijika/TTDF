@@ -146,4 +146,17 @@ final class Assets
             echo '<script src="' . self::staticUrl($path) . '"></script>' . PHP_EOL;
         }
     }
+
+    /**
+     * Bundled admin panels are ES modules; classic scripts would silently fail
+     * on their `import` statements.
+     *
+     * @param list<string> $paths
+     */
+    public static function printStaticModules(array $paths): void
+    {
+        foreach ($paths as $path) {
+            echo '<script type="module" src="' . self::staticUrl($path) . '"></script>' . PHP_EOL;
+        }
+    }
 }

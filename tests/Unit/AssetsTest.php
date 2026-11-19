@@ -75,8 +75,8 @@ final class AssetsTest extends TestCase
     public function testStaticUrlPointsAtVendoredFrameworkAssets(): void
     {
         self::assertSame(
-            'https://example.test/usr/themes/ttdf/vendor/yuinijika/ttdf/static/options/options.css?v=5.0.5-next',
-            Assets::staticUrl('options/options.css')
+            'https://example.test/usr/themes/ttdf/vendor/yuinijika/ttdf/static/app.css?v=5.0.5-next',
+            Assets::staticUrl('app.css')
         );
     }
 
@@ -112,11 +112,11 @@ final class AssetsTest extends TestCase
                 Assets::url('assets/app.css')
             );
             self::assertSame(
-                'https://example.test/usr/themes/ttdf/vendor/yuinijika/ttdf/static/options/options.css'
+                'https://example.test/usr/themes/ttdf/vendor/yuinijika/ttdf/static/app.css'
                 . '?v=5.0.5-next',
-                Assets::staticUrl('options/options.css')
+                Assets::staticUrl('app.css')
             );
-            self::assertStringNotContainsString('9.9.9-theme', Assets::staticUrl('options/options.css'));
+            self::assertStringNotContainsString('9.9.9-theme', Assets::staticUrl('app.css'));
         } finally {
             $property->setValue(null, '');
             @unlink($root . '/index.php');

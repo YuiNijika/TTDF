@@ -48,10 +48,10 @@ GET https://api.miomoe.cn/site/docs/page?path=ttdf/v5/index
 - 整站前端主题的页面骨架固定为四处：`SiteHeader` 白色吸顶导航、`App` 的 `shell-grid` 两栏容器（正文列 + `SiteSidebar`）、`SiteFooter` 深色多列页脚、`ActionRail` 右侧悬浮操作栏。侧栏由 `Show_Sidebar` 主题设置控制，只在 `home` / `archive` / `post` / `page` 显示，数据来自 `PageData::widgets()`（`recent`、`categories`、`tags`、`stats`）；正文目录由 `vite/src/lib/article.ts` 的 `parseArticle()` 解析后交给侧栏渲染，`ProseBlock` 不再自己输出目录列。
 - 横幅（hero）使用 `--hero-from` / `--hero-to` 双色深色渐变 + 白色文字与白色主按钮，禁止直接用 `--accent` 铺满大色块或依赖 `--accent-contrast` 决定横幅文字色；列表缩略图取自正文第一张 `<img>`（`PageData::thumbnail()`，相对路径按站点地址补全），缺图时回退到品牌色占位块，不引入附件字段、上传目录或第三方图床；列表元信息只使用 Typecho 已有字段（日期、评论数、分类），不得伪造浏览量或点赞数。
 - `TTDF\Theme\Vite` 只输出 `<script type="module">`、`<link rel="stylesheet">` 与 `<link rel="modulepreload">`；`TTDF\Theme\Webpack` 只输出 `<script defer>` 与 `<link rel="stylesheet">`。两者由 `TTDF\Theme\FrontendAssets` 注册到 `theme.head` 钩子，主题只触发钩子，不得在 `AppHeader` 或页面模板里直接调用 `printHead()`。开发模式只接受 `http(s)://host[:port]` 形式的 `origin`，生产模式只读取各自 `out_dir/manifest`，并通过 `TTDF\Theme\BuildManifest` 对路径做相对路径与 `realpath` 边界校验。manifest 缺失或损坏时生产页面静默降级，调试模式只写 `logs/error.log`，不得输出半截错误 HTML。`vite.dev_preamble` 可放开发期需要先于 entry 执行的内联 module 脚本（`{{origin}}` 会替换为配置的 dev origin，只接受 `<script type="module">…</script>`），React Refresh 等工具链引导脚本必须写在配置里，不得硬编码进主题模板。
-- `vendor/yuinijika/ttdf/static/options/options.js` 与 `options.css` 是手写源码；`static/vue/*`、`static/arco/*` 只通过 `pnpm add vue@latest @arco-design/web-vue@latest` 与 `pnpm sync:static` 同步，不手工编辑 dist 文件。
+- 后台设置页与定制器的唯一源码在 `frontend/options/`（Vue 3 + Arco Design Vue）。Vite 构建产物直接写入 `vendor/yuinijika/ttdf/static/`：`app.css`、`options.js`、`custom-theme.js` 与 `chunks/`；不得恢复 `static/vue`、`static/arco`、`static/options` 或 `static/assets`。跨 Typecho 后台布局与 Arco 浮层的全局覆盖集中在 `frontend/options/src/styles/global.css`，随构建进入 `app.css`，不得改回手写 `static/options/options.css`。
 - 整站前端主题的 UI 组件只能通过官方 CLI 拉取，不得手写：shadcn/ui 用 `pnpm dlx shadcn@latest add <component> --yes` 生成到 `vite/src/components/ui/`，图标固定 `lucide-react`（`components.json` 的 `iconLibrary` 必须是 `lucide`），`vite/src/lib/utils.ts` 之类手写 `cn` 也不再需要（CLI 输出直接 `import { cn } from "cn"`）。主题自有组件放 `vite/src/components/{layout,blocks,content}/`，不得在 `ui/` 下新建、改写或“补丁式”覆盖 CLI 产物。
 - 设置页 UI 固定使用 Arco Design Vue，不得重新引入 Element Plus、`el-*` 标签或 Element Plus CSS 选择器。Arco 组件交互回归使用 `pnpm test:ui`（Vitest + jsdom + `@vue/test-utils`）。
-- 设置页分类使用语义化 `<nav>` + 单内容面板，不使用 Arco Tabs 的滑动内容容器。顶层 Tab 在 `app/config/theme.php` 用 `tabs` 声明二级分组，二级分组在设置页顶部渲染为 `TTDF-subnav`；`Schema` 负责把各分组的 `fields` 展平给存储、校验与迁移，`options.js` 只渲染当前分组。section id 必须唯一且匹配 `[A-Za-z0-9_-]`，重复 id 自动追加后缀。首次加载使用骨架屏而非 spinner；保持中性色板，不添加蓝色标题条、蓝色焦点框或导航强调条；placeholder 不回填字段 `description`。
+- 设置页分类使用语义化 `<nav>` + 单内容面板，不使用 Arco Tabs 的滑动内容容器。顶层 Tab 在 `app/config/theme.php` 用 `tabs` 声明二级分组，二级分组在设置页顶部渲染为 `.subnav`；`Schema` 负责把各分组的 `fields` 展平给存储、校验与迁移，`SettingsApp.vue` 只渲染当前分组。section id 必须唯一且匹配 `[A-Za-z0-9_-]`，重复 id 自动追加后缀。首次加载使用骨架屏而非 spinner；保持中性色板，不添加蓝色标题条、蓝色焦点框或导航强调条；placeholder 不回填字段 `description`。
 - 设置字段可用 `inline => true` 把连续短字段合并为同一行，用 `show_when` 按其他字段值条件显示；两者只影响面板渲染，不改变 `Settings::validate()` 与存储。
 - `vendor/yuinijika/ttdf/package.json` 与 `pnpm-lock.yaml` 必须保留以复现静态资源，只忽略 `node_modules/`；不要在主题包中分发 `node_modules/`。
 - `vendor/yuinijika/ttdf/core/` 与 `vendor/yuinijika/ttdf/static/` 必须随主题包分发，生产环境不依赖 Composer 或 Node.js；`vendor/` 下的 Composer 依赖与 `vendor/composer/` 仍不提交。
@@ -162,12 +162,12 @@ GET https://api.miomoe.cn/site/docs/page?path=ttdf/v5/index
 4. 设置页 JS 只通过 `/ttdf/v1/admin/*` 读写，并携带 `X-Typecho-Token`
 5. 不在前台请求中触发建表或迁移
 6. 设置页“更多操作”的“立即备份”“恢复备份”分别调用 `POST /admin/backup`、`GET /admin/backups` 与 `POST /admin/restore`；恢复后重新加载表单，“执行迁移”调用 `POST /admin/migrate`，旧格式才写入首次 JSON，已有 JSON 返回 `already-current`
-7. 新增或调整 Arco 字段控件时，同步更新 `static/options/options.js`、`options.css` 与 `tests/options/*.test.mjs`
-8. 设置页依赖通过 `Vue` / `ArcoVue` 全局构建延迟解析，测试中不得依赖加载顺序副作用
+7. 新增或调整 Arco 字段控件时，同步更新 `frontend/options/src/components/fields/*.vue` 与 `frontend/options/tests/*.test.mjs`
+8. 设置页依赖通过 ESM 从 `vue` / `@arco-design/web-vue` 导入，测试使用 `vitest.config.mjs` 的 Vue 插件
 9. `type => 'Media'`、`Text + media` 与 `Textarea + media` 字段由设置页媒体库对话框通过 `/ttdf/v1/admin/media*` 选择附件；`Media` 保存 `cid`，文本类字段保存图片地址（`Textarea` 每行一个，追加不覆盖），都不要保存临时 URL；`Text + media` / `Textarea + media` 必须保留可编辑控件与媒体库按钮
 10. 媒体库改动至少补主题输出、列表过滤、分页/搜索、上传校验、重命名与删除边界测试
 11. `ColorPicker` 字段改动补 `ColorTest` 与 `SettingsTest` 的归一化 / 注入用例，并同步线上 `ttdf/v5/configuration/theme`、`ttdf/v5/configuration/panel`、`ttdf/v5/api/settings`、`ttdf/v5/api/support` 与两个 Skill
-12. `Blocks` 字段改动补 `SettingsTest` 的归一化用例与 `tests/options/fields.test.mjs` 的添加、排序、变体、自定义数据与 `reorder` 开关用例；新增区块类型时同步线上 `ttdf/v5/configuration/theme` 与 `ttdf/v5/configuration/panel`
+12. `Blocks` 字段改动补 `SettingsTest` 的归一化用例与 `frontend/options/tests/fields.test.mjs` 的添加、排序、变体、自定义数据与 `reorder` 开关用例；新增区块类型时同步线上 `ttdf/v5/configuration/theme` 与 `ttdf/v5/configuration/panel`
 
 ## 接入或调整前端构建（Vite / Webpack）
 

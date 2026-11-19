@@ -266,6 +266,7 @@ final class Router
                 'migrate' => $controller->migrate(),
                 'backup' => $controller->backup(),
                 'restore' => $controller->restore(),
+                'customizer-bridge' => $controller->customizerBridge(),
                 'media' => $mediaId > 0 ? $media->rename($mediaId) : $media->upload(),
                 default => Response::error('Endpoint not found', 404),
             };

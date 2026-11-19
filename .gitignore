@@ -6,6 +6,8 @@ logs/*
 .tmp/
 .agents/
 $null
+frontend/node_modules/
+frontend/options/node_modules/
 vendor/*
 !vendor/yuinijika/
 !vendor/yuinijika/ttdf/

@@ -3,11 +3,9 @@
   "version": "5.0.5-next",
   "private": true,
   "type": "module",
-  "description": "Build tooling that syncs Vue and Arco Design Vue distributions into the TTDF framework static directory.",
+  "description": "Admin UI sources live in frontend/options and build directly into static/.",
   "scripts": {
-    "sync:static": "node scripts/sync-static.mjs",
-    "check:static": "node --check static/options/options.js",
-    "test:ui": "vitest run --config vitest.config.mjs"
+    "test:ui": "node -e \"console.log('Run pnpm test:ui in frontend/options')\""
   },
   "keywords": [
     "ttdf",
