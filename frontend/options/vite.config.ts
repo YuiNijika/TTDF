@@ -11,6 +11,10 @@ export default defineConfig({
     // `static/` is generated output; wiping it prevents stale hashed chunks.
     emptyOutDir: true,
     manifest: false,
+    // The admin panel runs inside whatever browser the site owner uses,
+    // including older Chromium/WebKit builds. Emit ES2017 so optional
+    // chaining and other newer syntax never reach the browser untouched.
+    target: ['es2017', 'chrome70', 'firefox78', 'safari12'],
     // Both admin panels share components; a single stylesheet avoids emitting
     // orphaned per-chunk CSS that the PHP shell would have to know about.
     cssCodeSplit: false,

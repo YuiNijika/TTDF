@@ -28,7 +28,6 @@ interface PreviewEditingResult {
 }
 
 const STYLE_ID = 'ttdf-preview-editing-style';
-const LAYER_CLASS = 'ttdf-preview-layer';
 const TOOLBAR_CLASS = 'ttdf-preview-tools';
 const HANDLE_CLASS = 'ttdf-preview-handle';
 const EDIT_CLASS = 'ttdf-preview-edit';
@@ -70,7 +69,6 @@ function injectStyle(doc: Document): void {
     position: relative;
     outline: 1px dashed rgba(24, 24, 27, 0.12);
     outline-offset: -1px;
-    transition: outline-color 140ms ease, opacity 140ms ease;
 }
 [data-block].${EDITABLE_CLASS}:hover {
     outline-color: rgba(24, 24, 27, 0.5);
@@ -93,7 +91,6 @@ function injectStyle(doc: Document): void {
     content: "可编辑";
     pointer-events: none;
     opacity: 0;
-    transition: opacity 140ms ease;
 }
 [data-block].${EDITABLE_CLASS}.${FIELD_CLASS}:hover::after,
 [data-block].${EDITABLE_CLASS}.${FIELD_CLASS}.${EDITING_CLASS}::after {
@@ -108,30 +105,23 @@ function injectStyle(doc: Document): void {
 [data-block].${EDITABLE_CLASS}.${DRAGGING_CLASS} {
     opacity: 0.5;
 }
-.${LAYER_CLASS} {
-    position: fixed;
-    inset: 0;
-    z-index: 60;
-    overflow: hidden;
-    pointer-events: none;
-}
 .${TOOLBAR_CLASS} {
     position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 60;
     display: flex;
-    gap: 4px;
     opacity: 0;
-    pointer-events: auto;
     transition: opacity 140ms ease;
 }
-.${TOOLBAR_CLASS}.is-visible,
+[data-block].${EDITABLE_CLASS}:hover > .${TOOLBAR_CLASS},
 .${TOOLBAR_CLASS}:focus-within,
 .${TOOLBAR_CLASS}.is-active {
     opacity: 1;
 }
 .${HANDLE_CLASS},
 .${EDIT_CLASS} {
-    display: grid;
-    place-items: center;
+    display: block;
     width: 30px;
     height: 30px;
     padding: 0;
@@ -141,7 +131,10 @@ function injectStyle(doc: Document): void {
     color: #52525b;
     box-shadow: 0 6px 18px -12px rgba(0, 0, 0, 0.55);
     cursor: pointer;
-    transition: border-color 140ms ease, color 140ms ease;
+    vertical-align: top;
+}
+.${EDIT_CLASS} {
+    margin-left: 4px;
 }
 .${HANDLE_CLASS} {
     cursor: grab;
@@ -155,16 +148,19 @@ function injectStyle(doc: Document): void {
     color: #18181b;
 }
 .${HANDLE_CLASS} svg {
+    display: block;
     width: 15px;
     height: 15px;
+    margin: 7px auto 0;
     fill: currentColor;
 }
 .${EDIT_CLASS} svg {
+    display: block;
     width: 16px;
     height: 16px;
+    margin: 6px auto 0;
 }
 @media (prefers-reduced-motion: reduce) {
-    [data-block].${EDITABLE_CLASS},
     .${TOOLBAR_CLASS} {
         transition: none;
     }
@@ -205,11 +201,6 @@ function installPreviewEditing(
         return { cleanup: () => {}, count: 0, reason: '预览页还没有加载完成。' };
     }
 
-    doc.querySelectorAll(`.${LAYER_CLASS}`).forEach((node) => node.remove());
-    const layer = doc.createElement('div');
-    layer.className = LAYER_CLASS;
-    doc.body.append(layer);
-
     interface Mounted {
         index: number;
         name: string;
@@ -221,36 +212,15 @@ function installPreviewEditing(
     }
 
     const mounted = new Map<HTMLElement, Mounted>();
-    let hovered: HTMLElement | null = null;
     let editing: number | null = null;
     let dragFrom: number | null = null;
-    let frameRequest = 0;
     let disposed = false;
     let lastReason = '';
-
-    const editableOf = (block: HTMLElement): boolean => hasEditor(block.dataset.block ?? '');
 
     const kindMatches = (): boolean => {
         const currentKind = doc?.querySelector('[data-kind]')?.getAttribute('data-kind') ?? '';
 
         return expectedKind === '' || currentKind === expectedKind;
-    };
-
-    const syncToolbar = (item: Mounted) => {
-        const blockRect = item.block.getBoundingClientRect();
-        const visible = item.block === hovered || item.index === editing;
-        item.toolbar.classList.toggle('is-visible', visible);
-        item.toolbar.classList.toggle('is-active', item.index === editing);
-        item.toolbar.style.left = `${Math.round(blockRect.left + 8)}px`;
-        item.toolbar.style.top = `${Math.round(blockRect.top + 8)}px`;
-    };
-
-    const syncAll = () => {
-        if (hovered === null || !mounted.has(hovered)) {
-            const current = Array.from(mounted.values()).find((item) => item.block.matches(':hover'));
-            hovered = current ? current.block : null;
-        }
-        mounted.forEach(syncToolbar);
     };
 
     const mount = (block: HTMLElement, position: number): Mounted | null => {
@@ -259,13 +229,13 @@ function installPreviewEditing(
             return existing;
         }
 
-        const index = Number(block.dataset.blockIndex ?? position);
-        const name = block.dataset.block ?? '';
-        const label = labels[name] ?? name ?? '区块';
+        const index = Number(block.getAttribute('data-block-index') || position);
+        const name = block.getAttribute('data-block') ?? '';
+        const label = labels[name] || name || '区块';
         block.classList.add(EDITABLE_CLASS);
-        block.dataset.ttdfOrder = String(index);
-        block.dataset.ttdfLabel = label;
-        if (editableOf(block)) {
+        block.setAttribute('data-ttdf-order', String(index));
+        block.setAttribute('data-ttdf-label', label);
+        if (hasEditor(name)) {
             block.classList.add(FIELD_CLASS);
         }
 
@@ -276,52 +246,23 @@ function installPreviewEditing(
         handle.type = 'button';
         handle.className = HANDLE_CLASS;
         handle.draggable = true;
-        handle.title = `拖动「${label}」调整顺序`;
-        handle.setAttribute('aria-label', `拖动「${label}」调整顺序`);
+        handle.title = '拖动「' + label + '」调整顺序';
+        handle.setAttribute('aria-label', '拖动「' + label + '」调整顺序');
         handle.innerHTML = HANDLE_SVG;
-        toolbar.append(handle);
+        toolbar.appendChild(handle);
 
-        const edit = editableOf(block) ? doc.createElement('button') : null;
+        const edit = hasEditor(name) ? doc.createElement('button') : null;
         if (edit) {
             edit.type = 'button';
             edit.className = EDIT_CLASS;
             edit.draggable = false;
-            edit.title = `编辑「${label}」内容`;
-            edit.setAttribute('aria-label', `编辑「${label}」内容`);
+            edit.title = '编辑「' + label + '」内容';
+            edit.setAttribute('aria-label', '编辑「' + label + '」内容');
             edit.innerHTML = EDIT_SVG;
-            toolbar.append(edit);
+            toolbar.appendChild(edit);
         }
 
-        layer.append(toolbar);
-
-        const onEnter = () => {
-            hovered = block;
-            syncAll();
-        };
-        const onLeave = (event: MouseEvent) => {
-            const next = event.relatedTarget;
-            if (next instanceof Node && (layer.contains(next) || block.contains(next))) {
-                return;
-            }
-            if (hovered === block) {
-                hovered = null;
-            }
-            syncAll();
-        };
-        const onToolbarEnter = () => {
-            hovered = block;
-            syncAll();
-        };
-        const onToolbarLeave = (event: MouseEvent) => {
-            const next = event.relatedTarget;
-            if (next instanceof Node && (layer.contains(next) || block.contains(next))) {
-                return;
-            }
-            if (hovered === block) {
-                hovered = null;
-            }
-            syncAll();
-        };
+        block.insertBefore(toolbar, block.firstChild);
 
         const onEditClick = (event: MouseEvent) => {
             event.preventDefault();
@@ -367,48 +308,55 @@ function installPreviewEditing(
 
         const onDrop = (event: DragEvent) => {
             event.preventDefault();
-            const from = dragFrom ?? Number(event.dataTransfer?.getData('text/plain') ?? -1);
+            const from = dragFrom === null
+                ? Number((event.dataTransfer && event.dataTransfer.getData('text/plain')) || -1)
+                : dragFrom;
             mounted.forEach((item) => item.block.classList.remove(DROP_CLASS));
             dragFrom = null;
-            if (Number.isInteger(from) && from >= 0 && from !== index) {
+            if (isFinite(from) && from >= 0 && from !== index) {
                 onReorder(from, index);
             }
         };
 
-        block.addEventListener('mouseenter', onEnter);
-        block.addEventListener('mouseleave', onLeave);
         block.addEventListener('dragover', onDragOver);
         block.addEventListener('dragleave', onDragLeave);
         block.addEventListener('drop', onDrop);
-        toolbar.addEventListener('mouseenter', onToolbarEnter);
-        toolbar.addEventListener('mouseleave', onToolbarLeave);
         handle.addEventListener('dragstart', onDragStart);
         handle.addEventListener('dragend', onDragEnd);
-        edit?.addEventListener('click', onEditClick);
+        if (edit) {
+            edit.addEventListener('click', onEditClick);
+        }
 
-        const cleanupItem = () => {
-            block.removeEventListener('mouseenter', onEnter);
-            block.removeEventListener('mouseleave', onLeave);
-            block.removeEventListener('dragover', onDragOver);
-            block.removeEventListener('dragleave', onDragLeave);
-            block.removeEventListener('drop', onDrop);
-            toolbar.removeEventListener('mouseenter', onToolbarEnter);
-            toolbar.removeEventListener('mouseleave', onToolbarLeave);
-            handle.removeEventListener('dragstart', onDragStart);
-            handle.removeEventListener('dragend', onDragEnd);
-            edit?.removeEventListener('click', onEditClick);
-            toolbar.remove();
-            block.classList.remove(
-                EDITABLE_CLASS,
-                FIELD_CLASS,
-                DRAGGING_CLASS,
-                DROP_CLASS,
-                EDITING_CLASS
-            );
-            delete block.dataset.ttdfOrder;
-            delete block.dataset.ttdfLabel;
+        const item: Mounted = {
+            index,
+            name,
+            block,
+            toolbar,
+            handle,
+            edit,
+            cleanup: () => {
+                block.removeEventListener('dragover', onDragOver);
+                block.removeEventListener('dragleave', onDragLeave);
+                block.removeEventListener('drop', onDrop);
+                handle.removeEventListener('dragstart', onDragStart);
+                handle.removeEventListener('dragend', onDragEnd);
+                if (edit) {
+                    edit.removeEventListener('click', onEditClick);
+                }
+                if (toolbar.parentNode === block) {
+                    block.removeChild(toolbar);
+                }
+                block.classList.remove(
+                    EDITABLE_CLASS,
+                    FIELD_CLASS,
+                    DRAGGING_CLASS,
+                    DROP_CLASS,
+                    EDITING_CLASS
+                );
+                block.removeAttribute('data-ttdf-order');
+                block.removeAttribute('data-ttdf-label');
+            },
         };
-        const item: Mounted = { index, name, block, toolbar, handle, edit, cleanup: cleanupItem };
         mounted.set(block, item);
 
         return item;
@@ -422,7 +370,6 @@ function installPreviewEditing(
         if (!kindMatches()) {
             mounted.forEach((item) => item.cleanup());
             mounted.clear();
-            hovered = null;
             lastReason = '当前预览页与所选分组不一致，切换分组后再编辑。';
 
             return;
@@ -437,29 +384,21 @@ function installPreviewEditing(
             }
         });
         blocks.forEach((block, position) => {
-            mount(block, position);
+            const item = mount(block, position);
+            if (item && item.toolbar.parentNode !== block) {
+                block.insertBefore(item.toolbar, block.firstChild);
+            }
         });
-        if (hovered && !alive.has(hovered)) {
-            hovered = null;
-        }
         lastReason = mounted.size === 0 ? '当前预览页没有可编辑区块。' : '';
-        syncAll();
     };
 
     const scheduleReconcile = () => {
-        if (frameRequest !== 0) {
-            return;
-        }
-        frameRequest = win.requestAnimationFrame(() => {
-            frameRequest = 0;
-            reconcile();
-        });
+        win.setTimeout(reconcile, 0);
     };
 
-    const onScroll = () => scheduleReconcile();
     const onDocumentClick = (event: Event) => {
         const target = event.target;
-        if (target instanceof Element && target.closest(`.${EDIT_CLASS}, .${HANDLE_CLASS}`)) {
+        if (target instanceof Element && target.closest('.' + EDIT_CLASS + ', .' + HANDLE_CLASS)) {
             return;
         }
         onDismiss?.();
@@ -474,17 +413,20 @@ function installPreviewEditing(
     });
 
     doc.addEventListener('click', onDocumentClick, true);
-    win.addEventListener('scroll', onScroll, { passive: true });
-    win.addEventListener('resize', onScroll);
 
     reconcile();
 
     const markEditing = (index: number | null) => {
         editing = index;
         mounted.forEach((item) => {
-            item.block.classList.toggle(EDITING_CLASS, item.index === index);
+            if (item.index === index) {
+                item.block.classList.add(EDITING_CLASS);
+                item.toolbar.classList.add('is-active');
+            } else {
+                item.block.classList.remove(EDITING_CLASS);
+                item.toolbar.classList.remove('is-active');
+            }
         });
-        syncAll();
     };
 
     const blockRect = (index: number): PreviewBlockRect | null => {
@@ -513,17 +455,10 @@ function installPreviewEditing(
         blockRect,
         cleanup: () => {
             disposed = true;
-            if (frameRequest !== 0) {
-                win.cancelAnimationFrame(frameRequest);
-                frameRequest = 0;
-            }
             observer.disconnect();
             doc?.removeEventListener('click', onDocumentClick, true);
-            win.removeEventListener('scroll', onScroll);
-            win.removeEventListener('resize', onScroll);
             mounted.forEach((item) => item.cleanup());
             mounted.clear();
-            layer.remove();
         },
     };
 }
