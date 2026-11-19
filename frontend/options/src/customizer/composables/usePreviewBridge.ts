@@ -23,12 +23,20 @@ interface PreviewEditingResult {
     cleanup: () => void;
     count: number;
     reason?: string;
+    markEditing?: (index: number | null) => void;
+    blockRect?: (index: number) => PreviewBlockRect | null;
 }
 
 const STYLE_ID = 'ttdf-preview-editing-style';
+const LAYER_CLASS = 'ttdf-preview-layer';
 const TOOLBAR_CLASS = 'ttdf-preview-tools';
 const HANDLE_CLASS = 'ttdf-preview-handle';
 const EDIT_CLASS = 'ttdf-preview-edit';
+const EDITABLE_CLASS = 'ttdf-editable-block';
+const FIELD_CLASS = 'ttdf-editable-field';
+const EDITING_CLASS = 'ttdf-editing';
+const DRAGGING_CLASS = 'ttdf-dragging';
+const DROP_CLASS = 'ttdf-drop-target';
 
 const HANDLE_SVG = [
     '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">',
@@ -58,19 +66,19 @@ function injectStyle(doc: Document): void {
     const style = doc.createElement('style');
     style.id = STYLE_ID;
     style.textContent = `
-[data-block].ttdf-editable-block {
+[data-block].${EDITABLE_CLASS} {
     position: relative;
     outline: 1px dashed rgba(24, 24, 27, 0.12);
     outline-offset: -1px;
     transition: outline-color 140ms ease, opacity 140ms ease;
 }
-[data-block].ttdf-editable-block:hover {
+[data-block].${EDITABLE_CLASS}:hover {
     outline-color: rgba(24, 24, 27, 0.5);
 }
-[data-block].ttdf-editable-block.ttdf-editable-field {
-    outline: 1px dashed rgba(24, 24, 27, 0.28);
+[data-block].${EDITABLE_CLASS}.${FIELD_CLASS} {
+    outline-color: rgba(24, 24, 27, 0.28);
 }
-[data-block].ttdf-editable-block.ttdf-editable-field::after {
+[data-block].${EDITABLE_CLASS}.${FIELD_CLASS}::after {
     position: absolute;
     top: 8px;
     right: 8px;
@@ -87,32 +95,37 @@ function injectStyle(doc: Document): void {
     opacity: 0;
     transition: opacity 140ms ease;
 }
-[data-block].ttdf-editable-block.ttdf-editable-field:hover::after,
-[data-block].ttdf-editable-block.ttdf-editable-field.ttdf-editing::after {
+[data-block].${EDITABLE_CLASS}.${FIELD_CLASS}:hover::after,
+[data-block].${EDITABLE_CLASS}.${FIELD_CLASS}.${EDITING_CLASS}::after {
     opacity: 1;
 }
-[data-block].ttdf-editable-block.ttdf-editing {
+[data-block].${EDITABLE_CLASS}.${EDITING_CLASS} {
     outline: 2px solid #18181b;
 }
-[data-block].ttdf-editable-block.ttdf-drop-target {
+[data-block].${EDITABLE_CLASS}.${DROP_CLASS} {
     outline: 2px solid #18181b;
 }
-[data-block].ttdf-editable-block.ttdf-dragging {
+[data-block].${EDITABLE_CLASS}.${DRAGGING_CLASS} {
     opacity: 0.5;
+}
+.${LAYER_CLASS} {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    overflow: hidden;
+    pointer-events: none;
 }
 .${TOOLBAR_CLASS} {
     position: absolute;
-    top: 8px;
-    left: 8px;
-    z-index: 60;
     display: flex;
     gap: 4px;
     opacity: 0;
+    pointer-events: auto;
     transition: opacity 140ms ease;
 }
-[data-block].ttdf-editable-block:hover > .${TOOLBAR_CLASS},
+.${TOOLBAR_CLASS}.is-visible,
 .${TOOLBAR_CLASS}:focus-within,
-[data-block].ttdf-editable-block.ttdf-editing > .${TOOLBAR_CLASS} {
+.${TOOLBAR_CLASS}.is-active {
     opacity: 1;
 }
 .${HANDLE_CLASS},
@@ -151,13 +164,18 @@ function injectStyle(doc: Document): void {
     height: 16px;
 }
 @media (prefers-reduced-motion: reduce) {
-    [data-block].ttdf-editable-block,
+    [data-block].${EDITABLE_CLASS},
     .${TOOLBAR_CLASS} {
         transition: none;
     }
 }
 `;
     doc.head.append(style);
+}
+
+function blockElements(doc: Document): HTMLElement[] {
+    return Array.from(doc.querySelectorAll<HTMLElement>('[data-block]'))
+        .filter((element) => element.closest('[data-block]') === element);
 }
 
 function installPreviewEditing(
@@ -176,7 +194,7 @@ function installPreviewEditing(
         return { cleanup: () => {}, count: 0, reason: '预览页与后台不同源，无法启用编辑。' };
     }
 
-    if (!doc) {
+    if (!doc || !doc.body) {
         return { cleanup: () => {}, count: 0, reason: '预览页还没有加载完成。' };
     }
 
@@ -189,41 +207,69 @@ function installPreviewEditing(
         };
     }
 
-    injectStyle(doc);
-
-    const blocks = Array.from(doc.querySelectorAll<HTMLElement>('[data-block]'))
-        .filter((element) => element.closest('[data-block]') === element);
-    if (blocks.length === 0) {
+    if (blockElements(doc).length === 0) {
         return { cleanup: () => {}, count: 0, reason: '当前预览页没有可编辑区块。' };
     }
 
-    const cleanup: Array<() => void> = [];
+    injectStyle(doc);
+
+    const win = doc.defaultView;
+    if (!win) {
+        return { cleanup: () => {}, count: 0, reason: '预览页还没有加载完成。' };
+    }
+
+    doc.querySelectorAll(`.${LAYER_CLASS}`).forEach((node) => node.remove());
+    const layer = doc.createElement('div');
+    layer.className = LAYER_CLASS;
+    doc.body.append(layer);
+
+    interface Mounted {
+        index: number;
+        name: string;
+        block: HTMLElement;
+        toolbar: HTMLElement;
+        handle: HTMLButtonElement;
+        edit: HTMLButtonElement | null;
+        cleanup: () => void;
+    }
+
+    const mounted = new Map<HTMLElement, Mounted>();
+    let hovered: HTMLElement | null = null;
+    let editing: number | null = null;
     let dragFrom: number | null = null;
+    let frameRequest = 0;
+    let disposed = false;
 
-    const onDocumentClick = (event: Event) => {
-        const target = event.target;
-        if (target instanceof Element && target.closest(`.${EDIT_CLASS}, .${HANDLE_CLASS}`)) {
-            return;
-        }
-        onDismiss?.();
+    const editableOf = (block: HTMLElement): boolean => hasEditor(block.dataset.block ?? '');
+
+    const syncToolbar = (item: Mounted) => {
+        const blockRect = item.block.getBoundingClientRect();
+        const visible = item.block === hovered || item.index === editing;
+        item.toolbar.classList.toggle('is-visible', visible);
+        item.toolbar.classList.toggle('is-active', item.index === editing);
+        item.toolbar.style.left = `${Math.round(blockRect.left + 8)}px`;
+        item.toolbar.style.top = `${Math.round(blockRect.top + 8)}px`;
     };
-    doc.addEventListener('click', onDocumentClick, true);
-    cleanup.push(() => doc?.removeEventListener('click', onDocumentClick, true));
 
-    blocks.forEach((block, position) => {
+    const syncAll = () => {
+        mounted.forEach(syncToolbar);
+    };
+
+    const mount = (block: HTMLElement, position: number): Mounted | null => {
+        const existing = mounted.get(block);
+        if (existing) {
+            return existing;
+        }
+
         const index = Number(block.dataset.blockIndex ?? position);
         const name = block.dataset.block ?? '';
         const label = labels[name] ?? name ?? '区块';
-        block.classList.add('ttdf-editable-block');
+        block.classList.add(EDITABLE_CLASS);
         block.dataset.ttdfOrder = String(index);
         block.dataset.ttdfLabel = label;
-
-        const editable = hasEditor(name);
-        if (editable) {
-            block.classList.add('ttdf-editable-field');
+        if (editableOf(block)) {
+            block.classList.add(FIELD_CLASS);
         }
-
-        block.querySelectorAll(`:scope > .${TOOLBAR_CLASS}`).forEach((node) => node.remove());
 
         const toolbar = doc.createElement('div');
         toolbar.className = TOOLBAR_CLASS;
@@ -237,9 +283,8 @@ function installPreviewEditing(
         handle.innerHTML = HANDLE_SVG;
         toolbar.append(handle);
 
-        let edit: HTMLButtonElement | null = null;
-        if (editable) {
-            edit = doc.createElement('button');
+        const edit = editableOf(block) ? doc.createElement('button') : null;
+        if (edit) {
             edit.type = 'button';
             edit.className = EDIT_CLASS;
             edit.draggable = false;
@@ -249,7 +294,36 @@ function installPreviewEditing(
             toolbar.append(edit);
         }
 
-        block.prepend(toolbar);
+        layer.append(toolbar);
+
+        const onEnter = () => {
+            hovered = block;
+            syncAll();
+        };
+        const onLeave = (event: MouseEvent) => {
+            const next = event.relatedTarget;
+            if (next instanceof Node && (layer.contains(next) || block.contains(next))) {
+                return;
+            }
+            if (hovered === block) {
+                hovered = null;
+            }
+            syncAll();
+        };
+        const onToolbarEnter = () => {
+            hovered = block;
+            syncAll();
+        };
+        const onToolbarLeave = (event: MouseEvent) => {
+            const next = event.relatedTarget;
+            if (next instanceof Node && (layer.contains(next) || block.contains(next))) {
+                return;
+            }
+            if (hovered === block) {
+                hovered = null;
+            }
+            syncAll();
+        };
 
         const onEditClick = (event: MouseEvent) => {
             event.preventDefault();
@@ -263,15 +337,9 @@ function installPreviewEditing(
             });
         };
 
-        edit?.addEventListener('click', onEditClick);
-
-        const clearDropState = () => {
-            blocks.forEach((item) => item.classList.remove('ttdf-drop-target'));
-        };
-
         const onDragStart = (event: DragEvent) => {
             dragFrom = index;
-            block.classList.add('ttdf-dragging');
+            block.classList.add(DRAGGING_CLASS);
             if (event.dataTransfer) {
                 event.dataTransfer.effectAllowed = 'move';
                 event.dataTransfer.setData('text/plain', String(index));
@@ -280,8 +348,8 @@ function installPreviewEditing(
 
         const onDragEnd = () => {
             dragFrom = null;
-            block.classList.remove('ttdf-dragging');
-            clearDropState();
+            block.classList.remove(DRAGGING_CLASS);
+            mounted.forEach((item) => item.block.classList.remove(DROP_CLASS));
         };
 
         const onDragOver = (event: DragEvent) => {
@@ -292,89 +360,169 @@ function installPreviewEditing(
             if (event.dataTransfer) {
                 event.dataTransfer.dropEffect = 'move';
             }
-            block.classList.add('ttdf-drop-target');
+            block.classList.add(DROP_CLASS);
         };
 
         const onDragLeave = () => {
-            block.classList.remove('ttdf-drop-target');
+            block.classList.remove(DROP_CLASS);
         };
 
         const onDrop = (event: DragEvent) => {
             event.preventDefault();
             const from = dragFrom ?? Number(event.dataTransfer?.getData('text/plain') ?? -1);
-            clearDropState();
+            mounted.forEach((item) => item.block.classList.remove(DROP_CLASS));
             dragFrom = null;
             if (Number.isInteger(from) && from >= 0 && from !== index) {
                 onReorder(from, index);
             }
         };
 
-        handle.addEventListener('dragstart', onDragStart);
-        handle.addEventListener('dragend', onDragEnd);
+        block.addEventListener('mouseenter', onEnter);
+        block.addEventListener('mouseleave', onLeave);
         block.addEventListener('dragover', onDragOver);
         block.addEventListener('dragleave', onDragLeave);
         block.addEventListener('drop', onDrop);
+        toolbar.addEventListener('mouseenter', onToolbarEnter);
+        toolbar.addEventListener('mouseleave', onToolbarLeave);
+        handle.addEventListener('dragstart', onDragStart);
+        handle.addEventListener('dragend', onDragEnd);
+        edit?.addEventListener('click', onEditClick);
 
-        cleanup.push(() => {
-            handle.removeEventListener('dragstart', onDragStart);
-            handle.removeEventListener('dragend', onDragEnd);
-            edit?.removeEventListener('click', onEditClick);
+        const cleanupItem = () => {
+            block.removeEventListener('mouseenter', onEnter);
+            block.removeEventListener('mouseleave', onLeave);
             block.removeEventListener('dragover', onDragOver);
             block.removeEventListener('dragleave', onDragLeave);
             block.removeEventListener('drop', onDrop);
+            toolbar.removeEventListener('mouseenter', onToolbarEnter);
+            toolbar.removeEventListener('mouseleave', onToolbarLeave);
+            handle.removeEventListener('dragstart', onDragStart);
+            handle.removeEventListener('dragend', onDragEnd);
+            edit?.removeEventListener('click', onEditClick);
             toolbar.remove();
             block.classList.remove(
-                'ttdf-editable-block',
-                'ttdf-editable-field',
-                'ttdf-dragging',
-                'ttdf-drop-target',
-                'ttdf-editing'
+                EDITABLE_CLASS,
+                FIELD_CLASS,
+                DRAGGING_CLASS,
+                DROP_CLASS,
+                EDITING_CLASS
             );
             delete block.dataset.ttdfOrder;
             delete block.dataset.ttdfLabel;
+        };
+        const item: Mounted = { index, name, block, toolbar, handle, edit, cleanup: cleanupItem };
+        mounted.set(block, item);
+
+        return item;
+    };
+
+    const reconcile = () => {
+        if (disposed) {
+            return;
+        }
+
+        const blocks = blockElements(doc as Document);
+        const alive = new Set(blocks);
+        mounted.forEach((item, block) => {
+            if (!alive.has(block)) {
+                item.cleanup();
+                mounted.delete(block);
+            }
         });
+        blocks.forEach((block, position) => {
+            mount(block, position);
+        });
+        if (hovered && !alive.has(hovered)) {
+            hovered = null;
+        }
+        syncAll();
+    };
+
+    const scheduleReconcile = () => {
+        if (frameRequest !== 0) {
+            return;
+        }
+        frameRequest = win.requestAnimationFrame(() => {
+            frameRequest = 0;
+            reconcile();
+        });
+    };
+
+    const onScroll = () => scheduleReconcile();
+    const onDocumentClick = (event: Event) => {
+        const target = event.target;
+        if (target instanceof Element && target.closest(`.${EDIT_CLASS}, .${HANDLE_CLASS}`)) {
+            return;
+        }
+        onDismiss?.();
+    };
+
+    const observer = new MutationObserver(scheduleReconcile);
+    observer.observe(doc.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['data-block', 'data-block-index'],
     });
 
+    doc.addEventListener('click', onDocumentClick, true);
+    win.addEventListener('scroll', onScroll, { passive: true });
+    win.addEventListener('resize', onScroll);
+
+    reconcile();
+
+    const markEditing = (index: number | null) => {
+        editing = index;
+        mounted.forEach((item) => {
+            item.block.classList.toggle(EDITING_CLASS, item.index === index);
+        });
+        syncAll();
+    };
+
+    const blockRect = (index: number): PreviewBlockRect | null => {
+        const found = Array.from(mounted.values()).find((item) => item.index === index);
+        if (!found) {
+            return null;
+        }
+        const rect = found.block.getBoundingClientRect();
+
+        return {
+            left: rect.left,
+            top: rect.top,
+            width: rect.width,
+            height: rect.height,
+        };
+    };
+
     return {
-        cleanup: () => cleanup.forEach((fn) => fn()),
-        count: blocks.length,
+        count: mounted.size,
+        markEditing,
+        blockRect,
+        cleanup: () => {
+            disposed = true;
+            if (frameRequest !== 0) {
+                win.cancelAnimationFrame(frameRequest);
+                frameRequest = 0;
+            }
+            observer.disconnect();
+            doc?.removeEventListener('click', onDocumentClick, true);
+            win.removeEventListener('scroll', onScroll);
+            win.removeEventListener('resize', onScroll);
+            mounted.forEach((item) => item.cleanup());
+            mounted.clear();
+            layer.remove();
+        },
     };
 }
 
 export function usePreviewBridge(options: PreviewBridgeOptions) {
-    let cleanupEditing: (() => void) | null = null;
-    let activeBlock: HTMLElement | null = null;
+    let editing: PreviewEditingResult | null = null;
     let editingIndex: number | null = null;
     const pending = new Map<string, (ok: boolean) => void>();
 
-    const applyEditing = () => {
-        const doc = options.getFrame()?.contentDocument;
-        if (!doc) {
-            return;
-        }
-
-        if (activeBlock) {
-            activeBlock.classList.remove('ttdf-editing');
-            activeBlock = null;
-        }
-
-        if (editingIndex === null) {
-            return;
-        }
-
-        const target = Array.from(doc.querySelectorAll<HTMLElement>('[data-block]'))
-            .filter((element) => element.closest('[data-block]') === element)
-            .find((element) => Number(element.dataset.blockIndex) === editingIndex);
-        if (target) {
-            target.classList.add('ttdf-editing');
-            activeBlock = target;
-        }
-    };
-
     const install = (): number => {
-        cleanupEditing?.();
-        cleanupEditing = null;
-        activeBlock = null;
+        editing?.cleanup();
+        editing = null;
 
         const frame = options.getFrame();
         if (!frame || options.getFieldName() === '' || options.getExpectedKind() === '') {
@@ -390,42 +538,25 @@ export function usePreviewBridge(options: PreviewBridgeOptions) {
             options.onEdit,
             options.onDismiss
         );
-        cleanupEditing = result.cleanup;
+        editing = result;
         if (result.count === 0 && result.reason) {
             options.onUnavailable?.(result.reason);
         }
-        applyEditing();
+        if (editingIndex !== null) {
+            result.markEditing?.(editingIndex);
+        }
 
         return result.count;
     };
 
     const markEditing = (index: number | null) => {
         editingIndex = index;
-        applyEditing();
+        editing?.markEditing?.(index);
     };
 
-    const blockRect = (index: number): PreviewBlockRect | null => {
-        const doc = options.getFrame()?.contentDocument;
-        if (!doc) {
-            return null;
-        }
-
-        const target = Array.from(doc.querySelectorAll<HTMLElement>('[data-block]'))
-            .filter((element) => element.closest('[data-block]') === element)
-            .find((element) => Number(element.dataset.blockIndex) === index);
-        if (!target) {
-            return null;
-        }
-
-        const rect = target.getBoundingClientRect();
-
-        return {
-            left: rect.left,
-            top: rect.top,
-            width: rect.width,
-            height: rect.height,
-        };
-    };
+    const blockRect = (index: number): PreviewBlockRect | null => (
+        editing?.blockRect?.(index) ?? null
+    );
 
     const settle = (id: string, ok: boolean) => {
         const resolve = pending.get(id);
@@ -486,7 +617,8 @@ export function usePreviewBridge(options: PreviewBridgeOptions) {
     onMounted(() => window.addEventListener('message', onMessage));
     onBeforeUnmount(() => {
         window.removeEventListener('message', onMessage);
-        cleanupEditing?.();
+        editing?.cleanup();
+        editing = null;
         editingIndex = null;
         pending.clear();
     });
@@ -496,6 +628,9 @@ export function usePreviewBridge(options: PreviewBridgeOptions) {
         requestRefresh,
         markEditing,
         blockRect,
-        cleanup: () => cleanupEditing?.(),
+        cleanup: () => {
+            editing?.cleanup();
+            editing = null;
+        },
     };
 }

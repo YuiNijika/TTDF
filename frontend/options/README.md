@@ -31,6 +31,10 @@ Vite 构建产物直接写入 `../../vendor/yuinijika/ttdf/static/`，不再生�
 当前区块，不会丢失编辑状态。区块在预览中始终带虚线描边，悬停加深，正在编辑时改为实线
 描边；点击预览其他位置或按 `Esc` 会关闭编辑浮层，关闭前会补交未保存的改动。
 
+手柄与铅笔按钮挂在 iframe 内的固定覆盖层上，按区块矩形定位，不插入区块自身节点；预览
+页因热刷新或前端重渲染替换区块时，`MutationObserver` 会重新对齐按钮，因此刷新后按钮
+不会失效。覆盖层默认不拦截点击，只有按钮本身可交互。
+
 ## Recommended IDE Setup
 
 [VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
