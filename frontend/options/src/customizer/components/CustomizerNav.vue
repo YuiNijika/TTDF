@@ -5,13 +5,14 @@ const props = defineProps<{
     tabs: CustomizerTab[];
     activeTab: string;
     loading: boolean;
+    embedded?: boolean;
 }>();
 
 const emit = defineEmits<{ (event: 'select', id: string): void }>();
 </script>
 
 <template>
-    <aside class="cz-nav">
+    <aside class="cz-nav" :class="{ 'is-embedded': props.embedded }">
         <p class="cz-nav-label">页面</p>
         <button
             v-for="tab in props.tabs"
@@ -75,6 +76,15 @@ const emit = defineEmits<{ (event: 'select', id: string): void }>();
     font-size: 11px;
     font-style: normal;
 }
+.cz-nav.is-embedded {
+    flex-direction: column;
+    padding: 10px 12px 24px;
+    border-right: 0;
+    border-bottom: 0;
+}
+.cz-nav.is-embedded .cz-nav-label {
+    display: block;
+}
 .cz-hint {
     padding: 0 10px;
     color: var(--cz-muted);
@@ -84,17 +94,6 @@ const emit = defineEmits<{ (event: 'select', id: string): void }>();
 @media (max-height: 760px) {
     .cz-nav {
         padding-block: 8px;
-    }
-}
-@media (max-width: 900px) {
-    .cz-nav {
-        flex-direction: row;
-        overflow-x: auto;
-        border-right: 0;
-        border-bottom: 1px solid var(--cz-line);
-    }
-    .cz-nav-label {
-        display: none;
     }
 }
 </style>

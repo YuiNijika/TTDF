@@ -17,6 +17,7 @@ const props = defineProps<{
     categories: Record<string, string> | string[];
     apiUrl?: string;
     nonce?: string;
+    embedded?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -28,7 +29,7 @@ const fieldValue = (field: SettingsField): unknown => props.values[String(field.
 </script>
 
 <template>
-    <aside class="cz-panel">
+    <aside class="cz-panel" :class="{ 'is-embedded': props.embedded }">
         <div v-if="props.loading" class="cz-skeleton" aria-busy="true">
             <span v-for="item in 5" :key="item"></span>
         </div>
@@ -103,6 +104,10 @@ const fieldValue = (field: SettingsField): unknown => props.values[String(field.
     overflow: auto;
     border-left: 1px solid var(--cz-line);
     background: var(--cz-surface);
+}
+.cz-panel.is-embedded {
+    height: 100%;
+    border-left: 0;
 }
 .cz-section-tabs {
     position: sticky;
@@ -209,11 +214,6 @@ const fieldValue = (field: SettingsField): unknown => props.values[String(field.
 @media (max-height: 760px) {
     .cz-fields {
         padding-bottom: 32px;
-    }
-}
-@media (max-width: 900px) {
-    .cz-panel {
-        border-left: 0;
     }
 }
 @media (prefers-reduced-motion: reduce) {

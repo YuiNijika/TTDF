@@ -48,6 +48,10 @@ const {
 
 const saving = ref(false);
 const previewOpen = ref(true);
+const compactQuery = window.matchMedia('(max-width: 900px)');
+const isCompact = ref(compactQuery.matches);
+const drawerOpen = ref(false);
+const drawerTab = ref<'nav' | 'settings'>('nav');
 const previewKey = ref(0);
 const device = ref<PreviewDevice>('desktop');
 const previewStage = ref<{ getFrame: () => HTMLIFrameElement | null } | null>(null);
@@ -146,6 +150,23 @@ const drag = useBlockDrag({
 });
 const dragStatus = drag.status;
 const dragHint = drag.hint;
+
+const openMenu = () => {
+    drawerTab.value = 'nav';
+    drawerOpen.value = true;
+};
+const selectDrawerTab = (id: string) => {
+    selectTab(id);
+    drawerOpen.value = false;
+};
+const syncCompact = (event: MediaQueryListEvent) => {
+    isCompact.value = event.matches;
+    if (event.matches) {
+        previewOpen.value = true;
+    } else {
+        drawerOpen.value = false;
+    }
+};
 
 let editTimer: number | null = null;
 const queueEditSave = () => {
@@ -310,12 +331,14 @@ const beforeUnload = (event: BeforeUnloadEvent) => {
 
 onMounted(() => {
     void load();
+    compactQuery.addEventListener('change', syncCompact);
     window.addEventListener('beforeunload', beforeUnload);
     window.addEventListener('keydown', onKeydown);
     window.addEventListener('resize', onPreviewViewportChange);
 });
 
 onBeforeUnmount(() => {
+    compactQuery.removeEventListener('change', syncCompact);
     window.removeEventListener('beforeunload', beforeUnload);
     window.removeEventListener('keydown', onKeydown);
     window.removeEventListener('resize', onPreviewViewportChange);
@@ -336,15 +359,18 @@ onBeforeUnmount(() => {
             :payload="payload"
             :device="device"
             :preview-open="previewOpen"
+            :menu-open="drawerOpen"
             :saving="saving"
             @update:device="device = $event"
             @toggle-preview="previewOpen = !previewOpen"
+            @open-menu="openMenu"
             @refresh="refreshPreview"
             @save="save(true)"
         />
 
         <div class="cz-body">
             <CustomizerNav
+                v-if="!isCompact"
                 :tabs="tabs"
                 :active-tab="activeTab"
                 :loading="loading"
@@ -388,6 +414,7 @@ onBeforeUnmount(() => {
             </PreviewStage>
 
             <SettingsPanel
+                v-if="!isCompact"
                 :loading="loading"
                 :error="error"
                 :sections="currentTab?.sections ?? []"
@@ -405,6 +432,70 @@ onBeforeUnmount(() => {
                 @update-value="updateValue"
             />
         </div>
+
+        <a-drawer
+            v-if="isCompact"
+            v-model:visible="drawerOpen"
+            placement="right"
+            width="min(92vw, 420px)"
+            :footer="false"
+            :body-style="{ padding: '0' }"
+            unmount-on-close
+        >
+            <template #title>
+                <div class="cz-drawer-head">
+                    <span class="cz-drawer-title">菜单</span>
+                    <div class="cz-drawer-tabs" role="tablist" aria-label="定制器菜单">
+                        <button
+                            type="button"
+                            role="tab"
+                            class="cz-drawer-tab"
+                            :class="{ 'is-active': drawerTab === 'nav' }"
+                            :aria-selected="drawerTab === 'nav'"
+                            @click="drawerTab = 'nav'"
+                        >页面</button>
+                        <button
+                            type="button"
+                            role="tab"
+                            class="cz-drawer-tab"
+                            :class="{ 'is-active': drawerTab === 'settings' }"
+                            :aria-selected="drawerTab === 'settings'"
+                            @click="drawerTab = 'settings'"
+                        >设置</button>
+                    </div>
+                </div>
+            </template>
+
+            <div class="cz-drawer-body">
+                <CustomizerNav
+                    v-if="drawerTab === 'nav'"
+                    :tabs="tabs"
+                    :active-tab="activeTab"
+                    :loading="loading"
+                    embedded
+                    @select="selectDrawerTab"
+                />
+                <SettingsPanel
+                    v-else
+                    :loading="loading"
+                    :error="error"
+                    :sections="currentTab?.sections ?? []"
+                    :active-section="activeSection"
+                    :current-section="currentSection"
+                    :html-blocks="htmlBlocks"
+                    :field-groups="fieldGroups"
+                    :values="values"
+                    :components="components"
+                    :slots="templateSlots"
+                    :categories="categories"
+                    :api-url="payload.apiUrl"
+                    :nonce="payload.nonce"
+                    embedded
+                    @select-section="selectSection"
+                    @update-value="updateValue"
+                />
+            </div>
+        </a-drawer>
     </div>
 </template>
 
@@ -435,6 +526,55 @@ onBeforeUnmount(() => {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+.cz-drawer-head {
+    --cz-ink: #18181b;
+    --cz-muted: #71717a;
+    --cz-line: #e4e4e7;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-width: 0;
+}
+.cz-drawer-title {
+    font-size: 13px;
+    font-weight: 600;
+}
+.cz-drawer-tabs {
+    display: inline-flex;
+    flex: none;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid var(--cz-line);
+    border-radius: 999px;
+}
+.cz-drawer-tab {
+    padding: 3px 11px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--cz-muted);
+    font-size: 12px;
+    cursor: pointer;
+}
+.cz-drawer-tab.is-active {
+    background: var(--cz-ink);
+    color: #fff;
+}
+.cz-drawer-body {
+    --cz-ink: #18181b;
+    --cz-muted: #71717a;
+    --cz-line: #e4e4e7;
+    --cz-surface: #fff;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+.cz-drawer-body > * {
+    flex: 1 1 auto;
+    min-height: 0;
+}
 @media (max-width: 1320px) {
     .cz-body {
         grid-template-columns: 176px minmax(0, 1fr) 350px;
@@ -447,8 +587,9 @@ onBeforeUnmount(() => {
 }
 @media (max-width: 900px) {
     .cz-body {
-        display: block;
-        overflow: auto;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
     }
 }
 </style>

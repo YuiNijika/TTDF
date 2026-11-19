@@ -60,6 +60,9 @@ final class OptionsUiTest extends TestCase
         $entry = $this->source('frontend/options/src/customizer/index.ts');
         $component = $this->source('frontend/options/src/customizer/Customizer.vue');
         $stage = $this->source('frontend/options/src/customizer/components/PreviewStage.vue');
+        $topbar = $this->source('frontend/options/src/customizer/components/CustomizerTopBar.vue');
+        $nav = $this->source('frontend/options/src/customizer/components/CustomizerNav.vue');
+        $panel = $this->source('frontend/options/src/customizer/components/SettingsPanel.vue');
 
         self::assertStringContainsString("import '../styles/global.css'", $entry);
         self::assertStringContainsString('createApp(Customizer)', $entry);
@@ -68,6 +71,12 @@ final class OptionsUiTest extends TestCase
         self::assertStringContainsString('cz-preview', $stage);
         self::assertStringContainsString('previewOpen', $component);
         self::assertStringContainsString('useBlockDrag', $component);
+        self::assertStringContainsString('<a-drawer', $component);
+        self::assertStringContainsString('isCompact', $component);
+        self::assertStringContainsString("emit('open-menu')", $topbar);
+        self::assertStringContainsString('cz-github', $topbar);
+        self::assertStringContainsString('embedded', $nav);
+        self::assertStringContainsString('embedded', $panel);
     }
 
     public function testGlobalStylesKeepTypechoAndArcoOverrides(): void
