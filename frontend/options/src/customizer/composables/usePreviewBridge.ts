@@ -67,14 +67,6 @@ function injectStyle(doc: Document): void {
     style.textContent = `
 [data-block].${EDITABLE_CLASS} {
     position: relative;
-    outline: 1px dashed rgba(24, 24, 27, 0.12);
-    outline-offset: -1px;
-}
-[data-block].${EDITABLE_CLASS}:hover {
-    outline-color: rgba(24, 24, 27, 0.5);
-}
-[data-block].${EDITABLE_CLASS}.${FIELD_CLASS} {
-    outline-color: rgba(24, 24, 27, 0.28);
 }
 [data-block].${EDITABLE_CLASS}.${FIELD_CLASS}::after {
     position: absolute;
@@ -96,14 +88,17 @@ function injectStyle(doc: Document): void {
 [data-block].${EDITABLE_CLASS}.${FIELD_CLASS}.${EDITING_CLASS}::after {
     opacity: 1;
 }
-[data-block].${EDITABLE_CLASS}.${EDITING_CLASS} {
-    outline: 2px solid #18181b;
-}
-[data-block].${EDITABLE_CLASS}.${DROP_CLASS} {
-    outline: 2px solid #18181b;
-}
 [data-block].${EDITABLE_CLASS}.${DRAGGING_CLASS} {
     opacity: 0.5;
+}
+[data-block].${EDITABLE_CLASS}:hover {
+    outline: 1px dashed rgba(24, 24, 27, 0.45);
+    outline-offset: -1px;
+}
+[data-block].${EDITABLE_CLASS}.${EDITING_CLASS},
+[data-block].${EDITABLE_CLASS}.${DROP_CLASS} {
+    outline: 2px solid #18181b;
+    outline-offset: -2px;
 }
 .${TOOLBAR_CLASS} {
     position: absolute;
@@ -111,13 +106,15 @@ function injectStyle(doc: Document): void {
     left: 8px;
     z-index: 60;
     display: flex;
-    opacity: 0.35;
+    opacity: 0;
+    pointer-events: none;
     transition: opacity 140ms ease;
 }
 [data-block].${EDITABLE_CLASS}:hover > .${TOOLBAR_CLASS},
 .${TOOLBAR_CLASS}:focus-within,
 .${TOOLBAR_CLASS}.is-active {
     opacity: 1;
+    pointer-events: auto;
 }
 .${HANDLE_CLASS},
 .${EDIT_CLASS} {

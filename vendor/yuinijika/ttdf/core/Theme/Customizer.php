@@ -116,7 +116,7 @@ final class Customizer
     }
 
     /**
-     * @return array<string, string>
+     * @return array<string, string|array<string, string>>
      */
     private static function payload(): array
     {
@@ -141,9 +141,130 @@ final class Customizer
             'themeVersion' => Typecho::themeVersion(),
             'ttdfVersion' => Framework::VERSION,
             'siteUrl' => $siteUrl,
+            'previewUrls' => self::previewUrls($siteUrl, $indexUrl),
             'backUrl' => $adminUrl,
             'optionsUrl' => $optionsUrl,
             'bridgeUrl' => self::bridgeUrl(),
+        ];
+    }
+
+    /**
+     * Per-page-type preview targets. The customizer iframe used to always load
+     * the home page, so switching to the archive/post/page/404 group made the
+     * preview kind mismatch and every drag/edit handle silently dropped.
+     *
+     * @return array<string, string>
+     */
+    private static function previewUrls(string $siteUrl, string $indexUrl): array
+    {
+        $base = rtrim($indexUrl !== '' ? $indexUrl : $siteUrl, '/');
+        $prefix = $base === '' ? $siteUrl : $base;
+        $post = self::firstContent('post');
+        $page = self::firstContent('page');
+        // Numeric string keys such as `404` become integers in PHP arrays, so
+        // the not-found target uses a word key and the UI maps it back.
+        $urls = [
+            'home' => $base === '' ? '/' : $base . '/',
+            'archive' => self::archivePreviewUrl($prefix),
+            'post' => $post === null ? '' : self::routeUrl('post', $post, $prefix),
+            'page' => $page === null ? '' : self::routeUrl('page', $page, $prefix),
+            'notfound' => $base === '' ? '/404' : $base . '/404',
+        ];
+
+        foreach ($urls as $kind => $url) {
+            if ($url === '') {
+                unset($urls[$kind]);
+            }
+        }
+
+        return $urls;
+    }
+
+    /**
+     * `/blog/` is empty on many sites and renders the 404 template, so prefer
+     * a real category page (its `data-kind` is still `archive`) and only fall
+     * back to the archive route when no category exists.
+     */
+    private static function archivePreviewUrl(string $prefix): string
+    {
+        $slug = self::firstMetaSlug('category');
+        if ($slug !== null) {
+            $url = self::routeUrl('category', ['slug' => $slug], $prefix);
+            if ($url !== '') {
+                return $url;
+            }
+        }
+
+        return self::routeUrl('archive', [], $prefix);
+    }
+
+    private static function firstMetaSlug(string $type): ?string
+    {
+        try {
+            if (!class_exists('Typecho\\Db')) {
+                return null;
+            }
+            $db = \Typecho\Db::get();
+            $row = $db->fetchRow(
+                $db->select('slug')->from('table.metas')
+                    ->where('type = ?', $type)
+                    ->order('mid', \Typecho\Db::SORT_ASC)
+                    ->limit(1)
+            );
+        } catch (\Throwable) {
+            return null;
+        }
+
+        $slug = is_array($row) ? trim((string) ($row['slug'] ?? '')) : '';
+
+        return $slug === '' ? null : $slug;
+    }
+
+    /**
+     * @param array<string, mixed> $params
+     */
+    private static function routeUrl(string $name, array $params, string $prefix): string
+    {
+        try {
+            if (!class_exists('Typecho\\Router')) {
+                return '';
+            }
+            $url = \Typecho\Router::url($name, $params, $prefix);
+
+            return $url === '#' ? '' : $url;
+        } catch (\Throwable) {
+            return '';
+        }
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private static function firstContent(string $type): ?array
+    {
+        try {
+            if (!class_exists('Typecho\\Db')) {
+                return null;
+            }
+            $db = \Typecho\Db::get();
+            $row = $db->fetchRow(
+                $db->select('cid', 'slug')->from('table.contents')
+                    ->where('type = ?', $type)
+                    ->where('status = ?', 'publish')
+                    ->order('created', \Typecho\Db::SORT_DESC)
+                    ->limit(1)
+            );
+        } catch (\Throwable) {
+            return null;
+        }
+
+        if (!is_array($row)) {
+            return null;
+        }
+
+        return [
+            'cid' => (int) ($row['cid'] ?? 0),
+            'slug' => (string) ($row['slug'] ?? ''),
         ];
     }
 

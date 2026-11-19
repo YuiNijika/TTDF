@@ -57,6 +57,27 @@ final class CustomizerTest extends TestCase
         self::assertStringNotContainsString('vue.global.prod.js', $source);
     }
 
+    public function testPayloadExposesPerPagePreviewTargets(): void
+    {
+        $source = $this->source('vendor/yuinijika/ttdf/core/Theme/Customizer.php');
+
+        self::assertStringContainsString("'previewUrls' => self::previewUrls(", $source);
+        self::assertStringContainsString("self::archivePreviewUrl(\$prefix)", $source);
+        self::assertStringContainsString('table.metas', $source);
+        self::assertStringContainsString('table.contents', $source);
+    }
+
+    public function testCustomizerPreviewFollowsTheActiveBlockGroup(): void
+    {
+        $component = $this->source('frontend/options/src/customizer/Customizer.vue');
+        $types = $this->source('frontend/options/src/customizer/types.ts');
+
+        self::assertStringContainsString('PAGE_PREVIEW_KIND', $component);
+        self::assertStringContainsString("Archive_Blocks: 'archive'", $component);
+        self::assertStringContainsString('payload.previewUrls', $component);
+        self::assertStringContainsString('previewUrls?: Record<string, string>', $types);
+    }
+
     private function source(string $relative): string
     {
         $path = dirname(__DIR__, 2) . '/' . ltrim($relative, '/');

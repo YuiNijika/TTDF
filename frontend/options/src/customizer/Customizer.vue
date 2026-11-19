@@ -56,11 +56,18 @@ const editing = ref<{ index: number; name: string; rect: PreviewBlockRect } | nu
 const previewWidth = computed(() => (
     device.value === 'mobile' ? '390px' : device.value === 'tablet' ? '834px' : '100%'
 ));
-// Keep the preview on the admin page's own origin. If `siteUrl` points at a
-// different host or port, the iframe becomes cross-origin, `contentDocument`
-// is null, and the bridge cannot inject the drag/edit toolbar at all.
-const previewUrl = computed(() => {
-    const raw = String(payload.siteUrl || '/');
+const dragField = computed(() => drag.field.value);
+const PAGE_PREVIEW_KIND: Record<string, string> = {
+    Home_Blocks: 'home',
+    Archive_Blocks: 'archive',
+    Post_Blocks: 'post',
+    Page_Blocks: 'page',
+    NotFound_Blocks: 'notfound',
+};
+// Resolve every preview target against the admin origin. A `siteUrl` on a
+// different host/port would make the iframe cross-origin, `contentDocument`
+// null, and the bridge could not inject the drag/edit toolbar at all.
+const resolvePreview = (raw: string): string => {
     try {
         const url = new URL(raw, window.location.href);
 
@@ -68,8 +75,17 @@ const previewUrl = computed(() => {
     } catch {
         return '/';
     }
+};
+// Each page group must preview its own page type: the bridge only injects
+// handles when the iframe's `data-kind` matches the active block field.
+const previewUrl = computed(() => {
+    const previews = payload.previewUrls ?? {};
+    const field = dragField.value?.name ?? '';
+    const kind = PAGE_PREVIEW_KIND[field] ?? 'home';
+    const raw = String(previews[kind] || previews.home || payload.siteUrl || '/');
+
+    return resolvePreview(raw);
 });
-const dragField = computed(() => drag.field.value);
 const editingBlocks = computed(() => {
     const name = dragField.value?.name;
 

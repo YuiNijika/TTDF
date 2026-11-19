@@ -27,6 +27,7 @@ export interface CustomizerPayload {
     themeVersion?: string;
     ttdfVersion?: string;
     siteUrl?: string;
+    previewUrls?: Record<string, string>;
     backUrl?: string;
     optionsUrl?: string;
 }
