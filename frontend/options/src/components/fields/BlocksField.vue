@@ -162,6 +162,7 @@ const rows = computed(() => {
             key,
             ...entry,
             variant: entry.variant || Object.keys(variants)[0] || '',
+            customized: Object.keys(entry.data).length > 0 || entry.variant !== '',
             label: meta?.label ?? entry.name,
             missing: meta === undefined,
             variants,
@@ -332,20 +333,20 @@ const onGripKeydown = (event: KeyboardEvent, index: number) => {
                         <span class="block-name">{{ row.label }}</span>
                         <span v-if="row.missing" class="block-missing">未知名</span>
                         <span v-else-if="row.fields.length" class="block-hint">
-                            {{ Object.keys(row.data).length > 0 ? '已自定义' : '可自定义' }}
+                            {{ row.customized ? '已自定义' : '可自定义' }}
                         </span>
                     </span>
 
-                    <a-select
-                        v-if="Object.keys(row.variants).length > 0"
-                        class="block-variant"
-                        size="small"
-                        :model-value="row.variant"
-                        :aria-label="row.label + ' 展示样式'"
-                        @update:model-value="setVariant(index, $event)"
-                    >
-                        <a-option v-for="(label, key) in row.variants" :key="key" :value="key">{{ label }}</a-option>
-                    </a-select>
+                    <span v-if="Object.keys(row.variants).length > 0" class="block-variant">
+                        <a-select
+                            size="small"
+                            :model-value="row.variant"
+                            :aria-label="row.label + ' 展示样式'"
+                            @update:model-value="setVariant(index, $event)"
+                        >
+                            <a-option v-for="(label, key) in row.variants" :key="key" :value="key">{{ label }}</a-option>
+                        </a-select>
+                    </span>
                     <span v-else class="block-variant is-empty" aria-hidden="true"></span>
 
                     <span class="block-actions">
@@ -517,8 +518,13 @@ const onGripKeydown = (event: KeyboardEvent, index: number) => {
     color: #b45309;
 }
 .block-variant {
+    display: block;
     width: 100%;
+    max-width: 9.5rem;
     min-width: 0;
+}
+.block-variant :deep(.arco-select) {
+    width: 100%;
 }
 .block-variant.is-empty {
     display: block;
@@ -542,8 +548,8 @@ const onGripKeydown = (event: KeyboardEvent, index: number) => {
         grid-template-columns: auto minmax(0, 1fr) auto;
         grid-template-areas:
             "grip title actions"
-            ". variant variant";
-        row-gap: 6px;
+            "grip variant variant";
+        row-gap: 0;
     }
     .block-grip,
     .block-order {
@@ -554,9 +560,11 @@ const onGripKeydown = (event: KeyboardEvent, index: number) => {
     }
     .block-variant {
         grid-area: variant;
+        margin-top: 8px;
     }
     .block-variant.is-empty {
         display: none;
+        margin-top: 0;
     }
     .block-actions {
         grid-area: actions;

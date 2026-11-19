@@ -5,6 +5,7 @@ const props = defineProps<{
     url: string;
     width: string;
     title?: string;
+    toolbar?: boolean;
 }>();
 
 const emit = defineEmits<{ (event: 'load'): void }>();
@@ -18,7 +19,7 @@ defineExpose({ getFrame });
 
 <template>
     <main class="cz-preview">
-        <div class="cz-preview-toolbar">
+        <div v-if="props.toolbar !== false" class="cz-preview-toolbar">
             <slot name="toolbar"></slot>
         </div>
         <div class="cz-frame" :style="{ '--preview-width': props.width }">
@@ -35,14 +36,15 @@ defineExpose({ getFrame });
 
 <style scoped>
 .cz-preview {
-    display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
+    display: flex;
+    flex-direction: column;
     min-width: 0;
     min-height: 0;
     background: #e9eaec;
 }
 .cz-preview-toolbar {
     display: flex;
+    flex: 0 0 auto;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
@@ -55,9 +57,9 @@ defineExpose({ getFrame });
 }
 .cz-frame {
     position: relative;
+    flex: 1 1 auto;
     width: var(--preview-width, 100%);
     max-width: calc(100% - 32px);
-    height: calc(100% - 32px);
     min-height: 0;
     margin: 16px auto;
     overflow: hidden;

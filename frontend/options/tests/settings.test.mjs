@@ -286,7 +286,7 @@ describe('TTDF settings application', () => {
         await flushPromises();
 
         expect(wrapper.find('button[aria-label="更多操作"]').exists()).toBe(true);
-        expect(wrapper.findAll('.app-actions > button').some((node) => node.text() === '可视化定制器')).toBe(true);
+        expect(wrapper.findAll('.app-actions button').some((node) => node.text() === '可视化编辑')).toBe(true);
         wrapper.unmount();
     });
 });

@@ -36,13 +36,13 @@ export function useBlockDrag(options: BlockDragOptions) {
         if (!field.value) {
             return otherBlocks.value
                 ? '当前分组的区块不在预览内编辑，切换到「首页 / 归档 / 文章」等页面分组'
-                : '当前分组没有可拖拽区块';
+                : '';
         }
         if (!enabled.value) {
             return '当前区块已关闭拖拽排序';
         }
 
-        return hint.value || '悬停区块显示手柄，拖动即可调整顺序';
+        return hint.value;
     });
 
     const bridge = usePreviewBridge({

@@ -96,7 +96,7 @@ final class Customizer
             return;
         }
 
-        $title = Typecho::themeName() . ' - 主题定制';
+        $title = 'TTDF框架主题定制器 v' . Framework::VERSION;
 
         echo '<!DOCTYPE html>' . PHP_EOL;
         echo '<html lang="zh-CN">' . PHP_EOL;

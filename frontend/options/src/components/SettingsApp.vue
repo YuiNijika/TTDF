@@ -465,7 +465,7 @@ onMounted(() => void load());
             </div>
             <div class="app-actions">
                 <a-button type="outline" :disabled="!customizerUrl" @click="openCustomizer">
-                    可视化定制器
+                    可视化编辑
                 </a-button>
                 <a-button-group>
                     <a-button type="primary" :loading="saving" @click="save">

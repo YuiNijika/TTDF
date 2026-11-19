@@ -72,7 +72,9 @@ final class ArchiveLayout
     {
         foreach ($args as $arg) {
             if (is_object($arg) && is_callable([$arg, $method])) {
-                return [$arg, $method];
+                /** @var callable(): mixed $callback */
+                $callback = [$arg, $method];
+                return $callback;
             }
         }
 
@@ -82,7 +84,12 @@ final class ArchiveLayout
 
         try {
             $archive = \Widget\Archive::alloc();
-            return is_object($archive) && is_callable([$archive, $method]) ? [$archive, $method] : null;
+            if (!is_object($archive) || !is_callable([$archive, $method])) {
+                return null;
+            }
+            /** @var callable(): mixed $callback */
+            $callback = [$archive, $method];
+            return $callback;
         } catch (\Throwable) {
             return null;
         }

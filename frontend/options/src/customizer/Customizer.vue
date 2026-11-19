@@ -357,11 +357,11 @@ onBeforeUnmount(() => {
                 :key="previewKey"
                 :url="previewUrl"
                 :width="previewWidth"
+                :toolbar="dragStatus !== ''"
                 @load="onPreviewLoad"
             >
                 <template #toolbar>
                     <span class="cz-drag-status">{{ dragStatus }}</span>
-                    <span class="cz-preview-note">悬停区块可拖动排序或点击铅笔编辑</span>
                 </template>
                 <template #overlay>
                     <BlockEditor
@@ -434,10 +434,6 @@ onBeforeUnmount(() => {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-}
-.cz-preview-note {
-    flex: 0 0 auto;
-    color: #a1a1aa;
 }
 @media (max-width: 1320px) {
     .cz-body {
