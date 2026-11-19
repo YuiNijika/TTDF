@@ -56,7 +56,19 @@ const editing = ref<{ index: number; name: string; rect: PreviewBlockRect } | nu
 const previewWidth = computed(() => (
     device.value === 'mobile' ? '390px' : device.value === 'tablet' ? '834px' : '100%'
 ));
-const previewUrl = computed(() => String(payload.siteUrl || '/'));
+// Keep the preview on the admin page's own origin. If `siteUrl` points at a
+// different host or port, the iframe becomes cross-origin, `contentDocument`
+// is null, and the bridge cannot inject the drag/edit toolbar at all.
+const previewUrl = computed(() => {
+    const raw = String(payload.siteUrl || '/');
+    try {
+        const url = new URL(raw, window.location.href);
+
+        return (url.pathname || '/') + url.search;
+    } catch {
+        return '/';
+    }
+});
 const dragField = computed(() => drag.field.value);
 const editingBlocks = computed(() => {
     const name = dragField.value?.name;

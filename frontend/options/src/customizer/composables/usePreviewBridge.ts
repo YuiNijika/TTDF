@@ -111,7 +111,7 @@ function injectStyle(doc: Document): void {
     left: 8px;
     z-index: 60;
     display: flex;
-    opacity: 0;
+    opacity: 0.35;
     transition: opacity 140ms ease;
 }
 [data-block].${EDITABLE_CLASS}:hover > .${TOOLBAR_CLASS},
@@ -187,10 +187,22 @@ function installPreviewEditing(
     try {
         doc = frame.contentDocument;
     } catch {
-        return { cleanup: () => {}, count: 0, reason: '预览页与后台不同源，无法启用编辑。' };
+        return {
+            cleanup: () => {},
+            count: 0,
+            reason: '预览页与后台地址不同源，无法注入按钮。请用与站点地址一致的域名打开后台。',
+        };
     }
 
-    if (!doc || !doc.body) {
+    if (!doc) {
+        return {
+            cleanup: () => {},
+            count: 0,
+            reason: '预览页与后台地址不同源，无法注入按钮。请用与站点地址一致的域名打开后台。',
+        };
+    }
+
+    if (!doc.body) {
         return { cleanup: () => {}, count: 0, reason: '预览页还没有加载完成。' };
     }
 
