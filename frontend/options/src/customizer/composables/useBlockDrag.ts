@@ -23,6 +23,9 @@ interface BlockDragOptions {
 export function useBlockDrag(options: BlockDragOptions) {
     const hint = ref('');
     const field = computed<SettingsField | null>(() => pageBlocksField(options.getFields()));
+    const otherBlocks = computed<SettingsField | null>(() => (
+        options.getFields().find((item) => item.type === 'Blocks' && item !== field.value) ?? null
+    ));
     const catalog = computed(() => blockCatalog(field.value));
     const expectedKind = computed(() => (
         field.value?.name ? PAGE_BLOCK_KINDS[field.value.name] ?? '' : ''
@@ -31,7 +34,9 @@ export function useBlockDrag(options: BlockDragOptions) {
     const enabled = computed(() => dragEnabled(field.value));
     const status = computed(() => {
         if (!field.value) {
-            return '当前分组没有可拖拽区块';
+            return otherBlocks.value
+                ? '当前分组的区块不在预览内编辑，切换到「首页 / 归档 / 文章」等页面分组'
+                : '当前分组没有可拖拽区块';
         }
         if (!enabled.value) {
             return '当前区块已关闭拖拽排序';

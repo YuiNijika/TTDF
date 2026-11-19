@@ -35,6 +35,10 @@ Vite 构建产物直接写入 `../../vendor/yuinijika/ttdf/static/`，不再生�
 页因热刷新或前端重渲染替换区块时，`MutationObserver` 会重新对齐按钮，因此刷新后按钮
 不会失效。覆盖层默认不拦截点击，只有按钮本身可交互。
 
+当前页面与分组会写入 URL 的 `tab` / `section` 参数，刷新后停在原分组。只有页面级区块
+字段（首页、归档、文章、独立页面、404）会显示手柄与铅笔；停留在「显示&布局」这类没有
+页面区块的分组时，工具栏不会出现，提示会指引切换到页面分组。
+
 ## Recommended IDE Setup
 
 [VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).

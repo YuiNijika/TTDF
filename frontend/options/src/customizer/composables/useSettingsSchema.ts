@@ -67,9 +67,30 @@ export function useSettingsSchema(request: Request) {
         });
     };
 
+    const replaceUrl = () => {
+        const url = new URL(window.location.href);
+        if (activeTab.value !== '') {
+            url.searchParams.set('tab', activeTab.value);
+        } else {
+            url.searchParams.delete('tab');
+        }
+        if (activeSection.value !== '') {
+            url.searchParams.set('section', activeSection.value);
+        } else {
+            url.searchParams.delete('section');
+        }
+        window.history.replaceState({}, '', url);
+    };
+
     const selectTab = (id: string) => {
         activeTab.value = id;
         activeSection.value = tabs.value.find((tab) => tab.id === id)?.sections[0]?.id ?? '';
+        replaceUrl();
+    };
+
+    const selectSection = (id: string) => {
+        activeSection.value = id;
+        replaceUrl();
     };
 
     const updateValue = (name: string, next: unknown) => {
@@ -106,11 +127,17 @@ export function useSettingsSchema(request: Request) {
 
             initValues((form.data ?? {}) as Record<string, unknown>);
 
-            const requested = new URLSearchParams(window.location.search).get('tab');
+            const params = new URLSearchParams(window.location.search);
+            const requested = params.get('tab');
             activeTab.value = tabs.value.some((tab) => tab.id === requested)
                 ? String(requested)
                 : (tabs.value[0]?.id ?? '');
-            activeSection.value = currentTab.value?.sections[0]?.id ?? '';
+            const sections = currentTab.value?.sections ?? [];
+            const requestedSection = params.get('section');
+            activeSection.value = sections.some((section) => section.id === requestedSection)
+                ? String(requestedSection)
+                : (sections[0]?.id ?? '');
+            replaceUrl();
             dirty.value = false;
         } catch (reason) {
             error.value = reason instanceof Error ? reason.message : '加载失败';
@@ -137,6 +164,7 @@ export function useSettingsSchema(request: Request) {
         htmlBlocks,
         load,
         selectTab,
+        selectSection,
         updateValue,
         markSaved,
     };

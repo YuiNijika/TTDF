@@ -41,6 +41,7 @@ const {
     htmlBlocks,
     load,
     selectTab,
+    selectSection,
     updateValue,
     markSaved,
 } = schema;
@@ -255,10 +256,6 @@ const refreshPreview = async () => {
         return;
     }
     await drag.requestRefresh();
-};
-
-const selectSection = (id: string) => {
-    activeSection.value = id;
 };
 
 watch(previewOpen, (open) => {

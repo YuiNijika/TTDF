@@ -198,19 +198,6 @@ function installPreviewEditing(
         return { cleanup: () => {}, count: 0, reason: '预览页还没有加载完成。' };
     }
 
-    const currentKind = doc.querySelector('[data-kind]')?.getAttribute('data-kind') ?? '';
-    if (expectedKind !== '' && currentKind !== expectedKind) {
-        return {
-            cleanup: () => {},
-            count: 0,
-            reason: '当前预览页与所选分组不一致，切换分组后再编辑。',
-        };
-    }
-
-    if (blockElements(doc).length === 0) {
-        return { cleanup: () => {}, count: 0, reason: '当前预览页没有可编辑区块。' };
-    }
-
     injectStyle(doc);
 
     const win = doc.defaultView;
@@ -239,8 +226,15 @@ function installPreviewEditing(
     let dragFrom: number | null = null;
     let frameRequest = 0;
     let disposed = false;
+    let lastReason = '';
 
     const editableOf = (block: HTMLElement): boolean => hasEditor(block.dataset.block ?? '');
+
+    const kindMatches = (): boolean => {
+        const currentKind = doc?.querySelector('[data-kind]')?.getAttribute('data-kind') ?? '';
+
+        return expectedKind === '' || currentKind === expectedKind;
+    };
 
     const syncToolbar = (item: Mounted) => {
         const blockRect = item.block.getBoundingClientRect();
@@ -252,6 +246,10 @@ function installPreviewEditing(
     };
 
     const syncAll = () => {
+        if (hovered === null || !mounted.has(hovered)) {
+            const current = Array.from(mounted.values()).find((item) => item.block.matches(':hover'));
+            hovered = current ? current.block : null;
+        }
         mounted.forEach(syncToolbar);
     };
 
@@ -421,6 +419,15 @@ function installPreviewEditing(
             return;
         }
 
+        if (!kindMatches()) {
+            mounted.forEach((item) => item.cleanup());
+            mounted.clear();
+            hovered = null;
+            lastReason = '当前预览页与所选分组不一致，切换分组后再编辑。';
+
+            return;
+        }
+
         const blocks = blockElements(doc as Document);
         const alive = new Set(blocks);
         mounted.forEach((item, block) => {
@@ -435,6 +442,7 @@ function installPreviewEditing(
         if (hovered && !alive.has(hovered)) {
             hovered = null;
         }
+        lastReason = mounted.size === 0 ? '当前预览页没有可编辑区块。' : '';
         syncAll();
     };
 
@@ -495,7 +503,12 @@ function installPreviewEditing(
     };
 
     return {
-        count: mounted.size,
+        get count() {
+            return mounted.size;
+        },
+        get reason() {
+            return lastReason;
+        },
         markEditing,
         blockRect,
         cleanup: () => {
