@@ -7,7 +7,7 @@
 - **ttdf-framework**：指本仓库 `D:\Codes\TTDF` 本身，负责框架核心、autoloader、配置、路由、Hook、REST、设置表、测试、文档与发布。
 - **typecho-theme**：指使用 TTDF v5 构建的独立 Typecho 主题工程，例如包含自己的 `functions.php`、`app/pages/` 页面模板、`app/config/`、`app/router/`、`app/components/`、`app/support/` 和资源的主题。
 
-当前 `master` 是 v5 开发线，版本固定为 `5.0.5-next`；`v4` 分支已冻结，只用于旧主题与旧站点，不在 `master` 上恢复 v4 全局 API。
+当前 `master` 是 v5 开发线，版本固定为 `5.0.6-next`；`v4` 分支已冻结，只用于旧主题与旧站点，不在 `master` 上恢复 v4 全局 API。
 
 # 开发场景 Skill 读取
 
@@ -248,8 +248,8 @@ GET https://api.miomoe.cn/site/docs/page?path=ttdf/v5/index
 
 ## 发布
 
-- 版本号：`5.0.5-next`
-- 发布标签：`v5.0.5-next`
+- 版本号：`5.0.6-next`
+- 发布标签：`v5.0.6-next`
 - 发布前确认 `composer lint`、`composer analyse`、`composer test` 全绿
 - 发布包必须包含 `vendor/yuinijika/ttdf/core/`、`vendor/yuinijika/ttdf/static/` 与 `vendor/yuinijika/ttdf/bin/`，并排除 `tests/`、`vendor/composer/`、`vendor/yuinijika/ttdf/node_modules/`、`vite/node_modules/`、`webpack/node_modules/`、`.tmp/`、`logs/`
 - `v4` 分支不改动

@@ -1,6 +1,6 @@
 {
   "name": "@yuinijika/ttdf-static",
-  "version": "5.0.5-next",
+  "version": "5.0.6-next",
   "private": true,
   "type": "module",
   "description": "Admin UI sources live in frontend/options and build directly into static/.",
