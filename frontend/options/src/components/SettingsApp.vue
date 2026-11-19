@@ -412,19 +412,6 @@ const runMigration = async () => {
     }
 };
 
-const installBridge = async () => {
-    try {
-        const result = await request<{ data?: { message?: string; url?: string } }>('/customizer-bridge', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: '{}',
-        });
-        Message.success(result.data?.message || '直达入口已创建：' + (result.data?.url || ''));
-    } catch (reason) {
-        Message.error('创建入口失败：' + (reason instanceof Error ? reason.message : '未知错误'));
-    }
-};
-
 const openCustomizer = () => {
     if (!props.customizerUrl) {
         Message.error('未配置定制器地址');
@@ -440,12 +427,6 @@ const onAction = (command: string | number | Record<string, unknown> | undefined
     }
 
     switch (String(command)) {
-        case 'customizer':
-            openCustomizer();
-            break;
-        case 'bridge':
-            void installBridge();
-            break;
         case 'export':
             exportSettings();
             break;
@@ -483,6 +464,9 @@ onMounted(() => void load());
                 </p>
             </div>
             <div class="app-actions">
+                <a-button type="outline" :disabled="!customizerUrl" @click="openCustomizer">
+                    可视化定制器
+                </a-button>
                 <a-button-group>
                     <a-button type="primary" :loading="saving" @click="save">
                         {{ saving ? '保存中…' : '保存设置' }}
@@ -494,8 +478,6 @@ onMounted(() => void load());
                             </svg>
                         </a-button>
                         <template #content>
-                            <a-doption value="customizer">可视化定制器</a-doption>
-                            <a-doption value="bridge">创建直达入口</a-doption>
                             <a-doption value="export">导出设置</a-doption>
                             <a-doption value="import">导入设置</a-doption>
                             <a-doption value="backup">立即备份</a-doption>
@@ -702,6 +684,12 @@ onMounted(() => void load());
     padding: 16px 20px;
     border-bottom: 1px solid var(--line);
 }
+.app-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
 .app-title {
     margin: 0;
     font-size: 17px;
@@ -732,9 +720,9 @@ onMounted(() => void load());
 .app-body {
     display: grid;
     grid-template-columns: 190px minmax(0, 1fr);
-    height: clamp(720px, 88vh, 1400px);
-    min-height: 720px;
-    max-height: 1400px;
+    height: clamp(560px, 68vh, 980px);
+    min-height: 560px;
+    max-height: 980px;
 }
 .app-nav {
     display: flex;
@@ -933,6 +921,37 @@ onMounted(() => void load());
 @keyframes shimmer {
     to {
         background-position: -200% 0;
+    }
+}
+@media (min-width: 1600px) {
+    .app-body {
+        height: clamp(640px, 72vh, 1100px);
+        min-height: 640px;
+        max-height: 1100px;
+    }
+}
+@media (max-width: 1599px) {
+    .app-body {
+        height: clamp(580px, 68vh, 980px);
+        min-height: 580px;
+        max-height: 980px;
+    }
+}
+@media (max-width: 1200px) {
+    .app-body {
+        height: clamp(540px, 64vh, 860px);
+        min-height: 540px;
+        max-height: 860px;
+    }
+}
+@media (max-height: 760px) {
+    .app-header {
+        padding-block: 12px;
+    }
+    .app-body {
+        height: clamp(480px, 62vh, 720px);
+        min-height: 480px;
+        max-height: 720px;
     }
 }
 @media (max-width: 860px) {

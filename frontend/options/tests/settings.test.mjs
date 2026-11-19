@@ -233,7 +233,7 @@ describe('TTDF settings application', () => {
         const wrapper = mountSettings();
         await flushPromises();
 
-        await wrapper.find('.app-actions button').trigger('click');
+        await wrapper.find('.app-actions .arco-btn-primary').trigger('click');
         await flushPromises();
 
         const saveCall = fetchMock.mock.calls.find(([url]) => url.endsWith('/options'));
@@ -274,7 +274,7 @@ describe('TTDF settings application', () => {
 
         const wrapper = mountSettings();
         await flushPromises();
-        await wrapper.find('.app-actions button').trigger('click');
+        await wrapper.find('.app-actions .arco-btn-primary').trigger('click');
         await flushPromises();
 
         expect(wrapper.find('.app-alert').text()).toContain('nonce 失效');
@@ -286,6 +286,7 @@ describe('TTDF settings application', () => {
         await flushPromises();
 
         expect(wrapper.find('button[aria-label="更多操作"]').exists()).toBe(true);
+        expect(wrapper.findAll('.app-actions > button').some((node) => node.text() === '可视化定制器')).toBe(true);
         wrapper.unmount();
     });
 });

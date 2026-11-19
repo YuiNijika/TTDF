@@ -24,6 +24,15 @@ final class OptionsUiTest extends TestCase
             '/src/components/fields/TagsField.vue',
             '/src/components/fields/TemplateMapField.vue',
             '/src/customizer/Customizer.vue',
+            '/src/customizer/components/CustomizerTopBar.vue',
+            '/src/customizer/components/CustomizerNav.vue',
+            '/src/customizer/components/PreviewStage.vue',
+            '/src/customizer/components/SettingsPanel.vue',
+            '/src/customizer/composables/useBlockDrag.ts',
+            '/src/customizer/composables/usePreviewBridge.ts',
+            '/src/customizer/composables/useSettingsSchema.ts',
+            '/src/customizer/lib/blocks.ts',
+            '/src/customizer/types.ts',
         ];
 
         foreach ($components as $component) {
@@ -49,13 +58,15 @@ final class OptionsUiTest extends TestCase
     {
         $entry = $this->source('frontend/options/src/customizer/index.ts');
         $component = $this->source('frontend/options/src/customizer/Customizer.vue');
+        $stage = $this->source('frontend/options/src/customizer/components/PreviewStage.vue');
 
         self::assertStringContainsString("import '../styles/global.css'", $entry);
         self::assertStringContainsString('createApp(Customizer)', $entry);
         self::assertStringContainsString("getElementById('ttdf-custom-theme')", $entry);
-        self::assertStringContainsString('<iframe', $component);
-        self::assertStringContainsString('cz-preview', $component);
+        self::assertStringContainsString('<iframe', $stage);
+        self::assertStringContainsString('cz-preview', $stage);
         self::assertStringContainsString('previewOpen', $component);
+        self::assertStringContainsString('useBlockDrag', $component);
     }
 
     public function testGlobalStylesKeepTypechoAndArcoOverrides(): void
