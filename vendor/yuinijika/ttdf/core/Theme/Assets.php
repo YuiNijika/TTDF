@@ -36,10 +36,27 @@ final class Assets
             $relative = Framework::STATIC_RELATIVE_PATH;
         }
 
+        $file = ltrim(str_replace('\\', '/', $path), '/');
+
         return self::buildUrl(
-            $relative . '/' . ltrim(str_replace('\\', '/', $path), '/'),
-            Framework::VERSION
+            $relative . '/' . $file,
+            self::staticVersion($file)
         );
+    }
+
+    /**
+     * Bundled admin panels are rebuilt independently of the framework version,
+     * so a constant `v=` would keep serving stale JS/CSS after a rebuild. The
+     * file hash (with the framework version as a prefix) invalidates the cache
+     * whenever the asset content actually changes.
+     */
+    private static function staticVersion(string $path): string
+    {
+        $version = Framework::VERSION;
+        $file = Framework::staticPath() . '/' . $path;
+        $hash = is_file($file) ? md5_file($file) : false;
+
+        return $hash === false ? $version : $version . '.' . substr($hash, 0, 10);
     }
 
     /**

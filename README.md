@@ -190,6 +190,9 @@ pnpm test:ui
 Typecho 后台布局覆盖与 Arco 浮层样式统一写在 `frontend/options/src/styles/global.css`。
 `package.json` 与 `pnpm-lock.yaml` 用于复现构建；只忽略 `node_modules/`。
 
+框架静态资源的 `?v=` 由框架版本号加文件内容哈希组成，重新构建后 URL 自动变化，
+不需要升版本号来刷新浏览器缓存。
+
 `pnpm test:ui` 使用 Vitest + jsdom 覆盖全部设置字段控件，以及保存、错误提示、
 Tab URL 同步、导出、导入和迁移流程。
 

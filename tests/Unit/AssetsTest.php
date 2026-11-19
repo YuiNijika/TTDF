@@ -74,10 +74,29 @@ final class AssetsTest extends TestCase
 
     public function testStaticUrlPointsAtVendoredFrameworkAssets(): void
     {
-        self::assertSame(
+        $url = Assets::staticUrl('app.css');
+
+        self::assertStringStartsWith(
             'https://example.test/usr/themes/ttdf/vendor/yuinijika/ttdf/static/app.css?v=5.0.5-next',
-            Assets::staticUrl('app.css')
+            $url
         );
+    }
+
+    public function testStaticUrlChangesWhenTheBuiltFileChanges(): void
+    {
+        $first = Assets::staticUrl('custom-theme.js');
+        $file = \TTDF\Framework::staticPath() . '/custom-theme.js';
+        $original = (string) file_get_contents($file);
+
+        try {
+            file_put_contents($file, $original . "\n// cache probe\n");
+            $second = Assets::staticUrl('custom-theme.js');
+        } finally {
+            file_put_contents($file, $original);
+        }
+
+        self::assertNotSame($first, $second);
+        self::assertSame($first, Assets::staticUrl('custom-theme.js'));
     }
 
     public function testPrintHelpersEscapeAndEmitTags(): void
@@ -112,9 +131,8 @@ final class AssetsTest extends TestCase
                 Assets::url('assets/app.css')
             );
             self::assertSame(
-                'https://example.test/usr/themes/ttdf/vendor/yuinijika/ttdf/static/app.css'
-                . '?v=5.0.5-next',
-                Assets::staticUrl('app.css')
+                'https://example.test/usr/themes/ttdf/vendor/yuinijika/ttdf/static/app.css',
+                strtok(Assets::staticUrl('app.css'), '?')
             );
             self::assertStringNotContainsString('9.9.9-theme', Assets::staticUrl('app.css'));
         } finally {
