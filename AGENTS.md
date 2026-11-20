@@ -251,7 +251,9 @@ GET https://api.miomoe.cn/site/docs/page?path=ttdf/v5/index
 - 版本号：`5.0.7-next`
 - 发布标签：`v5.0.7-next`
 - 发布前确认 `composer lint`、`composer analyse`、`composer test` 全绿
-- 发布包必须包含 `vendor/yuinijika/ttdf/core/`、`vendor/yuinijika/ttdf/static/` 与 `vendor/yuinijika/ttdf/bin/`，并排除 `tests/`、`vendor/composer/`、`vendor/yuinijika/ttdf/node_modules/`、`vite/node_modules/`、`webpack/node_modules/`、`.tmp/`、`logs/`
+- 主发布包只包含运行时主题文件：`app/`、`assets/`、`logs/.htaccess`、`logs/index.php`、`vendor/yuinijika/ttdf/core/`、`vendor/yuinijika/ttdf/static/`、`vendor/yuinijika/ttdf/bin/`、`functions.php`、`index.php`、`LICENSE` 与 `README.md`。
+- 主发布包不得包含 `frontend/`、`vite/`、`webpack/`、`tests/`、`vendor/composer/`、任意 `node_modules/` 与 `.tmp/`。
+- `frontend/` 只保留仓库源码，不随 Release 附件分发；Vite 与 Webpack 工程分别作为独立附件发布，命名固定为 `TTDF_Vite_v{版本}.zip` 与 `TTDF_Webpack_v{版本}.zip`。
 - `v4` 分支不改动
 
 # 前端 UI 规范
