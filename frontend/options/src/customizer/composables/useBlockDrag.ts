@@ -8,6 +8,7 @@ import {
     blockCatalog,
     blockLabelMap,
     dragEnabled,
+    mappedBlockFields,
     pageBlocksField,
 } from '../lib/blocks';
 import type { BlockFieldMap } from '../lib/blocks';
@@ -29,18 +30,16 @@ export function useBlockDrag(options: BlockDragOptions) {
     const blockFields = computed<BlockFieldMap>(() => (
         options.getBlockFields?.() ?? DEFAULT_BLOCK_FIELDS
     ));
-    const mappedFields = computed(() => options.getFields().filter(
-        (item) => item.type === 'Blocks' && item.name && blockFields.value[item.name] !== undefined
-    ));
+    const mappedFields = computed(() => mappedBlockFields(options.getFields(), blockFields.value));
     const field = computed<SettingsField | null>(() => {
         const active = options.getActiveFieldName?.() ?? '';
-        const selected = mappedFields.value.find((item) => item.name === active);
+        const selected = mappedFields.value.find((item) => item.name === active)?.field;
 
-        return selected ?? pageBlocksField(options.getFields(), blockFields.value);
+        return selected ?? mappedFields.value[0]?.field ?? pageBlocksField(
+            options.getFields(),
+            blockFields.value
+        );
     });
-    const otherBlocks = computed<SettingsField | null>(() => (
-        options.getFields().find((item) => item.type === 'Blocks' && item !== field.value) ?? null
-    ));
     const catalog = computed(() => blockCatalog(field.value));
     const target = computed(() => blockTarget(blockFields.value, field.value));
     const expectedKind = computed(() => target.value?.kind ?? '');
@@ -49,9 +48,7 @@ export function useBlockDrag(options: BlockDragOptions) {
     const enabled = computed(() => dragEnabled(field.value));
     const status = computed(() => {
         if (!field.value) {
-            return otherBlocks.value
-                ? '当前分组的区块不在预览内编辑，切换到「首页 / 归档 / 文章」等页面分组'
-                : '';
+            return '当前主题没有可编辑的区块字段';
         }
         if (!enabled.value) {
             return '当前区块已关闭拖拽排序';

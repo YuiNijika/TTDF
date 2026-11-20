@@ -7,6 +7,14 @@ export interface BlockTarget {
 
 export type BlockFieldMap = Record<string, BlockTarget>;
 
+export interface MappedBlockField {
+    name: string;
+    label: string;
+    kind: string;
+    slot: string;
+    field: SettingsField;
+}
+
 export const DEFAULT_BLOCK_FIELDS: BlockFieldMap = {
     Home_Blocks: { kind: 'home', slot: 'main' },
     Archive_Blocks: { kind: 'archive', slot: 'main' },
@@ -49,6 +57,44 @@ export function blockTarget(
     const name = String(field?.name || '');
 
     return name !== '' ? map[name] ?? null : null;
+}
+
+/**
+ * A customizer preview is not tied to the settings section that happens to be
+ * visible. Collect every mapped Blocks field once so the preview toolbar can
+ * switch targets and the drag bridge keeps working after the user moves to an
+ * unrelated settings section.
+ */
+export function mappedBlockFields(
+    fields: SettingsField[] | undefined,
+    map: BlockFieldMap = DEFAULT_BLOCK_FIELDS
+): MappedBlockField[] {
+    const seen = new Set<string>();
+    const result: MappedBlockField[] = [];
+
+    (Array.isArray(fields) ? fields : []).forEach((field) => {
+        const name = String(field.name || '');
+        const target = name !== '' ? map[name] : null;
+        if (
+            field.type !== 'Blocks'
+            || name === ''
+            || !target
+            || seen.has(name)
+        ) {
+            return;
+        }
+
+        seen.add(name);
+        result.push({
+            name,
+            label: String(field.label || name),
+            kind: target.kind,
+            slot: target.slot,
+            field,
+        });
+    });
+
+    return result;
 }
 
 export interface BlockEntry {

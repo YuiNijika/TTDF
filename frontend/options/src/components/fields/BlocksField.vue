@@ -248,7 +248,7 @@ const onCardClick = (event: MouseEvent, index: number) => {
     if (!row || row.fields.length === 0 || dragIndex.value === index || !target) {
         return;
     }
-    if (target.closest('button, a, input, textarea, select, label, .arco-select, .arco-btn, .block-grip, .block-actions')) {
+    if (target.closest('button, a, input, textarea, select, label, .arco-select, .arco-btn, .block-grip, .block-variant, .block-actions')) {
         return;
     }
     toggle(index);
@@ -337,7 +337,12 @@ const onGripKeydown = (event: KeyboardEvent, index: number) => {
                         </span>
                     </span>
 
-                    <span v-if="Object.keys(row.variants).length > 0" class="block-variant">
+                    <span
+                        v-if="Object.keys(row.variants).length > 0"
+                        class="block-variant"
+                        @click.stop
+                        @mousedown.stop
+                    >
                         <a-select
                             size="small"
                             :model-value="row.variant"

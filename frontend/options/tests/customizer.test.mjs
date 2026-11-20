@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     blockCatalog,
+    mappedBlockFields,
     normalizeBlockEntries,
     reorderBlockEntries,
     setBlockData,
@@ -8,6 +9,24 @@ import {
 } from '../src/customizer/lib/blocks';
 
 describe('TTDF customizer block ordering', () => {
+    it('collects mapped block fields independently from the visible settings section', () => {
+        const targets = mappedBlockFields([
+            { type: 'Blocks', name: 'Home_Blocks', label: '首页区块' },
+            { type: 'Text', name: 'Site_Title' },
+            { type: 'Blocks', name: 'Home_Side_Blocks', label: '首页侧栏' },
+            { type: 'Blocks', name: 'Not_Mapped' },
+            { type: 'Blocks', name: 'Home_Blocks', label: '重复字段' },
+        ], {
+            Home_Blocks: { kind: 'home', slot: 'main' },
+            Home_Side_Blocks: { kind: 'home', slot: 'right' },
+        });
+
+        expect(targets.map((target) => target.name))
+            .toEqual(['Home_Blocks', 'Home_Side_Blocks']);
+        expect(targets.map((target) => target.slot)).toEqual(['main', 'right']);
+        expect(targets[0].label).toBe('首页区块');
+    });
+
     it('normalizes object and legacy string entries', () => {
         expect(normalizeBlockEntries([
             'hero:compact',

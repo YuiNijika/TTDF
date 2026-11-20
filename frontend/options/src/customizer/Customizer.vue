@@ -11,6 +11,7 @@ import { useBlockDrag } from './composables/useBlockDrag';
 import type { PreviewBlockRect } from './composables/usePreviewBridge';
 import { useSettingsSchema } from './composables/useSettingsSchema';
 import {
+    mappedBlockFields,
     normalizeBlockEntries,
     normalizeBlockTargets,
     reorderBlockEntries,
@@ -39,6 +40,7 @@ const {
     categories,
     currentTab,
     currentSection,
+    allFields,
     fieldGroups,
     htmlBlocks,
     load,
@@ -65,6 +67,7 @@ const previewWidth = computed(() => (
 ));
 const dragField = computed(() => drag.field.value);
 const blockFields = computed<BlockFieldMap>(() => normalizeBlockTargets(payload.blockFields));
+const blockTargets = computed(() => mappedBlockFields(allFields.value, blockFields.value));
 // Resolve every preview target against the admin origin. A `siteUrl` on a
 // different host/port would make the iframe cross-origin, `contentDocument`
 // null, and the bridge could not inject the drag/edit toolbar at all.
@@ -122,9 +125,11 @@ const editingMaxHeight = computed(() => {
 
     return Math.max(220, Math.min(560, height - editingAnchor.value.top - 12));
 });
+let repositionAttempts = 0;
+let repositionTimer: number | null = null;
 
 const drag = useBlockDrag({
-    getFields: () => currentSection.value?.fields ?? [],
+    getFields: () => allFields.value,
     getBlockFields: () => blockFields.value,
     getActiveFieldName: () => activeBlockField.value,
     getFrame: () => previewStage.value?.getFrame() ?? null,
@@ -138,6 +143,11 @@ const drag = useBlockDrag({
         await save(true);
     },
     edit: (index, name, rect) => {
+        repositionAttempts = 0;
+        if (repositionTimer !== null) {
+            window.clearTimeout(repositionTimer);
+            repositionTimer = null;
+        }
         editing.value = { index, name, rect };
         drag.markEditing(index);
         bindPreviewViewport();
@@ -150,6 +160,24 @@ const drag = useBlockDrag({
 });
 const dragStatus = drag.status;
 const dragHint = drag.hint;
+const activeTargetName = computed(() => {
+    const current = activeBlockField.value || drag.field.value?.name || '';
+    if (blockTargets.value.some((target) => target.name === current)) {
+        return current;
+    }
+
+    return blockTargets.value[0]?.name ?? '';
+});
+const slotLabel = (slot: string): string => {
+    if (slot === 'left') {
+        return '左侧栏';
+    }
+    if (slot === 'right') {
+        return '右侧栏';
+    }
+
+    return '主区域';
+};
 
 const openMenu = () => {
     drawerTab.value = 'nav';
@@ -187,6 +215,11 @@ const queueEditSave = () => {
 };
 
 const closeEditor = (flush = true) => {
+    repositionAttempts = 0;
+    if (repositionTimer !== null) {
+        window.clearTimeout(repositionTimer);
+        repositionTimer = null;
+    }
     if (editTimer !== null) {
         window.clearTimeout(editTimer);
         editTimer = null;
@@ -198,6 +231,20 @@ const closeEditor = (flush = true) => {
     drag.markEditing(null);
 };
 
+const selectBlockTarget = (value: unknown) => {
+    const name = String(value || '');
+    if (
+        name === ''
+        || name === activeTargetName.value
+        || !blockTargets.value.some((target) => target.name === name)
+    ) {
+        return;
+    }
+
+    closeEditor(false);
+    activeBlockField.value = name;
+};
+
 const repositionEditor = () => {
     const current = editing.value;
     if (!current) {
@@ -205,11 +252,26 @@ const repositionEditor = () => {
     }
 
     const rect = drag.blockRect(current.index);
-    if (!rect) {
+    if (!rect || (rect.width <= 0 && rect.height <= 0)) {
+        // A preview refresh briefly replaces the block nodes. Keep the editor
+        // open and retry before treating the block as removed.
+        if (repositionAttempts < 24) {
+            repositionAttempts += 1;
+            if (repositionTimer !== null) {
+                window.clearTimeout(repositionTimer);
+            }
+            repositionTimer = window.setTimeout(() => {
+                repositionTimer = null;
+                repositionEditor();
+            }, 80);
+
+            return;
+        }
         closeEditor(false);
 
         return;
     }
+    repositionAttempts = 0;
     if (
         rect.left === current.rect.left
         && rect.top === current.rect.top
@@ -321,9 +383,19 @@ watch(previewOpen, (open) => {
     }
 });
 
-watch(activeSection, () => {
+watch(currentSection, (section) => {
+    const candidate = section?.fields.find((field) => {
+        const name = String(field.name || '');
+
+        return field.type === 'Blocks' && blockFields.value[name] !== undefined;
+    });
+    const name = String(candidate?.name || '');
+    if (name === '' || name === activeTargetName.value) {
+        return;
+    }
+
     closeEditor(false);
-    activeBlockField.value = '';
+    activeBlockField.value = name;
 });
 
 const onKeydown = (event: KeyboardEvent) => {
@@ -360,6 +432,10 @@ onBeforeUnmount(() => {
     if (editTimer !== null) {
         window.clearTimeout(editTimer);
     }
+    if (repositionTimer !== null) {
+        window.clearTimeout(repositionTimer);
+        repositionTimer = null;
+    }
 });
 </script>
 
@@ -393,10 +469,29 @@ onBeforeUnmount(() => {
                 :key="previewKey"
                 :url="previewUrl"
                 :width="previewWidth"
-                :toolbar="dragStatus !== ''"
+                :toolbar="blockTargets.length > 0 || dragStatus !== ''"
                 @load="onPreviewLoad"
             >
                 <template #toolbar>
+                    <div class="cz-edit-target">
+                        <span class="cz-edit-target-label">编辑目标</span>
+                        <a-select
+                            v-if="blockTargets.length > 0"
+                            :model-value="activeTargetName"
+                            size="small"
+                            class="cz-edit-target-select"
+                            aria-label="选择预览编辑目标"
+                            @change="selectBlockTarget"
+                        >
+                            <a-option
+                                v-for="target in blockTargets"
+                                :key="target.name"
+                                :value="target.name"
+                            >
+                                {{ target.label }} · {{ slotLabel(target.slot) }}
+                            </a-option>
+                        </a-select>
+                    </div>
                     <span class="cz-drag-status">{{ dragStatus }}</span>
                 </template>
                 <template #overlay>
@@ -535,8 +630,33 @@ onBeforeUnmount(() => {
 }
 .cz-drag-status {
     overflow: hidden;
+    min-width: 0;
+    color: var(--cz-muted);
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+.cz-edit-target {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 8px;
+}
+.cz-edit-target-label {
+    flex: none;
+    color: var(--cz-muted);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+}
+.cz-edit-target-select {
+    width: 210px;
+}
+@media (max-width: 900px) {
+    .cz-edit-target {
+        flex: 1 1 100%;
+    }
+    .cz-edit-target-select {
+        width: min(100%, 240px);
+    }
 }
 .cz-drawer-head {
     --cz-ink: #18181b;

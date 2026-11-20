@@ -53,17 +53,19 @@ const emit = defineEmits<{
         </header>
 
         <div class="cz-editor-body">
-            <label v-if="Object.keys(props.variants).length > 0" class="cz-editor-variant">
+            <div v-if="Object.keys(props.variants).length > 0" class="cz-editor-variant">
                 <span>展示样式</span>
                 <a-select
                     size="small"
                     :model-value="props.variant"
                     :aria-label="props.label + ' 展示样式'"
+                    @click.stop
+                    @mousedown.stop
                     @update:model-value="emit('update-variant', String($event || ''))"
                 >
                     <a-option v-for="(text, key) in props.variants" :key="key" :value="key">{{ text }}</a-option>
                 </a-select>
-            </label>
+            </div>
 
             <FormField
                 v-for="(field, index) in props.fields"

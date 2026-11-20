@@ -46,6 +46,7 @@ defineExpose({ getFrame });
 .cz-preview-toolbar {
     display: flex;
     flex: 0 0 auto;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 10px;

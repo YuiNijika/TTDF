@@ -40,6 +40,26 @@ export function useSettingsSchema(request: Request) {
     const currentSection = computed(
         () => currentTab.value?.sections.find((section) => section.id === activeSection.value) ?? null
     );
+    const allFields = computed(() => {
+        const seen = new Set<string>();
+        const fields: SettingsField[] = [];
+
+        tabs.value.forEach((tab) => {
+            tab.sections.forEach((section) => {
+                section.fields.forEach((field) => {
+                    const name = String(field.name || '');
+                    if (name === '' || seen.has(name)) {
+                        return;
+                    }
+
+                    seen.add(name);
+                    fields.push(field);
+                });
+            });
+        });
+
+        return fields;
+    });
     const visibleFields = computed(() =>
         filterFields(currentSection.value?.fields ?? [], values).filter((field) => field.name)
     );
@@ -159,6 +179,7 @@ export function useSettingsSchema(request: Request) {
         categories,
         currentTab,
         currentSection,
+        allFields,
         visibleFields,
         fieldGroups,
         htmlBlocks,
