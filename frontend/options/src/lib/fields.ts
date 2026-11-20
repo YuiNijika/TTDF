@@ -10,6 +10,7 @@ export interface SettingsField {
     inline?: boolean;
     inline_group?: string;
     show_when?: Record<string, unknown>;
+    implies?: Record<string, unknown>;
     media?: boolean | { enabled?: boolean };
     components?: string[];
     slots?: Record<string, string> | string[];
@@ -166,3 +167,32 @@ export const filterFields = (
 ): SettingsField[] => (Array.isArray(fields) ? fields : []).filter(
     (field) => field && fieldMatches(field, values)
 );
+
+export const applyImpliedValues = (
+    fields: SettingsField[] | undefined,
+    values: Record<string, unknown>
+): boolean => {
+    let changed = false;
+
+    (Array.isArray(fields) ? fields : []).forEach((field) => {
+        if (!field || !field.name || field.type !== 'Switch' || values[field.name] !== true) {
+            return;
+        }
+
+        const rules = field.implies;
+        if (!rules || typeof rules !== 'object' || Array.isArray(rules)) {
+            return;
+        }
+
+        Object.entries(rules).forEach(([target, forced]) => {
+            if (target === '' || values[target] === forced) {
+                return;
+            }
+
+            values[target] = forced;
+            changed = true;
+        });
+    });
+
+    return changed;
+};

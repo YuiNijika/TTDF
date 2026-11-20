@@ -13,6 +13,13 @@ use TTDF\Support\Escaper;
 final class Settings
 {
     /**
+     * Targets declared through a field's `implies` map, keyed by target name.
+     *
+     * @var array<string, list<array{source: string, value: mixed}>>|null
+     */
+    private static ?array $implicationTargets = null;
+
+    /**
      * Typecho calls this only from the admin theme-options screen.
      *
      * @param object $form
@@ -85,6 +92,58 @@ final class Settings
      */
     public static function values(): array
     {
+        return self::applyImplications(self::rawValues());
+    }
+
+    /**
+     * Resolve one effective setting after schema defaults and `implies`
+     * dependencies have been applied.
+     */
+    public static function value(string $name, mixed $default = null): mixed
+    {
+        $values = self::values();
+
+        return array_key_exists($name, $values) ? $values[$name] : $default;
+    }
+
+    /**
+     * Return the value a dependency forces for `$name`, or null when no rule
+     * is active. This lets runtime configuration honor cross-field switches
+     * without treating every schema default as an explicit stored value.
+     */
+    public static function impliedValue(string $name): mixed
+    {
+        if (Schema::isLoading()) {
+            return null;
+        }
+
+        $rules = self::implicationTargets()[$name] ?? null;
+        if ($rules === null || $rules === []) {
+            return null;
+        }
+
+        $raw = self::rawValues();
+        $effective = self::applyImplications($raw);
+
+        foreach ($rules as $rule) {
+            if (($effective[$rule['source']] ?? null) === true) {
+                $field = Schema::fields(self::root())[$name] ?? null;
+                if (!is_array($field)) {
+                    return $rule['value'];
+                }
+
+                return self::normalizeValue($field, $rule['value']);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function rawValues(): array
+    {
         $options = Options::instance();
         $values = [];
 
@@ -114,7 +173,96 @@ final class Settings
             $result[$name] = self::normalizeValue($field, $input[$name]);
         }
 
+        $current = self::rawValues();
+        $effective = self::applyImplications(array_merge($current, $result));
+
+        foreach (self::implicationTargets() as $target => $rules) {
+            foreach ($rules as $rule) {
+                if (($effective[$rule['source']] ?? null) !== true) {
+                    continue;
+                }
+
+                $result[$target] = $effective[$target];
+                break;
+            }
+        }
+
         return $result;
+    }
+
+    /**
+     * Force dependent switches declared with `implies` when their source is
+     * enabled. Dependencies only force `true`; they never turn unrelated
+     * settings off.
+     *
+     * @param array<string, mixed> $values
+     * @return array<string, mixed>
+     */
+    private static function applyImplications(array $values): array
+    {
+        if (self::implicationTargets() === []) {
+            return $values;
+        }
+
+        $fields = Schema::fields(self::root());
+
+        foreach (self::implicationTargets() as $target => $rules) {
+            foreach ($rules as $rule) {
+                if (($values[$rule['source']] ?? null) !== true) {
+                    continue;
+                }
+
+                $field = $fields[$target] ?? null;
+                $values[$target] = is_array($field)
+                    ? self::normalizeValue($field, $rule['value'])
+                    : $rule['value'];
+                break;
+            }
+        }
+
+        return $values;
+    }
+
+    /**
+     * @return array<string, list<array{source: string, value: mixed}>>
+     */
+    private static function implicationTargets(): array
+    {
+        if (self::$implicationTargets !== null) {
+            return self::$implicationTargets;
+        }
+
+        $fields = Schema::fields(self::root());
+        $targets = [];
+
+        foreach ($fields as $source => $field) {
+            $rules = $field['implies'] ?? null;
+            if (!is_array($rules)) {
+                continue;
+            }
+
+            foreach ($rules as $target => $forced) {
+                if (
+                    !is_string($target)
+                    || !isset($fields[$target])
+                    || ($fields[$target]['type'] ?? '') !== 'Switch'
+                ) {
+                    continue;
+                }
+
+                $targets[$target][] = [
+                    'source' => $source,
+                    'value' => $forced,
+                ];
+            }
+        }
+
+        return self::$implicationTargets = $targets;
+    }
+
+    public static function reset(): void
+    {
+        self::$implicationTargets = null;
     }
 
     /**

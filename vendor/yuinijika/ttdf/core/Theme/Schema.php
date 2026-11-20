@@ -15,6 +15,8 @@ final class Schema
     /** @var array<string, string>|null */
     private static ?array $aliases = null;
 
+    private static bool $loading = false;
+
     /**
      * @return array<string, array<string, mixed>>
      */
@@ -29,7 +31,13 @@ final class Schema
             return self::$tabs = [];
         }
 
-        $tabs = require $file;
+        self::$loading = true;
+        try {
+            $tabs = require $file;
+        } finally {
+            self::$loading = false;
+        }
+
         self::$tabs = is_array($tabs) ? self::normalizeTabs($tabs) : [];
 
         return self::$tabs;
@@ -278,5 +286,11 @@ final class Schema
         self::$tabs = null;
         self::$fields = null;
         self::$aliases = null;
+        self::$loading = false;
+    }
+
+    public static function isLoading(): bool
+    {
+        return self::$loading;
     }
 }

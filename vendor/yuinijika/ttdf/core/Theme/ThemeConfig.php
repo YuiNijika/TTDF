@@ -134,6 +134,10 @@ final class ThemeConfig
 
         try {
             $value = Options::instance()->get($name, null);
+            $implied = Settings::impliedValue($name);
+            if ($implied !== null) {
+                $value = $implied;
+            }
         } catch (\Throwable) {
             $value = null;
         }

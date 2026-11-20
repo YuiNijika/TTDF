@@ -7,7 +7,9 @@ namespace TTDF\Tests\Unit;
 use PHPUnit\Framework\TestCase;
 use TTDF\Config\Config;
 use TTDF\Theme\Options;
+use TTDF\Theme\Schema;
 use TTDF\Theme\Settings;
+use TTDF\Theme\ThemeConfig;
 
 final class SettingsTest extends TestCase
 {
@@ -45,6 +47,67 @@ final class SettingsTest extends TestCase
         $result = Settings::validate(['RESTAPI_Switch' => ['unexpected']]);
 
         self::assertFalse($result['RESTAPI_Switch']);
+    }
+
+    public function testImpliedSwitchesForceDependentSettingsAtRuntimeAndSave(): void
+    {
+        $this->seedImplicationSchema();
+
+        $property = new \ReflectionProperty(Options::class, 'instance');
+        $property->setValue(null, new Options(new InMemoryOptionsStore([
+            'Theme' => '{"Show_UserCenter":true,"RESTAPI_Switch":false,"RESTV2_Switch":false}',
+        ]), 'Theme'));
+        Settings::reset();
+        ThemeConfig::reset();
+
+        try {
+            $values = Settings::values();
+            self::assertTrue($values['RESTAPI_Switch']);
+            self::assertTrue($values['RESTV2_Switch']);
+            self::assertTrue(Settings::value('RESTV2_Switch'));
+            self::assertTrue(Settings::impliedValue('RESTV2_Switch'));
+            self::assertTrue(ThemeConfig::restEnabled());
+            self::assertTrue(ThemeConfig::restV2Enabled());
+
+            $validated = Settings::validate(['Show_UserCenter' => true]);
+            self::assertTrue($validated['RESTAPI_Switch']);
+            self::assertTrue($validated['RESTV2_Switch']);
+
+            $disabled = Settings::validate(['Show_UserCenter' => false]);
+            self::assertArrayNotHasKey('RESTAPI_Switch', $disabled);
+            self::assertArrayNotHasKey('RESTV2_Switch', $disabled);
+        } finally {
+            Options::reset();
+            Settings::reset();
+            Schema::reset();
+        }
+    }
+
+    private function seedImplicationSchema(): void
+    {
+        Schema::reset();
+        $property = new \ReflectionProperty(Schema::class, 'fields');
+        $property->setValue(null, [
+            'Show_UserCenter' => [
+                'type' => 'Switch',
+                'name' => 'Show_UserCenter',
+                'value' => false,
+                'implies' => [
+                    'RESTAPI_Switch' => true,
+                    'RESTV2_Switch' => true,
+                ],
+            ],
+            'RESTAPI_Switch' => [
+                'type' => 'Switch',
+                'name' => 'RESTAPI_Switch',
+                'value' => false,
+            ],
+            'RESTV2_Switch' => [
+                'type' => 'Switch',
+                'name' => 'RESTV2_Switch',
+                'value' => false,
+            ],
+        ]);
     }
 
     public function testTemplateMapValidationKeepsKnownSlotsAndSafeNames(): void

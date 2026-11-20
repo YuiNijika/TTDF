@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { Message } from '@arco-design/web-vue';
 import FormField from './FormField.vue';
 import {
+    applyImpliedValues,
     cloneSerializable,
     groupFields,
     normalizeValue,
@@ -86,6 +87,10 @@ const currentSections = computed(() => sectionsFor(currentTab.value));
 const currentSection = computed(
     () => currentSections.value.find((section) => section.id === activeSection.value) ?? currentSections.value[0] ?? null
 );
+const allFields = computed(() => tabs.value.flatMap((tab) => [
+    ...tab.fields,
+    ...tab.sections.flatMap((section) => section.fields),
+]));
 const regularFields = computed(() => (currentSection.value?.fields ?? []).filter((field) => field.group !== 'rest'));
 const restFields = computed(() => (currentSection.value?.fields ?? []).filter((field) => field.group === 'rest'));
 const regularGroups = computed(() => groupFields(regularFields.value, formData));
@@ -126,6 +131,8 @@ const switchSection = (id: string) => {
 };
 
 const serializable = (): Record<string, unknown> => {
+    applyImpliedValues(allFields.value, formData);
+
     const data: Record<string, unknown> = {};
     Object.keys(formData).forEach((key) => {
         data[key] = cloneSerializable(formData[key]);
@@ -187,6 +194,9 @@ const load = async () => {
 
         initValues((formResult.data ?? {}) as Record<string, unknown>);
         dirty.value = false;
+        if (applyImpliedValues(allFields.value, formData)) {
+            dirty.value = true;
+        }
 
         const params = new URLSearchParams(window.location.search);
         const requestedTab = params.get('tab');
@@ -245,6 +255,7 @@ const save = async () => {
 
 const updateField = (name: string, value: unknown) => {
     formData[name] = value;
+    applyImpliedValues(allFields.value, formData);
     dirty.value = true;
 };
 

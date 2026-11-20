@@ -21,6 +21,7 @@ use TTDF\Theme\ArchiveLayout;
 use TTDF\Theme\FrontendAssets;
 use TTDF\Theme\Options;
 use TTDF\Theme\Schema;
+use TTDF\Theme\Settings;
 use TTDF\Theme\ThemeConfig;
 
 final class Framework
@@ -102,6 +103,7 @@ final class Framework
         Hooks::reset();
         TypechoBridge::reset();
         Options::reset();
+        Settings::reset();
         Schema::reset();
         ErrorHandler::reset();
         Config::reset();

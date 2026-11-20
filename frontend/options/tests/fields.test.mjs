@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import FormField from '../src/components/FormField.vue';
+import { applyImpliedValues } from '../src/lib/fields';
 import { mountWithArco } from './helpers.mjs';
 
 const mountField = (field, modelValue, props = {}) => mountWithArco(FormField, {
@@ -14,6 +15,33 @@ const mountField = (field, modelValue, props = {}) => mountWithArco(FormField, {
 });
 
 describe('TTDF field renderer', () => {
+    it('forces switches declared by active dependencies', () => {
+        const fields = [
+            {
+                type: 'Switch',
+                name: 'Show_UserCenter',
+                implies: {
+                    RESTAPI_Switch: true,
+                    RESTV2_Switch: true,
+                },
+            },
+            { type: 'Switch', name: 'RESTAPI_Switch' },
+            { type: 'Switch', name: 'RESTV2_Switch' },
+        ];
+        const values = {
+            Show_UserCenter: true,
+            RESTAPI_Switch: false,
+            RESTV2_Switch: false,
+        };
+
+        expect(applyImpliedValues(fields, values)).toBe(true);
+        expect(values.RESTAPI_Switch).toBe(true);
+        expect(values.RESTV2_Switch).toBe(true);
+
+        values.Show_UserCenter = false;
+        expect(applyImpliedValues(fields, values)).toBe(false);
+    });
+
     it('renders a text input and emits updates', async () => {
         const wrapper = mountField({ type: 'Text', name: 'Title', label: '标题' }, 'Hello');
 
