@@ -169,7 +169,11 @@ function injectStyle(doc: Document): void {
 
 function blockElements(doc: Document): HTMLElement[] {
     return Array.from(doc.querySelectorAll<HTMLElement>('[data-block]'))
-        .filter((element) => element.closest('[data-block]') === element);
+        .filter((element) => element.closest('[data-block]') === element)
+        // Negative indices are server-rendered legacy blocks without a
+        // matching entry in the settings array, so they cannot be edited or
+        // reordered safely.
+        .filter((element) => Number(element.getAttribute('data-block-index') ?? '0') >= 0);
 }
 
 function blockSlot(block: HTMLElement): string {
