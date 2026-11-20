@@ -150,22 +150,22 @@ final class ViteTest extends TestCase
 
         self::assertStringContainsString(
             '<link rel="stylesheet" href="https://example.test/usr/themes/ttdf/assets/dist/main-def.css'
-            . '?v=5.0.6-next">',
+            . '?v=5.0.7-next">',
             $html
         );
         self::assertStringContainsString(
             '<link rel="stylesheet" href="https://example.test/usr/themes/ttdf/assets/dist/shared-def.css'
-            . '?v=5.0.6-next">',
+            . '?v=5.0.7-next">',
             $html
         );
         self::assertStringContainsString(
             '<link rel="modulepreload" href="https://example.test/usr/themes/ttdf/assets/dist/shared-xyz.js'
-            . '?v=5.0.6-next" crossorigin>',
+            . '?v=5.0.7-next" crossorigin>',
             $html
         );
         self::assertStringContainsString(
             '<script type="module" crossorigin '
-            . 'src="https://example.test/usr/themes/ttdf/assets/dist/main-abc.js?v=5.0.6-next"></script>',
+            . 'src="https://example.test/usr/themes/ttdf/assets/dist/main-abc.js?v=5.0.7-next"></script>',
             $html
         );
     }
@@ -323,7 +323,7 @@ PHP);
         $root = sys_get_temp_dir() . '/ttdf-vite-' . uniqid('', true);
         mkdir($root, 0777, true);
         $files = array_replace([
-            'index.php' => "<?php\n/**\n * @version 5.0.6-next\n */\n",
+            'index.php' => "<?php\n/**\n * @version 5.0.7-next\n */\n",
         ], $files);
 
         foreach ($files as $path => $contents) {

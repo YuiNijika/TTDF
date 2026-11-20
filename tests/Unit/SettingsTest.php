@@ -150,8 +150,8 @@ final class SettingsTest extends TestCase
     {
         $info = Settings::themeInfo();
 
-        self::assertSame('5.0.6-next', $info['themeVersion']);
-        self::assertSame('5.0.6-next', $info['ttdfVersion']);
+        self::assertSame('5.0.7-next', $info['themeVersion']);
+        self::assertSame('5.0.7-next', $info['ttdfVersion']);
         self::assertSame('1.3.0', $info['typechoVersion']);
     }
 

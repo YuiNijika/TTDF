@@ -79,7 +79,7 @@ final class RestRouterTest extends TestCase
 
         $payload = $this->capture(static fn () => Router::handle(dirname(__DIR__, 2)))->payload();
         self::assertSame(200, $payload['code']);
-        self::assertSame('5.0.6-next', $payload['data']['frameworkVersion']);
+        self::assertSame('5.0.7-next', $payload['data']['frameworkVersion']);
     }
 
     public function testSubdirectoryInstallWithIndexPhpPrefixStillMatches(): void

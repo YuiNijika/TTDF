@@ -101,12 +101,12 @@ final class WebpackTest extends TestCase
 
         self::assertStringContainsString(
             '<link rel="stylesheet" href="https://example.test/usr/themes/ttdf/assets/dist/main-def.css'
-            . '?v=5.0.6-next">',
+            . '?v=5.0.7-next">',
             $html
         );
         self::assertStringContainsString(
             '<script defer src="https://example.test/usr/themes/ttdf/assets/dist/main-abc.js'
-            . '?v=5.0.6-next"></script>',
+            . '?v=5.0.7-next"></script>',
             $html
         );
     }
@@ -123,8 +123,8 @@ final class WebpackTest extends TestCase
 
         $html = Webpack::head();
 
-        self::assertStringContainsString('main-def.css?v=5.0.6-next', $html);
-        self::assertStringContainsString('main-abc.js?v=5.0.6-next', $html);
+        self::assertStringContainsString('main-def.css?v=5.0.7-next', $html);
+        self::assertStringContainsString('main-abc.js?v=5.0.7-next', $html);
     }
 
     public function testProductionAcceptsAssetsMap(): void
@@ -141,8 +141,8 @@ final class WebpackTest extends TestCase
 
         $html = Webpack::head();
 
-        self::assertStringContainsString('main-def.css?v=5.0.6-next', $html);
-        self::assertStringContainsString('main-abc.js?v=5.0.6-next', $html);
+        self::assertStringContainsString('main-def.css?v=5.0.7-next', $html);
+        self::assertStringContainsString('main-abc.js?v=5.0.7-next', $html);
     }
 
     public function testMissingManifestDegradesWithoutMarkup(): void
@@ -240,7 +240,7 @@ PHP);
         $root = sys_get_temp_dir() . '/ttdf-webpack-' . uniqid('', true);
         mkdir($root, 0777, true);
         $files = array_replace([
-            'index.php' => "<?php\n/**\n * @version 5.0.6-next\n */\n",
+            'index.php' => "<?php\n/**\n * @version 5.0.7-next\n */\n",
         ], $files);
 
         foreach ($files as $path => $contents) {
