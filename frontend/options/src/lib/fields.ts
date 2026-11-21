@@ -83,6 +83,23 @@ export const normalizeValue = (field: SettingsField, value: unknown): unknown =>
             return current && typeof current === 'object' && !Array.isArray(current)
                 ? { ...(current as Record<string, unknown>) }
                 : {};
+        case 'Blocks': {
+            const fallback = field.value !== undefined ? field.value : field.default;
+            if (
+                Array.isArray(current)
+                && current.length === 0
+                && Array.isArray(fallback)
+                && fallback.length > 0
+            ) {
+                return fallback.map((item) => (
+                    item && typeof item === 'object'
+                        ? { ...(item as Record<string, unknown>) }
+                        : item
+                ));
+            }
+
+            return current;
+        }
         default:
             return current;
     }

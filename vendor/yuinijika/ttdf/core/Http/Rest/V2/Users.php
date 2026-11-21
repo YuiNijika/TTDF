@@ -159,7 +159,7 @@ final class Users
     public function create(array $input): array
     {
         $name = (string) $input['name'];
-        $mail = (string) $input['mail'];
+        $mail = trim((string) $input['mail']);
         $password = (string) $input['password'];
         $group = (string) ($input['group'] ?? 'contributor');
         $screenName = (string) ($input['screenName'] ?? $name);
@@ -175,6 +175,7 @@ final class Users
             Response::error('Invalid password', 422, ['password' => '密码至少 6 个字符']);
         }
 
+        $this->assertMail($mail);
         $this->assertUnique('name', $name, 0);
         $this->assertUnique('mail', $mail, 0);
 
@@ -293,7 +294,8 @@ final class Users
         }
 
         if (array_key_exists('mail', $input)) {
-            $mail = (string) $input['mail'];
+            $mail = trim((string) $input['mail']);
+            $this->assertMail($mail);
             $this->assertUnique('mail', $mail, $uid);
             $rows['mail'] = $mail;
         }
@@ -423,6 +425,22 @@ final class Users
         $decoded = html_entity_decode($name, ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
         return preg_match('/[()\\\\"<>]|[\x00-\x08\x0b\x0c\x0e-\x1f]|[\r\n\t]/u', $decoded) !== 1;
+    }
+
+    private function assertMail(string $mail): void
+    {
+        $sanitized = filter_var($mail, FILTER_SANITIZE_EMAIL);
+        $length = function_exists('mb_strlen') ? mb_strlen($mail, 'UTF-8') : strlen($mail);
+
+        if (
+            $mail === ''
+            || $length > 64
+            || !is_string($sanitized)
+            || $sanitized !== $mail
+            || filter_var($mail, FILTER_VALIDATE_EMAIL) === false
+        ) {
+            Response::error('Invalid email address', 422, ['mail' => '电子邮箱格式错误']);
+        }
     }
 
     private function avatar(string $mail): string

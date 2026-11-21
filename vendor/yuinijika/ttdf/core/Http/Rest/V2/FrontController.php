@@ -235,6 +235,10 @@ final class FrontController
         Hooks::doAction('rest.v2.register.before_create', $input);
         $user = $this->users->register($input);
         Hooks::doAction('rest.v2.register.created', $user, $input);
+        // A hook may activate the account or rotate its auth code as part of
+        // the registration policy. Read the row again so the issued token and
+        // response reflect those server-side changes.
+        $user = $this->users->find((int) $user['uid']) ?? $user;
 
         $ttl = Router::defaultTokenTtl();
         $token = Token::issue((int) $user['uid'], (string) $user['authCode'], $ttl);

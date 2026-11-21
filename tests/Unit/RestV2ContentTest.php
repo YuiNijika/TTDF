@@ -519,6 +519,16 @@ final class RestV2ContentTest extends V2ApiTestCase
         )->payload();
 
         self::assertSame(422, $short['code']);
+
+        $badMail = $this->dispatch(
+            'admin/users',
+            'POST',
+            ['name' => 'mailer', 'mail' => 'not-an-email', 'password' => 'secret1'],
+            ['Origin' => 'https://example.test']
+        )->payload();
+
+        self::assertSame(422, $badMail['code']);
+        self::assertSame(['mail' => '电子邮箱格式错误'], $badMail['errors']);
     }
 
     public function testUserListingNeverExposesCredentials(): void
@@ -552,6 +562,21 @@ final class RestV2ContentTest extends V2ApiTestCase
         $this->assertSuccess(200, $payload);
         self::assertNotSame($before, V2FakeDb::row('table.users', 2)['authCode']);
         self::assertArrayNotHasKey('authCode', $payload['data']);
+    }
+
+    public function testUserUpdatesRejectInvalidEmailAddresses(): void
+    {
+        $this->signInWithCookie(1);
+
+        $payload = $this->dispatch(
+            'admin/users/2',
+            'PATCH',
+            ['mail' => 'broken-mail'],
+            ['Origin' => 'https://example.test']
+        )->payload();
+
+        self::assertSame(422, $payload['code']);
+        self::assertSame(['mail' => '电子邮箱格式错误'], $payload['errors']);
     }
 
     public function testAdministratorCannotDemoteOrDeleteThemselves(): void

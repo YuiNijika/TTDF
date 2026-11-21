@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import FormField from '../src/components/FormField.vue';
-import { applyImpliedValues } from '../src/lib/fields';
+import { applyImpliedValues, normalizeValue } from '../src/lib/fields';
 import { mountWithArco } from './helpers.mjs';
 
 const mountField = (field, modelValue, props = {}) => mountWithArco(FormField, {
@@ -15,6 +15,17 @@ const mountField = (field, modelValue, props = {}) => mountWithArco(FormField, {
 });
 
 describe('TTDF field renderer', () => {
+    it('seeds an empty Blocks value from the declared defaults', () => {
+        const field = {
+            type: 'Blocks',
+            name: 'Home_Blocks',
+            value: ['hero', 'carousel', 'post-list:list'],
+        };
+
+        expect(normalizeValue(field, [])).toEqual(['hero', 'carousel', 'post-list:list']);
+        expect(normalizeValue(field, ['categories'])).toEqual(['categories']);
+    });
+
     it('forces switches declared by active dependencies', () => {
         const fields = [
             {

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace TTDF\Tests\Unit;
 
 use TTDF\Compat\Typecho;
+use TTDF\Hooks\Hooks;
+use Typecho\Db;
 
 require_once __DIR__ . '/V2ApiTestCase.php';
 
@@ -52,6 +54,33 @@ final class RestV2RegisterTest extends V2ApiTestCase
 
         self::assertSame('4', \Typecho\Cookie::$values['__typecho_uid'] ?? '');
         self::assertNotSame('', \Typecho\Cookie::$values['__typecho_authCode'] ?? '');
+    }
+
+    public function testRegistrationHooksCanActivateTheAccountForTheResponse(): void
+    {
+        $this->overrideSiteOptions(['allowRegister' => true]);
+
+        Hooks::addAction(
+            'rest.v2.register.created',
+            static function (array $user): void {
+                $db = Db::get();
+                $db->query(
+                    $db->update('table.users')
+                        ->rows(['activated' => 1_700_000_000])
+                        ->where('uid = ?', (int) $user['uid'])
+                );
+            }
+        );
+
+        $payload = $this->dispatch('auth/register', 'POST', [
+            'name' => 'verified',
+            'mail' => 'verified@example.test',
+            'password' => 'secret1',
+        ])->payload();
+
+        $this->assertSuccess(201, $payload);
+        self::assertNotEmpty($payload['data']['user']['activated']);
+        self::assertSame(1_700_000_000, (int) V2FakeDb::row('table.users', 4)['activated']);
     }
 
     public function testRegistrationRejectsDuplicateAccounts(): void
