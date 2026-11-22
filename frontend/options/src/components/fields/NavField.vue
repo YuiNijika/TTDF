@@ -5,11 +5,13 @@ import NavItemEditor from './NavItemEditor.vue';
 interface NavChild {
     label: string;
     url: string;
+    icon: string;
 }
 
 interface NavItem {
     label: string;
     url: string;
+    icon: string;
     children: NavChild[];
 }
 
@@ -25,10 +27,12 @@ const items = computed<NavItem[]>(() => (
         ? props.modelValue.map((item: any) => ({
             label: item && typeof item === 'object' ? String(item.label || '') : '',
             url: item && typeof item === 'object' ? String(item.url || '') : '',
+            icon: item && typeof item === 'object' ? String(item.icon || '') : '',
             children: item && typeof item === 'object' && Array.isArray(item.children)
                 ? item.children.map((child: any) => ({
                     label: child && typeof child === 'object' ? String(child.label || '') : '',
                     url: child && typeof child === 'object' ? String(child.url || '') : '',
+                    icon: child && typeof child === 'object' ? String(child.icon || '') : '',
                 }))
                 : [],
         }))
@@ -38,10 +42,15 @@ const items = computed<NavItem[]>(() => (
 const commit = (next: NavItem[]) => emit('update:modelValue', next.map((item) => ({
     label: item.label.trim(),
     url: item.url.trim(),
-    children: item.children.map((child) => ({ label: child.label.trim(), url: child.url.trim() })),
+    icon: item.icon.trim().toLowerCase(),
+    children: item.children.map((child) => ({
+        label: child.label.trim(),
+        url: child.url.trim(),
+        icon: child.icon.trim().toLowerCase(),
+    })),
 })));
 
-const add = () => commit([...items.value, { label: '', url: '', children: [] }]);
+const add = () => commit([...items.value, { label: '', url: '', icon: '', children: [] }]);
 
 const remove = (index: number) => {
     const next = items.value.slice();

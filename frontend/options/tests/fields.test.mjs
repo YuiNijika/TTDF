@@ -105,6 +105,21 @@ describe('TTDF field renderer', () => {
         wrapper.unmount();
     });
 
+    it('renders autocomplete choices and accepts custom values', () => {
+        const wrapper = mountField(
+            {
+                type: 'Autocomplete',
+                name: 'Languages',
+                label: '可选语言',
+                options: { english: 'English', japanese: '日本語' },
+            },
+            ['english']
+        );
+
+        expect(wrapper.find('.arco-select').exists()).toBe(true);
+        wrapper.unmount();
+    });
+
     it('edits list entries', async () => {
         const wrapper = mountField({ type: 'AddList', name: 'Items', label: '列表' }, ['one']);
 

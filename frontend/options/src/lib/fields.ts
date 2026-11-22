@@ -68,6 +68,7 @@ export const normalizeValue = (field: SettingsField, value: unknown): unknown =>
     switch (field.type) {
         case 'Checkbox':
         case 'Tags':
+        case 'Autocomplete':
         case 'AddList':
         case 'Cascader':
         case 'Transfer':

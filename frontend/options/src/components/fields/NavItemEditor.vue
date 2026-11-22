@@ -2,11 +2,13 @@
 interface NavChild {
     label: string;
     url: string;
+    icon: string;
 }
 
 interface NavItem {
     label: string;
     url: string;
+    icon: string;
     children: NavChild[];
 }
 
@@ -22,15 +24,15 @@ const emit = defineEmits<{
 
 const patch = (value: Partial<NavItem>) => emit('update', { ...props.item, ...value });
 
-const update = (key: 'label' | 'url', value: unknown) => {
+const update = (key: 'label' | 'url' | 'icon', value: unknown) => {
     patch({ [key]: String(value || '') });
 };
 
 const addChild = () => {
-    patch({ children: [...props.item.children, { label: '', url: '' }] });
+    patch({ children: [...props.item.children, { label: '', url: '', icon: '' }] });
 };
 
-const updateChild = (childIndex: number, key: 'label' | 'url', value: unknown) => {
+const updateChild = (childIndex: number, key: 'label' | 'url' | 'icon', value: unknown) => {
     patch({
         children: props.item.children.map((child, offset) => (
             offset === childIndex ? { ...child, [key]: String(value || '') } : child
@@ -58,6 +60,12 @@ const removeChild = (childIndex: number) => {
                 placeholder="/about 或 https://example.com"
                 @update:model-value="update('url', $event)"
             />
+            <a-input
+                :model-value="item.icon"
+                :aria-label="'导航图标 ' + (index + 1)"
+                placeholder="图标名，如 home / file-text"
+                @update:model-value="update('icon', $event)"
+            />
             <a-button size="small" status="danger" @click="emit('remove')">删除</a-button>
         </div>
         <div v-if="item.children.length" class="nav-children">
@@ -73,6 +81,12 @@ const removeChild = (childIndex: number) => {
                     :aria-label="'二级导航链接 ' + (index + 1) + '-' + (childIndex + 1)"
                     placeholder="/archive"
                     @update:model-value="updateChild(childIndex, 'url', $event)"
+                />
+                <a-input
+                    :model-value="child.icon"
+                    :aria-label="'二级导航图标 ' + (index + 1) + '-' + (childIndex + 1)"
+                    placeholder="图标名"
+                    @update:model-value="updateChild(childIndex, 'icon', $event)"
                 />
                 <a-button size="mini" status="danger" @click="removeChild(childIndex)">移除</a-button>
             </div>
@@ -97,7 +111,7 @@ const removeChild = (childIndex: number) => {
 }
 .nav-main {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) auto;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.3fr) minmax(0, 0.8fr) auto;
     gap: 8px;
     align-items: center;
 }
@@ -109,7 +123,7 @@ const removeChild = (childIndex: number) => {
 }
 .nav-child {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) auto;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.1fr) minmax(0, 0.7fr) auto;
     gap: 8px;
     align-items: center;
 }

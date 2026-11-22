@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { mediaEnabled } from '../lib/fields';
 import AccordionField from './fields/AccordionField.vue';
+import AutocompleteField from './fields/AutocompleteField.vue';
 import BlocksField from './fields/BlocksField.vue';
 import ListField from './fields/ListField.vue';
 import MediaField from './fields/MediaField.vue';
@@ -227,6 +228,12 @@ const focus = () => {
             />
             <TagsField
                 v-else-if="type === 'Tags'"
+                :field="field"
+                :model-value="modelValue"
+                @update:model-value="update"
+            />
+            <AutocompleteField
+                v-else-if="type === 'Autocomplete'"
                 :field="field"
                 :model-value="modelValue"
                 @update:model-value="update"

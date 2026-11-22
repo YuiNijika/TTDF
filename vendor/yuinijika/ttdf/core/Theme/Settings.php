@@ -782,6 +782,31 @@ final class Settings
             return self::normalizeSlides($value);
         }
 
+        if ($type === 'Autocomplete') {
+            $items = is_string($value)
+                ? explode(',', $value)
+                : (is_array($value) ? $value : []);
+            $limit = isset($field['maxItems']) && is_numeric($field['maxItems'])
+                ? max(1, min(64, (int) $field['maxItems']))
+                : 64;
+            $result = [];
+            foreach ($items as $item) {
+                if (!is_scalar($item)) {
+                    continue;
+                }
+                $item = trim((string) $item);
+                if ($item === '' || in_array($item, $result, true)) {
+                    continue;
+                }
+                $result[] = $item;
+                if (count($result) >= $limit) {
+                    break;
+                }
+            }
+
+            return $result;
+        }
+
         if (in_array($type, ['Checkbox', 'Tags', 'AddList', 'Cascader', 'Transfer'], true)) {
             if (is_string($value)) {
                 return array_values(array_filter(array_map('trim', explode(',', $value))));
@@ -817,7 +842,7 @@ final class Settings
     }
 
     /**
-     * @return list<array{label: string, url: string, children: list<array{label: string, url: string}>}>
+     * @return list<array{label: string, url: string, icon: string, children: list<array{label: string, url: string, icon: string}>}>
      */
     private static function normalizeNav(mixed $value): array
     {
@@ -852,13 +877,33 @@ final class Settings
                     continue;
                 }
 
-                $children[] = ['label' => $childLabel, 'url' => $childUrl];
+                $children[] = [
+                    'label' => $childLabel,
+                    'url' => $childUrl,
+                    'icon' => self::navIcon($child['icon'] ?? ''),
+                ];
             }
 
-            $items[] = ['label' => $label, 'url' => $url, 'children' => $children];
+            $items[] = [
+                'label' => $label,
+                'url' => $url,
+                'icon' => self::navIcon($item['icon'] ?? ''),
+                'children' => $children,
+            ];
         }
 
         return $items;
+    }
+
+    private static function navIcon(mixed $value): string
+    {
+        if (!is_scalar($value)) {
+            return '';
+        }
+
+        $icon = strtolower(trim((string) $value));
+
+        return preg_match('/^[a-z0-9-]{1,48}$/D', $icon) === 1 ? $icon : '';
     }
 
     /**

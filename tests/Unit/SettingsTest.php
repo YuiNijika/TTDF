@@ -283,14 +283,16 @@ final class SettingsTest extends TestCase
                 [
                     'label' => ' 首页 ',
                     'url' => '/',
+                    'icon' => ' Home ',
                     'children' => [
-                        ['label' => '归档', 'url' => '/archive'],
+                        ['label' => '归档', 'url' => '/archive', 'icon' => 'file-text'],
                         ['label' => '坏链接', 'url' => 'javascript:alert(1)'],
                     ],
                 ],
                 [
                     'label' => '外部',
                     'url' => 'https://example.test/path',
+                    'icon' => 'bad icon',
                     'children' => [['label' => '子项', 'url' => '/child']],
                 ],
                 ['label' => '无效', 'url' => 'mailto:test@example.test'],
@@ -300,14 +302,45 @@ final class SettingsTest extends TestCase
             [
                 'label' => '首页',
                 'url' => '/',
-                'children' => [['label' => '归档', 'url' => '/archive']],
+                'icon' => 'home',
+                'children' => [[
+                    'label' => '归档',
+                    'url' => '/archive',
+                    'icon' => 'file-text',
+                ]],
             ],
             [
                 'label' => '外部',
                 'url' => 'https://example.test/path',
-                'children' => [['label' => '子项', 'url' => '/child']],
+                'icon' => '',
+                'children' => [[
+                    'label' => '子项',
+                    'url' => '/child',
+                    'icon' => '',
+                ]],
             ],
         ], $result);
+    }
+
+    public function testAutocompleteFieldNormalizesToUniqueStrings(): void
+    {
+        $field = ['type' => 'Autocomplete'];
+
+        self::assertSame(
+            ['english', 'japanese', 'custom-code'],
+            Settings::normalizeValue($field, [
+                ' english ',
+                'japanese',
+                'english',
+                '',
+                ['nested'],
+                'custom-code',
+            ])
+        );
+        self::assertSame(
+            ['english', 'japanese'],
+            Settings::normalizeValue($field, 'english,japanese,english')
+        );
     }
 
     public function testSlidesFieldDropsUnsafeImagesAndKeepsCopy(): void

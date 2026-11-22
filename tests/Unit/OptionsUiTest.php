@@ -15,6 +15,7 @@ final class OptionsUiTest extends TestCase
             '/src/components/SettingsApp.vue',
             '/src/components/FormField.vue',
             '/src/components/MediaLibrary.vue',
+            '/src/components/fields/AutocompleteField.vue',
             '/src/components/fields/BlocksField.vue',
             '/src/components/fields/ListField.vue',
             '/src/components/fields/MediaField.vue',
