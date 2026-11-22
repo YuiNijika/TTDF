@@ -23,6 +23,7 @@ const emit = defineEmits<{ (event: 'update:modelValue', value: BlockEntry[]): vo
 const newBlock = ref('');
 const dragIndex = ref(-1);
 const openBlocks = ref<Record<string, boolean>>({});
+const itemLabel = computed(() => String(props.field.item_label || '区块'));
 
 const variantsOf = (variants: unknown): Record<string, string> => {
     const result: Record<string, string> = {};
@@ -157,13 +158,15 @@ const rows = computed(() => {
         counts[entry.name] = (counts[entry.name] || 0) + 1;
         const key = entry.name + '-' + counts[entry.name];
         const variants = meta?.variants ?? {};
+        const customLabel = typeof entry.data.label === 'string' ? entry.data.label.trim() : '';
 
         return {
             key,
             ...entry,
             variant: entry.variant || Object.keys(variants)[0] || '',
             customized: Object.keys(entry.data).length > 0 || entry.variant !== '',
-            label: meta?.label ?? entry.name,
+            label: customLabel !== '' ? customLabel : (meta?.label ?? entry.name),
+            kind: customLabel !== '' ? (meta?.label ?? entry.name) : '',
             missing: meta === undefined,
             variants,
             fields: meta?.fields ?? [],
@@ -332,6 +335,7 @@ const onGripKeydown = (event: KeyboardEvent, index: number) => {
                     <span class="block-title">
                         <span class="block-name">{{ row.label }}</span>
                         <span v-if="row.missing" class="block-missing">未知名</span>
+                        <span v-else-if="row.kind" class="block-hint">{{ row.kind }}</span>
                         <span v-else-if="row.fields.length" class="block-hint">
                             {{ row.customized ? '已自定义' : '可自定义' }}
                         </span>
@@ -418,9 +422,13 @@ const onGripKeydown = (event: KeyboardEvent, index: number) => {
                 </div>
             </li>
         </ul>
-        <p v-else class="blocks-empty">还没有区块。先在下面添加一个，再按需调整顺序与内容。</p>
+        <p v-else class="blocks-empty">还没有{{ itemLabel }}。先在下面添加一个，再按需调整顺序与内容。</p>
         <div class="block-add">
-            <a-select v-model="newBlock" :aria-label="(field.label || '区块') + '：选择要添加的区块'" placeholder="选择区块…">
+            <a-select
+                v-model="newBlock"
+                :aria-label="(field.label || itemLabel) + '：选择要添加的' + itemLabel"
+                :placeholder="'选择' + itemLabel + '…'"
+            >
                 <a-option v-for="item in catalog" :key="item.value" :value="item.value">{{ item.label }}</a-option>
             </a-select>
             <a-button type="primary" size="small" @click="add">添加</a-button>
