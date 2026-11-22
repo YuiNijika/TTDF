@@ -7,7 +7,7 @@
 - **ttdf-framework**：指本仓库 `D:\Codes\TTDF` 本身，负责框架核心、autoloader、配置、路由、Hook、REST、设置表、测试、文档与发布。
 - **typecho-theme**：指使用 TTDF v5 构建的独立 Typecho 主题工程，例如包含自己的 `functions.php`、`app/pages/` 页面模板、`app/config/`、`app/router/`、`app/components/`、`app/support/` 和资源的主题。
 
-当前 `master` 是 v5 开发线，版本固定为 `5.0.7-next`；`v4` 分支已冻结，只用于旧主题与旧站点，不在 `master` 上恢复 v4 全局 API。
+当前 `master` 是 v5 开发线，版本固定为 `5.0.8-next`；`v4` 分支已冻结，只用于旧主题与旧站点，不在 `master` 上恢复 v4 全局 API。
 
 # 开发场景 Skill 读取
 
@@ -248,8 +248,8 @@ GET https://api.miomoe.cn/site/docs/page?path=ttdf/v5/index
 
 ## 发布
 
-- 版本号：`5.0.7-next`
-- 发布标签：`v5.0.7-next`
+- 版本号：`5.0.8-next`
+- 发布标签：`v5.0.8-next`
 - 发布前确认 `composer lint`、`composer analyse`、`composer test` 全绿
 - 主发布包只包含运行时主题文件：`app/`、`assets/`、`logs/.htaccess`、`logs/index.php`、`vendor/yuinijika/ttdf/core/`、`vendor/yuinijika/ttdf/static/`、`vendor/yuinijika/ttdf/bin/`、`functions.php`、`index.php`、`LICENSE` 与 `README.md`。
 - 主发布包不得包含 `frontend/`、`vite/`、`webpack/`、`tests/`、`vendor/composer/`、任意 `node_modules/` 与 `.tmp/`。

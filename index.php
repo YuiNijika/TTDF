@@ -10,7 +10,7 @@ declare(strict_types=1);
  *
  * @package TTDF Next
  * @author Yuinijika
- * @version 5.0.7-next
+ * @version 5.0.8-next
  * @link https://github.com/YuiNijika/TTDF
  */
 
