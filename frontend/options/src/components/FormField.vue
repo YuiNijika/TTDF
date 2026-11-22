@@ -4,6 +4,7 @@ import { mediaEnabled } from '../lib/fields';
 import AccordionField from './fields/AccordionField.vue';
 import AutocompleteField from './fields/AutocompleteField.vue';
 import BlocksField from './fields/BlocksField.vue';
+import IconPicker from './fields/IconPicker.vue';
 import ListField from './fields/ListField.vue';
 import MediaField from './fields/MediaField.vue';
 import NavField from './fields/NavField.vue';
@@ -236,6 +237,13 @@ const focus = () => {
                 v-else-if="type === 'Autocomplete'"
                 :field="field"
                 :model-value="modelValue"
+                @update:model-value="update"
+            />
+            <IconPicker
+                v-else-if="type === 'Icon'"
+                :model-value="modelValue as string"
+                :aria-label="field.label || field.name || '图标设置'"
+                :placeholder="field.placeholder || '选择图标'"
                 @update:model-value="update"
             />
             <a-cascader

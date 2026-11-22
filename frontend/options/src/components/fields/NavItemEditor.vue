@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import IconPicker from './IconPicker.vue';
+
 interface NavChild {
     label: string;
     url: string;
@@ -60,7 +62,7 @@ const removeChild = (childIndex: number) => {
                 placeholder="/about 或 https://example.com"
                 @update:model-value="update('url', $event)"
             />
-            <a-input
+            <IconPicker
                 :model-value="item.icon"
                 :aria-label="'导航图标 ' + (index + 1)"
                 placeholder="图标名，如 home / file-text"
@@ -82,7 +84,7 @@ const removeChild = (childIndex: number) => {
                     placeholder="/archive"
                     @update:model-value="updateChild(childIndex, 'url', $event)"
                 />
-                <a-input
+                <IconPicker
                     :model-value="child.icon"
                     :aria-label="'二级导航图标 ' + (index + 1) + '-' + (childIndex + 1)"
                     placeholder="图标名"
