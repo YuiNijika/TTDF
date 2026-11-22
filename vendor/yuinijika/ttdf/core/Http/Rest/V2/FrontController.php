@@ -594,14 +594,17 @@ final class FrontController
         $body = Payload::body();
         Payload::require($body, 'cid', 'text');
 
-        $comment = $this->comments->create([
+        $input = [
             'cid' => Payload::int($body, 'cid', 0, 1),
             'text' => Payload::string($body, 'text', '', 20000),
             'parent' => Payload::int($body, 'parent', 0, 0),
             'author' => Payload::string($body, 'author', '', 150),
             'mail' => Payload::string($body, 'mail', '', 150),
             'url' => Payload::string($body, 'url', '', 255),
-        ], Auth::identity());
+            'captcha' => is_array($body['captcha'] ?? null) ? $body['captcha'] : null,
+        ];
+
+        $comment = $this->comments->create($input, Auth::identity());
 
         Response::success($comment, [], 201);
     }

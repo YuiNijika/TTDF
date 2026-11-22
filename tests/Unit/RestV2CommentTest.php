@@ -355,6 +355,31 @@ final class RestV2CommentTest extends V2ApiTestCase
         self::assertSame('waiting', $enriched['data']['status']);
     }
 
+    public function testCommentHooksReceiveTheCaptchaPayload(): void
+    {
+        $captcha = null;
+        Hooks::addFilter(
+            'rest.v2.comment.can_create',
+            static function (bool $allowed, array $content, array $input) use (&$captcha): bool {
+                $captcha = $input['captcha'] ?? null;
+
+                return $allowed;
+            }
+        );
+
+        $payload = $this->dispatch('comments', 'POST', [
+            'cid' => 10,
+            'text' => 'Captcha-aware hook',
+            'author' => 'Guest',
+            'mail' => 'guest@example.test',
+            'captcha' => ['id' => 'hook-test', 'answer' => '7'],
+        ])->payload();
+
+        $this->assertSuccess(201, $payload);
+        self::assertSame(['id' => 'hook-test', 'answer' => '7'], $captcha);
+        Hooks::reset();
+    }
+
     public function testReplyInsideTheLimitIsAccepted(): void
     {
         $this->overrideSiteOptions(['commentsThreaded' => true, 'commentsMaxNestingLevels' => 5]);
