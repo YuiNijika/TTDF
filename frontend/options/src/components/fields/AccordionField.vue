@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { groupFields } from '../../lib/fields';
 import type { FieldGroup, SettingsField } from '../../lib/fields';
 import FormField from '../FormField.vue';
@@ -24,6 +24,13 @@ const props = withDefaults(
 );
 
 const parentName = computed(() => String(props.field.name || 'accordion-' + props.index));
+
+const activeKeys = ref<string[]>([]);
+
+const onCollapseChange = (key: unknown, keys: unknown): void => {
+    const next = Array.isArray(keys) ? keys : Array.isArray(key) ? key : [key];
+    activeKeys.value = next.map((value) => String(value ?? '').trim()).filter(Boolean);
+};
 
 const emit = defineEmits<{
     (event: 'update:modelValue', value: Record<string, Record<string, unknown>>): void;
@@ -195,8 +202,9 @@ const commit = (channel: ChannelDefinition, name: string, value: unknown) => {
     <div class="accordion-field">
         <a-collapse
             class="channel-collapse"
-            :default-active-key="[]"
+            :active-key="activeKeys"
             expand-icon-position="right"
+            @change="onCollapseChange"
         >
             <a-collapse-item
                 v-for="row in rows"
@@ -219,6 +227,7 @@ const commit = (channel: ChannelDefinition, name: string, value: unknown) => {
                             <FormField
                                 v-for="(field, fieldIndex) in group.fields"
                                 :key="field.name || fieldIndex"
+                                v-memo="[field, field.name ? row.data[field.name] : undefined]"
                                 :field="field"
                                 :model-value="field.name ? row.data[field.name] : undefined"
                                 :index="fieldIndex"
@@ -229,6 +238,7 @@ const commit = (channel: ChannelDefinition, name: string, value: unknown) => {
                         </div>
                         <FormField
                             v-else
+                            v-memo="[group.field, group.field.name ? row.data[group.field.name] : undefined]"
                             :field="group.field"
                             :model-value="group.field.name ? row.data[group.field.name] : undefined"
                             :index="groupIndex"

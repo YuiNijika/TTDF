@@ -561,6 +561,7 @@ onMounted(() => void load());
                                     <FormField
                                         v-for="(field, fieldIndex) in group.fields"
                                         :key="field.name || 'field-' + fieldIndex"
+                                        v-memo="[field, field.name ? formData[field.name] : undefined]"
                                         :field="field"
                                         :model-value="field.name ? formData[field.name] : undefined"
                                         :components="components"
@@ -574,6 +575,7 @@ onMounted(() => void load());
                                 </div>
                                 <FormField
                                     v-else
+                                    v-memo="[group.field, group.field.name ? formData[group.field.name] : undefined]"
                                     :field="group.field"
                                     :model-value="group.field.name ? formData[group.field.name] : undefined"
                                     :components="components"
@@ -603,6 +605,7 @@ onMounted(() => void load());
                                             <FormField
                                                 v-for="(field, fieldIndex) in group.fields"
                                                 :key="field.name || 'field-' + fieldIndex"
+                                                v-memo="[field, field.name ? formData[field.name] : undefined]"
                                                 :field="field"
                                                 :model-value="field.name ? formData[field.name] : undefined"
                                                 :components="components"
@@ -616,6 +619,7 @@ onMounted(() => void load());
                                         </div>
                                         <FormField
                                             v-else
+                                            v-memo="[group.field, group.field.name ? formData[group.field.name] : undefined]"
                                             :field="group.field"
                                             :model-value="group.field.name ? formData[group.field.name] : undefined"
                                             :components="components"

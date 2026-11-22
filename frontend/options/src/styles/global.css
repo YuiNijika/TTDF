@@ -232,6 +232,25 @@ body .arco-modal {
     padding-top: 14px;
 }
 
+.html-block .ttdf-pay-notify {
+    padding: 10px 12px;
+    border: 1px solid #e4e4e7;
+    border-radius: 8px;
+    background: #fafafa;
+    color: #52525b;
+    font-size: 12px;
+    line-height: 1.7;
+}
+
+.html-block .ttdf-pay-notify code {
+    padding: 1px 6px;
+    border: 1px solid #e4e4e7;
+    border-radius: 4px;
+    background: #fff;
+    font-size: 12px;
+    word-break: break-all;
+}
+
 @media (max-width: 900px) {
     .settings-app {
         border-radius: 0;
