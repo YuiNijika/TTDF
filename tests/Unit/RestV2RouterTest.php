@@ -295,6 +295,28 @@ final class RestV2RouterTest extends V2ApiTestCase
         self::assertArrayNotHasKey('authCode', $payload['data']['user']);
     }
 
+    public function testLoginDecisionFilterCanBlockAValidAccountBeforeTokenIssue(): void
+    {
+        $filter = static fn (mixed $decision, array $user, array $body): array => [
+            'message' => 'Account is banned',
+            'status' => 403,
+        ];
+        Hooks::addFilter('rest.v2.login.decision', $filter);
+
+        try {
+            $payload = $this->dispatch('auth/login', 'POST', [
+                'name' => 'admin',
+                'password' => 'secret',
+            ])->payload();
+        } finally {
+            Hooks::removeFilter('rest.v2.login.decision', $filter);
+        }
+
+        self::assertSame(403, $payload['code']);
+        self::assertSame('Account is banned', $payload['message']);
+        self::assertArrayNotHasKey('__typecho_uid', \Typecho\Cookie::$values);
+    }
+
     public function testConfiguredTokenTtlDrivesIssuedTokens(): void
     {
         Config::load([

@@ -163,9 +163,14 @@ final class Users
         $password = (string) $input['password'];
         $group = (string) ($input['group'] ?? 'contributor');
         $screenName = (string) ($input['screenName'] ?? $name);
-        $url = (string) ($input['url'] ?? '');
+        $rawUrl = trim((string) ($input['url'] ?? ''));
+        $url = Url::website($rawUrl);
 
         $this->assertGroup($group);
+
+        if ($rawUrl !== '' && $url === '') {
+            Response::error('Invalid user homepage', 422, ['url' => '个人主页地址必须使用 http 或 https']);
+        }
 
         if (preg_match('/^[A-Za-z0-9_-]{1,32}$/', $name) !== 1) {
             Response::error('Invalid user name', 422, ['name' => '只允许字母、数字、下划线与短横线，最多 32 个字符']);
@@ -305,7 +310,12 @@ final class Users
         }
 
         if (array_key_exists('url', $input)) {
-            $rows['url'] = (string) $input['url'];
+            $rawUrl = trim((string) $input['url']);
+            $url = Url::website($rawUrl);
+            if ($rawUrl !== '' && $url === '') {
+                Response::error('Invalid user homepage', 422, ['url' => '个人主页地址必须使用 http 或 https']);
+            }
+            $rows['url'] = $url;
         }
 
         if (array_key_exists('group', $input)) {
@@ -374,7 +384,7 @@ final class Users
             'name' => (string) ($row['name'] ?? ''),
             'screenName' => (string) ($row['screenName'] ?? ''),
             'mail' => $mail,
-            'url' => (string) ($row['url'] ?? ''),
+            'url' => Url::website($row['url'] ?? ''),
             'group' => (string) ($row['group'] ?? ''),
             'created' => $this->date($row['created'] ?? null),
             'activated' => $this->date($row['activated'] ?? null),
@@ -397,7 +407,7 @@ final class Users
             'uid' => (int) ($row['uid'] ?? 0),
             'name' => (string) ($row['name'] ?? ''),
             'screenName' => (string) ($row['screenName'] ?? ''),
-            'url' => (string) ($row['url'] ?? ''),
+            'url' => Url::website($row['url'] ?? ''),
             'group' => (string) ($row['group'] ?? ''),
             'created' => $this->date($row['created'] ?? null),
         ];

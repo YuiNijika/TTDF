@@ -167,19 +167,24 @@ final class PublicController
         foreach ($rows as $row) {
             $text = (string) ($row['text'] ?? '');
             $attachment = Attachment::metadata($text);
-            $items[] = [
+            $item = [
                 'cid' => (int) ($row['cid'] ?? 0),
-                'title' => (string) ($row['title'] ?? ''),
                 'parent' => (int) ($row['parent'] ?? 0),
-                'name' => $attachment['name'],
                 'url' => Attachment::url($text),
-                'size' => $attachment['size'],
                 'type' => $attachment['type'],
                 'mime' => $attachment['mime'],
                 'isImage' => $attachment['isImage'],
-                'created' => $this->date($row['created'] ?? null),
-                'modified' => $this->date($row['modified'] ?? null),
             ];
+
+            if ($authorId !== null) {
+                $item['title'] = (string) ($row['title'] ?? '');
+                $item['name'] = $attachment['name'];
+                $item['size'] = $attachment['size'];
+                $item['created'] = $this->date($row['created'] ?? null);
+                $item['modified'] = $this->date($row['modified'] ?? null);
+            }
+
+            $items[] = $item;
         }
 
         Response::success($items, $this->paginationMeta($page, $pageSize, $total));
@@ -323,11 +328,11 @@ final class PublicController
         }
 
         if ($parents === []) {
-            $select->where('parent = 0');
+            $select->where('cid = ?', 0);
             return;
         }
 
-        $select->where('(parent = 0 OR parent IN ?)', $parents);
+        $select->where('parent IN ?', $parents);
     }
 
     /**

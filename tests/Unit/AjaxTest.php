@@ -7,6 +7,7 @@ namespace TTDF\Tests\Unit;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use TTDF\Ajax\Endpoint;
+use TTDF\Hooks\Hooks;
 use TTDF\Http\Request;
 use TTDF\Http\Response;
 use TTDF\Http\ResponseException;
@@ -82,6 +83,34 @@ final class AjaxTest extends TestCase
 
         self::assertSame(401, $response->status());
         self::assertSame('Unauthorized', $response->payload()['message']);
+    }
+
+    public function testAuthorizeHookCanRejectBeforeTheHandlerRuns(): void
+    {
+        $ran = false;
+        Endpoint::register('guarded', static function () use (&$ran): array {
+            $ran = true;
+
+            return [];
+        }, [
+            'auth' => 'public',
+            'nonce' => false,
+            'same_origin' => false,
+        ]);
+        $guard = static function (string $action, array $data, string $auth): void {
+            Response::error('Blocked', 403);
+        };
+        Hooks::addAction('ajax.authorize', $guard);
+
+        try {
+            $_POST = ['action' => 'guarded'];
+            $response = $this->invoke();
+        } finally {
+            Hooks::removeAction('ajax.authorize', $guard);
+        }
+
+        self::assertSame(403, $response->status());
+        self::assertFalse($ran);
     }
 
     public function testAuthenticatedActionRequiresNonce(): void

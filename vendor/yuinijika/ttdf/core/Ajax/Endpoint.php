@@ -6,6 +6,7 @@ namespace TTDF\Ajax;
 
 use InvalidArgumentException;
 use TTDF\Compat\Typecho;
+use TTDF\Hooks\Hooks;
 use TTDF\Http\PayloadTooLargeException;
 use TTDF\Http\Request;
 use TTDF\Http\Response;
@@ -127,6 +128,7 @@ final class Endpoint
             }
 
             Guard::authorize($route);
+            Hooks::doAction('ajax.authorize', $action, $data, $route['auth']);
 
             $result = ($route['handler'])($data, $action);
             Response::success(is_array($result) ? $result : ['result' => $result]);

@@ -206,7 +206,7 @@ final class Auth
             'name' => (string) $user['name'],
             'screenName' => (string) $user['screenName'],
             'mail' => (string) $user['mail'],
-            'url' => (string) $user['url'],
+            'url' => Url::website($user['url'] ?? ''),
             'group' => (string) $user['group'],
             'authCode' => (string) $user['authCode'],
             'source' => $source,
@@ -223,7 +223,7 @@ final class Auth
             'uid' => (int) $identity['uid'],
             'name' => (string) $identity['name'],
             'screenName' => (string) $identity['screenName'],
-            'url' => (string) $identity['url'],
+            'url' => Url::website($identity['url'] ?? ''),
             'group' => (string) $identity['group'],
             'source' => (string) ($identity['source'] ?? ''),
         ];

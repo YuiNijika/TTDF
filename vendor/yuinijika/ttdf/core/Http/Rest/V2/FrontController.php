@@ -178,6 +178,14 @@ final class FrontController
             Response::error('Invalid credentials', 401);
         }
 
+        $decision = Hooks::applyFilters('rest.v2.login.decision', null, $user, $body);
+        if (is_array($decision)) {
+            Response::error(
+                (string) ($decision['message'] ?? 'Account is unavailable'),
+                (int) ($decision['status'] ?? 403)
+            );
+        }
+
         $token = Token::issue((int) $user['uid'], (string) $user['authCode'], $ttl ?: Token::DEFAULT_TTL);
         Auth::startCookieSession($user, $ttl > 0 ? $ttl : 0);
 
@@ -220,6 +228,7 @@ final class FrontController
             'mail' => $mail,
             'password' => $password,
             'code' => Payload::string($body, 'code', '', 12),
+            'captcha' => is_array($body['captcha'] ?? null) ? $body['captcha'] : null,
         ];
 
         $allowed = Hooks::applyFilters('rest.v2.register.can_register', true, $input);
@@ -490,8 +499,8 @@ final class FrontController
             }
         }
 
-        if (isset($input['url']) && $input['url'] !== '' && filter_var($input['url'], FILTER_VALIDATE_URL) === false) {
-            Response::error('Invalid request body', 422, ['url' => '个人主页地址格式错误']);
+        if (isset($input['url']) && $input['url'] !== '' && Url::website($input['url']) === '') {
+            Response::error('Invalid request body', 422, ['url' => '个人主页地址必须使用 http 或 https']);
         }
 
         $mailChanged = false;

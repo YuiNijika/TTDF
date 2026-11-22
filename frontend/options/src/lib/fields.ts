@@ -83,6 +83,10 @@ export const normalizeValue = (field: SettingsField, value: unknown): unknown =>
             return current && typeof current === 'object' && !Array.isArray(current)
                 ? { ...(current as Record<string, unknown>) }
                 : {};
+        case 'Accordion':
+            return current && typeof current === 'object' && !Array.isArray(current)
+                ? { ...(current as Record<string, unknown>) }
+                : {};
         case 'Blocks': {
             const fallback = field.value !== undefined ? field.value : field.default;
             if (

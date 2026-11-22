@@ -580,6 +580,19 @@ final class Settings
      */
     private static function normalizeBlockData(mixed $declared, array $values): array
     {
+        return self::normalizeNestedData($declared, $values, ['Blocks', 'Html']);
+    }
+
+    /**
+     * Normalize nested field data used by Blocks and Accordion settings.
+     *
+     * @param mixed $declared
+     * @param array<string, mixed> $values
+     * @param list<string> $blockedTypes
+     * @return array<string, mixed>
+     */
+    private static function normalizeNestedData(mixed $declared, array $values, array $blockedTypes): array
+    {
         if (!is_array($declared) || $values === []) {
             return [];
         }
@@ -603,7 +616,7 @@ final class Settings
             }
 
             $type = (string) ($field['type'] ?? 'Text');
-            if (in_array($type, ['Blocks', 'Html'], true)) {
+            if (in_array($type, $blockedTypes, true)) {
                 continue;
             }
 
@@ -619,6 +632,109 @@ final class Settings
         }
 
         return $data;
+    }
+
+    /**
+     * Normalize an accordion field into a channel map.
+     *
+     * Each declared option renders as one collapsible channel. Values may be
+     * stored as an associative map or as a list of `{name, data}` entries so
+     * clients can opt into the clearer list representation without losing
+     * compatibility with the canonical object form.
+     *
+     * @param array<string, mixed> $field
+     * @return array<string, array<string, mixed>>
+     */
+    private static function normalizeAccordion(mixed $value, array $field): array
+    {
+        $catalog = self::accordionCatalog($field);
+        if ($catalog === []) {
+            return [];
+        }
+
+        $input = self::accordionInput($value);
+        $channels = [];
+
+        foreach ($catalog as $name => $definition) {
+            if (!array_key_exists($name, $input)) {
+                continue;
+            }
+
+            $data = self::normalizeNestedData(
+                $definition['fields'] ?? [],
+                $input[$name],
+                ['Blocks', 'Accordion', 'Html']
+            );
+            if ($data !== []) {
+                $channels[$name] = $data;
+            }
+        }
+
+        return $channels;
+    }
+
+    /**
+     * @param array<string, mixed> $field
+     * @return array<string, array<string, mixed>>
+     */
+    private static function accordionCatalog(array $field): array
+    {
+        $options = $field['options'] ?? [];
+        if (!is_array($options)) {
+            return [];
+        }
+
+        $catalog = [];
+        foreach ($options as $key => $definition) {
+            $name = is_string($key) ? $key : '';
+            if ($name === '' && is_array($definition)) {
+                $name = trim((string) ($definition['name'] ?? ($definition['value'] ?? '')));
+            }
+            if (preg_match('/^[a-z][a-z0-9-]{0,63}$/D', $name) !== 1) {
+                continue;
+            }
+
+            $catalog[$name] = is_array($definition) ? $definition : ['label' => (string) $definition];
+        }
+
+        return $catalog;
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    private static function accordionInput(mixed $value): array
+    {
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $input = [];
+        if (array_is_list($value)) {
+            foreach ($value as $item) {
+                if (!is_array($item)) {
+                    continue;
+                }
+
+                $name = trim((string) ($item['name'] ?? ($item['channel'] ?? '')));
+                $data = isset($item['data']) && is_array($item['data'])
+                    ? $item['data']
+                    : (isset($item['fields']) && is_array($item['fields']) ? $item['fields'] : []);
+                if ($name !== '') {
+                    $input[$name] = $data;
+                }
+            }
+
+            return $input;
+        }
+
+        foreach ($value as $name => $data) {
+            if (is_string($name) && is_array($data)) {
+                $input[$name] = $data;
+            }
+        }
+
+        return $input;
     }
 
     /**
@@ -652,6 +768,10 @@ final class Settings
 
         if ($type === 'Blocks') {
             return self::normalizeBlocks($value, $field);
+        }
+
+        if ($type === 'Accordion') {
+            return self::normalizeAccordion($value, $field);
         }
 
         if ($type === 'Nav') {

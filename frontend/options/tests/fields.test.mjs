@@ -160,6 +160,46 @@ describe('TTDF field renderer', () => {
         wrapper.unmount();
     });
 
+    it('renders accordion channels collapsed and edits nested fields independently', async () => {
+        const wrapper = mountField(
+            {
+                type: 'Accordion',
+                name: 'Payment_Channels',
+                label: '付款方式',
+                options: {
+                    alipay: {
+                        label: '支付宝',
+                        fields: [
+                            { type: 'Switch', name: 'enabled', label: '启用' },
+                            { type: 'Text', name: 'gateway', label: '网关地址' },
+                        ],
+                    },
+                    wxpay: {
+                        label: '微信支付',
+                        fields: [
+                            { type: 'Switch', name: 'enabled', label: '启用' },
+                            { type: 'Text', name: 'gateway', label: '网关地址' },
+                        ],
+                    },
+                },
+            },
+            {}
+        );
+
+        expect(wrapper.findAll('.accordion-header')).toHaveLength(2);
+        expect(wrapper.findAll('.arco-collapse-item-active')).toHaveLength(0);
+        expect(wrapper.find('[data-testid="accordion-alipay"]').text()).toContain('未配置');
+
+        await wrapper
+            .find('[data-channel="alipay"] .ttdf-field[data-field-type="Text"] input')
+            .setValue('https://pay.test');
+
+        expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([
+            { alipay: { gateway: 'https://pay.test' } },
+        ]);
+        wrapper.unmount();
+    });
+
     it('renders media fields with a preview and empty state', async () => {
         const wrapper = mountField(
             { type: 'Text', name: 'Cover', label: '封面', media: true },

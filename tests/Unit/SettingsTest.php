@@ -344,6 +344,58 @@ final class SettingsTest extends TestCase
         ], $slides);
     }
 
+    public function testAccordionFieldKeepsEnabledChannelsAndDeclaredNestedFields(): void
+    {
+        $field = [
+            'type' => 'Accordion',
+            'name' => 'Payment_Channels',
+            'options' => [
+                'alipay' => [
+                    'label' => 'Alipay',
+                    'fields' => [
+                        ['type' => 'Switch', 'name' => 'enabled'],
+                        ['type' => 'Text', 'name' => 'gateway'],
+                        ['type' => 'Number', 'name' => 'sort'],
+                    ],
+                ],
+                'wechat' => [
+                    'label' => 'WeChat',
+                    'fields' => [
+                        ['type' => 'Switch', 'name' => 'enabled'],
+                        ['type' => 'Text', 'name' => 'gateway'],
+                    ],
+                ],
+            ],
+        ];
+
+        $result = Settings::normalizeValue($field, [
+            'alipay' => [
+                'enabled' => 'true',
+                'gateway' => ' https://pay.test ',
+                'sort' => '4',
+                'unknown' => 'drop',
+            ],
+            'wechat' => ['enabled' => false],
+            'unknown' => ['enabled' => true],
+        ]);
+
+        self::assertSame([
+            'alipay' => [
+                'enabled' => true,
+                'gateway' => 'https://pay.test',
+                'sort' => 4,
+            ],
+            'wechat' => ['enabled' => false],
+        ], $result);
+        self::assertSame([], Settings::normalizeValue($field, 'invalid'));
+        self::assertSame([
+            'alipay' => ['gateway' => 'https://pay.test'],
+        ], Settings::normalizeValue($field, [
+            ['name' => 'alipay', 'data' => ['gateway' => 'https://pay.test']],
+            ['name' => 'unknown', 'data' => ['gateway' => 'https://bad.test']],
+        ]));
+    }
+
     public function testSaveWritesOneJsonDocumentAndCreatesBackups(): void
     {
         $store = new InMemoryOptionsStore();

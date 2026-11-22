@@ -273,11 +273,11 @@ final class PublicControllerTest extends TestCase
             }
 
             if (in_array('COUNT(*) AS num', $query->fields, true)) {
-                return [['num' => 3]];
+                return [['num' => 2]];
             }
 
             if ($query->table === 'table.contents' && in_array('title', $query->fields, true)) {
-                return [
+                $rows = [
                     [
                         'cid' => 10,
                         'title' => 'photo',
@@ -303,6 +303,21 @@ final class PublicControllerTest extends TestCase
                         'modified' => 1_700_000_000,
                     ],
                 ];
+
+                foreach ($query->wheres as $where) {
+                    if ($where['condition'] === 'parent IN ?') {
+                        $visible = $where['values'][0] ?? [];
+                        return array_values(array_filter(
+                            $rows,
+                            static fn (array $row): bool => in_array((int) $row['parent'], $visible, true)
+                        ));
+                    }
+                }
+
+                return array_values(array_filter(
+                    $rows,
+                    static fn (array $row): bool => (int) $row['parent'] === 0
+                ));
             }
 
             return [];
@@ -310,20 +325,22 @@ final class PublicControllerTest extends TestCase
 
         $payload = $this->capture(static fn () => (new PublicController())->attachments())->payload();
 
-        self::assertSame(3, $payload['meta']['total']);
-        self::assertCount(3, $payload['data']);
+        self::assertSame(2, $payload['meta']['total']);
+        self::assertCount(2, $payload['data']);
         self::assertTrue($payload['data'][0]['isImage']);
         self::assertSame('https://example.test/usr/uploads/photo.jpg', $payload['data'][0]['url']);
+        self::assertArrayNotHasKey('name', $payload['data'][0]);
+        self::assertArrayNotHasKey('title', $payload['data'][0]);
         self::assertFalse($payload['data'][1]['isImage']);
-        self::assertSame(0, $payload['data'][2]['parent']);
+        self::assertSame(2, $payload['data'][1]['parent']);
 
         $query = $this->findQuery('table.contents', 'title');
         $visibility = $this->findWhere($query, 'parent IN ?');
-        self::assertSame('(parent = 0 OR parent IN ?)', $visibility['condition']);
+        self::assertSame('parent IN ?', $visibility['condition']);
         self::assertSame([[1, 2]], $visibility['values']);
     }
 
-    public function testAttachmentsFallBackToUnattachedWhenNoParentIsVisible(): void
+    public function testAttachmentsReturnNoRowsWhenNoParentIsVisible(): void
     {
         Db::$fetcher = static function (Query $query): array {
             if (in_array('COUNT(*) AS num', $query->fields, true)) {
@@ -336,7 +353,7 @@ final class PublicControllerTest extends TestCase
         $this->capture(static fn () => (new PublicController())->attachments());
 
         $query = $this->findQuery('table.contents', 'title');
-        self::assertCondition($query, 'parent = 0', []);
+        self::assertCondition($query, 'cid = ?', [0]);
     }
 
     /**

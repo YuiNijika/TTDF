@@ -10,6 +10,42 @@ require_once __DIR__ . '/V2ApiTestCase.php';
 
 final class RestV2CommentTest extends V2ApiTestCase
 {
+    public function testGuestHomepageRejectsExecutableSchemes(): void
+    {
+        $payload = $this->dispatch('comments', 'POST', [
+            'cid' => 10,
+            'text' => 'Dangerous homepage',
+            'author' => 'Guest',
+            'mail' => 'guest@example.test',
+            'url' => 'javascript://example.test/%0Aalert(1)',
+        ])->payload();
+
+        self::assertSame(422, $payload['code']);
+        self::assertSame(['url' => '个人主页地址格式错误'], $payload['errors']);
+        self::assertSame(0, count(V2FakeDb::rows('table.comments')));
+    }
+
+    public function testSignedInHomepageIsSanitizedBeforeItIsStored(): void
+    {
+        $tables = V2FakeDb::tables();
+        foreach ($tables['table.users'] as $index => $row) {
+            if ((int) ($row['uid'] ?? 0) === 3) {
+                $tables['table.users'][$index]['url'] = 'javascript://example.test/%0Aalert(1)';
+            }
+        }
+        V2FakeDb::install($tables);
+        $this->signInWithCookie(3);
+
+        $payload = $this->dispatch('comments', 'POST', [
+            'cid' => 10,
+            'text' => 'Safe comment',
+        ], ['Origin' => 'https://example.test'])->payload();
+
+        $this->assertSuccess(201, $payload);
+        self::assertSame('', V2FakeDb::row('table.comments', 1)['url']);
+        self::assertSame('', $payload['data']['url']);
+    }
+
     public function testAnonymousCommentIsPublishedWhenNothingHoldsItBack(): void
     {
         $payload = $this->dispatch('comments', 'POST', [

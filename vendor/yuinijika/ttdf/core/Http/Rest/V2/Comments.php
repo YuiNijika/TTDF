@@ -85,7 +85,7 @@ final class Comments
         if ($identity !== null) {
             $comment['author'] = (string) $identity['screenName'];
             $comment['mail'] = (string) $identity['mail'];
-            $comment['url'] = (string) $identity['url'];
+            $comment['url'] = Url::website($identity['url'] ?? '');
             $comment['authorId'] = (int) $identity['uid'];
         } else {
             $author = is_scalar($input['author'] ?? null) ? trim((string) $input['author']) : '';
@@ -484,11 +484,11 @@ final class Comments
             return '';
         }
 
-        if (mb_strlen($url) > 255 || filter_var($url, FILTER_VALIDATE_URL) === false) {
+        if (Url::website($url) === '') {
             Response::error('Invalid request body', 422, ['url' => '个人主页地址格式错误']);
         }
 
-        return $url;
+        return Url::website($url);
     }
 
     private function assertInterval(): void
@@ -559,7 +559,7 @@ final class Comments
             'authorId' => (int) ($comment['authorId'] ?? 0),
             'ownerId' => (int) ($comment['ownerId'] ?? 0),
             'mail' => (string) ($comment['mail'] ?? ''),
-            'url' => (string) ($comment['url'] ?? ''),
+            'url' => Url::website($comment['url'] ?? ''),
             'ip' => (string) ($comment['ip'] ?? ''),
             'agent' => mb_substr((string) ($comment['agent'] ?? ''), 0, 511),
             'text' => (string) ($comment['text'] ?? ''),
@@ -591,14 +591,7 @@ final class Comments
 
     private function safeUrl(string $url): string
     {
-        $url = trim($url);
-        if ($url === '') {
-            return '';
-        }
-
-        $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
-
-        return $scheme === '' || in_array($scheme, ['http', 'https', 'mailto'], true) ? $url : '';
+        return Url::link($url, 255);
     }
 
     private function options(string $name, mixed $default = false): mixed

@@ -643,7 +643,7 @@ final class RestV2ContentTest extends V2ApiTestCase
         )->payload();
 
         self::assertSame(422, $payload['code']);
-        self::assertSame(['url' => '个人主页地址格式错误'], $payload['errors']);
+        self::assertSame(['url' => '个人主页地址必须使用 http 或 https'], $payload['errors']);
     }
 
     public function testProfileUpdatesRejectAnEmptyBody(): void

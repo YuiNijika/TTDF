@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { mediaEnabled } from '../lib/fields';
+import AccordionField from './fields/AccordionField.vue';
 import BlocksField from './fields/BlocksField.vue';
 import ListField from './fields/ListField.vue';
 import MediaField from './fields/MediaField.vue';
@@ -17,6 +18,7 @@ const props = withDefaults(
         slots?: Record<string, string> | string[];
         categories?: Record<string, string> | string[];
         index?: number;
+        scope?: string;
         apiUrl?: string;
         nonce?: string;
     }>(),
@@ -26,6 +28,7 @@ const props = withDefaults(
         slots: () => ({}),
         categories: () => ({}),
         index: 0,
+        scope: '',
         apiUrl: '',
         nonce: '',
     }
@@ -39,7 +42,13 @@ const emit = defineEmits<{
 const type = computed(() => String(props.field.type || 'Text'));
 const isMedia = computed(() => mediaEnabled(props.field));
 const isMediaList = computed(() => type.value === 'Textarea');
-const testId = computed(() => 'field-' + String(props.field.name || 'field-' + props.index).replace(/[^A-Za-z0-9_-]/g, '-'));
+const fieldKey = computed(() => {
+    const name = String(props.field.name || 'field-' + props.index);
+    const scope = String(props.scope || '').trim();
+
+    return (scope !== '' ? scope + '-' : '') + name;
+});
+const testId = computed(() => 'field-' + fieldKey.value.replace(/[^A-Za-z0-9_-]/g, '-'));
 const inputId = computed(() => 'ttdf-input-' + testId.value);
 const optionEntries = computed(() => Object.entries((props.field.options as Record<string, string>) || {}));
 const categoryOptions = computed(() => {
@@ -282,6 +291,14 @@ const focus = () => {
                 :api-url="apiUrl"
                 :nonce="nonce"
                 @update:model-value="update"
+            />
+            <AccordionField
+                v-else-if="type === 'Accordion'"
+                :field="field"
+                :model-value="modelValue"
+                :index="index"
+                @update:model-value="update"
+                @focus-field="emit('focus-field', $event)"
             />
             <ListField
                 v-else-if="type === 'AddList'"
