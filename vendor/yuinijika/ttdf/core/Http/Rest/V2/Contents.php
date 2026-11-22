@@ -7,6 +7,7 @@ namespace TTDF\Http\Rest\V2;
 use TTDF\Compat\Typecho;
 use TTDF\Framework;
 use TTDF\Http\Response;
+use TTDF\Http\Rest\Attachment;
 use TTDF\Http\Rest\AttachmentLinker;
 use TTDF\Theme\Fields;
 use Typecho\Db;
@@ -22,6 +23,8 @@ use Typecho\Db\Query;
  */
 final class Contents
 {
+    public const MARKDOWN_MARKER = '<!--markdown-->';
+
     public const TYPES = ['post', 'page'];
 
     public const STATUSES = ['publish', 'private', 'hidden', 'waiting'];
@@ -43,6 +46,7 @@ final class Contents
         'categories',
         'tags',
         'fields',
+        'attachments',
     ];
 
     private readonly Db $db;
@@ -63,7 +67,7 @@ final class Contents
 
         $row = $this->row($this->db->select('*')->from('table.contents')->where('cid = ?', $cid)->limit(1));
 
-        return $row === null ? null : $this->present($row);
+        return $row === null ? null : $this->present($row, true);
     }
 
     /**
@@ -108,13 +112,14 @@ final class Contents
         $status = $this->normalizeStatus($input['status'] ?? 'publish', $draft);
         $title = $this->title($input['title'] ?? '');
         $now = time();
+        $body = $this->body((string) ($input['text'] ?? ''));
 
         $rows = [
             'title' => $title,
             'slug' => $this->uniqueSlug($this->slug($input['slug'] ?? '', $title), 0),
             'created' => $this->timestamp($input['created'] ?? null, $now),
             'modified' => $now,
-            'text' => (string) ($input['text'] ?? ''),
+            'text' => self::MARKDOWN_MARKER . $body,
             'order' => (int) ($input['order'] ?? 0),
             'authorId' => $this->resolveAuthor($input['authorId'] ?? null, $authorId),
             'template' => (string) ($input['template'] ?? ''),
@@ -135,9 +140,17 @@ final class Contents
 
         $this->syncFields($cid, $input['fields'] ?? []);
 
+        $attachments = $this->linkAttachments(
+            $cid,
+            (int) $rows['authorId'],
+            $body,
+            array_values(is_array($input['attachments'] ?? null) ? $input['attachments'] : []),
+            $authorId
+        );
+        $this->storeBody($cid, $body, $attachments);
+
         if (!$draft) {
             $this->syncTerms($cid, $input['categories'] ?? [], $input['tags'] ?? []);
-            $this->linkAttachments($cid, (int) $rows['authorId'], (string) $rows['text']);
         }
 
         return (array) $this->find($cid);
@@ -147,7 +160,7 @@ final class Contents
      * @param array<string, mixed> $input
      * @return array<string, mixed>
      */
-    public function update(string $type, int $cid, array $input): array
+    public function update(string $type, int $cid, array $input, ?int $actorId = null): array
     {
         $this->assertType($type);
 
@@ -169,8 +182,12 @@ final class Contents
             $rows['slug'] = $this->uniqueSlug($this->slug((string) $input['slug'], (string) $title), $cid);
         }
 
+        $body = array_key_exists('text', $input)
+            ? $this->body((string) $input['text'])
+            : $this->body((string) $current['text']);
+
         if (array_key_exists('text', $input)) {
-            $rows['text'] = (string) $input['text'];
+            $rows['text'] = self::MARKDOWN_MARKER . $body;
         }
 
         if (array_key_exists('created', $input)) {
@@ -241,13 +258,14 @@ final class Contents
             $this->refreshCounts($this->relatedMids($cid, 'tag'), 'tag');
         }
 
-        if ($isPublished) {
-            $this->linkAttachments(
-                $cid,
-                (int) ($rows['authorId'] ?? $current['authorId']),
-                (string) ($rows['text'] ?? $current['text'])
-            );
-        }
+        $attachments = $this->linkAttachments(
+            $cid,
+            (int) ($rows['authorId'] ?? $current['authorId']),
+            $body,
+            array_values(is_array($input['attachments'] ?? null) ? $input['attachments'] : []),
+            $actorId
+        );
+        $this->storeBody($cid, $body, $attachments);
 
         return (array) $this->find($cid);
     }
@@ -263,6 +281,12 @@ final class Contents
 
         $mids = array_merge($this->relatedMids($cid, 'category'), $this->relatedMids($cid, 'tag'));
 
+        $this->db->query(
+            $this->db->update('table.contents')
+                ->rows(['parent' => 0, 'status' => 'publish'])
+                ->where('parent = ?', $cid)
+                ->where('type = ?', 'attachment')
+        );
         $this->db->query($this->db->delete('table.relationships')->where('cid = ?', $cid));
         $this->db->query($this->db->delete('table.fields')->where('cid = ?', $cid));
         $this->db->query($this->db->delete('table.comments')->where('cid = ?', $cid));
@@ -277,12 +301,20 @@ final class Contents
      * @param array<string, mixed> $row
      * @return array<string, mixed>
      */
-    public function present(array $row): array
+    public function present(array $row, bool $withAttachments = false): array
     {
         $cid = (int) ($row['cid'] ?? 0);
         $type = (string) ($row['type'] ?? 'post');
         $isDraft = str_ends_with($type, '_draft');
         $status = (string) ($row['status'] ?? 'publish');
+
+        $attachments = $withAttachments ? $this->attachmentsOf($cid) : [];
+        $text = $this->stripDefinitions(
+            $this->body((string) ($row['text'] ?? '')),
+            $withAttachments
+                ? array_map(static fn (array $item): int => (int) ($item['id'] ?? 0), $attachments)
+                : null
+        );
 
         return [
             'cid' => $cid,
@@ -303,10 +335,11 @@ final class Contents
             'allowComment' => (int) ($row['allowComment'] ?? 1) === 1,
             'allowPing' => (int) ($row['allowPing'] ?? 1) === 1,
             'allowFeed' => (int) ($row['allowFeed'] ?? 1) === 1,
-            'text' => (string) ($row['text'] ?? ''),
+            'text' => $text,
             'categories' => $this->termsOf($cid, 'category'),
             'tags' => $this->termsOf($cid, 'tag'),
             'fields' => $this->fieldsOf($cid),
+            'attachments' => $attachments,
         ];
     }
 
@@ -458,13 +491,164 @@ final class Contents
         }
     }
 
-    private function linkAttachments(int $cid, int $authorId, string $text): void
-    {
+    /**
+     * @param list<mixed> $attachmentIds
+     * @return list<array<string, mixed>>
+     */
+    private function linkAttachments(
+        int $cid,
+        int $authorId,
+        string $text,
+        array $attachmentIds,
+        ?int $actorId = null
+    ): array {
         try {
-            (new AttachmentLinker($this->db))->link($cid, $authorId, $text);
+            return (new AttachmentLinker($this->db))->link(
+                $cid,
+                $authorId,
+                $text,
+                $attachmentIds,
+                $actorId
+            );
         } catch (\Throwable $exception) {
             error_log('TTDF attachment linking failed: ' . $exception->getMessage());
+
+            return [];
         }
+    }
+
+    /**
+     * Persist the canonical Markdown body and the attachment definitions
+     * Typecho's renderer needs for `![name][cid]` images.
+     *
+     * @param list<array<string, mixed>> $attachments
+     */
+    private function storeBody(int $cid, string $body, array $attachments): void
+    {
+        $text = $this->withDefinitions($body, $attachments);
+
+        try {
+            $this->db->query(
+                $this->db->update('table.contents')
+                    ->rows(['text' => $text])
+                    ->where('cid = ?', $cid)
+            );
+        } catch (\Throwable $exception) {
+            error_log('TTDF markdown storage failed: ' . $exception->getMessage());
+        }
+    }
+
+    /**
+     * @param list<array<string, mixed>> $attachments
+     */
+    private function withDefinitions(string $body, array $attachments): string
+    {
+        $body = $this->body($body);
+        $definitions = [];
+        $ids = [];
+
+        foreach ($attachments as $attachment) {
+            $attachmentId = (int) ($attachment['id'] ?? 0);
+            $url = trim((string) ($attachment['url'] ?? ''));
+            if ($attachmentId <= 0 || $url === '') {
+                continue;
+            }
+
+            $ids[] = $attachmentId;
+            $definitions[] = '[' . $attachmentId . ']: ' . $url;
+        }
+
+        $body = $this->stripDefinitions($body, $ids);
+        if ($definitions === []) {
+            return self::MARKDOWN_MARKER . $body;
+        }
+
+        return self::MARKDOWN_MARKER
+            . rtrim($body)
+            . "\n\n"
+            . implode("\n", $definitions);
+    }
+
+    /**
+     * @param list<int>|null $ids null removes every numeric definition
+     */
+    private function stripDefinitions(string $text, ?array $ids = null): string
+    {
+        $allowed = $ids === null ? null : array_fill_keys(array_map('intval', $ids), true);
+
+        $text = rtrim($text);
+
+        while (
+            preg_match('/(?:\r?\n){1,2}[ \t]{0,3}\[(\d{1,12})\]:[^\n]*$/u', $text, $match) === 1
+        ) {
+            $id = (int) $match[1];
+            if ($allowed !== null && !isset($allowed[$id])) {
+                break;
+            }
+
+            $text = rtrim(substr($text, 0, -strlen($match[0])));
+        }
+
+        return $text;
+    }
+
+    private function body(string $text): string
+    {
+        return str_starts_with($text, self::MARKDOWN_MARKER)
+            ? substr($text, strlen(self::MARKDOWN_MARKER))
+            : $text;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function attachmentsOf(int $cid): array
+    {
+        if ($cid <= 0) {
+            return [];
+        }
+
+        $rows = $this->rows(
+            $this->db->select('cid', 'title', 'text', 'created', 'modified', 'authorId', 'order')
+                ->from('table.contents')
+                ->where('parent = ?', $cid)
+                ->where('type = ?', 'attachment')
+                ->where('status = ?', 'publish')
+                ->order('order', $this->sortAsc())
+                ->order('cid', $this->sortAsc())
+        );
+
+        $items = [];
+        foreach ($rows as $row) {
+            $attachmentId = (int) ($row['cid'] ?? 0);
+            $metadata = Attachment::metadata((string) ($row['text'] ?? ''));
+            $url = Attachment::url((string) ($row['text'] ?? ''));
+            if ($attachmentId <= 0 || !$metadata['isImage'] || $url === '') {
+                continue;
+            }
+
+            $items[] = [
+                'id' => $attachmentId,
+                'cid' => $attachmentId,
+                'title' => (string) ($row['title'] ?? ''),
+                'name' => $metadata['name'],
+                'url' => $url,
+                'path' => $metadata['path'],
+                'size' => $metadata['size'],
+                'type' => $metadata['type'],
+                'mime' => $metadata['mime'],
+                'created' => (int) ($row['created'] ?? 0),
+                'modified' => (int) ($row['modified'] ?? 0),
+                'authorId' => (int) ($row['authorId'] ?? 0),
+            ];
+        }
+
+        return $items;
+    }
+
+    private function sortAsc(): string
+    {
+        return defined('Typecho\\Db::SORT_ASC') ? (string) constant('Typecho\\Db::SORT_ASC') : 'ASC';
     }
 
     /**

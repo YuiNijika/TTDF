@@ -142,6 +142,139 @@ final class RestV2ContentTest extends V2ApiTestCase
         self::assertSame($expected, $linked);
     }
 
+    public function testCreatingAPostStoresMarkdownAndReturnsCleanEditorText(): void
+    {
+        $this->signInWithCookie(1);
+
+        $payload = $this->dispatch(
+            'admin/posts',
+            'POST',
+            ['title' => 'Markdown body', 'text' => '## Heading'],
+            ['Origin' => 'https://example.test']
+        )->payload();
+
+        $this->assertSuccess(201, $payload);
+        self::assertSame('## Heading', $payload['data']['text']);
+        self::assertSame([], $payload['data']['attachments']);
+
+        $stored = (string) V2FakeDb::row('table.contents', (int) $payload['data']['cid'])['text'];
+        self::assertStringStartsWith('<!--markdown-->', $stored);
+        self::assertStringNotContainsString('<!--markdown-->## Heading<!--markdown-->', $stored);
+    }
+
+    public function testCreatingAPostLinksAttachmentCidReferencesAndStoresDefinitions(): void
+    {
+        $this->signInWithCookie(1);
+
+        $tables = $this->tables();
+        $tables['table.contents'][] = $this->attachmentRow(30, 1, '/usr/uploads/cover.png');
+        V2FakeDb::install($tables);
+
+        $payload = $this->dispatch(
+            'admin/posts',
+            'POST',
+            [
+                'title' => 'Referenced media',
+                'text' => "Before\n\n![cover.png][30]\n\nAfter",
+                'attachments' => [30],
+            ],
+            ['Origin' => 'https://example.test']
+        )->payload();
+
+        $this->assertSuccess(201, $payload);
+        self::assertSame('Referenced media', $payload['data']['title']);
+        self::assertSame(
+            "Before\n\n![cover.png][30]\n\nAfter",
+            $payload['data']['text']
+        );
+        self::assertSame(30, $payload['data']['attachments'][0]['id']);
+        self::assertSame(30, $payload['data']['attachments'][0]['cid']);
+
+        $cid = (int) $payload['data']['cid'];
+        self::assertSame($cid, (int) V2FakeDb::row('table.contents', 30)['parent']);
+
+        $stored = (string) V2FakeDb::row('table.contents', $cid)['text'];
+        self::assertStringStartsWith('<!--markdown-->', $stored);
+        self::assertStringContainsString(
+            '[30]: https://example.test/usr/uploads/cover.png',
+            $stored
+        );
+    }
+
+    public function testUpdatingAPostDetachesRemovedAttachmentReferences(): void
+    {
+        $this->signInWithCookie(1);
+
+        $tables = $this->tables();
+        $tables['table.contents'][] = $this->attachmentRow(30, 1, '/usr/uploads/cover.png');
+        V2FakeDb::install($tables);
+
+        $created = $this->dispatch(
+            'admin/posts',
+            'POST',
+            [
+                'title' => 'Detach media',
+                'text' => '![cover.png][30]',
+                'attachments' => [30],
+            ],
+            ['Origin' => 'https://example.test']
+        )->payload();
+        $this->assertSuccess(201, $created);
+
+        $payload = $this->dispatch(
+            'admin/posts/' . (int) $created['data']['cid'],
+            'PATCH',
+            ['text' => 'Body without images', 'attachments' => []],
+            ['Origin' => 'https://example.test']
+        )->payload();
+
+        $this->assertSuccess(200, $payload);
+        self::assertSame('Body without images', $payload['data']['text']);
+        self::assertSame([], $payload['data']['attachments']);
+        self::assertSame(0, (int) V2FakeDb::row('table.contents', 30)['parent']);
+    }
+
+    public function testAdminEditingAnotherAuthorsPostLinksOwnAttachments(): void
+    {
+        $this->signInWithCookie(1);
+
+        $tables = $this->tables();
+        $tables['table.contents'][] = $this->attachmentRow(32, 1, '/usr/uploads/admin-cover.png');
+        V2FakeDb::install($tables);
+
+        $created = $this->dispatch(
+            'admin/posts',
+            'POST',
+            [
+                'title' => 'Managed by an administrator',
+                'text' => 'Original body',
+                'authorId' => 2,
+            ],
+            ['Origin' => 'https://example.test']
+        )->payload();
+        $this->assertSuccess(201, $created);
+        self::assertSame(2, (int) $created['data']['authorId']);
+
+        $cid = (int) $created['data']['cid'];
+        $payload = $this->dispatch(
+            'admin/posts/' . $cid,
+            'PATCH',
+            [
+                'text' => "Before\n\n![admin-cover.png][32]\n\nAfter",
+                'attachments' => [32],
+            ],
+            ['Origin' => 'https://example.test']
+        )->payload();
+
+        $this->assertSuccess(200, $payload);
+        self::assertSame(32, $payload['data']['attachments'][0]['id']);
+        self::assertSame($cid, (int) V2FakeDb::row('table.contents', 32)['parent']);
+        self::assertStringContainsString(
+            '[32]: https://example.test/usr/uploads/admin-cover.png',
+            (string) V2FakeDb::row('table.contents', $cid)['text']
+        );
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -327,7 +460,36 @@ final class RestV2ContentTest extends V2ApiTestCase
 
         V2FakeDb::install([
             'table.users' => V2FakeDb::rows('table.users'),
-            'table.contents' => V2FakeDb::rows('table.contents'),
+            'table.contents' => array_merge(
+                V2FakeDb::rows('table.contents'),
+                [
+                    [
+                        'cid' => 14,
+                        'title' => 'cover.png',
+                        'slug' => 'media-14',
+                        'type' => 'attachment',
+                        'status' => 'publish',
+                        'created' => 1_700_003_000,
+                        'modified' => 1_700_003_000,
+                        'text' => json_encode([
+                            'name' => 'cover.png',
+                            'path' => '/usr/uploads/cover.png',
+                            'size' => 128,
+                            'type' => 'png',
+                            'mime' => 'image/png',
+                        ], JSON_THROW_ON_ERROR),
+                        'authorId' => 1,
+                        'commentsNum' => 0,
+                        'password' => '',
+                        'template' => '',
+                        'order' => 1,
+                        'allowComment' => 0,
+                        'allowPing' => 0,
+                        'allowFeed' => 0,
+                        'parent' => 10,
+                    ],
+                ]
+            ),
             'table.metas' => V2FakeDb::rows('table.metas'),
             'table.relationships' => V2FakeDb::rows('table.relationships'),
             'table.comments' => [
@@ -368,6 +530,7 @@ final class RestV2ContentTest extends V2ApiTestCase
         self::assertSame([], V2FakeDb::rows('table.relationships'));
         self::assertSame([], V2FakeDb::rows('table.fields'));
         self::assertSame([], V2FakeDb::rows('table.comments'));
+        self::assertSame(0, (int) V2FakeDb::row('table.contents', 14)['parent']);
     }
 
     public function testContentListingFiltersByType(): void

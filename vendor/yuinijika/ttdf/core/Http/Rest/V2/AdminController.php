@@ -104,9 +104,8 @@ final class AdminController
     public function updateContent(string $type, int $cid, array $identity): never
     {
         $body = Payload::body();
-        unset($identity);
 
-        Response::success($this->contents->update($type, $cid, $body));
+        Response::success($this->contents->update($type, $cid, $body, (int) $identity['uid']));
     }
 
     public function deleteContent(string $type, int $cid): never
