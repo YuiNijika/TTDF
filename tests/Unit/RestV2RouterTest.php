@@ -35,6 +35,24 @@ final class RestV2RouterTest extends V2ApiTestCase
         self::assertSame('ttdf/v2', $payload['data']['restPrefix']);
     }
 
+    public function testV2RemainsAvailableWhenV1IsDisabled(): void
+    {
+        Config::load([
+            'rest' => [
+                'enabled' => false,
+                'v1_prefix' => 'ttdf/v1',
+                'v2_enabled' => true,
+                'v2_prefix' => 'ttdf/v2',
+            ],
+        ]);
+        Options::reset();
+
+        $payload = $this->dispatch('site')->payload();
+
+        $this->assertSuccess(200, $payload);
+        self::assertSame('ttdf/v2', $payload['data']['restPrefix']);
+    }
+
     public function testAttachmentsRequireAuthentication(): void
     {
         $payload = $this->dispatch('attachments')->payload();

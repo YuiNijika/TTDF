@@ -19,10 +19,9 @@ use TTDF\Http\Rest\RouteMatch;
  * Router for the v2 API.
  *
  * v2 is a full API surface: sessions, front-end reads, comment writing and the
- * administration endpoints. It is mounted on its own prefix and has its own
- * child switch, while the public REST switch remains the master switch for
- * both API versions. Built-in routes always win over extension routes so a
- * theme cannot shadow `auth/login` or `admin/options`.
+ * administration endpoints. It is mounted on its own prefix and switch, so
+ * disabling v1 does not disable v2. Built-in routes always win over extension
+ * routes so a theme cannot shadow `auth/login` or `admin/options`.
  */
 final class Router
 {

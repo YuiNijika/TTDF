@@ -127,7 +127,7 @@ final class ThemePathsTest extends TestCase
         }
     }
 
-    public function testPublicRestSwitchMastersBothApiVersions(): void
+    public function testV1AndV2RestSwitchesAreIndependent(): void
     {
         Config::load([
             'rest' => [
@@ -139,7 +139,7 @@ final class ThemePathsTest extends TestCase
 
         try {
             self::assertFalse(ThemeConfig::restEnabled());
-            self::assertFalse(ThemeConfig::restV2Enabled());
+            self::assertTrue(ThemeConfig::restV2Enabled());
 
             Config::load([
                 'rest' => [
@@ -151,11 +151,18 @@ final class ThemePathsTest extends TestCase
             self::assertTrue(ThemeConfig::restEnabled());
             self::assertFalse(ThemeConfig::restV2Enabled());
 
+            Config::load([
+                'rest' => [
+                    'enabled' => false,
+                    'v2_enabled' => false,
+                ],
+            ]);
             $property = new \ReflectionProperty(Options::class, 'instance');
             $property->setValue(null, new Options(new InMemoryOptionsStore([
-                'Theme' => '{"RESTAPI_Switch":true,"RESTV2_Switch":true}',
+                'Theme' => '{"RESTAPI_Switch":false,"RESTV2_Switch":true}',
             ]), 'Theme'));
             ThemeConfig::reset();
+            self::assertFalse(ThemeConfig::restEnabled());
             self::assertTrue(ThemeConfig::restV2Enabled());
         } finally {
             Config::reset();

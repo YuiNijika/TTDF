@@ -156,8 +156,8 @@ return [
                         'type' => 'Switch',
                         'name' => 'RESTAPI_Switch',
                         'value' => false,
-                        'label' => '公开 REST API',
-                        'description' => '关闭后仅保留需要管理员登录与 nonce 的后台接口。',
+                        'label' => '只读 REST API（v1）',
+                        'description' => '控制 /ttdf/v1；关闭后仅保留需要管理员登录与 nonce 的 v1 后台接口，不影响独立的 v2 开关。',
                     ],
                     [
                         'type' => 'Textarea',
