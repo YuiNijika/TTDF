@@ -6,6 +6,7 @@ namespace TTDF;
 
 use RuntimeException;
 use TTDF\Ajax\Endpoint as AjaxEndpoint;
+use TTDF\Cache\Cache;
 use TTDF\Compat\Typecho as TypechoCompat;
 use TTDF\Config\Config;
 use TTDF\Config\ConfigLoader;
@@ -98,6 +99,7 @@ final class Framework
         self::$root = '';
         AjaxEndpoint::reset();
         ArchiveLayout::reset();
+        Cache::reset();
         FrontendAssets::reset();
         RuntimeConsole::reset();
         Hooks::reset();

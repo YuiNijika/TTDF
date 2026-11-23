@@ -199,6 +199,7 @@ return [
                     ],
                 ],
             ],
+            'cache' => \TTDF\Theme\CacheSettings::section(),
         ],
     ],
 ];
