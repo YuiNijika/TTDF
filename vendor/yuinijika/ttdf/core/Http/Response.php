@@ -40,19 +40,15 @@ final class Response
             throw new ResponseException($payload, $status);
         }
 
-        if (!headers_sent()) {
-            if (class_exists('Typecho\\Response')) {
-                \Typecho\Response::getInstance()->setStatus($status);
-            } else {
-                http_response_code($status);
-            }
-            header('Content-Type: application/json; charset=UTF-8');
-            header('X-Content-Type-Options: nosniff');
-            header('Cache-Control: no-store');
-        }
-
-        echo Json::encode($payload);
-        exit;
+        ResponseEmitter::send(
+            Json::encode($payload),
+            $status,
+            [
+                'Content-Type' => 'application/json; charset=UTF-8',
+                'X-Content-Type-Options' => 'nosniff',
+                'Cache-Control' => 'no-store',
+            ]
+        );
     }
 
     /**
@@ -130,15 +126,63 @@ final class Response
             throw new ResponseException([], $status);
         }
 
-        if (!headers_sent()) {
-            if (class_exists('Typecho\\Response')) {
-                \Typecho\Response::getInstance()->setStatus($status);
-            } else {
-                http_response_code($status);
-            }
-            header('Content-Length: 0');
+        ResponseEmitter::send('', $status, [
+            'Content-Length' => '0',
+            'Cache-Control' => 'no-store',
+        ]);
+    }
+
+    /**
+     * Emit a non-REST terminal response with a stable status and headers.
+     *
+     * @param array<string, string> $headers
+     */
+    public static function text(
+        string $body,
+        int $status = 200,
+        string $contentType = 'text/plain; charset=UTF-8',
+        array $headers = []
+    ): never {
+        $headers = ['Content-Type' => $contentType] + $headers;
+
+        if (self::$capture) {
+            throw new ResponseException([
+                'message' => 'Text response captured',
+                'contentType' => $contentType,
+                'body' => $body,
+            ], $status);
         }
 
-        exit;
+        ResponseEmitter::send($body, $status, $headers);
+    }
+
+    /**
+     * @param array<string, string> $headers
+     */
+    public static function redirect(
+        string $url,
+        int $status = 302,
+        array $headers = []
+    ): never {
+        $parts = parse_url($url);
+        $relative = str_starts_with($url, '/') && !str_starts_with($url, '//');
+        $absolute = is_array($parts)
+            && in_array(strtolower((string) ($parts['scheme'] ?? '')), ['http', 'https'], true)
+            && (string) ($parts['host'] ?? '') !== ''
+            && !isset($parts['user'])
+            && !isset($parts['pass']);
+
+        if (
+            $url === ''
+            || preg_match('/[\x00-\x20\x7f\\\\]/', $url) === 1
+            || (!$relative && !$absolute)
+        ) {
+            throw new \InvalidArgumentException('Invalid redirect URL');
+        }
+
+        self::text('', $status, 'text/plain; charset=UTF-8', [
+            'Location' => $url,
+            'Cache-Control' => 'no-store',
+        ] + $headers);
     }
 }

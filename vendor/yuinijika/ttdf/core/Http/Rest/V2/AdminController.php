@@ -63,13 +63,20 @@ final class AdminController
         Response::success($this->options->update($settings));
     }
 
-    public function contentList(): never
+    /**
+     * @param array<string, mixed> $identity
+     */
+    public function contentList(array $identity): never
     {
+        $authorId = self::isAdministrator($identity)
+            ? Request::queryInt('authorId', 0)
+            : (int) ($identity['uid'] ?? 0);
+
         $result = $this->contents->listing([
             'type' => Request::queryString('type'),
             'status' => Request::queryString('status'),
             'search' => Request::queryString('search'),
-            'authorId' => Request::queryInt('authorId', 0),
+            'authorId' => $authorId,
             'page' => Request::queryInt('page', 1),
             'pageSize' => Request::queryInt('pageSize', 20),
         ]);
@@ -77,8 +84,13 @@ final class AdminController
         Response::success($result['items'], self::meta($result['total']));
     }
 
-    public function content(int $cid): never
+    /**
+     * @param array<string, mixed> $identity
+     */
+    public function content(int $cid, array $identity): never
     {
+        self::assertCanManage($this->contents, $cid, $identity);
+
         $row = $this->contents->find($cid);
         if ($row === null) {
             Response::error('Content not found', 404);
@@ -94,6 +106,7 @@ final class AdminController
     {
         $body = Payload::body();
         Payload::require($body, 'title');
+        self::assertRequestedAuthor($body, $identity);
 
         Response::success($this->contents->create($type, $body, (int) $identity['uid']), [], 201);
     }
@@ -104,12 +117,19 @@ final class AdminController
     public function updateContent(string $type, int $cid, array $identity): never
     {
         $body = Payload::body();
+        self::assertCanManage($this->contents, $cid, $identity);
+        self::assertRequestedAuthor($body, $identity);
 
         Response::success($this->contents->update($type, $cid, $body, (int) $identity['uid']));
     }
 
-    public function deleteContent(string $type, int $cid): never
+    /**
+     * @param array<string, mixed> $identity
+     */
+    public function deleteContent(string $type, int $cid, array $identity): never
     {
+        self::assertCanManage($this->contents, $cid, $identity);
+
         $this->contents->delete($type, $cid);
         Response::success(['deleted' => $cid, 'type' => $type]);
     }
@@ -301,5 +321,54 @@ final class AdminController
             'total' => $total,
             'lastPage' => $total === 0 ? 0 : (int) ceil($total / $pageSize),
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $identity
+     */
+    private static function assertCanManage(
+        Contents $contents,
+        int $cid,
+        array $identity
+    ): void {
+        if (self::isAdministrator($identity)) {
+            return;
+        }
+
+        $row = $contents->find($cid);
+        if ($row === null) {
+            Response::error('Content not found', 404);
+        }
+
+        if ((int) ($row['authorId'] ?? 0) !== (int) ($identity['uid'] ?? 0)) {
+            Response::error('You can only manage your own content', 403);
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $body
+     * @param array<string, mixed> $identity
+     */
+    private static function assertRequestedAuthor(array $body, array $identity): void
+    {
+        if (
+            self::isAdministrator($identity)
+            || !array_key_exists('authorId', $body)
+        ) {
+            return;
+        }
+
+        $requested = is_scalar($body['authorId']) ? (int) $body['authorId'] : 0;
+        if ($requested > 0 && $requested !== (int) ($identity['uid'] ?? 0)) {
+            Response::error('You cannot assign this content to another author', 403);
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $identity
+     */
+    private static function isAdministrator(array $identity): bool
+    {
+        return (string) ($identity['group'] ?? '') === 'administrator';
     }
 }

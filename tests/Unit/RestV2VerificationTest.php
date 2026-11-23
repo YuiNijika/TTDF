@@ -12,6 +12,18 @@ require_once __DIR__ . '/V2ApiTestCase.php';
 
 final class RestV2VerificationTest extends V2ApiTestCase
 {
+    public function testVerificationCodeCanOnlyBeConsumedOnce(): void
+    {
+        $issued = VerificationCodes::issue('once@example.test', 'reset');
+
+        self::assertTrue(
+            VerificationCodes::verify('once@example.test', 'reset', $issued['code'])
+        );
+        self::assertFalse(
+            VerificationCodes::verify('once@example.test', 'reset', $issued['code'])
+        );
+    }
+
     public function testEmailCodeRequiresADeliveryHook(): void
     {
         $this->overrideSiteOptions(['allowRegister' => true]);

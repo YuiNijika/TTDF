@@ -92,8 +92,7 @@ final class VerificationCodes
 
         $hash = (string) ($record['hash'] ?? '');
         if ($code !== '' && $hash !== '' && password_verify($code, $hash)) {
-            self::clear($mail, $purpose);
-            return true;
+            return self::consume($name);
         }
 
         $record['attempts'] = $attempts + 1;
@@ -110,14 +109,22 @@ final class VerificationCodes
     {
         $name = self::key(self::normalizeMail($mail), self::purpose($purpose));
 
+        self::consume($name);
+    }
+
+    private static function consume(string $name): bool
+    {
         try {
-            Db::get()->query(
+            $deleted = (int) Db::get()->query(
                 Db::get()->delete('table.options')
                     ->where('name = ?', $name)
                     ->where('user = ?', 0)
             );
+
+            return $deleted > 0;
         } catch (Throwable) {
             // A missing or already consumed code needs no further cleanup.
+            return false;
         }
     }
 

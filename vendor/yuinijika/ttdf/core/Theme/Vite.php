@@ -224,7 +224,7 @@ final class Vite
             }
         }
 
-        $entryUrl = self::assetUrl($entryFile);
+        $entryUrl = self::entryUrl($entryFile);
         if ($entryUrl === null) {
             self::report('entry URL is invalid');
             return '';
@@ -254,6 +254,24 @@ final class Vite
     private static function assetUrl(string $file): ?string
     {
         return BuildManifest::assetUrl(self::outDir(), $file);
+    }
+
+    /**
+     * Hashed Vite entries must not carry a query string. Dynamic chunks import
+     * their shared entry chunk without one, and browsers treat the two module
+     * URLs as separate execution contexts otherwise. Stylesheets and preloads
+     * still receive the theme version query from Assets::url().
+     */
+    private static function entryUrl(string $file): ?string
+    {
+        $url = self::assetUrl($file);
+        if ($url === null) {
+            return null;
+        }
+
+        $withoutVersion = preg_replace('/\?v=[^#]*(?=#|$)/', '', $url, 1);
+
+        return is_string($withoutVersion) ? $withoutVersion : $url;
     }
 
     private static function outDir(): string

@@ -165,7 +165,7 @@ final class ViteTest extends TestCase
         );
         self::assertStringContainsString(
             '<script type="module" crossorigin '
-            . 'src="https://example.test/usr/themes/ttdf/assets/dist/main-abc.js?v=5.0.9-next"></script>',
+            . 'src="https://example.test/usr/themes/ttdf/assets/dist/main-abc.js"></script>',
             $html
         );
     }

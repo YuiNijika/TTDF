@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace TTDF\Tests\Unit;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use TTDF\Http\Response;
 use TTDF\Http\ResponseException;
@@ -51,6 +52,46 @@ final class ResponseTest extends TestCase
 
         self::assertSame(204, $exception->status());
         self::assertSame([], $exception->payload());
+    }
+
+    public function testTextResponseCapturesStatusContentTypeAndBody(): void
+    {
+        $exception = $this->capture(static fn () => Response::text(
+            '<urlset></urlset>',
+            200,
+            'application/xml; charset=UTF-8',
+            ['Cache-Control' => 'no-store']
+        ));
+
+        self::assertSame(200, $exception->status());
+        self::assertSame('application/xml; charset=UTF-8', $exception->payload()['contentType']);
+        self::assertSame('<urlset></urlset>', $exception->payload()['body']);
+    }
+
+    public function testRedirectRejectsHeaderInjection(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        Response::redirect("/user/profile\r\nLocation: https://evil.example");
+    }
+
+    #[DataProvider('invalidRedirectProvider')]
+    public function testRedirectRejectsAmbiguousOrCredentialBearingTargets(string $url): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        Response::redirect($url);
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function invalidRedirectProvider(): iterable
+    {
+        yield 'scheme-relative' => ['//evil.example/path'];
+        yield 'backslash' => ['/\\evil.example'];
+        yield 'relative path' => ['user/profile'];
+        yield 'userinfo' => ['https://user@example.com/path'];
     }
 
     /**

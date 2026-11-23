@@ -563,6 +563,110 @@ final class RestV2ContentTest extends V2ApiTestCase
         self::assertSame('Hidden draft', $drafts['data'][0]['title']);
     }
 
+    public function testEditorContentListingIsAlwaysScopedToTheCurrentAuthor(): void
+    {
+        $post = $this->tables()['table.contents'][0];
+        $this->seedRows('table.contents', [
+            array_replace($post, [
+                'cid' => 12,
+                'title' => 'Editor draft',
+                'slug' => 'editor-draft',
+                'type' => 'post_draft',
+                'authorId' => 2,
+            ]),
+        ]);
+        $this->signInWithCookie(2);
+
+        $payload = $this->dispatch('admin/contents?authorId=1')->payload();
+
+        $this->assertSuccess(200, $payload);
+        self::assertSame(1, $payload['meta']['total']);
+        self::assertSame('Editor draft', $payload['data'][0]['title']);
+        self::assertSame(2, $payload['data'][0]['authorId']);
+    }
+
+    public function testEditorCannotReadAnotherAuthorsContent(): void
+    {
+        $this->signInWithCookie(2);
+
+        $response = $this->dispatch('admin/contents/10');
+
+        self::assertSame(403, $response->status());
+        self::assertSame(403, $response->payload()['code']);
+    }
+
+    public function testEditorCannotCreateContentForAnotherAuthor(): void
+    {
+        $this->signInWithCookie(2);
+
+        $response = $this->dispatch(
+            'admin/posts',
+            'POST',
+            ['title' => 'Spoofed author', 'authorId' => 1],
+            ['Origin' => 'https://example.test']
+        );
+
+        self::assertSame(403, $response->status());
+        self::assertSame(403, $response->payload()['code']);
+    }
+
+    public function testEditorCannotUpdateAnotherAuthorsContent(): void
+    {
+        $this->signInWithCookie(2);
+
+        $response = $this->dispatch(
+            'admin/posts/10',
+            'PATCH',
+            ['title' => 'Hijacked title'],
+            ['Origin' => 'https://example.test']
+        );
+
+        self::assertSame(403, $response->status());
+        self::assertSame(403, $response->payload()['code']);
+        self::assertSame('Hello world', V2FakeDb::row('table.contents', 10)['title']);
+    }
+
+    public function testEditorCannotReassignOwnContentToAnotherAuthor(): void
+    {
+        $post = $this->tables()['table.contents'][0];
+        $this->seedRows('table.contents', [
+            array_replace($post, [
+                'cid' => 13,
+                'title' => 'Editor own post',
+                'slug' => 'editor-own-post',
+                'authorId' => 2,
+            ]),
+        ]);
+        $this->signInWithCookie(2);
+
+        $response = $this->dispatch(
+            'admin/posts/13',
+            'PATCH',
+            ['authorId' => 1],
+            ['Origin' => 'https://example.test']
+        );
+
+        self::assertSame(403, $response->status());
+        self::assertSame(403, $response->payload()['code']);
+        self::assertSame(2, V2FakeDb::row('table.contents', 13)['authorId']);
+    }
+
+    public function testEditorCannotDeleteAnotherAuthorsContent(): void
+    {
+        $this->signInWithCookie(2);
+
+        $response = $this->dispatch(
+            'admin/posts/10',
+            'DELETE',
+            null,
+            ['Origin' => 'https://example.test']
+        );
+
+        self::assertSame(403, $response->status());
+        self::assertSame(403, $response->payload()['code']);
+        self::assertNotNull(V2FakeDb::row('table.contents', 10));
+    }
+
     public function testCategoryCrudKeepsChildrenAtTheRoot(): void
     {
         $this->signInWithCookie(1);

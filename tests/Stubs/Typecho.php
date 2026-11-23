@@ -314,6 +314,10 @@ namespace Typecho {
         public function setStatus(int $status): void
         {
         }
+
+        public function setHeader(string $name, string $value): void
+        {
+        }
     }
 
     final class Plugin

@@ -403,8 +403,18 @@ final class Router
             self::route('GET', 'options', Auth::TIER_ADMIN, static fn () => $controller()->optionsGet()),
             self::route('PATCH', 'options', Auth::TIER_ADMIN, static fn () => $controller()->optionsPatch()),
 
-            self::route('GET', 'contents', $writer, static fn () => $controller()->contentList()),
-            self::route('GET', 'contents/{cid}', $writer, static fn (array $p) => $controller()->content((int) $p['cid'])),
+            self::route(
+                'GET',
+                'contents',
+                $writer,
+                static fn (array $p, array $i) => $controller()->contentList($i)
+            ),
+            self::route(
+                'GET',
+                'contents/{cid}',
+                $writer,
+                static fn (array $p, array $i) => $controller()->content((int) $p['cid'], $i)
+            ),
             self::route(
                 'POST',
                 'posts',
@@ -421,7 +431,7 @@ final class Router
                 'DELETE',
                 'posts/{cid}',
                 $writer,
-                static fn (array $p) => $controller()->deleteContent('post', (int) $p['cid'])
+                static fn (array $p, array $i) => $controller()->deleteContent('post', (int) $p['cid'], $i)
             ),
             self::route(
                 'POST',
@@ -439,7 +449,7 @@ final class Router
                 'DELETE',
                 'pages/{cid}',
                 $writer,
-                static fn (array $p) => $controller()->deleteContent('page', (int) $p['cid'])
+                static fn (array $p, array $i) => $controller()->deleteContent('page', (int) $p['cid'], $i)
             ),
 
             self::route('GET', 'comments', Auth::TIER_ADMIN, static fn () => $controller()->commentList()),
